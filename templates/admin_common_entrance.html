@@ -1,0 +1,1068 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Entrance EXAM Admin | COGNITARA EXAM SYSTEM</title>
+    <link href="{{ url_for('static', filename='vendor/bootstrap/css/bootstrap.min.css') }}" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='vendor/fontawesome/css/all.min.css') }}">
+    <script src="{{ url_for('static', filename='vendor/chartjs/chart.umd.min.js') }}"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: linear-gradient(135deg, #f5f7fa 0%, #e8edf5 100%); font-family: 'Segoe UI', 'Poppins', sans-serif; }
+        
+        .admin-container { max-width: 1400px; margin: 0 auto; padding: 40px 30px; position: relative; z-index: 10; }
+        
+        .edu-icon { position: absolute; color: rgba(26, 86, 219, 0.05); pointer-events: none; z-index: 0; animation: floatIcon 20s infinite ease-in-out; }
+        @keyframes floatIcon { 0% { transform: translate(0, 0) rotate(0deg); opacity: 0; } 10% { opacity: 0.08; } 90% { opacity: 0.08; } 100% { transform: translate(100px, -100px) rotate(360deg); opacity: 0; } }
+        
+        .page-header { text-align: center; margin-bottom: 40px; }
+        .logo-icon { width: 80px; height: 80px; background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%); border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 20px; animation: pulse 2s infinite; }
+        @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+        .logo-icon i { font-size: 40px; color: white; }
+        .page-header h1 { font-size: 36px; font-weight: 800; background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 10px; }
+        .page-header p { font-size: 16px; color: #64748b; }
+        
+        .stats-bar { background: white; border-radius: 20px; padding: 20px 30px; margin-bottom: 30px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px; border: 1px solid #e2e8f0; }
+        .stats-info { display: flex; align-items: center; gap: 15px; cursor: pointer; }
+        .stats-icon { width: 50px; height: 50px; background: #ede9fe; border-radius: 15px; display: flex; align-items: center; justify-content: center; }
+        .stats-icon i { font-size: 24px; color: #8b5cf6; }
+        .stats-text h3 { font-size: 28px; font-weight: 800; color: #1e293b; margin: 0; }
+        .stats-text p { margin: 0; color: #64748b; font-size: 13px; }
+        
+        .btn-back, .btn-primary-custom, .btn-danger-custom, .btn-success-custom, .btn-warning-custom { text-decoration: none !important; }
+        .btn-back { background: white; border: 2px solid #e2e8f0; padding: 10px 25px; border-radius: 12px; color: #64748b; font-weight: 600; display: inline-flex; align-items: center; gap: 8px; transition: all 0.3s; font-size: 14px; }
+        .btn-back:hover { border-color: #8b5cf6; color: #8b5cf6; background: #f5f3ff; transform: translateY(-2px); }
+        .btn-primary-custom { background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%); color: white; border: none; padding: 8px 18px; border-radius: 10px; font-weight: 600; cursor: pointer; transition: all 0.3s; display: inline-flex; align-items: center; gap: 6px; font-size: 13px; }
+        .btn-primary-custom:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(139,92,246,0.3); color: white; }
+        .btn-danger-custom { background: #ef4444; color: white; border: none; padding: 6px 14px; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.3s; display: inline-flex; align-items: center; gap: 5px; font-size: 12px; }
+        .btn-danger-custom:hover { background: #dc2626; transform: translateY(-2px); }
+        .btn-success-custom { background: #10b981; color: white; border: none; padding: 6px 14px; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.3s; font-size: 12px; display: inline-flex; align-items: center; gap: 5px; }
+        .btn-success-custom:hover { background: #059669; transform: translateY(-2px); }
+        .btn-warning-custom { background: #f59e0b; color: white; border: none; padding: 6px 14px; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.3s; font-size: 12px; display: inline-flex; align-items: center; gap: 5px; }
+        .btn-warning-custom:hover { background: #d97706; transform: translateY(-2px); }
+        .tech{text-decoration: none;}
+        
+        .nav-tabs { border: none; gap: 10px; flex-wrap: wrap; margin-bottom: 25px; }
+        .nav-tabs .nav-link { background: white; border: 1px solid #e2e8f0; border-radius: 16px; padding: 10px 24px; color: #64748b; font-weight: 600; font-size: 13px; transition: all 0.3s; text-decoration: none; }
+        .nav-tabs .nav-link:hover { border-color: #8b5cf6; color: #8b5cf6; }
+        .nav-tabs .nav-link.active { background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%); border-color: #8b5cf6; color: white; }
+        
+        .card-custom { background: white; border-radius: 20px; border: 1px solid #e2e8f0; margin-bottom: 25px; overflow: hidden; }
+        .card-header-custom { padding: 14px 20px; border-bottom: 1px solid #e2e8f0; background: #f8fafc; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
+        .card-header-custom h3 { margin: 0; font-size: 16px; font-weight: 600; color: #1e293b; display: flex; align-items: center; gap: 8px; }
+        .card-header-custom i { color: #8b5cf6; }
+        .card-body-custom { padding: 20px; }
+        
+        .form-control-custom { width: 100%; padding: 10px 15px; border: 2px solid #e2e8f0; border-radius: 10px; font-size: 13px; transition: all 0.3s; background: #f8fafc; margin-bottom: 12px; }
+        .form-control-custom:focus { outline: none; border-color: #8b5cf6; background: white; box-shadow: 0 0 0 3px rgba(139,92,246,0.1); }
+        
+        .student-table { width: 100%; border-collapse: collapse; }
+        .student-table th { padding: 12px 10px; text-align: left; font-size: 11px; font-weight: 600; color: #64748b; border-bottom: 1px solid #e2e8f0; background: #f8fafc; }
+        .student-table td { padding: 10px; border-bottom: 1px solid #f0f2f5; font-size: 12px; vertical-align: middle; }
+        .student-table tr:hover { background: #f8fafc; }
+        
+        .badge-pending { background: #fef3c7; color: #d97706; padding: 3px 8px; border-radius: 20px; font-size: 10px; font-weight: 600; display: inline-block; }
+        .badge-approved { background: #d1fae5; color: #065f46; padding: 3px 8px; border-radius: 20px; font-size: 10px; font-weight: 600; display: inline-block; }
+        .badge-rejected { background: #fee2e2; color: #991b1b; padding: 3px 8px; border-radius: 20px; font-size: 10px; font-weight: 600; display: inline-block; }
+        .badge-not-started { background: #e2e8f0; color: #64748b; padding: 3px 8px; border-radius: 20px; font-size: 10px; font-weight: 600; display: inline-block; }
+        
+        .exam-card { background: #f8fafc; border-radius: 14px; padding: 12px 18px; margin-bottom: 12px; border: 1px solid #e2e8f0; transition: all 0.3s; }
+        .exam-card:hover { border-color: #8b5cf6; }
+        .exam-title { font-size: 16px; font-weight: 700; color: #1e293b; margin-bottom: 5px; }
+        .exam-meta { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 8px; font-size: 11px; color: #64748b; }
+        
+        .scrollable-table { max-height: 400px; overflow-y: auto; }
+        
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 15px; margin-bottom: 25px; }
+        .flip-card { background-color: transparent; width: 100%; height: 120px; perspective: 1000px; cursor: pointer; }
+        .flip-card-inner { position: relative; width: 100%; height: 100%; text-align: center; transition: transform 0.6s; transform-style: preserve-3d; }
+        .flip-card:hover .flip-card-inner { transform: rotateY(180deg); }
+        .flip-card-front, .flip-card-back { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; border-radius: 16px; display: flex; flex-direction: column; justify-content: center; align-items: center; background: white; border: 1px solid #e2e8f0; }
+        .flip-card-back { background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%); color: white; transform: rotateY(180deg); }
+        .flip-card-front i { font-size: 28px; margin-bottom: 8px; }
+        .flip-card-front h3 { font-size: 28px; font-weight: 800; margin: 5px 0; }
+        .flip-card-front p { color: #64748b; font-size: 11px; margin: 0; }
+        .flip-card-back i { font-size: 28px; margin-bottom: 8px; }
+        .flip-card-back p { font-size: 11px; margin: 0; }
+        
+        .donut-container { max-width: 180px; margin: 0 auto; }
+        
+        /* Premium Modal Styles */
+        .premium-modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(4px);
+            z-index: 10000;
+            display: none;
+            justify-content: center;
+            align-items: center;
+        }
+        .premium-modal-overlay.show { display: flex; }
+        @keyframes modalSlide {
+            from { transform: translateY(30px) scale(0.96); opacity: 0; }
+            to { transform: translateY(0) scale(1); opacity: 1; }
+        }
+        .premium-modal-container {
+            background: white;
+            border-radius: 24px;
+            width: 400px;
+            max-width: 92%;
+            overflow: hidden;
+            animation: modalSlide 0.25s ease;
+            box-shadow: 0 20px 40px -12px rgba(0,0,0,0.2);
+        }
+        .premium-modal-header {
+            padding: 14px 20px;
+            border-bottom: 1px solid #eef2ff;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: linear-gradient(135deg, #faf5ff 0%, #ffffff 100%);
+        }
+        .premium-modal-header h3 {
+            margin: 0;
+            font-size: 16px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .modal-icon-small {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .premium-modal-close {
+            background: #f1f5f9;
+            border: none;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .premium-modal-close:hover { background: #fee2e2; color: #ef4444; transform: rotate(90deg); }
+        .premium-modal-body { padding: 20px; max-height: 400px; overflow-y: auto; }
+        .premium-modal-footer {
+            padding: 12px 20px 16px;
+            border-top: 1px solid #eef2ff;
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            background: #fafafa;
+        }
+        .premium-btn {
+            padding: 8px 20px;
+            border-radius: 30px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+            font-size: 12px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .premium-btn-primary { background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; }
+        .premium-btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 10px rgba(16,185,129,0.3); }
+        .premium-btn-danger { background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: white; }
+        .premium-btn-danger:hover { transform: translateY(-1px); box-shadow: 0 4px 10px rgba(239,68,68,0.3); }
+        .premium-btn-secondary { background: #f1f5f9; color: #475569; }
+        
+        .score-ring {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 15px;
+        }
+        .score-ring-inner {
+            width: 80px;
+            height: 80px;
+            background: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+        .badge-in-progress { background: #dbeafe; color: #1d4ed8; padding: 3px 8px; border-radius: 20px; font-size: 10px; font-weight: 600; display: inline-block; }
+        .toast-premium {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: white;
+            border-radius: 12px;
+            padding: 10px 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1);
+            z-index: 10001;
+            animation: slideInRight 0.3s ease;
+            border-left: 4px solid;
+            font-size: 12px;
+        }
+        @keyframes slideInRight {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        .toast-premium.success { border-left-color: #10b981; background: linear-gradient(135deg, #ffffff 0%, #f0fdf4 100%); }
+        .toast-premium.error { border-left-color: #ef4444; background: linear-gradient(135deg, #ffffff 0%, #fef2f2 100%); }
+        .loading-spinner {
+            width: 30px;
+            height: 30px;
+            border: 2px solid #e2e8f0;
+            border-top-color: #8b5cf6;
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+            margin: 10px auto;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        
+        @media (max-width: 768px) {
+            .admin-container { padding: 20px 15px; }
+            .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+            .flip-card { height: 100px; }
+            .premium-modal-container { width: 95%; }
+        }
+    </style>
+    <!-- CSRF Protection Shield -->
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <script>
+    window.CSRF_TOKEN = "{{ csrf_token() }}";
+    (function() {
+        if (window.fetch) {
+            const _origFetch = window.fetch;
+            window.fetch = function(url, options) {
+                options = options || {};
+                const method = (options.method || 'GET').toUpperCase();
+                if (!['GET', 'HEAD', 'OPTIONS', 'TRACE'].includes(method)) {
+                    options.headers = options.headers || {};
+                    const token = window.CSRF_TOKEN || (document.querySelector('meta[name="csrf-token"]') && document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
+                    if (token) {
+                        if (typeof Headers !== 'undefined' && options.headers instanceof Headers) {
+                            if (!options.headers.has('X-CSRFToken')) options.headers.set('X-CSRFToken', token);
+                        } else if (Array.isArray(options.headers)) {
+                            options.headers.push(['X-CSRFToken', token]);
+                        } else {
+                            if (!options.headers['X-CSRFToken']) options.headers['X-CSRFToken'] = token;
+                        }
+                    }
+                }
+                return _origFetch(url, options);
+            };
+        }
+        if (window.$ && $.ajaxSetup) {
+            $.ajaxSetup({
+                beforeSend: function(xhr, settings) {
+                    if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type)) {
+                        xhr.setRequestHeader("X-CSRFToken", window.CSRF_TOKEN);
+                    }
+                }
+            });
+        }
+        if (navigator.sendBeacon) {
+            const _origBeacon = navigator.sendBeacon.bind(navigator);
+            navigator.sendBeacon = function(url, data) {
+                if (data instanceof FormData) {
+                    if (!data.has('csrf_token')) data.append('csrf_token', window.CSRF_TOKEN);
+                } else if (typeof data === 'string') {
+                    try {
+                        const obj = JSON.parse(data);
+                        if (typeof obj === 'object' && obj !== null && !obj.csrf_token) {
+                            obj.csrf_token = window.CSRF_TOKEN;
+                            data = JSON.stringify(obj);
+                        }
+                    } catch(e) {}
+                }
+                return _origBeacon(url, data);
+            };
+        }
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('form[method="POST"], form[method="post"]').forEach(function(form) {
+                if (!form.querySelector('input[name="csrf_token"]')) {
+                    var input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = 'csrf_token';
+                    input.value = window.CSRF_TOKEN;
+                    form.appendChild(input);
+                }
+            });
+        });
+    })();
+    </script>
+</head>
+<body>
+<div class="edu-icon"><i class="fas fa-door-open"></i></div>
+<div class="edu-icon"><i class="fas fa-users"></i></div>
+<div class="edu-icon"><i class="fas fa-chart-line"></i></div>
+
+<div class="admin-container">
+    <div class="page-header">
+        <div class="logo-icon"><i class="fas fa-door-open"></i></div>
+        <h1>Entrance Exam Management</h1>
+        <p>Manage exams, students, approvals, and analytics</p>
+    </div>
+
+    <div class="stats-bar">
+        <div class="stats-info" onclick="showStudentList('exams')">
+            <div class="stats-icon"><i class="fas fa-file-alt"></i></div>
+            <div class="stats-text"><h3>{{ exams|length }}</h3><p>Total Exams</p></div>
+        </div>
+        <div class="stats-info" onclick="showStudentList('all')">
+            <div class="stats-icon"><i class="fas fa-users"></i></div>
+            <div class="stats-text"><h3>{{ total_students|default(0) }}</h3><p>Registered Students</p></div>
+        </div>
+        <div class="stats-info" onclick="showStudentList('pending_approval')">
+            <div class="stats-icon"><i class="fas fa-hourglass-half"></i></div>
+            <div class="stats-text"><h3>{{ pending_approvals|default(0) }}</h3><p>Pending Approvals</p></div>
+        </div>
+        <a href="/admin" class="btn-back"><i class="fas fa-arrow-left"></i> Main Dashboard</a>
+    </div>
+
+    <ul class="nav nav-tabs" id="ceTabs" role="tablist">
+        <li class="nav-item"><button class="nav-link active" id="exams-tab" data-bs-toggle="tab" data-bs-target="#exams" type="button" role="tab"><i class="fas fa-file-alt"></i> Exams</button></li>
+        <li class="nav-item"><button class="nav-link" id="students-tab" data-bs-toggle="tab" data-bs-target="#students" type="button" role="tab"><i class="fas fa-user-plus"></i> Register Student</button></li>
+        <li class="nav-item"><button class="nav-link" id="approvals-tab" data-bs-toggle="tab" data-bs-target="#approvals" type="button" role="tab"><i class="fas fa-user-check"></i> Approvals {% if pending_approvals > 0 %}<span class="badge bg-warning text-dark ms-1">{{ pending_approvals }}</span>{% endif %}</button></li>
+        <li class="nav-item"><button class="nav-link" id="analytics-tab" data-bs-toggle="tab" data-bs-target="#analytics" type="button" role="tab"><i class="fas fa-chart-line"></i> Analytics</button></li>
+        <li class="nav-item"><button class="nav-link" id="warnings-tab" data-bs-toggle="tab" data-bs-target="#warnings" type="button" role="tab"><i class="fas fa-exclamation-triangle"></i> Warnings {% if total_warnings_count > 0 %}<span class="badge bg-danger ms-1">{{ total_warnings_count }}</span>{% endif %}</button></li>
+        <li class="nav-item"><a href="/admin/ce_technical_support" class="tech"><button class="nav-link"><i class="fas fa-tools"></i> Technical Support<span class="badge bg-danger ms-1" id="techSupportBadge"></span></button></a></li>
+        <li class="nav-item"><a href="/admin/ce-settings" style="text-decoration:none;"><button class="nav-link" type="button"><i class="fas fa-sliders-h"></i> CE Settings</button></a></li>
+    </ul>
+
+    <div class="tab-content mt-3">
+        <!-- EXAMS TAB -->
+        <div class="tab-pane fade show active" id="exams" role="tabpanel">
+            <div class="card-custom">
+                <div class="card-header-custom">
+                    <h3><i class="fas fa-file-alt"></i> Entrance Exams</h3>
+                    <a href="/admin/ce_exam/create" class="btn-primary-custom"><i class="fas fa-plus"></i> Create Exam</a>
+                </div>
+                <div class="card-body-custom">
+                    {% if exams %}
+                        {% for exam in exams %}
+                        <div class="exam-card">
+                            <div class="exam-title">
+                                <i class="fas fa-door-open" style="color: #8b5cf6;"></i> {{ exam.name }}
+                                {% if exam.active %}<span class="badge-approved" style="margin-left: 8px;"><i class="fas fa-play-circle"></i> Active</span>{% else %}<span class="badge-pending" style="margin-left: 8px;"><i class="fas fa-stop-circle"></i> Inactive</span>{% endif %}
+                            </div>
+                            <div class="exam-meta">
+                                <span><i class="fas fa-flag-checkered"></i> Target: {{ exam.target_class }}</span>
+                                <span><i class="fas fa-hourglass-half"></i> Duration: {{ exam.duration }} min</span>
+                                <span><i class="fas fa-percent"></i> Passing: {{ exam.passing_score }}%</span>
+                                <span><i class="fas fa-list-ol"></i> Questions: {{ exam.total_questions_to_show }}</span>
+                                <span><i class="fas fa-users"></i> Attempts: {{ exam.attempts_count|default(0) }}</span>
+                                <span><i class="fas fa-check-circle"></i> Passed: {{ exam.passed_count|default(0) }}</span>
+                                <span><i class="fas fa-times-circle"></i> Failed: {{ exam.failed_count|default(0) }}</span>
+                                <span><i class="fas fa-ban"></i> Rejected: {{ exam.rejected_count|default(0) }}</span>
+                            </div>
+                            <div class="mt-2">
+                                <a href="/admin/ce_exam/{{ exam.id }}/settings" class="btn-primary-custom" style="padding: 4px 12px; font-size: 11px;"><i class="fas fa-cog"></i> Settings</a>
+                                <a href="/admin/ce_analytics/{{ exam.id }}" class="btn-primary-custom" style="padding: 4px 12px; font-size: 11px; background: #3b82f6;"><i class="fas fa-chart-line"></i> Analytics</a>
+                                <button class="btn-danger-custom" onclick="showConfirmModal('toggle', {{ exam.id }}, {{ exam.active }}, '{{ exam.name }}')" style="padding: 4px 12px; font-size: 11px;"><i class="fas {% if exam.active %}fa-stop{% else %}fa-play{% endif %}"></i> {% if exam.active %}Stop{% else %}Start{% endif %}</button>
+                                <button class="btn-danger-custom" onclick="showConfirmModal('delete_exam', {{ exam.id }}, null, '{{ exam.name }}')" style="padding: 4px 12px; font-size: 11px; background: #ef4444;"><i class="fas fa-trash"></i> Delete</button>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-center py-4"><i class="fas fa-door-open" style="font-size: 50px; color: #cbd5e1;"></i><p class="mt-2">No entrance exams created yet.</p><a href="/admin/ce_exam/create" class="btn-primary-custom">Create Your First Exam</a></div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- REGISTER STUDENT TAB -->
+        <div class="tab-pane fade" id="students" role="tabpanel">
+            <div class="card-custom">
+                <div class="card-header-custom"><h3><i class="fas fa-user-plus"></i> Register New Student</h3></div>
+                <div class="card-body-custom">
+                    <form id="registerStudentForm">
+                        <div class="row">
+                            <div class="col-md-6"><select name="exam_id" id="exam_id" class="form-control-custom" required><option value="">-- Select Exam --</option>{% for exam in exams %}<option value="{{ exam.id }}">{{ exam.name }} → {{ exam.target_class }}</option>{% endfor %}</select></div>
+                            <div class="col-md-6"><input type="text" name="full_name" id="full_name" class="form-control-custom" placeholder="Full Name" required></div>
+                            <div class="col-md-6"><input type="text" name="username" id="regUsername" class="form-control-custom" placeholder="Username" required><div id="usernameCheck" class="small mt-1"></div></div>
+                            <div class="col-md-6"><input type="email" name="email" id="email" class="form-control-custom" placeholder="Email" required></div>
+                            <div class="col-md-6"><input type="text" name="password" id="password" class="form-control-custom" value="student123" placeholder="Password" required><small class="text-muted">Default: student123</small></div>
+                            <div class="col-md-6"><input type="text" name="phone" id="phone" class="form-control-custom" placeholder="Phone (optional)"></div>
+                            <div class="col-md-6">
+                                <label class="form-label text-muted small mb-1"><i class="fas fa-camera"></i> Student Photo (Optional)</label>
+                                <input type="file" name="photo" id="ceStudentPhoto" class="form-control-custom" accept="image/*">
+                            </div>
+                        </div>
+                        <button type="submit" class="btn-primary-custom" id="registerBtn"><i class="fas fa-save"></i> Register Student</button>
+                    </form>
+                </div>
+            </div>
+
+            <div class="card-custom mt-4">
+                <div class="card-header-custom">
+                    <h3><i class="fas fa-users"></i> Registered Students ({{ registered_students|length }})</h3>
+                    <div><button class="btn-warning-custom" onclick="showConfirmModal('reset_all', null, null, null)"><i class="fas fa-undo-alt"></i> Reset All</button><button class="btn-danger-custom" onclick="showConfirmModal('delete_all_students', null, null, null)" style="margin-left: 8px;"><i class="fas fa-trash-alt"></i> Delete All</button></div>
+                </div>
+                <div class="card-body-custom">
+                    <div class="scrollable-table">
+                        <table class="student-table">
+                            <thead><tr><th>Student</th><th>Username</th><th>Exam</th><th>Status</th><th>Actions</th></tr></thead>
+                            <tbody id="studentsTableBody">
+                                {% for student in registered_students %}
+                                <tr id="student-row-{{ student.id }}" data-student-name="{{ student.full_name }}" data-student-id="{{ student.id }}" data-exam-id="{{ student.exam_id }}">
+                                    <td>
+                                        <div style="display:flex; align-items:center; gap:10px;">
+                                            <img src="{{ url_for('static', filename='images/' + (student.photo or 'default.png')) }}" 
+                                                 alt="{{ student.full_name }}" 
+                                                 style="width:36px; height:36px; border-radius:50%; object-fit:cover; border:1.5px solid #1a56db; flex-shrink:0;">
+                                            <div>
+                                                <strong style="display:block; font-size:13px; color:#0f172a;">{{ student.full_name }}</strong>
+                                                <span style="font-size:11px; color:#64748b;">ID: #{{ student.id }}</span>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>{{ student.username }}</td>
+                                    <td>{{ student.exam_name }}</td>
+                                    <td>
+                                        {% if student.attempt_status == 'pending' %}
+                                            <span class="badge-pending">Pending</span>
+                                        {% elif student.attempt_status == 'approved' %}
+                                            <span class="badge-approved">Approved</span>
+                                        {% elif student.attempt_status == 'rejected' %}
+                                            <span class="badge-rejected">Rejected</span>
+                                        {% elif student.attempt_status == 'in_progress' %}
+                                            <span class="badge-in-progress"><i class="fas fa-circle-notch fa-spin"></i> In Progress</span>
+                                        {% else %}
+                                            <span class="badge-not-started">Not Started</span>
+                                        {% endif %}
+                                    </td>
+                                    
+                                    <td>
+                                        <button class="btn-warning-custom" onclick="showConfirmModal('reset', null, null, null, {{ student.id }}, {{ student.exam_id }}, '{{ student.full_name }}')" style="padding: 3px 8px; font-size: 10px;"><i class="fas fa-undo-alt"></i> Reset</button>
+                                        <button class="btn-danger-custom" onclick="showConfirmModal('delete_student', {{ student.id }}, null, '{{ student.full_name }}')" style="padding: 3px 8px; font-size: 10px;"><i class="fas fa-trash"></i> Delete</button>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- APPROVALS TAB -->
+        <div class="tab-pane fade" id="approvals" role="tabpanel">
+            <div class="card-custom">
+                <div class="card-header-custom">
+                    <h3><i class="fas fa-user-check"></i> Pending Approvals ({{ pending_approvals_list|length }})</h3>
+                    <div><input type="text" id="searchApproval" class="form-control-custom" placeholder="Search student..." style="width: 180px; display: inline-block; margin-right: 8px;"><button class="btn-success-custom" onclick="showConfirmModal('approve_all', null, null, null)"><i class="fas fa-check-double"></i> Approve All</button></div>
+                </div>
+                <div class="card-body-custom">
+                    <div class="scrollable-table">
+                        <table class="student-table">
+                            <thead><tr><th>Student</th><th>Exam</th><th>Score</th><th>%</th><th>Target</th><th>Actions</th></tr></thead>
+                            <tbody id="approvalsTableBody">
+                                {% for approval in pending_approvals_list %}
+                                {% set percent = (approval.score / approval.total * 100)|round|int if approval.total > 0 else 0 %}
+                                <tr id="approval-row-{{ approval.attempt_id }}" class="approval-row" data-name="{{ approval.full_name|lower }}" data-score="{{ approval.score }}" data-total="{{ approval.total }}" data-percent="{{ percent }}" data-student-id="{{ approval.student_id }}" data-exam-id="{{ approval.exam_id }}" data-student-name="{{ approval.full_name }}">
+                                    <td><strong>{{ approval.full_name }}</strong><br><small>{{ approval.username }}</small></td>
+                                    <td>{{ approval.exam_name }}</td>
+                                    <td>{{ approval.score }}/{{ approval.total }}</td>
+                                    <td><span class="badge {% if percent >= 50 %}bg-success{% else %}bg-danger{% endif %}">{{ percent }}%</span></td>
+                                    <td>{{ approval.target_class }}</td>
+                                    <td>
+                                        <button class="btn-success-custom" onclick="openApproveModal(this)" style="padding: 3px 8px; font-size: 10px;"><i class="fas fa-check-circle"></i> Approve</button>
+                                        <button class="btn-danger-custom" onclick="openRejectModal(this)" style="padding: 3px 8px; font-size: 10px;"><i class="fas fa-times-circle"></i> Reject</button>
+                                        <a href="/admin/ce_student_analytics/{{ approval.student_id }}/{{ approval.exam_id }}" class="btn-primary-custom" style="padding: 3px 8px; font-size: 10px; background: #3b82f6;"><i class="fas fa-eye"></i> View</a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% if not pending_approvals_list %}<div class="text-center py-4"><i class="fas fa-check-circle" style="font-size: 50px; color: #10b981;"></i><p class="mt-2">No pending approvals.</p></div>{% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="tab-pane fade" id="warnings" role="tabpanel">
+            <div class="stats-grid">
+                <div class="flip-card" style="height:150px">
+                    <div class="flip-card-inner">
+                        <div class="flip-card-front"><i class="fas fa-exclamation-triangle" style="color: #ef4444;"></i><h3>{{ total_warnings_count|default(0) }}</h3><p>Total Warnings Issued</p></div>
+                        <div class="flip-card-back"><i class="fas fa-history"></i><p>Across all exams</p></div>
+                    </div>
+                </div>
+                <div class="flip-card" style="height:150px">
+                    <div class="flip-card-inner">
+                        <div class="flip-card-front"><i class="fas fa-users-slash" style="color: #f59e0b;"></i><h3>{{ warning_summary|length }}</h3><p>Students Warned</p></div>
+                        <div class="flip-card-back"><i class="fas fa-user-shield"></i><p>Unique offenders</p></div>
+                    </div>
+                </div>
+                <div class="flip-card" style="height:150px">
+                    <div class="flip-card-inner">
+                        <div class="flip-card-front"><i class="fas fa-radiation" style="color: #dc2626;"></i><h3>{% if most_warned %}{{ most_warned.total_warnings }}{% else %}0{% endif %}</h3><p>Highest Warning Count</p></div>
+                        <div class="flip-card-back"><i class="fas fa-user-tag"></i><p>{% if most_warned %}{{ most_warned.full_name }}{% else %}—{% endif %}</p></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card-custom">
+                <div class="card-header-custom">
+                    <h3><i class="fas fa-clipboard-list"></i> Warning Summary</h3>
+                    <button class="btn-danger-custom" onclick="showConfirmModal('delete_all_warnings', null, null, null)"><i class="fas fa-trash-alt"></i> Delete All Logs</button>
+                </div>
+                <div class="card-body-custom">
+                    <div class="scrollable-table">
+                        <table class="student-table">
+                            <thead><tr><th>Student</th><th>Exam</th><th>Total Warnings</th><th>Last Warning</th><th>Actions</th></tr></thead>
+                            <tbody>
+                                {% for w in warning_summary %}
+                                <tr id="summary-row-{{ w.student_id }}-{{ w.exam_id }}">
+                                    <td><strong>{{ w.full_name }}</strong><br><small>{{ w.username }}</small></td>
+                                    <td>{{ w.exam_name }}</td>
+                                    <td><span class="badge bg-danger">{{ w.total_warnings }}</span></td>
+                                    <td>{{ w.last_warning }}</td>
+                                    <td>
+                                        <button class="btn-warning-custom" onclick="showConfirmModal('clear_student_warnings', null, null, '{{ w.full_name | replace("'", "\\'") }}', {{ w.student_id }}, {{ w.exam_id }}, null)" style="padding: 3px 8px; font-size: 10px;"><i class="fas fa-eraser"></i> Clear</button>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% if not warning_summary %}<div class="text-center py-4"><i class="fas fa-shield-alt" style="font-size: 40px; color: #10b981;"></i><p class="mt-2">No warnings recorded.</p></div>{% endif %}
+                </div>
+            </div>
+
+            <div class="card-custom">
+                <div class="card-header-custom">
+                    <h3><i class="fas fa-list-ul"></i> Detailed Warning Logs</h3>
+                </div>
+                <div class="card-body-custom">
+                    <div class="scrollable-table">
+                        <table class="student-table">
+                            <thead><tr><th>Timestamp</th><th>Student</th><th>Exam</th><th>Message</th><th>Action</th></tr></thead>
+                            <tbody>
+                                {% for log in warning_logs %}
+                                <tr id="log-row-{{ log.id }}">
+                                    <td style="white-space: nowrap;">{{ log.timestamp }}</td>
+                                    <td><strong>{{ log.full_name }}</strong></td>
+                                    <td>{{ log.exam_name }}</td>
+                                    <td class="text-danger">{{ log.warning_message }}</td>
+                                    <td>
+                                        <button class="btn-danger-custom" onclick="showConfirmModal('delete_warning_log', {{ log.id }}, null, null)" style="padding: 3px 8px; font-size: 10px;"><i class="fas fa-trash"></i></button>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ANALYTICS TAB -->
+        <div class="tab-pane fade" id="analytics" role="tabpanel">
+            <div class="stats-grid">
+                <div class="flip-card" onclick="showStudentList('all')"><div class="flip-card-inner"><div class="flip-card-front"><i class="fas fa-chart-line" style="color: #3b82f6;"></i><h3>{{ total_all_attempts|default(0) }}</h3><p>Total Attempts</p></div><div class="flip-card-back"><i class="fas fa-chart-line"></i><p>Click to view</p></div></div></div>
+                <div class="flip-card" onclick="showStudentList('passed')"><div class="flip-card-inner"><div class="flip-card-front"><i class="fas fa-check-circle" style="color: #10b981;"></i><h3>{{ total_all_passed|default(0) }}</h3><p>Passed</p></div><div class="flip-card-back"><i class="fas fa-trophy"></i><p>Click to view</p></div></div></div>
+                <div class="flip-card" onclick="showStudentList('failed')"><div class="flip-card-inner"><div class="flip-card-front"><i class="fas fa-times-circle" style="color: #ef4444;"></i><h3>{{ total_all_failed|default(0) }}</h3><p>Failed</p></div><div class="flip-card-back"><i class="fas fa-book"></i><p>Click to view</p></div></div></div>
+                <div class="flip-card" onclick="showStudentList('rejected')"><div class="flip-card-inner"><div class="flip-card-front"><i class="fas fa-ban" style="color: #f59e0b;"></i><h3>{{ total_all_rejected|default(0) }}</h3><p>Rejected</p></div><div class="flip-card-back"><i class="fas fa-gavel"></i><p>Click to view</p></div></div></div>
+                <div class="flip-card" onclick="showStudentList('approved')"><div class="flip-card-inner"><div class="flip-card-front"><i class="fas fa-user-check" style="color: #8b5cf6;"></i><h3>{{ total_all_approved|default(0) }}</h3><p>Approved</p></div><div class="flip-card-back"><i class="fas fa-check-double"></i><p>Click to view</p></div></div></div>
+                <div class="flip-card"><div class="flip-card-inner"><div class="flip-card-front"><i class="fas fa-chart-simple" style="color: #8b5cf6;"></i><h3>{{ global_avg|default(0) }}%</h3><p>Average Score</p></div><div class="flip-card-back"><i class="fas fa-chart-line"></i><p>Class average</p></div></div></div>
+                <div class="flip-card" id="highestCard"><div class="flip-card-inner"><div class="flip-card-front"><i class="fas fa-trophy" style="color: #f59e0b;"></i><h3>{{ global_highest|default(0) }}%</h3><p>Highest Score</p></div><div class="flip-card-back"><i class="fas fa-crown"></i><p>{{ highest_student_name|default('—') }}</p></div></div></div>
+                <div class="flip-card" id="lowestCard"><div class="flip-card-inner"><div class="flip-card-front"><i class="fas fa-arrow-down" style="color: #ef4444;"></i><h3>{{ global_lowest|default(0) }}%</h3><p>Lowest Score</p></div><div class="flip-card-back"><i class="fas fa-chart-line"></i><p>{{ lowest_student_name|default('—') }}</p></div></div></div>
+            </div>
+
+            <div class="card-custom">
+                <div class="card-header-custom"><h3><i class="fas fa-chart-pie"></i> Score Distribution</h3></div>
+                <div class="card-body-custom text-center"><div class="donut-container"><canvas id="scoreDonutChart" style="height: 160px; width: 160px;"></canvas></div></div>
+            </div>
+
+            <div class="card-custom">
+                <div class="card-header-custom"><h3><i class="fas fa-trophy"></i> Top Performers</h3></div>
+                <div class="card-body-custom">
+                    <div class="scrollable-table">
+                        <table class="student-table">
+                            <thead><tr><th>Rank</th><th>Student</th><th>Exam</th><th>Score</th><th>%</th></thead>
+                            <tbody>
+                                {% for p in top_performers %}
+                                <tr>
+                                    <td>#{{ loop.index }}</td>
+                                    <td><strong>{{ p.full_name }}</strong><br><small>{{ p.username }}</small></td>
+                                    <td>{{ p.exam_name }}</td>
+                                    <td>{{ p.score }}/{{ p.total }}</td>
+                                    <td><span class="badge-approved">{{ p.percentage|round|int }}%</span></td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div class="card-custom">
+                <div class="card-header-custom"><h3><i class="fas fa-chart-line"></i> Exam-wise Analytics</h3></div>
+                <div class="card-body-custom">
+                    <div class="row">
+                        {% for exam in exams %}
+                        <div class="col-md-6 mb-3">
+                            <div class="exam-card" style="text-align: left;">
+                                <h6><i class="fas fa-door-open" style="color: #8b5cf6;"></i> {{ exam.name }}</h6>
+                                <div class="row text-center mt-2">
+                                    <div class="col-3"><h6 class="mb-0">{{ exam.attempts_count|default(0) }}</h6><small>Attempts</small></div>
+                                    <div class="col-3"><h6 class="mb-0 text-success">{{ exam.passed_count|default(0) }}</h6><small>Passed</small></div>
+                                    <div class="col-3"><h6 class="mb-0 text-danger">{{ exam.failed_count|default(0) }}</h6><small>Failed</small></div>
+                                    <div class="col-3"><h6 class="mb-0 text-warning">{{ exam.rejected_count|default(0) }}</h6><small>Rejected</small></div>
+                                </div>
+                                <div class="mt-2 text-center"><a href="/admin/ce_analytics/{{ exam.id }}" class="btn-primary-custom" style="padding: 4px 12px; font-size: 11px;"><i class="fas fa-chart-line"></i> View Details</a></div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Student List Modal -->
+<div class="modal fade" id="studentListModal" tabindex="-1">
+    <div class="modal-dialog modal-lg"><div class="modal-content"><div class="modal-header"><h5 class="modal-title" id="modalTitle">Students</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body" id="modalBody"><div class="text-center">Loading...</div></div><div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button></div></div></div>
+</div>
+
+<!-- Premium Modal -->
+<div id="premiumModal" class="premium-modal-overlay">
+    <div class="premium-modal-container">
+        <div class="premium-modal-header"><h3 id="modalTitleText">Modal Title</h3><button class="premium-modal-close" onclick="closeModal()"><i class="fas fa-times"></i></button></div>
+        <div class="premium-modal-body" id="modalBodyContent">Content</div>
+        <div class="premium-modal-footer"><button class="premium-btn premium-btn-secondary" onclick="closeModal()">Cancel</button><button class="premium-btn premium-btn-primary" id="modalConfirmBtn">Confirm</button></div>
+    </div>
+</div>
+
+<script src="{{ url_for('static', filename='vendor/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
+<script>
+    // Chart
+    const donutCtx = document.getElementById('scoreDonutChart').getContext('2d');
+    new Chart(donutCtx, { type: 'doughnut', data: { labels: {{ distribution_labels|safe }}, datasets: [{ data: {{ distribution_counts|safe }}, backgroundColor: ['#ef4444', '#f59e0b', '#fbbf24', '#34d399', '#10b981'], borderWidth: 0 }] }, options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { position: 'bottom', labels: { boxWidth: 8, font: { size: 9 } } } } } });
+
+    // Search filter
+    document.getElementById('searchApproval')?.addEventListener('keyup', function() {
+        const val = this.value.toLowerCase();
+        document.querySelectorAll('#approvalsTableBody .approval-row').forEach(row => { row.style.display = row.getAttribute('data-name').includes(val) ? '' : 'none'; });
+    });
+
+    // Modal functions
+    let modalCallback = null;
+    function showModal(title, content, confirmText, confirmType, callback) {
+        document.getElementById('modalTitleText').innerHTML = title;
+        document.getElementById('modalBodyContent').innerHTML = content;
+        const btn = document.getElementById('modalConfirmBtn');
+        btn.innerHTML = confirmText;
+        btn.className = 'premium-btn ' + (confirmType === 'approve' ? 'premium-btn-primary' : (confirmType === 'reject' ? 'premium-btn-danger' : 'premium-btn-warning'));
+        modalCallback = callback;
+        document.getElementById('premiumModal').classList.add('show');
+    }
+    function closeModal() { document.getElementById('premiumModal').classList.remove('show'); modalCallback = null; }
+    document.getElementById('modalConfirmBtn').onclick = () => { if (modalCallback) modalCallback(); closeModal(); };
+    document.getElementById('premiumModal').onclick = (e) => { if (e.target === e.currentTarget) closeModal(); };
+    
+    function showToast(msg, type) {
+        const toast = document.createElement('div');
+        toast.className = `toast-premium ${type}`;
+        toast.innerHTML = `<span>${type === 'success' ? '<i class="fas fa-check"></i>' : '<i class="fas fa-times"></i>'}</span><span>${msg}</span>`;
+        document.body.appendChild(toast);
+        setTimeout(() => { toast.style.animation = 'slideInRight 0.3s reverse'; setTimeout(() => toast.remove(), 300); }, 2500);
+    }
+    function showLoading() { showModal('<span class="loading-spinner" style="display: inline-block; margin-right: 8px;"></span> Processing', '<div class="text-center"><div class="loading-spinner"></div><p class="mt-2" style="font-size: 12px;">Please wait...</p></div>', '', '', null); }
+    function hideLoading() { closeModal(); }
+    
+    function getRowData(btn) {
+        const row = btn.closest('tr');
+        return {
+            studentName: row.getAttribute('data-student-name') || row.cells[0].innerText.split('\n')[0].trim(),
+            score: parseInt(row.getAttribute('data-score')),
+            total: parseInt(row.getAttribute('data-total')),
+            percent: parseInt(row.getAttribute('data-percent')),
+            studentId: parseInt(row.getAttribute('data-student-id')),
+            examId: parseInt(row.getAttribute('data-exam-id')),
+            attemptId: parseInt(row.id.replace('approval-row-', ''))
+        };
+    }
+    
+    // ============ BEAUTIFUL APPROVE MODAL - SCORE BASED ONLY ============
+    function openApproveModal(btn) {
+        const data = getRowData(btn);
+        const pct = data.percent;
+        
+        // Color and icon based on score range
+        let bgColor, ringColor, icon, title, message, textColor;
+        
+        if (pct >= 90) {
+            bgColor = 'linear-gradient(135deg, #fef3c7 0%, #fffbeb 100%)';
+            ringColor = '#f59e0b';
+            icon = '<i class="fas fa-crown"></i>';
+            title = 'OUTSTANDING!';
+            message = 'Exceptional performance! This student is a top achiever. Strongly recommended for approval.';
+            textColor = '#92400e';
+        } else if (pct >= 80) {
+            bgColor = 'linear-gradient(135deg, #d1fae5 0%, #ecfdf5 100%)';
+            ringColor = '#10b981';
+            icon = '<i class="fas fa-star"></i>';
+            title = 'EXCELLENT!';
+            message = 'Very impressive score! Student has demonstrated mastery. Highly recommended for approval.';
+            textColor = '#065f46';
+        } else if (pct >= 70) {
+            bgColor = 'linear-gradient(135deg, #dbeafe 0%, #eff6ff 100%)';
+            ringColor = '#3b82f6';
+            icon = '<i class="fas fa-book"></i>';
+            title = 'VERY GOOD!';
+            message = 'Solid performance! Student has good understanding. Recommended for approval.';
+            textColor = '#1e40af';
+        } else if (pct >= 60) {
+            bgColor = 'linear-gradient(135deg, #e0e7ff 0%, #eef2ff 100%)';
+            ringColor = '#6366f1';
+            icon = '<i class="fas fa-thumbs-up"></i>';
+            title = 'GOOD!';
+            message = 'Satisfactory performance. Student meets expectations. Approval recommended.';
+            textColor = '#3730a3';
+        } else if (pct >= 50) {
+            bgColor = 'linear-gradient(135deg, #fef3c7 0%, #fffbeb 100%)';
+            ringColor = '#f59e0b';
+            icon = '<i class="fas fa-book-open"></i>';
+            title = 'PASSED';
+            message = 'Student has passed the exam. Consider approval with encouragement for improvement.';
+            textColor = '#92400e';
+        } else {
+            bgColor = 'linear-gradient(135deg, #fee2e2 0%, #fef2f2 100%)';
+            ringColor = '#ef4444';
+            icon = '<i class="fas fa-exclamation-triangle"></i>';
+            title = 'BELOW PASSING';
+            message = 'Student did not meet the passing mark. Consider rejection or allow retake.';
+            textColor = '#991b1b';
+        }
+        
+        const modalContent = `
+            <div style="text-align: center;">
+                <div class="score-ring" style="background: conic-gradient(from 0deg, ${ringColor} 0deg, ${ringColor} ${pct * 3.6}deg, #e2e8f0 ${pct * 3.6}deg);">
+                    <div class="score-ring-inner">
+                        <span style="font-size: 28px; font-weight: 800; color: ${ringColor};">${pct}%</span>
+                        <span style="font-size: 10px; color: #64748b;">Score</span>
+                    </div>
+                </div>
+                
+                <div style="font-size: 14px; font-weight: 600; margin-bottom: 15px; color: #475569;">
+                    ${data.score}/${data.total} Correct Answers
+                </div>
+                
+                <div style="background: ${bgColor}; border-radius: 16px; padding: 15px; margin-bottom: 15px;">
+                    <div style="display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 8px;">
+                        <span style="font-size: 28px;">${icon}</span>
+                        <span style="font-size: 18px; font-weight: 700; color: ${textColor};">${title}</span>
+                    </div>
+                    <p style="font-size: 12px; margin: 0; color: ${textColor};">${message}</p>
+                </div>
+                
+                <div style="font-size: 11px; color: #64748b; padding: 8px; background: #f8fafc; border-radius: 10px;">
+                    Score Range: ${pct}%
+                </div>
+            </div>
+        `;
+        
+        showModal(
+            `<span class="modal-icon-small" style="background:#d1fae5;"><i class="fas fa-check-circle" style="color:#10b981; font-size: 14px;"></i></span> Approve ${data.studentName}?`,
+            modalContent,
+            '<i class="fas fa-check"></i> Approve',
+            'approve',
+            async () => {
+                showLoading();
+                const res = await fetch(`/admin/ce_approve/${data.attemptId}`, { method: 'POST' }).then(r => r.json());
+                hideLoading();
+                if (res.success) {
+                    document.getElementById(`approval-row-${data.attemptId}`).remove();
+                    showToast(res.message, 'success');
+                    setTimeout(() => location.reload(), 1500);
+                } else {
+                    showToast(res.error, 'error');
+                }
+            }
+        );
+    }
+    
+    // ============ BEAUTIFUL REJECT MODAL - SCORE BASED ONLY ============
+    function openRejectModal(btn) {
+        const data = getRowData(btn);
+        const pct = data.percent;
+        
+        // Warning level based on score
+        let bgColor, borderColor, icon, title, message, textColor;
+        
+        if (pct >= 80) {
+            bgColor = 'linear-gradient(135deg, #fee2e2 0%, #fef2f2 100%)';
+            borderColor = '#dc2626';
+            icon = '<i class="fas fa-circle text-danger"></i>';
+            title = 'CRITICAL WARNING!';
+            message = `This student scored ${pct}% which is EXCELLENT. Rejecting a high performer is strongly discouraged! Consider approval.`;
+            textColor = '#991b1b';
+        } else if (pct >= 70) {
+            bgColor = 'linear-gradient(135deg, #fed7aa 0%, #ffedd5 100%)';
+            borderColor = '#ea580c';
+            icon = '<i class="fas fa-circle text-warning"></i>';
+            title = 'HIGH WARNING!';
+            message = `Student scored ${pct}% which is very good. Rejection is not recommended. Consider approval instead.`;
+            textColor = '#9a3412';
+        } else if (pct >= 60) {
+            bgColor = 'linear-gradient(135deg, #fef3c7 0%, #fffbeb 100%)';
+            borderColor = '#d97706';
+            icon = '<i class="fas fa-circle text-warning"></i>';
+            title = 'MODERATE WARNING';
+            message = `Student scored ${pct}% which is above average. Consider approval rather than rejection.`;
+            textColor = '#92400e';
+        } else if (pct >= 50) {
+            bgColor = 'linear-gradient(135deg, #fef3c7 0%, #fffbeb 100%)';
+            borderColor = '#f59e0b';
+            icon = '<i class="fas fa-exclamation-triangle"></i>';
+            title = 'CAUTION';
+            message = `Student scored ${pct}% (passed). Consider approval or allow retake if needed.`;
+            textColor = '#92400e';
+        } else {
+            bgColor = 'linear-gradient(135deg, #e0e7ff 0%, #eef2ff 100%)';
+            borderColor = '#3b82f6';
+            icon = 'ℹ';
+            title = 'INFORMATION';
+            message = `Student scored ${pct}% (below passing). Rejection may be appropriate. Student can retake the exam.`;
+            textColor = '#1e40af';
+        }
+        
+        const modalContent = `
+            <div style="text-align: center;">
+                <div class="score-ring" style="background: conic-gradient(from 0deg, #ef4444 0deg, #ef4444 ${pct * 3.6}deg, #e2e8f0 ${pct * 3.6}deg);">
+                    <div class="score-ring-inner">
+                        <span style="font-size: 28px; font-weight: 800; color: #ef4444;">${pct}%</span>
+                        <span style="font-size: 10px; color: #64748b;">Score</span>
+                    </div>
+                </div>
+                
+                <div style="font-size: 14px; font-weight: 600; margin-bottom: 15px; color: #475569;">
+                    ${data.score}/${data.total} Correct Answers
+                </div>
+                
+                <div style="background: ${bgColor}; border-radius: 16px; padding: 15px; margin-bottom: 15px; border-left: 4px solid ${borderColor};">
+                    <div style="display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 8px;">
+                        <span style="font-size: 28px;">${icon}</span>
+                        <span style="font-size: 18px; font-weight: 700; color: ${textColor};">${title}</span>
+                    </div>
+                    <p style="font-size: 12px; margin: 0; color: ${textColor};">${message}</p>
+                </div>
+                
+                <div style="background: #f1f5f9; border-radius: 12px; padding: 12px; text-align: left; font-size: 11px;">
+                    <strong><i class="fas fa-clipboard-list"></i> What happens next:</strong><br>
+                    • Student will NOT be added to target class<br>
+                    • Student can retake the exam<br>
+                    • This score will be recorded as rejected
+                </div>
+            </div>
+        `;
+        
+        showModal(
+            `<span class="modal-icon-small" style="background:#fee2e2;"><i class="fas fa-times-circle" style="color:#ef4444; font-size: 14px;"></i></span> Reject ${data.studentName}?`,
+            modalContent,
+            '<i class="fas fa-times"></i> Reject',
+            'reject',
+            async () => {
+                showLoading();
+                const res = await fetch(`/admin/ce_reject/${data.attemptId}`, { method: 'POST' }).then(r => r.json());
+                hideLoading();
+                if (res.success) {
+                    document.getElementById(`approval-row-${data.attemptId}`).remove();
+                    showToast(res.message, 'success');
+                    setTimeout(() => location.reload(), 1500);
+                } else {
+                    showToast(res.error, 'error');
+                }
+            }
+        );
+    }
+    
+    // ============ CONFIRMATION HANDLERS ============
+    function showConfirmModal(type, id, status, name, studentId, examId, studentName) {
+        if (type === 'toggle') {
+            const action = status === 0 ? 'Start' : 'Stop';
+            showModal(`<span class="modal-icon-small" style="background:#fef3c7;"><i class="fas fa-${status===0?'play':'stop'}" style="color:#f59e0b; font-size:12px;"></i></span> ${action} Exam?`,
+                `<div style="text-align:center"><div style="background:#fef3c7; border-radius:12px; padding:12px;"><i class="fas fa-${status===0?'play-circle':'stop-circle'}" style="font-size:36px; color:#f59e0b;"></i><h5 style="margin:8px 0 0;">${action} ${name}?</h5><p class="mt-2" style="font-size:12px;">Students will ${status===0?'be able to take':'no longer be able to take'} this exam.</p></div></div>`,
+                `Yes, ${action}`, 'warning', () => window.location.href = `/admin/ce_exam/${id}/toggle`);
+        }
+        else if (type === 'delete_exam') {
+            showModal(`<span class="modal-icon-small" style="background:#fee2e2;"><i class="fas fa-trash-alt" style="color:#ef4444; font-size:12px;"></i></span> Delete Exam?`,
+                `<div style="text-align:center"><div style="background:#fee2e2; border-radius:12px; padding:12px;"><i class="fas fa-exclamation-triangle" style="font-size:36px; color:#ef4444;"></i><h5 style="margin:8px 0 0;">Delete ${name}?</h5><p class="mt-2" style="font-size:12px;">This will delete ALL questions, sections, and student data.<br><strong>Cannot be undone!</strong></p></div></div>`,
+                'Delete', 'reject', () => window.location.href = `/admin/ce_exam/${id}/delete`);
+        }
+        else if (type === 'delete_student') {
+            showModal(`<span class="modal-icon-small" style="background:#fee2e2;"><i class="fas fa-user-slash" style="color:#ef4444; font-size:12px;"></i></span> Delete Student?`,
+                `<div style="text-align:center"><div style="background:#fee2e2; border-radius:12px; padding:12px;"><i class="fas fa-user-graduate" style="font-size:36px; color:#ef4444;"></i><h5 style="margin:8px 0 0;">Delete ${name}?</h5><p class="mt-2" style="font-size:12px;">Permanently remove student and all exam data.<br><strong>Cannot be undone!</strong></p></div></div>`,
+                'Delete', 'reject', async () => {
+                    showLoading(); const res = await fetch(`/admin/ce_delete_student/${id}`, { method: 'POST' }).then(r=>r.json());
+                    hideLoading();
+                    if(res.success) { document.getElementById(`student-row-${id}`).remove(); showToast(res.message, 'success'); }
+                    else showToast(res.error, 'error');
+                });
+        }
+        else if (type === 'reset') {
+            showModal(`<span class="modal-icon-small" style="background:#fef3c7;"><i class="fas fa-undo-alt" style="color:#f59e0b; font-size:12px;"></i></span> Reset Exam?`,
+                `<div style="text-align:center"><div style="background:#fef3c7; border-radius:12px; padding:12px;"><i class="fas fa-hourglass-half" style="font-size:36px; color:#f59e0b;"></i><h5 style="margin:8px 0 0;">Reset ${studentName}'s Exam?</h5><div style="background:#f1f5f9; border-radius:8px; padding:8px; margin:10px 0; text-align:left; font-size:11px;"><strong><i class="fas fa-trash-alt"></i> Deleted:</strong> Answers, Score, Time, Attempt</div><div style="background:#d1fae5; border-radius:8px; padding:8px; text-align:left; font-size:11px;"><strong><i class="fas fa-check-circle"></i> Remains:</strong> Registration, Can retake</div><p style="margin-top:8px; font-size:11px;">After reset, the student can take the exam again.</p></div></div>`,
+                'Reset', 'warning', async () => {
+                    showLoading(); const res = await fetch(`/admin/ce_reset_student_exam/${studentId}/${examId}`, { method: 'POST' }).then(r=>r.json());
+                    hideLoading();
+                    if(res.success) { showToast(res.message, 'success'); setTimeout(()=>location.reload(),1500); }
+                    else showToast(res.error, 'error');
+                });
+        }
+        else if (type === 'reset_all') {
+            showModal(`<span class="modal-icon-small" style="background:#fef3c7;"><i class="fas fa-undo-alt" style="color:#f59e0b; font-size:12px;"></i></span> Reset All Exams?`,
+                `<div style="text-align:center"><div style="background:#fef3c7; border-radius:12px; padding:12px;"><i class="fas fa-clock" style="font-size:36px; color:#f59e0b;"></i><h5 style="margin:8px 0 0;">Reset ALL Student Exams?</h5><p class="mt-2" style="font-size:12px;">All students can retake their exams.<br><strong>Cannot be undone per student!</strong></p></div></div>`,
+                'Reset All', 'warning', async () => {
+                    showLoading(); const res = await fetch('/admin/ce_reset_all_students_exams', { method: 'POST' }).then(r=>r.json());
+                    hideLoading();
+                    if(res.success) { showToast(res.message, 'success'); setTimeout(()=>location.reload(),1500); }
+                    else showToast(res.error, 'error');
+                });
+        }
+        else if (type === 'delete_all_students') {
+            showModal(`<span class="modal-icon-small" style="background:#fee2e2;"><i class="fas fa-skull-crossbones" style="color:#ef4444; font-size:12px;"></i></span> Delete All Students?`,
+                `<div style="text-align:center"><div style="background:#fee2e2; border-radius:12px; padding:12px;"><i class="fas fa-users-slash" style="font-size:36px; color:#ef4444;"></i><h5 style="margin:8px 0 0;">Delete ALL Students?</h5><p class="mt-2" style="font-size:12px;">Permanently delete ALL registered students.<br><strong>IRREVERSIBLE!</strong></p></div></div>`,
+                'Delete All', 'reject', async () => {
+                    showLoading(); const res = await fetch('/admin/ce_delete_all_students', { method: 'POST' }).then(r=>r.json());
+                    hideLoading();
+                    if(res.success) { showToast(res.message, 'success'); setTimeout(()=>location.reload(),1500); }
+                    else showToast(res.error, 'error');
+                });
+        }
+        else if (type === 'delete_all_warnings') {
+            showModal(`<span class="modal-icon-small" style="background:#fee2e2;"><i class="fas fa-radiation" style="color:#ef4444; font-size:12px;"></i></span> Delete All Warnings?`,
+                `<div style="text-align:center"><div style="background:#fee2e2; border-radius:12px; padding:12px;"><i class="fas fa-trash-alt" style="font-size:36px; color:#ef4444;"></i><h5 style="margin:8px 0 0;">Clear All Logs?</h5><p class="mt-2" style="font-size:12px;">Wipe all warning history for all students.<br><strong>Cannot be undone!</strong></p></div></div>`,
+                'Delete All', 'reject', async () => {
+                    showLoading(); const res = await fetch('/admin/ce_delete_all_warnings', { method: 'POST' }).then(r=>r.json());
+                    hideLoading();
+                    if(res.success) { showToast(res.message, 'success'); setTimeout(()=>location.reload(),1500); }
+                    else showToast(res.error, 'error');
+                });
+        }
+        else if (type === 'clear_student_warnings') {
+            showModal(`<span class="modal-icon-small" style="background:#fef3c7;"><i class="fas fa-eraser" style="color:#f59e0b; font-size:12px;"></i></span> Clear Student Warnings?`,
+                `<div style="text-align:center"><div style="background:#fef3c7; border-radius:12px; padding:12px;"><i class="fas fa-user-shield" style="font-size:36px; color:#f59e0b;"></i><h5 style="margin:8px 0 0;">Clear warnings for ${name}?</h5><p class="mt-2" style="font-size:12px;">This resets their current warning count to 0 and deletes their logs.</p></div></div>`,
+                'Clear Warnings', 'warning', async () => {
+                    showLoading(); const res = await fetch(`/admin/ce_delete_student_warnings/${studentId}/${examId}`, { method: 'POST' }).then(r=>r.json());
+                    hideLoading();
+                    if(res.success) { showToast(res.message, 'success'); setTimeout(()=>location.reload(),1500); }
+                    else showToast(res.error, 'error');
+                });
+        }
+        else if (type === 'delete_warning_log') {
+            showModal(`<span class="modal-icon-small" style="background:#fee2e2;"><i class="fas fa-trash" style="color:#ef4444; font-size:12px;"></i></span> Delete Log?`,
+                `<div style="text-align:center"><div style="background:#fee2e2; border-radius:12px; padding:12px;"><i class="fas fa-minus-circle" style="font-size:36px; color:#ef4444;"></i><h5 style="margin:8px 0 0;">Delete this specific log?</h5></div></div>`,
+                'Delete Log', 'reject', async () => {
+                    showLoading(); const res = await fetch(`/admin/ce_delete_warning_log/${id}`, { method: 'POST' }).then(r=>r.json());
+                    hideLoading();
+                    if(res.success) { document.getElementById(`log-row-${id}`).remove(); showToast(res.message, 'success'); }
+                    else showToast(res.error, 'error');
+                });
+        }
+        else if (type === 'approve_all') {
+            showModal(`<span class="modal-icon-small" style="background:#d1fae5;"><i class="fas fa-check-double" style="color:#10b981; font-size:12px;"></i></span> Approve All Pending?`,
+                `<div style="text-align:center"><div style="background:#fef3c7; border-radius:12px; padding:12px;"><i class="fas fa-users" style="font-size:36px; color:#f59e0b;"></i><h5 style="margin:8px 0 0;">Approve ALL Pending?</h5><p class="mt-2" style="font-size:12px;">All pending students will be added to target classes.<br><strong>Cannot be undone per student!</strong></p></div></div>`,
+                'Approve All', 'approve', async () => {
+                    showLoading(); const res = await fetch('/admin/ce_approve_all_pending', { method: 'POST' }).then(r=>r.json());
+                    hideLoading();
+                    if(res.success) { showToast(res.message, 'success'); setTimeout(()=>location.reload(),1500); }
+                    else showToast(res.error, 'error');
+                });
+        }
+    }
+    
+    // ============ REGISTER ============
+    document.getElementById('registerStudentForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        fetch('/admin/ce_register_student', { method: 'POST', body: new FormData(this) })
+        .then(r=>r.json()).then(data => {
+            if(data.success) {
+                const tbody = document.getElementById('studentsTableBody');
+                const row = tbody.insertRow(0);
+                row.id = `student-row-${data.student.id}`;
+                row.setAttribute('data-student-name', data.student.full_name);
+                const photoUrl = data.student.photo ? `/static/images/${data.student.photo}` : '/static/images/default.png';
+                row.innerHTML = `<td><div style="display:flex; align-items:center; gap:10px;"><img src="${photoUrl}" style="width:36px; height:36px; border-radius:50%; object-fit:cover; border:1.5px solid #1a56db; flex-shrink:0;"><div><strong style="display:block; font-size:13px; color:#0f172a;">${data.student.full_name}</strong><span style="font-size:11px; color:#64748b;">ID: #${data.student.id}</span></div></div></td><td>${data.student.username}</td><td>${data.student.exam_name}</td><td><span class="badge-not-started">Not Started</span></td><td><button class="btn-warning-custom" onclick="showConfirmModal('reset', null, null, null, ${data.student.id}, null, '${data.student.full_name}')" style="padding:3px 8px;font-size:10px;"><i class="fas fa-undo-alt"></i> Reset</button> <button class="btn-danger-custom" onclick="showConfirmModal('delete_student', ${data.student.id}, null, '${data.student.full_name}')" style="padding:3px 8px;font-size:10px;"><i class="fas fa-trash"></i> Delete</button></td>`;
+                document.getElementById('registerStudentForm').reset();
+                document.getElementById('usernameCheck').innerHTML = '';
+                showToast(data.message, 'success');
+            } else showToast(data.error, 'error');
+        });
+    });
+    
+    // ============ SHOW STUDENT LIST ============
+    function showStudentList(type) {
+        fetch(`/admin/ce_get_students_by_status?type=${type}`).then(r=>r.json()).then(data => {
+            const modal = new bootstrap.Modal(document.getElementById('studentListModal'));
+            const titles = { all:'All Students', passed:'Students Who Passed', failed:'Students Who Failed', rejected:'Rejected Students', approved:'Approved Students', pending_approval:'Pending Approval', exams:'All Exams' };
+            document.getElementById('modalTitle').textContent = titles[type] || 'Students';
+            if(data.students?.length) {
+                let html = '<table class="student-table"><thead><tr><th>Student</th><th>Exam</th><th>Score</th><th>Percentage</th><th>Status</th></tr></thead><tbody>';
+                data.students.forEach(s => { html += `<tr>
+                    <td><strong>${s.full_name}</strong><br><small>${s.username}</small></td>
+                    <td>${s.exam_name}</td>
+                    <td>${s.score}/${s.total}</td>
+                    <td>${s.percentage}%</span></td>
+                    <td>${s.status}</td>
+                    </tr>`;
+                });
+                html += '</tbody></table>';
+                document.getElementById('modalBody').innerHTML = html;
+            } else document.getElementById('modalBody').innerHTML = '<div class="text-center py-4"><i class="fas fa-info-circle" style="font-size:40px;color:#cbd5e1"></i><p class="mt-2">No students found.</p></div>';
+            modal.show();
+        });
+    }
+    
+    // Username check
+    let timeout;
+    document.getElementById('regUsername').addEventListener('input', function() {
+        clearTimeout(timeout);
+        const username = this.value.trim();
+        const div = document.getElementById('usernameCheck');
+        if(username.length < 3) { div.innerHTML = ''; return; }
+        timeout = setTimeout(() => {
+            div.innerHTML = '<span class="text-muted"><i class="fas fa-spinner fa-spin"></i> Checking...</span>';
+            fetch(`/check_ce_username?username=${encodeURIComponent(username)}`).then(r=>r.json()).then(data => {
+                div.innerHTML = data.exists ? '<span class="text-danger"><i class="fas fa-times-circle"></i> Username exists!</span>' : '<span class="text-success"><i class="fas fa-check-circle"></i> Username available</span>';
+            });
+        }, 500);
+    });
+</script>
+<script>
+async function checkTechSupportBadge() {
+    try {
+        const res = await fetch('/admin/ce_technical_support_count');
+        const data = await res.json();
+        const badge = document.getElementById('techSupportBadge');
+        if (badge) {
+            if (data.count > 0) {
+                badge.style.display = 'inline-flex';
+                badge.textContent = data.count;
+            } else {
+                badge.style.display = 'none';
+            }
+        }
+    } catch(e) {}
+}
+// Check every 15 seconds
+checkTechSupportBadge();
+setInterval(checkTechSupportBadge, 15000);
+</script>
+</body>
+</html>

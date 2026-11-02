@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Edit Group | {{ group.group_name }}</title>
+    <link href="{{ url_for('static', filename='vendor/bootstrap/css/bootstrap.min.css') }}" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='vendor/fontawesome/css/all.min.css') }}">
+    <script src="{{ url_for('static', filename='vendor/sweetalert2/sweetalert2.all.min.js') }}"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body { background: linear-gradient(135deg, #f5f7fa 0%, #e8edf5 100%); padding: 40px; }
+        .edit-container { max-width: 800px; margin: 0 auto; }
+        .card-custom { background: white; border-radius: 24px; border: 1px solid #e2e8f0; overflow: hidden; }
+        .card-header-custom { padding: 20px 25px; border-bottom: 1px solid #e2e8f0; background: #f8fafc; }
+        .card-header-custom h3 { margin: 0; font-size: 20px; font-weight: 700; }
+        .card-body-custom { padding: 25px; }
+        .form-control-custom { width: 100%; padding: 12px 15px; border: 2px solid #e2e8f0; border-radius: 12px; margin-bottom: 15px; }
+        .btn-save { background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; border: none; padding: 12px 25px; border-radius: 12px; font-weight: 600; cursor: pointer; }
+        .btn-back { background: white; border: 2px solid #e2e8f0; padding: 10px 25px; border-radius: 12px; text-decoration: none; color: #64748b; }
+    </style>
+    <!-- CSRF Protection Shield -->
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <script>
+    window.CSRF_TOKEN = "{{ csrf_token() }}";
+    (function() {
+        if (window.fetch) {
+            const _origFetch = window.fetch;
+            window.fetch = function(url, options) {
+                options = options || {};
+                const method = (options.method || 'GET').toUpperCase();
+                if (!['GET', 'HEAD', 'OPTIONS', 'TRACE'].includes(method)) {
+                    options.headers = options.headers || {};
+                    const token = window.CSRF_TOKEN || (document.querySelector('meta[name="csrf-token"]') && document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
+                    if (token) {
+                        if (typeof Headers !== 'undefined' && options.headers instanceof Headers) {
+                            if (!options.headers.has('X-CSRFToken')) options.headers.set('X-CSRFToken', token);
+                        } else if (Array.isArray(options.headers)) {
+                            options.headers.push(['X-CSRFToken', token]);
+                        } else {
+                            if (!options.headers['X-CSRFToken']) options.headers['X-CSRFToken'] = token;
+                        }
+                    }
+                }
+                return _origFetch(url, options);
+            };
+        }
+        if (window.$ && $.ajaxSetup) {
+            $.ajaxSetup({
+                beforeSend: function(xhr, settings) {
+                    if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type)) {
+                        xhr.setRequestHeader("X-CSRFToken", window.CSRF_TOKEN);
+                    }
+                }
+            });
+        }
+        if (navigator.sendBeacon) {
+            const _origBeacon = navigator.sendBeacon.bind(navigator);
+            navigator.sendBeacon = function(url, data) {
+                if (data instanceof FormData) {
+                    if (!data.has('csrf_token')) data.append('csrf_token', window.CSRF_TOKEN);
+                } else if (typeof data === 'string') {
+                    try {
+                        const obj = JSON.parse(data);
+                        if (typeof obj === 'object' && obj !== null && !obj.csrf_token) {
+                            obj.csrf_token = window.CSRF_TOKEN;
+                            data = JSON.stringify(obj);
+                        }
+                    } catch(e) {}
+                }
+                return _origBeacon(url, data);
+            };
+        }
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('form[method="POST"], form[method="post"]').forEach(function(form) {
+                if (!form.querySelector('input[name="csrf_token"]')) {
+                    var input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = 'csrf_token';
+                    input.value = window.CSRF_TOKEN;
+                    form.appendChild(input);
+                }
+            });
+        });
+    })();
+    </script>
+</head>
+<body>
+    <div class="edit-container">
+        <div class="card-custom">
+            <div class="card-header-custom">
+                <h3><i class="fas fa-edit"></i> Edit Group: {{ group.group_name }}</h3>
+            </div>
+            <div class="card-body-custom">
+                <form method="POST" enctype="multipart/form-data">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="mb-3">
+                        <label class="form-label">Group Name</label>
+                        <input type="text" name="group_name" class="form-control-custom" value="{{ group.group_name }}" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Group Type</label>
+                        <select name="group_type" class="form-control-custom">
+                            <option value="normal" {% if group.group_type == 'normal' %}selected{% endif %}>Normal Group</option>
+                            <option value="comprehension" {% if group.group_type == 'comprehension' %}selected{% endif %}>Comprehension Passage</option>
+                            <option value="sequence" {% if group.group_type == 'sequence' %}selected{% endif %}>Sequential Questions</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Instruction Text</label>
+                        <textarea name="instruction_text" class="form-control-custom" rows="2">{{ group.instruction_text or '' }}</textarea>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Group Content (Passage/Instructions)</label>
+                        <textarea name="group_content" class="form-control-custom" rows="6">{{ group.group_content or '' }}</textarea>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Current Image</label>
+                        {% if group.group_image %}
+                            <div><img src="/static/images/{{ group.group_image }}" style="max-width: 150px; border-radius: 10px;"></div>
+                        {% else %}
+                            <p class="text-muted">No image uploaded</p>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Change Image (optional)</label>
+                        <input type="file" name="group_image" class="form-control" accept="image/*">
+                    </div>
+                    
+                    <div class="mt-4">
+                        <button type="submit" class="btn-save"><i class="fas fa-save"></i> Save Changes</button>
+                        <a href="/admin/ce_section/{{ group.section_id }}/groups" class="btn-back" style="margin-left: 10px;">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+

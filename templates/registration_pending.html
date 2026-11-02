@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Registration Submitted | COGNITARA EXAM SYSTEM</title>
+    <link href="{{ url_for('static', filename='vendor/bootstrap/css/bootstrap.min.css') }}" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='vendor/fontawesome/css/all.min.css') }}">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #e8edf5 100%);
+            font-family: 'Segoe UI', 'Poppins', Tahoma, Geneva, Verdana, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* Animated Educational Icons Background */
+        .edu-icon {
+            position: absolute;
+            color: rgba(26, 86, 219, 0.06);
+            pointer-events: none;
+            z-index: 0;
+            animation: floatIcon 20s infinite ease-in-out;
+        }
+
+        @keyframes floatIcon {
+            0% {
+                transform: translate(0, 0) rotate(0deg);
+                opacity: 0;
+            }
+            10% {
+                opacity: 0.08;
+            }
+            90% {
+                opacity: 0.08;
+            }
+            100% {
+                transform: translate(100px, -100px) rotate(360deg);
+                opacity: 0;
+            }
+        }
+
+        .edu-icon:nth-child(1) { top: 10%; left: 5%; animation-duration: 18s; font-size: 50px; }
+        .edu-icon:nth-child(2) { top: 70%; left: 15%; animation-duration: 22s; font-size: 40px; animation-delay: 2s; }
+        .edu-icon:nth-child(3) { top: 30%; left: 85%; animation-duration: 20s; font-size: 55px; animation-delay: 4s; }
+        .edu-icon:nth-child(4) { top: 80%; left: 80%; animation-duration: 25s; font-size: 35px; animation-delay: 1s; }
+        .edu-icon:nth-child(5) { top: 50%; left: 10%; animation-duration: 19s; font-size: 45px; animation-delay: 3s; }
+        .edu-icon:nth-child(6) { top: 20%; left: 70%; animation-duration: 23s; font-size: 60px; animation-delay: 5s; }
+        .edu-icon:nth-child(7) { top: 60%; left: 90%; animation-duration: 21s; font-size: 42px; animation-delay: 2.5s; }
+        .edu-icon:nth-child(8) { top: 85%; left: 25%; animation-duration: 24s; font-size: 38px; animation-delay: 6s; }
+        .edu-icon:nth-child(9) { top: 15%; left: 45%; animation-duration: 17s; font-size: 48px; animation-delay: 1.5s; }
+        .edu-icon:nth-child(10) { top: 45%; left: 75%; animation-duration: 26s; font-size: 52px; animation-delay: 3.5s; }
+
+        /* Main Container */
+        .pending-container {
+            max-width: 500px;
+            width: 100%;
+            margin: 0 auto;
+            position: relative;
+            z-index: 10;
+        }
+
+        /* Card Design */
+        .pending-card {
+            background: white;
+            border-radius: 32px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
+            overflow: hidden;
+            transition: transform 0.3s ease;
+            text-align: center;
+        }
+
+        .pending-card:hover {
+            transform: translateY(-5px);
+        }
+
+        /* Header Section */
+        .card-header {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            padding: 40px 30px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card-header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+            animation: shimmer 8s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { transform: translate(-30%, -30%) rotate(0deg); }
+            100% { transform: translate(30%, 30%) rotate(360deg); }
+        }
+
+        .icon-circle {
+            width: 90px;
+            height: 90px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+            animation: pulse 2s infinite;
+            position: relative;
+            z-index: 1;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .icon-circle i {
+            font-size: 45px;
+            color: white;
+        }
+
+        .card-header h3 {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 10px;
+            color: white;
+            position: relative;
+            z-index: 1;
+        }
+
+        .card-header p {
+            font-size: 14px;
+            opacity: 0.9;
+            margin: 0;
+            color: white;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Body Section */
+        .card-body {
+            padding: 40px 35px;
+        }
+
+        /* Success Animation */
+        .success-animation {
+            margin-bottom: 25px;
+        }
+
+        .checkmark-circle {
+            width: 80px;
+            height: 80px;
+            background: #10b981;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            animation: scaleIn 0.5s ease-out;
+        }
+
+        @keyframes scaleIn {
+            0% { transform: scale(0); opacity: 0; }
+            70% { transform: scale(1.1); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .checkmark-circle i {
+            font-size: 45px;
+            color: white;
+        }
+
+        /* Welcome Message */
+        .welcome-message {
+            margin-bottom: 25px;
+        }
+
+        .welcome-message h4 {
+            font-size: 24px;
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 10px;
+        }
+
+        .welcome-message h4 i {
+            color: #f59e0b;
+            font-size: 22px;
+        }
+
+        .username-highlight {
+            color: #1a56db;
+            background: #eff6ff;
+            padding: 5px 15px;
+            border-radius: 50px;
+            display: inline-block;
+            font-size: 18px;
+            margin-top: 10px;
+        }
+
+        /* Info Cards */
+        .info-grid {
+            display: flex;
+            gap: 15px;
+            margin: 30px 0;
+            flex-wrap: wrap;
+        }
+
+        .info-item {
+            flex: 1;
+            background: #f8fafc;
+            border-radius: 16px;
+            padding: 15px 10px;
+            text-align: center;
+            transition: all 0.3s ease;
+            border: 1px solid #e2e8f0;
+        }
+
+        .info-item:hover {
+            transform: translateY(-3px);
+            border-color: #f59e0b;
+            background: white;
+        }
+
+        .info-icon {
+            width: 45px;
+            height: 45px;
+            background: #fef3c7;
+            border-radius: 12px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 10px;
+        }
+
+        .info-icon i {
+            font-size: 22px;
+            color: #f59e0b;
+        }
+
+        .info-item p {
+            font-size: 12px;
+            color: #64748b;
+            margin: 0;
+            line-height: 1.4;
+        }
+
+        .info-item strong {
+            color: #1e293b;
+            font-size: 13px;
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        /* Status Badge */
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: #fef3c7;
+            color: #d97706;
+            padding: 8px 20px;
+            border-radius: 50px;
+            font-size: 14px;
+            font-weight: 600;
+            margin: 20px 0;
+        }
+
+        .status-badge i {
+            font-size: 16px;
+        }
+
+        /* Note Box */
+        .note-box {
+            background: #eff6ff;
+            border-radius: 16px;
+            padding: 15px 20px;
+            margin: 20px 0;
+            text-align: left;
+            border-left: 4px solid #1a56db;
+        }
+
+        .note-box i {
+            color: #1a56db;
+            margin-right: 10px;
+        }
+
+        .note-box p {
+            margin: 0;
+            font-size: 13px;
+            color: #1e293b;
+        }
+
+        .note-box small {
+            color: #64748b;
+            font-size: 11px;
+            display: block;
+            margin-top: 8px;
+        }
+
+        /* Button */
+        .btn-login {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            background: linear-gradient(135deg, #1a56db 0%, #0e3b9e 100%);
+            color: white;
+            padding: 14px 35px;
+            border-radius: 50px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            margin-top: 10px;
+            width: 100%;
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn-login:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px -5px rgba(26, 86, 219, 0.4);
+            color: white;
+        }
+
+        /* Footer */
+        .card-footer {
+            background: #f8fafc;
+            padding: 15px;
+            text-align: center;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        .card-footer p {
+            margin: 0;
+            font-size: 11px;
+            color: #94a3b8;
+        }
+
+        /* Responsive */
+        @media (max-width: 576px) {
+            .card-header {
+                padding: 30px 20px;
+            }
+            
+            .card-body {
+                padding: 30px 25px;
+            }
+            
+            .card-header h3 {
+                font-size: 22px;
+            }
+            
+            .welcome-message h4 {
+                font-size: 20px;
+            }
+            
+            .info-grid {
+                gap: 10px;
+            }
+            
+            .info-item {
+                padding: 12px 8px;
+            }
+            
+            .btn-login {
+                padding: 12px 25px;
+                font-size: 14px;
+            }
+        }
+
+        /* Progress Bar Animation */
+        .progress-container {
+            width: 100%;
+            height: 4px;
+            background: #e2e8f0;
+            border-radius: 2px;
+            margin-top: 20px;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            width: 0%;
+            height: 100%;
+            background: linear-gradient(90deg, #f59e0b, #10b981);
+            animation: loading 3s ease-in-out infinite;
+            border-radius: 2px;
+        }
+
+        @keyframes loading {
+            0% { width: 0%; }
+            50% { width: 70%; }
+            100% { width: 100%; }
+        }
+    </style>
+    <!-- CSRF Protection Shield -->
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <script>
+    window.CSRF_TOKEN = "{{ csrf_token() }}";
+    (function() {
+        if (window.fetch) {
+            const _origFetch = window.fetch;
+            window.fetch = function(url, options) {
+                options = options || {};
+                const method = (options.method || 'GET').toUpperCase();
+                if (!['GET', 'HEAD', 'OPTIONS', 'TRACE'].includes(method)) {
+                    options.headers = options.headers || {};
+                    const token = window.CSRF_TOKEN || (document.querySelector('meta[name="csrf-token"]') && document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
+                    if (token) {
+                        if (typeof Headers !== 'undefined' && options.headers instanceof Headers) {
+                            if (!options.headers.has('X-CSRFToken')) options.headers.set('X-CSRFToken', token);
+                        } else if (Array.isArray(options.headers)) {
+                            options.headers.push(['X-CSRFToken', token]);
+                        } else {
+                            if (!options.headers['X-CSRFToken']) options.headers['X-CSRFToken'] = token;
+                        }
+                    }
+                }
+                return _origFetch(url, options);
+            };
+        }
+        if (window.$ && $.ajaxSetup) {
+            $.ajaxSetup({
+                beforeSend: function(xhr, settings) {
+                    if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type)) {
+                        xhr.setRequestHeader("X-CSRFToken", window.CSRF_TOKEN);
+                    }
+                }
+            });
+        }
+        if (navigator.sendBeacon) {
+            const _origBeacon = navigator.sendBeacon.bind(navigator);
+            navigator.sendBeacon = function(url, data) {
+                if (data instanceof FormData) {
+                    if (!data.has('csrf_token')) data.append('csrf_token', window.CSRF_TOKEN);
+                } else if (typeof data === 'string') {
+                    try {
+                        const obj = JSON.parse(data);
+                        if (typeof obj === 'object' && obj !== null && !obj.csrf_token) {
+                            obj.csrf_token = window.CSRF_TOKEN;
+                            data = JSON.stringify(obj);
+                        }
+                    } catch(e) {}
+                }
+                return _origBeacon(url, data);
+            };
+        }
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('form[method="POST"], form[method="post"]').forEach(function(form) {
+                if (!form.querySelector('input[name="csrf_token"]')) {
+                    var input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = 'csrf_token';
+                    input.value = window.CSRF_TOKEN;
+                    form.appendChild(input);
+                }
+            });
+        });
+    })();
+    </script>
+</head>
+<body>
+
+    <!-- Animated Educational Icons Background -->
+    <div class="edu-icon"><i class="fas fa-graduation-cap"></i></div>
+    <div class="edu-icon"><i class="fas fa-book"></i></div>
+    <div class="edu-icon"><i class="fas fa-pencil-alt"></i></div>
+    <div class="edu-icon"><i class="fas fa-flask"></i></div>
+    <div class="edu-icon"><i class="fas fa-calculator"></i></div>
+    <div class="edu-icon"><i class="fas fa-globe"></i></div>
+    <div class="edu-icon"><i class="fas fa-laptop-code"></i></div>
+    <div class="edu-icon"><i class="fas fa-brain"></i></div>
+    <div class="edu-icon"><i class="fas fa-chart-line"></i></div>
+    <div class="edu-icon"><i class="fas fa-users"></i></div>
+
+    <div class="pending-container">
+        <div class="pending-card">
+            <div class="card-header">
+                <div class="icon-circle">
+                    <i class="fas fa-user-check"></i>
+                </div>
+                <h3>Registration Submitted!</h3>
+                <p>Your application is being reviewed</p>
+            </div>
+            
+            <div class="card-body">
+                <!-- Success Animation -->
+                <div class="success-animation">
+                    <div class="checkmark-circle">
+                        <i class="fas fa-check"></i>
+                    </div>
+                </div>
+
+                <!-- Welcome Message -->
+                <div class="welcome-message">
+                    <h4>
+                        <i class="fas fa-smile-wink"></i> Thank You, 
+                        <span style="color: #1a56db;">{{ username }}</span>
+                        <i class="fas fa-smile-wink"></i>
+                    </h4>
+                    <div class="username-highlight">
+                        <i class="fas fa-user"></i> {{ username }}
+                    </div>
+                </div>
+
+                <!-- Info Grid -->
+                <div class="info-grid">
+                    <div class="info-item">
+                        <div class="info-icon">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <strong>Under Review</strong>
+                        <p>Admin is reviewing your application</p>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-icon">
+                            <i class="fas fa-envelope"></i>
+                        </div>
+                        <strong>Email Notification</strong>
+                        <p>You'll receive an email once approved</p>
+                    </div>
+                </div>
+
+                <!-- Status Badge -->
+                <div class="status-badge">
+                    <i class="fas fa-hourglass-half"></i>
+                    <span>Pending Approval</span>
+                </div>
+
+                <!-- Note Box -->
+                <div class="note-box">
+                    <i class="fas fa-info-circle"></i>
+                    <strong>What happens next?</strong>
+                    <p>Your registration has been sent to the administrator for review. Once approved, you will be able to login and access all exam features.</p>
+                    <small><i class="fas fa-clock"></i> Approval typically takes 24-48 hours</small>
+                </div>
+
+                <!-- Progress Bar Animation -->
+                <div class="progress-container">
+                    <div class="progress-bar"></div>
+                </div>
+
+                <!-- Login Button -->
+                <a href="/" class="btn-login">
+                    <i class="fas fa-sign-in-alt"></i> Return to Login
+                </a>
+            </div>
+
+            <div class="card-footer">
+                <p><i class="fas fa-shield-alt"></i> COGNITARA EXAM SYSTEM - Secure Online Examination System</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Auto-redirect after 5 seconds (optional) -->
+    <script>
+        // Auto redirect to login after 8 seconds (optional - remove if not needed)
+        setTimeout(function() {
+            window.location.href = '/';
+        }, 8000);
+    </script>
+</body>
+</html>

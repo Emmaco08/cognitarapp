@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{{ exam.name }} - Analytics | COGNITARA EXAM SYSTEM</title>
+    <link href="{{ url_for('static', filename='vendor/bootstrap/css/bootstrap.min.css') }}" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='vendor/fontawesome/css/all.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='vendor/katex/katex.min.css') }}">
+    <script src="{{ url_for('static', filename='vendor/katex/katex.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='vendor/katex/contrib/mhchem.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='vendor/katex/contrib/auto-render.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='vendor/chartjs/chart.umd.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='vendor/sweetalert2/sweetalert2.all.min.js') }}"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: linear-gradient(135deg, #f5f7fa 0%, #e8edf5 100%); font-family: 'Segoe UI', 'Poppins', sans-serif; }
+        
+        .analytics-container { max-width: 1400px; margin: 0 auto; padding: 40px 30px; position: relative; z-index: 10; }
+        
+        .edu-icon { position: absolute; color: rgba(26, 86, 219, 0.05); pointer-events: none; z-index: 0; animation: floatIcon 20s infinite ease-in-out; }
+        @keyframes floatIcon { 0% { transform: translate(0, 0) rotate(0deg); opacity: 0; } 10% { opacity: 0.08; } 90% { opacity: 0.08; } 100% { transform: translate(100px, -100px) rotate(360deg); opacity: 0; } }
+        
+        .page-header { text-align: center; margin-bottom: 30px; }
+        .logo-icon { width: 70px; height: 70px; background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%); border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 15px; animation: pulse 2s infinite; }
+        @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+        .logo-icon i { font-size: 35px; color: white; }
+        .page-header h1 { font-size: 28px; font-weight: 800; background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 5px; }
+        .page-header p { font-size: 14px; color: #64748b; }
+        
+        .stats-bar { background: white; border-radius: 20px; padding: 20px 30px; margin-bottom: 30px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px; border: 1px solid #e2e8f0; }
+        .stats-info { display: flex; align-items: center; gap: 15px; }
+        .stats-icon { width: 50px; height: 50px; background: #ede9fe; border-radius: 15px; display: flex; align-items: center; justify-content: center; }
+        .stats-icon i { font-size: 24px; color: #8b5cf6; }
+        .stats-text h3 { font-size: 28px; font-weight: 800; color: #1e293b; margin: 0; }
+        .stats-text p { margin: 0; color: #64748b; font-size: 13px; }
+        
+        .btn-back { background: white; border: 2px solid #e2e8f0; padding: 8px 20px; border-radius: 12px; color: #64748b; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; transition: all 0.3s; font-size: 13px; }
+        .btn-back:hover { border-color: #8b5cf6; color: #8b5cf6; background: #f5f3ff; }
+        .btn-export { background: #10b981; color: white; border: none; padding: 8px 20px; border-radius: 12px; font-weight: 600; cursor: pointer; transition: all 0.3s; font-size: 13px; display: inline-flex; align-items: center; gap: 8px; }
+        .btn-export:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(16,185,129,0.3); }
+        
+        .card-custom { background: white; border-radius: 24px; border: 1px solid #e2e8f0; margin-bottom: 25px; overflow: hidden; }
+        .card-header-custom { padding: 15px 20px; border-bottom: 1px solid #e2e8f0; background: #f8fafc; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; }
+        .card-header-custom h3 { margin: 0; font-size: 16px; font-weight: 600; color: #1e293b; display: flex; align-items: center; gap: 8px; }
+        .card-header-custom i { color: #8b5cf6; }
+        .card-body-custom { padding: 20px; }
+        
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 15px; margin-bottom: 25px; }
+        .stat-card { background: white; border-radius: 20px; padding: 15px; text-align: center; border: 1px solid #e2e8f0; transition: all 0.3s; }
+        .stat-card:hover { transform: translateY(-3px); box-shadow: 0 10px 20px -10px rgba(0,0,0,0.1); }
+        .stat-card i { font-size: 28px; margin-bottom: 8px; }
+        .stat-card h4 { font-size: 28px; font-weight: 800; margin: 5px 0; }
+        .stat-card p { color: #64748b; font-size: 12px; margin: 0; }
+        
+        .progress-custom { height: 6px; background: #e2e8f0; border-radius: 10px; overflow: hidden; margin: 8px 0; }
+        .progress-fill { height: 100%; border-radius: 10px; transition: width 0.5s; }
+        
+        .data-table { width: 100%; border-collapse: collapse; }
+        .data-table th { padding: 12px 12px; text-align: left; font-size: 12px; font-weight: 600; color: #64748b; border-bottom: 1px solid #e2e8f0; background: #f8fafc; }
+        .data-table td { padding: 10px 12px; border-bottom: 1px solid #f0f2f5; font-size: 13px; vertical-align: middle; }
+        .data-table tr:hover { background: #f8fafc; }
+        
+        .badge-pass { background: #d1fae5; color: #065f46; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; display: inline-block; }
+        .badge-fail { background: #fee2e2; color: #991b1b; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; display: inline-block; }
+        .badge-pending { background: #fef3c7; color: #d97706; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; display: inline-block; }
+        .badge-rejected { background: #f1f5f9; color: #64748b; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; display: inline-block; }
+        .badge-not-started { background: #e2e8f0; color: #64748b; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; display: inline-block; }
+        
+        .difficulty-easy { background: #d1fae5; color: #065f46; padding: 2px 8px; border-radius: 20px; font-size: 10px; }
+        .difficulty-medium { background: #fef3c7; color: #d97706; padding: 2px 8px; border-radius: 20px; font-size: 10px; }
+        .difficulty-hard { background: #fee2e2; color: #991b1b; padding: 2px 8px; border-radius: 20px; font-size: 10px; }
+        .difficulty-very-hard { background: #ede9fe; color: #5b21b6; padding: 2px 8px; border-radius: 20px; font-size: 10px; }
+        
+        .nav-tabs { border: none; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; }
+        .nav-tabs .nav-link { background: white; border: 1px solid #e2e8f0; border-radius: 30px; padding: 8px 20px; color: #64748b; font-weight: 500; font-size: 13px; transition: all 0.3s; }
+        .nav-tabs .nav-link:hover { border-color: #8b5cf6; color: #8b5cf6; }
+        .nav-tabs .nav-link.active { background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%); border-color: #8b5cf6; color: white; }
+        
+        .scrollable-table { max-height: 400px; overflow-y: auto; }
+        .two-columns { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        
+        @media (max-width: 768px) {
+            .analytics-container { padding: 20px 15px; }
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+            .two-columns { grid-template-columns: 1fr; }
+        }
+    </style>
+    <!-- CSRF Protection Shield -->
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <script>
+    window.CSRF_TOKEN = "{{ csrf_token() }}";
+    (function() {
+        if (window.fetch) {
+            const _origFetch = window.fetch;
+            window.fetch = function(url, options) {
+                options = options || {};
+                const method = (options.method || 'GET').toUpperCase();
+                if (!['GET', 'HEAD', 'OPTIONS', 'TRACE'].includes(method)) {
+                    options.headers = options.headers || {};
+                    const token = window.CSRF_TOKEN || (document.querySelector('meta[name="csrf-token"]') && document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
+                    if (token) {
+                        if (typeof Headers !== 'undefined' && options.headers instanceof Headers) {
+                            if (!options.headers.has('X-CSRFToken')) options.headers.set('X-CSRFToken', token);
+                        } else if (Array.isArray(options.headers)) {
+                            options.headers.push(['X-CSRFToken', token]);
+                        } else {
+                            if (!options.headers['X-CSRFToken']) options.headers['X-CSRFToken'] = token;
+                        }
+                    }
+                }
+                return _origFetch(url, options);
+            };
+        }
+        if (window.$ && $.ajaxSetup) {
+            $.ajaxSetup({
+                beforeSend: function(xhr, settings) {
+                    if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type)) {
+                        xhr.setRequestHeader("X-CSRFToken", window.CSRF_TOKEN);
+                    }
+                }
+            });
+        }
+        if (navigator.sendBeacon) {
+            const _origBeacon = navigator.sendBeacon.bind(navigator);
+            navigator.sendBeacon = function(url, data) {
+                if (data instanceof FormData) {
+                    if (!data.has('csrf_token')) data.append('csrf_token', window.CSRF_TOKEN);
+                } else if (typeof data === 'string') {
+                    try {
+                        const obj = JSON.parse(data);
+                        if (typeof obj === 'object' && obj !== null && !obj.csrf_token) {
+                            obj.csrf_token = window.CSRF_TOKEN;
+                            data = JSON.stringify(obj);
+                        }
+                    } catch(e) {}
+                }
+                return _origBeacon(url, data);
+            };
+        }
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('form[method="POST"], form[method="post"]').forEach(function(form) {
+                if (!form.querySelector('input[name="csrf_token"]')) {
+                    var input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = 'csrf_token';
+                    input.value = window.CSRF_TOKEN;
+                    form.appendChild(input);
+                }
+            });
+        });
+    })();
+    </script>
+</head>
+<body>
+<div class="edu-icon"><i class="fas fa-chart-line"></i></div>
+<div class="edu-icon"><i class="fas fa-chart-bar"></i></div>
+
+<div class="analytics-container">
+    <div class="page-header">
+        <div class="logo-icon"><i class="fas fa-chart-line"></i></div>
+        <h1>{{ exam.name }} - Analytics</h1>
+        <p>Performance insights and statistics</p>
+    </div>
+
+    <div class="stats-bar">
+    <div class="stats-info">
+        <div class="stats-icon"><i class="fas fa-file-alt"></i></div>
+        <div class="stats-text"><h3>{{ total_attempts }}</h3><p>Total Attempts</p></div>
+    </div>
+    <div class="stats-info">
+        <div class="stats-icon"><i class="fas fa-check-circle"></i></div>
+        <div class="stats-text"><h3>{{ passed }}</h3><p>Passed (≥{{ passing_score }}%)</p></div>
+    </div>
+    <div class="stats-info">
+        <div class="stats-icon"><i class="fas fa-times-circle"></i></div>
+        <div class="stats-text"><h3>{{ failed }}</h3><p>Failed (<{{ passing_score }}%)</p></div>
+    </div>
+    <div class="stats-info">
+        <div class="stats-icon"><i class="fas fa-hourglass-half"></i></div>
+        <div class="stats-text"><h3>{{ pending }}</h3><p>Pending Review</p></div>
+    </div>
+    <div class="stats-info">
+        <div class="stats-icon"><i class="fas fa-chart-line"></i></div>
+        <div class="stats-text"><h3>{{ avg_score }}%</h3><p>Avg Score</p></div>
+    </div>
+    <a href="/admin/common-entrance" class="btn-back"><i class="fas fa-arrow-left"></i> Back</a>
+</div>
+
+    <!-- Compact Stats Cards -->
+    <div class="stats-grid">
+        <div class="stat-card"><i class="fas fa-trophy" style="color: #f59e0b;"></i><h4>{{ max_score }}%</h4><p>Highest Score</p></div>
+        <div class="stat-card"><i class="fas fa-arrow-down" style="color: #ef4444;"></i><h4>{{ min_score }}%</h4><p>Lowest Score</p></div>
+        <div class="stat-card"><i class="fas fa-check-double" style="color: #10b981;"></i><h4>{{ approved }}</h4><p>Approved</p></div>
+        <div class="stat-card"><i class="fas fa-ban" style="color: #ef4444;"></i><h4>{{ rejected }}</h4><p>Rejected</p></div>
+    </div>
+
+    <!-- Tabs -->
+    <ul class="nav nav-tabs" id="analyticsTabs" role="tablist">
+        <li class="nav-item"><button class="nav-link active" id="overview-tab" data-bs-toggle="tab" data-bs-target="#overview" type="button" role="tab"><i class="fas fa-chart-pie"></i> Overview</button></li>
+        <li class="nav-item"><button class="nav-link" id="questions-tab" data-bs-toggle="tab" data-bs-target="#questions" type="button" role="tab"><i class="fas fa-question-circle"></i> Questions</button></li>
+        <li class="nav-item"><button class="nav-link" id="students-tab" data-bs-toggle="tab" data-bs-target="#students" type="button" role="tab"><i class="fas fa-users"></i> Students</button></li>
+        <li class="nav-item"><button class="nav-link" id="time-tab" data-bs-toggle="tab" data-bs-target="#time" type="button" role="tab"><i class="fas fa-clock"></i> Time</button></li>
+    </ul>
+
+    <div class="tab-content mt-3">
+        <!-- TAB 1: OVERVIEW (Small Charts Only) -->
+        <div class="tab-pane fade show active" id="overview" role="tabpanel">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="card-custom">
+                        <div class="card-header-custom"><h3><i class="fas fa-chart-pie"></i> Score Distribution</h3></div>
+                        <div class="card-body-custom text-center">
+                            <div style="max-width: 250px; margin: 0 auto;">
+                                <canvas id="scoreChart" style="height: 200px;"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card-custom">
+                        <div class="card-header-custom"><h3><i class="fas fa-chart-simple"></i> Performance</h3></div>
+                        <div class="card-body-custom">
+                            <div style="margin-bottom: 15px;">
+                                <div style="display: flex; justify-content: space-between; font-size: 13px;"><span>Pass Rate</span><span><strong>{{ (passed / total_attempts * 100)|round|int if total_attempts > 0 else 0 }}%</strong></span></div>
+                                <div class="progress-custom"><div class="progress-fill" style="width: {{ (passed / total_attempts * 100) if total_attempts > 0 else 0 }}%; background: #10b981;"></div></div>
+                            </div>
+                            <div style="margin-bottom: 15px;">
+                                <div style="display: flex; justify-content: space-between; font-size: 13px;"><span>Average Score</span><span><strong>{{ avg_score }}%</strong></span></div>
+                                <div class="progress-custom"><div class="progress-fill" style="width: {{ avg_score }}%; background: #8b5cf6;"></div></div>
+                            </div>
+                            <div>
+                                <div style="display: flex; justify-content: space-between; font-size: 13px;"><span>Highest Score</span><span><strong>{{ max_score }}%</strong></span></div>
+                                <div class="progress-custom"><div class="progress-fill" style="width: {{ max_score }}%; background: #f59e0b;"></div></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="card-custom">
+                        <div class="card-header-custom"><h3><i class="fas fa-chart-bar"></i> Difficulty Breakdown</h3></div>
+                        <div class="card-body-custom text-center">
+                            <div style="max-width: 250px; margin: 0 auto;">
+                                <canvas id="difficultyChart" style="height: 180px;"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card-custom">
+                        <div class="card-header-custom"><h3><i class="fas fa-trophy"></i> Top Performers</h3></div>
+                        <div class="card-body-custom">
+                            <div class="scrollable-table" style="max-height: 220px;">
+                                <table class="data-table">
+                                    <thead><tr><th>#</th><th>Student</th><th>Score</th><th>%</th></thead>
+                                    <tbody>
+                                        {% for p in top_performers %}
+                                        <tr><td>#{{ loop.index }}</td><td><strong>{{ p.full_name }}</strong></td><td>{{ p.score }}/{{ p.total }}</td><td><span class="badge-pass">{{ p.percentage|round|int }}%</span></td></tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 2: QUESTIONS (NO CHARTS - Just Tables) -->
+        <div class="tab-pane fade" id="questions" role="tabpanel">
+            <div class="two-columns">
+                <!-- Most Missed Questions -->
+                <div class="card-custom">
+                    <div class="card-header-custom"><h3><i class="fas fa-exclamation-triangle"></i> Most Missed Questions</h3></div>
+                    <div class="card-body-custom">
+                        <div class="scrollable-table" style="max-height: 350px;">
+                            <table class="data-table">
+                                <thead><tr><th>#</th><th>Question</th><th>Section</th><th>Correct %</th></tr></thead>
+                                <tbody>
+                                    {% for q in most_missed %}
+                                    <tr>
+                                        <td>{{ loop.index }}</td>
+                                        <td><div style="max-height:3em; overflow:hidden;">{{ q.question|safe }}</div></td>
+                                        <td>{{ q.section }}</td>
+                                        <td><span class="badge-fail">{{ q.correct_percentage }}%</span></td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Most Correct Questions -->
+                <div class="card-custom">
+                    <div class="card-header-custom"><h3><i class="fas fa-check-circle"></i> Most Correct Questions</h3></div>
+                    <div class="card-body-custom">
+                        <div class="scrollable-table" style="max-height: 350px;">
+                            <table class="data-table">
+                                <thead><tr><th>#</th><th>Question</th><th>Section</th><th>Correct %</th></tr></thead>
+                                <tbody>
+                                    {% for q in most_correct %}
+                                    <tr>
+                                        <td>{{ loop.index }}</td>
+                                        <td><div style="max-height:3em; overflow:hidden;">{{ q.question|safe }}</div></td>
+                                        <td>{{ q.section }}</td>
+                                        <td><span class="badge-pass">{{ q.correct_percentage }}%</span></td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Most Time Spent Questions -->
+                <div class="card-custom">
+                    <div class="card-header-custom"><h3><i class="fas fa-hourglass-half"></i> Most Time Spent</h3></div>
+                    <div class="card-body-custom">
+                        <div class="scrollable-table" style="max-height: 350px;">
+                            <table class="data-table">
+                                <thead><tr><th>#</th><th>Question</th><th>Section</th><th>Avg Time</th></tr></thead>
+                                <tbody>
+                                    {% for q in most_time_spent %}
+                                    <tr>
+                                        <td>{{ loop.index }}</td>
+                                        <td><div style="max-height:3em; overflow:hidden;">{{ q.question|safe }}</div></td>
+                                        <td>{{ q.section }}</td>
+                                        <td><span class="badge-pending">{{ q.avg_time_spent }}s</span></td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Least Time Spent Questions -->
+                <div class="card-custom">
+                    <div class="card-header-custom"><h3><i class="fas fa-bolt"></i> Least Time Spent</h3></div>
+                    <div class="card-body-custom">
+                        <div class="scrollable-table" style="max-height: 350px;">
+                            <table class="data-table">
+                                <thead><tr><th>#</th><th>Question</th><th>Section</th><th>Avg Time</th></tr></thead>
+                                <tbody>
+                                    {% for q in least_time_spent %}
+                                    <tr>
+                                        <td>{{ loop.index }}</td>
+                                        <td><div style="max-height:3em; overflow:hidden;">{{ q.question|safe }}</div></td>
+                                        <td>{{ q.section }}</td>
+                                        <td><span class="badge-pass">{{ q.avg_time_spent }}s</span></td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 3: STUDENT BREAKDOWN (Sorted by Percentage DESC) -->
+        <div class="tab-pane fade" id="students" role="tabpanel">
+            <div class="card-custom">
+                <div class="card-header-custom"><h3><i class="fas fa-users"></i> Registered Students ({{ all_students|length }})</h3></div>
+                <div class="card-body-custom">
+                    <div class="scrollable-table">
+                        <table class="data-table">
+                            <thead>
+                                <tr><th>Rank</th><th>Student</th><th>Username</th><th>Status</th><th>Score</th><th>Percentage</th><th>Action</th></tr>
+                            </thead>
+                            <tbody>
+                                {% for student in all_students_sorted %}
+                                <tr>
+                                    <td>#{{ loop.index }}</td>
+                                    <td><strong>{{ student.full_name }}</strong></td>
+                                    <td>{{ student.username }}</td>
+                                    <td>
+                                        {% if student.attempt_status == 'approved' %}
+                                            <span class="badge-pass">Approved</span>
+                                        {% elif student.attempt_status == 'pending' %}
+                                            <span class="badge-pending">Pending</span>
+                                        {% elif student.attempt_status == 'rejected' %}
+                                            <span class="badge-rejected">Rejected</span>
+                                        {% else %}
+                                            <span class="badge-not-started">Not Started</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{% if student.score is not none %}{{ student.score }}/{{ student.total }}{% else %}—{% endif %}</td>
+                                    <td>{% if student.percentage is not none %}<span class="{% if student.percentage >= exam.passing_score %}badge-pass{% else %}badge-fail{% endif %}">{{ student.percentage|round|int }}%</span>{% else %}—{% endif %}</td>
+                                    <td><a href="/admin/ce_student_analytics/{{ student.id }}/{{ exam.id }}" class="btn-back" style="padding: 4px 12px; font-size: 11px;"><i class="fas fa-eye"></i> View</a></td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 4: TIME ANALYSIS (Small Charts + Tables) -->
+        <div class="tab-pane fade" id="time" role="tabpanel">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="card-custom">
+                        <div class="card-header-custom"><h3><i class="fas fa-hourglass-half"></i> Time Distribution</h3></div>
+                        <div class="card-body-custom text-center">
+                            <div style="max-width: 220px; margin: 0 auto;">
+                                <canvas id="timeChart" style="height: 180px;"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card-custom">
+                        <div class="card-header-custom"><h3><i class="fas fa-clock"></i> Time Stats</h3></div>
+                        <div class="card-body-custom">
+                            <div style="margin-bottom: 12px;">
+                                <div style="display: flex; justify-content: space-between; font-size: 13px;"><span>Average Time</span><span><strong>{{ avg_total_time }} min</strong></span></div>
+                                <div class="progress-custom"><div class="progress-fill" style="width: {{ (avg_total_time / exam.duration * 100) if exam.duration > 0 else 0 }}%; background: #8b5cf6;"></div></div>
+                            </div>
+                            <div style="margin-bottom: 12px;">
+                                <div style="display: flex; justify-content: space-between; font-size: 13px;"><span>Fastest</span><span><strong>{{ min_total_time }} min</strong></span></div>
+                                <div class="progress-custom"><div class="progress-fill" style="width: {{ (min_total_time / exam.duration * 100) if exam.duration > 0 else 0 }}%; background: #10b981;"></div></div>
+                            </div>
+                            <div>
+                                <div style="display: flex; justify-content: space-between; font-size: 13px;"><span>Slowest</span><span><strong>{{ max_total_time }} min</strong></span></div>
+                                <div class="progress-custom"><div class="progress-fill" style="width: {{ (max_total_time / exam.duration * 100) if exam.duration > 0 else 0 }}%; background: #ef4444;"></div></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="two-columns">
+                <!-- Most Time Spent Questions -->
+                <div class="card-custom">
+                    <div class="card-header-custom"><h3><i class="fas fa-hourglass-start"></i> Most Time Spent Questions</h3></div>
+                    <div class="card-body-custom">
+                        <div class="scrollable-table" style="max-height: 300px;">
+                            <table class="data-table">
+                                <thead><tr><th>#</th><th>Question</th><th>Avg Time</th></tr></thead>
+                                <tbody>
+                                    {% for q in most_time_spent %}
+                                    <tr>
+                                        <td>{{ loop.index }}</td>
+                                        <td>{{ q.question[:50] }}{% if q.question|length > 50 %}...{% endif %}</td>
+                                        <td><span class="badge-pending">{{ q.avg_time_spent }}s</span></td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Least Time Spent Questions -->
+                <div class="card-custom">
+                    <div class="card-header-custom"><h3><i class="fas fa-bolt"></i> Least Time Spent Questions</h3></div>
+                    <div class="card-body-custom">
+                        <div class="scrollable-table" style="max-height: 300px;">
+                            <table class="data-table">
+                                <thead><tr><th>#</th><th>Question</th><th>Avg Time</th></tr></thead>
+                                <tbody>
+                                    {% for q in least_time_spent %}
+                                    <tr>
+                                        <td>{{ loop.index }}</td>
+                                        <td>{{ q.question[:50] }}{% if q.question|length > 50 %}...{% endif %}</td>
+                                        <td><span class="badge-pass">{{ q.avg_time_spent }}s</span></td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="{{ url_for('static', filename='vendor/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
+<script>
+    // Score Distribution Chart
+    new Chart(document.getElementById('scoreChart'), {
+        type: 'doughnut',
+        data: { labels: {{ distribution_labels|safe }}, datasets: [{ data: {{ distribution_counts|safe }}, backgroundColor: ['#ef4444', '#f59e0b', '#fbbf24', '#34d399', '#10b981'], borderWidth: 0 }] },
+        options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 10 } } } } }
+    });
+
+    // Difficulty Chart
+    new Chart(document.getElementById('difficultyChart'), {
+        type: 'doughnut',
+        data: { labels: ['Easy', 'Medium', 'Hard', 'Very Hard'], datasets: [{ data: [{{ difficulty_counts.Easy|default(0) }}, {{ difficulty_counts.Medium|default(0) }}, {{ difficulty_counts.Hard|default(0) }}, {{ difficulty_counts['Very Hard']|default(0) }}], backgroundColor: ['#10b981', '#f59e0b', '#ef4444', '#8b5cf6'], borderWidth: 0 }] },
+        options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 10 } } } } }
+    });
+
+    // Time Distribution Chart
+    new Chart(document.getElementById('timeChart'), {
+        type: 'pie',
+        data: { labels: {{ time_distribution_labels|safe }}, datasets: [{ data: {{ time_distribution_counts|safe }}, backgroundColor: ['#10b981', '#34d399', '#fbbf24', '#f59e0b', '#ef4444'], borderWidth: 0 }] },
+        options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 10 } } } } }
+    });
+
+    document.addEventListener('DOMContentLoaded', function() {
+        if (typeof renderMathInElement === 'function') {
+            renderMathInElement(document.body, {
+                delimiters: [
+                    {left: '$$', right: '$$', display: true},
+                    {left: '$', right: '$', display: false},
+                    {left: '\\(', right: '\\)', display: false},
+                    {left: '\\[', right: '\\]', display: true}
+                ],
+                throwOnError: false
+            });
+        }
+    });
+</script>
+</body>
+</html>

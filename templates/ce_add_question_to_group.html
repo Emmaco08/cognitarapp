@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Add Question to Group</title>
+    <link href="{{ url_for('static', filename='vendor/bootstrap/css/bootstrap.min.css') }}" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='vendor/fontawesome/css/all.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='vendor/katex/katex.min.css') }}">
+    <script src="{{ url_for('static', filename='vendor/katex/katex.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='vendor/katex/contrib/mhchem.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='vendor/katex/contrib/auto-render.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='vendor/sweetalert2/sweetalert2.all.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/cognitara-katex-editor.js') }}?v=20261020_v8"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body { background: linear-gradient(135deg, #f5f7fa 0%, #e8edf5 100%); padding: 40px; }
+        .container-custom { max-width: 800px; margin: 0 auto; }
+        .card-custom { background: white; border-radius: 24px; border: 1px solid #e2e8f0; overflow: hidden; }
+        .card-header-custom { padding: 20px 25px; border-bottom: 1px solid #e2e8f0; background: #f8fafc; }
+        .card-body-custom { padding: 25px; }
+        .form-control-custom { width: 100%; padding: 12px 15px; border: 2px solid #e2e8f0; border-radius: 12px; margin-bottom: 15px; }
+        .btn-save { background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; border: none; padding: 12px 25px; border-radius: 12px; font-weight: 600; cursor: pointer; }
+        .btn-back { background: white; border: 2px solid #e2e8f0; padding: 10px 25px; border-radius: 12px; text-decoration: none; color: #64748b; }
+        .toolbar-btn { padding: 6px 12px; font-size: 12px; cursor: pointer; border: 1px solid #e2e8f0; background: white; border-radius: 6px; }
+        .preview-box { background: #f8fafc; border-radius: 12px; padding: 15px; margin-top: 10px; display: none; border-left: 4px solid #8b5cf6; }
+    </style>
+    <!-- CSRF Protection Shield -->
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <script>
+    window.CSRF_TOKEN = "{{ csrf_token() }}";
+    (function() {
+        if (window.fetch) {
+            const _origFetch = window.fetch;
+            window.fetch = function(url, options) {
+                options = options || {};
+                const method = (options.method || 'GET').toUpperCase();
+                if (!['GET', 'HEAD', 'OPTIONS', 'TRACE'].includes(method)) {
+                    options.headers = options.headers || {};
+                    const token = window.CSRF_TOKEN || (document.querySelector('meta[name="csrf-token"]') && document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
+                    if (token) {
+                        if (typeof Headers !== 'undefined' && options.headers instanceof Headers) {
+                            if (!options.headers.has('X-CSRFToken')) options.headers.set('X-CSRFToken', token);
+                        } else if (Array.isArray(options.headers)) {
+                            options.headers.push(['X-CSRFToken', token]);
+                        } else {
+                            if (!options.headers['X-CSRFToken']) options.headers['X-CSRFToken'] = token;
+                        }
+                    }
+                }
+                return _origFetch(url, options);
+            };
+        }
+        if (window.$ && $.ajaxSetup) {
+            $.ajaxSetup({
+                beforeSend: function(xhr, settings) {
+                    if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type)) {
+                        xhr.setRequestHeader("X-CSRFToken", window.CSRF_TOKEN);
+                    }
+                }
+            });
+        }
+        if (navigator.sendBeacon) {
+            const _origBeacon = navigator.sendBeacon.bind(navigator);
+            navigator.sendBeacon = function(url, data) {
+                if (data instanceof FormData) {
+                    if (!data.has('csrf_token')) data.append('csrf_token', window.CSRF_TOKEN);
+                } else if (typeof data === 'string') {
+                    try {
+                        const obj = JSON.parse(data);
+                        if (typeof obj === 'object' && obj !== null && !obj.csrf_token) {
+                            obj.csrf_token = window.CSRF_TOKEN;
+                            data = JSON.stringify(obj);
+                        }
+                    } catch(e) {}
+                }
+                return _origBeacon(url, data);
+            };
+        }
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('form[method="POST"], form[method="post"]').forEach(function(form) {
+                if (!form.querySelector('input[name="csrf_token"]')) {
+                    var input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = 'csrf_token';
+                    input.value = window.CSRF_TOKEN;
+                    form.appendChild(input);
+                }
+            });
+        });
+    })();
+    </script>
+</head>
+<body>
+    <div class="container-custom">
+        <div class="card-custom">
+            <div class="card-header-custom">
+                <h3><i class="fas fa-layer-group"></i> Add Question to Group: {{ group.group_name }}</h3>
+                <p class="text-muted mb-0">Questions added to this group will appear together in sequence</p>
+            </div>
+            <div class="card-body-custom">
+                <form method="POST" action="/admin/ce_group/{{ group.id }}/add_question">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <!-- Toolbar -->
+                    <div style="margin-bottom: 10px; display: flex; flex-wrap: wrap; gap: 5px; align-items: center;">
+                        <button type="button" class="toolbar-btn" onclick="formatText('b', 'questionText')"><strong>B</strong></button>
+                        <button type="button" class="toolbar-btn" onclick="formatText('i', 'questionText')"><em>I</em></button>
+                        <button type="button" class="toolbar-btn" onclick="formatText('u', 'questionText')"><u>U</u></button>
+                        <button type="button" class="toolbar-btn" onclick="formatText('sup', 'questionText')">x²</button>
+                        <button type="button" class="toolbar-btn" onclick="formatText('sub', 'questionText')">x₂</button>
+                        <div class="f-btn-group" style="display:inline-flex; gap:3px; background:#eef2ff; padding:2px 6px; border-radius:8px; border:1px solid #c7d2fe;">
+                            <button type="button" class="f-btn" onclick="CogniTaraKaTeX.openBuilderWithTemplate(null, null, 'questionText')" title="Insert Math &amp; Science Formulas"><i class="fas fa-square-root-alt"></i> Formulas</button>
+                        </div>
+                        <button type="button" class="toolbar-btn" onclick="showPreview()"><i class="fas fa-eye"></i> Preview</button>
+                    </div>
+                    
+                    <!-- Preview Box -->
+                    <div id="previewBox" class="preview-box">
+                        <strong><i class="fas fa-eye"></i> Preview:</strong>
+                        <div id="previewContent" class="mt-2"></div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Question</label>
+                        <textarea name="question" id="questionText" class="form-control-custom" rows="4" required></textarea>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Question Image (optional)</label>
+                        <input type="file" name="image" class="form-control" accept="image/*">
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Option A</label>
+                            <input type="text" name="option1" class="form-control" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Option B</label>
+                            <input type="text" name="option2" class="form-control" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Option C</label>
+                            <input type="text" name="option3" class="form-control" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Option D</label>
+                            <input type="text" name="option4" class="form-control" required>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Correct Answer</label>
+                            <select name="answer" class="form-select" required>
+                                <option value="">Select...</option>
+                                <option value="1">A</option>
+                                <option value="2">B</option>
+                                <option value="3">C</option>
+                                <option value="4">D</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">
+                                <input type="checkbox" name="mandatory" value="1"> Mandatory Question
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-info mt-3">
+                        <i class="fas fa-info-circle"></i> 
+                        <strong>How this works:</strong> When students take the exam, they will see the group content (passage/instructions) first, then all questions in this group will appear together in the order you add them.
+                    </div>
+                    
+                    <div class="mt-4">
+                        <button type="submit" class="btn-save"><i class="fas fa-save"></i> Add Question to Group</button>
+                        <a href="/admin/ce_section/{{ group.section_id }}/groups" class="btn-back" style="margin-left: 10px;">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        function formatText(tag, textareaId) {
+            const textarea = document.getElementById(textareaId);
+            const start = textarea.selectionStart;
+            const end = textarea.selectionEnd;
+            const selectedText = textarea.value.substring(start, end);
+            let wrappedText;
+            if (tag === 'sup') wrappedText = `<sup>${selectedText || 'superscript'}</sup>`;
+            else if (tag === 'sub') wrappedText = `<sub>${selectedText || 'subscript'}</sub>`;
+            else wrappedText = `<${tag}>${selectedText}</${tag}>`;
+            textarea.value = textarea.value.substring(0, start) + wrappedText + textarea.value.substring(end);
+            textarea.focus();
+            updatePreview();
+        }
+        
+        function updatePreview() {
+            const content = document.getElementById('questionText').value;
+            const previewDiv = document.getElementById('previewContent');
+            previewDiv.innerHTML = content;
+            if (typeof renderMathInElement === 'function') {
+                renderMathInElement(previewDiv, {
+                    delimiters: [
+                        {left: '$$', right: '$$', display: true},
+                        {left: '$', right: '$', display: false},
+                        {left: '\\(', right: '\\)', display: false},
+                        {left: '\\[', right: '\\]', display: true}
+                    ],
+                    throwOnError: false
+                });
+            }
+        }
+        
+        function showPreview() {
+            updatePreview();
+            document.getElementById('previewBox').style.display = 'block';
+            document.getElementById('previewBox').scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+        
+        // Update preview on input
+        document.getElementById('questionText').addEventListener('input', updatePreview);
+        document.addEventListener('DOMContentLoaded', updatePreview);
+    </script>
+</body>
+</html>

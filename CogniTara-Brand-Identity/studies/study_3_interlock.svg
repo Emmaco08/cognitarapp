@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <rect width="100%" height="100%" fill="#0A0E1A" rx="32"/>
+  <!-- C arc -->
+  <path d="M 145,135
+           A 68 68 0 1 1 145,65
+           L 125,79
+           A 48 48 0 1 0 125,121 Z" fill="#FFFFFF" />
+  <!-- Dynamic T: Balanced crossbar and stem with 45 deg terminal chamfers -->
+  <path d="M 82,72
+           L 152,72
+           L 142,92
+           L 127,92
+           L 127,136
+           L 107,136
+           L 107,92
+           L 82,92 Z" fill="#FFFFFF" />
+</svg>

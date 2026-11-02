@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{{ exam.name }} | Entrance Exam</title>
+    <link href="{{ url_for('static', filename='vendor/bootstrap/css/bootstrap.min.css') }}" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='vendor/fontawesome/css/all.min.css') }}">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(135deg, #e0e7ff 0%, #f3e8ff 100%);
+            font-family: 'Inter', 'Segoe UI', 'Poppins', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            position: relative;
+        }
+
+        /* Animated Background */
+        .bg-shape {
+            position: fixed;
+            pointer-events: none;
+            z-index: 0;
+        }
+        .bg-shape-1 {
+            top: -20%;
+            right: -10%;
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle, rgba(139,92,246,0.08) 0%, transparent 70%);
+            border-radius: 50%;
+            animation: float 25s infinite ease-in-out;
+        }
+        .bg-shape-2 {
+            bottom: -10%;
+            left: -5%;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(59,130,246,0.08) 0%, transparent 70%);
+            border-radius: 50%;
+            animation: float 30s infinite ease-in-out reverse;
+        }
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            50% { transform: translate(40px, -30px) rotate(180deg); }
+        }
+
+        /* Main Card */
+        .dashboard-card {
+            background: white;
+            border-radius: 32px;
+            max-width: 500px;
+            width: 100%;
+            overflow: hidden;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            position: relative;
+            z-index: 10;
+            transition: transform 0.3s ease;
+        }
+        .dashboard-card:hover {
+            transform: translateY(-5px);
+        }
+
+        /* Header */
+        .card-header {
+            background: linear-gradient(135deg, #1a56db 0%, #8b5cf6 100%);
+            padding: 35px 30px;
+            text-align: center;
+            color: white;
+        }
+        .logo-icon {
+            width: 70px;
+            height: 70px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 15px;
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        .logo-icon i {
+            font-size: 32px;
+            color: white;
+        }
+        .card-header h2 {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+        .card-header p {
+            font-size: 13px;
+            opacity: 0.9;
+        }
+
+        /* Body */
+        .card-body {
+            padding: 28px;
+        }
+
+        /* Exam Info */
+        .exam-info {
+            background: #f8fafc;
+            border-radius: 20px;
+            padding: 15px 20px;
+            margin-bottom: 20px;
+        }
+        .info-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .info-item:last-child {
+            border-bottom: none;
+        }
+        .info-item span {
+            font-size: 13px;
+            color: #64748b;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .info-item span i {
+            color: #8b5cf6;
+            width: 18px;
+        }
+        .info-item strong {
+            font-size: 14px;
+            font-weight: 700;
+            color: #1e293b;
+        }
+
+        /* Alert Messages */
+        .alert-custom {
+            border-radius: 16px;
+            padding: 12px 16px;
+            margin-bottom: 18px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 13px;
+        }
+        .alert-warning-custom { background: #fef3c7; border-left: 3px solid #f59e0b; color: #92400e; }
+        .alert-success-custom { background: #d1fae5; border-left: 3px solid #10b981; color: #065f46; }
+        .alert-danger-custom { background: #fee2e2; border-left: 3px solid #ef4444; color: #991b1b; }
+        .alert-custom i { font-size: 18px; }
+
+        /* Button */
+        .btn-start {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            border: none;
+            padding: 14px;
+            border-radius: 16px;
+            font-weight: 600;
+            width: 100%;
+            font-size: 15px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .btn-start:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px -5px rgba(16, 185, 129, 0.4);
+        }
+
+        .warning-text {
+            text-align: center;
+            margin-top: 15px;
+            font-size: 11px;
+            color: #94a3b8;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+        }
+
+        /* ============ COMPACT MODAL ============ */
+        .custom-modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(4px);
+            z-index: 10000;
+            display: none;
+            justify-content: center;
+            align-items: center;
+        }
+        .custom-modal-overlay.show {
+            display: flex;
+        }
+        .custom-modal {
+            background: white;
+            border-radius: 24px;
+            width: 360px;
+            max-width: 90%;
+            overflow: hidden;
+            animation: modalPop 0.3s ease;
+        }
+        @keyframes modalPop {
+            from { transform: scale(0.95); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+        .modal-header-custom {
+            padding: 20px 20px 15px;
+            text-align: center;
+        }
+        .modal-header-custom.start {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+        }
+        .modal-header-custom.resume {
+            background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);
+            color: white;
+        }
+        .modal-icon {
+            width: 50px;
+            height: 50px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 10px;
+        }
+        .modal-icon i {
+            font-size: 24px;
+            color: white;
+        }
+        .modal-header-custom h3 {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 3px;
+        }
+        .modal-header-custom p {
+            font-size: 11px;
+            opacity: 0.8;
+        }
+        .modal-body-custom {
+            padding: 15px 20px;
+        }
+        .modal-stats {
+            background: #f8fafc;
+            border-radius: 14px;
+            padding: 10px 15px;
+            margin-bottom: 12px;
+        }
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            padding: 5px 0;
+        }
+        .stat-label { color: #64748b; }
+        .stat-value { font-weight: 600; color: #1e293b; }
+        .modal-warning {
+            background: #fef3c7;
+            border-radius: 10px;
+            padding: 8px 12px;
+            font-size: 11px;
+            color: #92400e;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+        .modal-warning i { font-size: 14px; }
+        .modal-footer-custom {
+            padding: 12px 20px 20px;
+            display: flex;
+            gap: 10px;
+        }
+        .modal-btn {
+            flex: 1;
+            padding: 10px;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+        .modal-btn-cancel {
+            background: white;
+            border: 1.5px solid #e2e8f0;
+            color: #64748b;
+        }
+        .modal-btn-cancel:hover {
+            border-color: #ef4444;
+            color: #ef4444;
+        }
+        .modal-btn-confirm {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+        }
+        .modal-btn-resume {
+            background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);
+            color: white;
+        }
+        .modal-btn-confirm:hover, .modal-btn-resume:hover {
+            transform: translateY(-1px);
+        }
+
+        .guidelines-modal {
+            width: 520px;
+            max-width: min(520px, calc(100vw - 24px));
+            max-height: calc(100vh - 32px);
+            display: flex;
+            flex-direction: column;
+            border-radius: 24px;
+        }
+        .guidelines-body {
+            overflow-y: auto;
+            max-height: 62vh;
+            padding: 16px 20px;
+        }
+        .rules-section {
+            border-radius: 14px;
+            padding: 12px 14px;
+            margin-bottom: 12px;
+            font-size: 12px;
+        }
+        .rules-section.dos {
+            background: #f0fdf4;
+            border: 1px solid #bbf7d0;
+        }
+        .rules-section.donts {
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+        }
+        .rules-section-title {
+            font-weight: 700;
+            font-size: 13px;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .rules-section.dos .rules-section-title { color: #166534; }
+        .rules-section.donts .rules-section-title { color: #991b1b; }
+        .rules-list {
+            margin: 0;
+            padding: 0;
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .rules-list li {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            line-height: 1.4;
+            color: #334155;
+        }
+        .rules-list li i {
+            margin-top: 2px;
+            flex-shrink: 0;
+        }
+        .rules-section.dos .rules-list li i { color: #10b981; }
+        .rules-section.donts .rules-list li i { color: #ef4444; }
+        .guideline-stat-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+            background: #f8fafc;
+            border-radius: 14px;
+            padding: 10px 14px;
+            margin-bottom: 12px;
+            border: 1px solid #e2e8f0;
+        }
+        .guideline-stat-item {
+            display: flex;
+            flex-direction: column;
+        }
+        .guideline-stat-label {
+            font-size: 11px;
+            color: #64748b;
+        }
+        .guideline-stat-value {
+            font-size: 14px;
+            font-weight: 700;
+            color: #1e293b;
+        }
+
+        @media (max-width: 480px) {
+            .card-body { padding: 20px; }
+            .card-header { padding: 25px 20px; }
+            .logo-icon { width: 55px; height: 55px; }
+            .logo-icon i { font-size: 26px; }
+            .card-header h2 { font-size: 20px; }
+        }
+    </style>
+    <!-- CSRF Protection Shield -->
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <script>
+    window.CSRF_TOKEN = "{{ csrf_token() }}";
+    (function() {
+        if (window.fetch) {
+            const _origFetch = window.fetch;
+            window.fetch = function(url, options) {
+                options = options || {};
+                const method = (options.method || 'GET').toUpperCase();
+                if (!['GET', 'HEAD', 'OPTIONS', 'TRACE'].includes(method)) {
+                    options.headers = options.headers || {};
+                    const token = window.CSRF_TOKEN || (document.querySelector('meta[name="csrf-token"]') && document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
+                    if (token) {
+                        if (typeof Headers !== 'undefined' && options.headers instanceof Headers) {
+                            if (!options.headers.has('X-CSRFToken')) options.headers.set('X-CSRFToken', token);
+                        } else if (Array.isArray(options.headers)) {
+                            options.headers.push(['X-CSRFToken', token]);
+                        } else {
+                            if (!options.headers['X-CSRFToken']) options.headers['X-CSRFToken'] = token;
+                        }
+                    }
+                }
+                return _origFetch(url, options);
+            };
+        }
+        if (window.$ && $.ajaxSetup) {
+            $.ajaxSetup({
+                beforeSend: function(xhr, settings) {
+                    if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type)) {
+                        xhr.setRequestHeader("X-CSRFToken", window.CSRF_TOKEN);
+                    }
+                }
+            });
+        }
+        if (navigator.sendBeacon) {
+            const _origBeacon = navigator.sendBeacon.bind(navigator);
+            navigator.sendBeacon = function(url, data) {
+                if (data instanceof FormData) {
+                    if (!data.has('csrf_token')) data.append('csrf_token', window.CSRF_TOKEN);
+                } else if (typeof data === 'string') {
+                    try {
+                        const obj = JSON.parse(data);
+                        if (typeof obj === 'object' && obj !== null && !obj.csrf_token) {
+                            obj.csrf_token = window.CSRF_TOKEN;
+                            data = JSON.stringify(obj);
+                        }
+                    } catch(e) {}
+                }
+                return _origBeacon(url, data);
+            };
+        }
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('form[method="POST"], form[method="post"]').forEach(function(form) {
+                if (!form.querySelector('input[name="csrf_token"]')) {
+                    var input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = 'csrf_token';
+                    input.value = window.CSRF_TOKEN;
+                    form.appendChild(input);
+                }
+            });
+        });
+    })();
+    </script>
+</head>
+<body>
+
+    <div class="bg-shape bg-shape-1"></div>
+    <div class="bg-shape bg-shape-2"></div>
+
+    <div class="dashboard-card">
+        <div class="card-header">
+            <div class="logo-icon">
+                <i class="fas fa-door-open"></i>
+            </div>
+            <h2>{{ exam.name }}</h2>
+            <p>Welcome, {{ student_name }}</p>
+        </div>
+        
+        <div class="card-body">
+            <div class="exam-info">
+                <div class="info-item">
+                    <span><i class="fas fa-hourglass-half"></i> Duration</span>
+                    <strong>{{ exam.duration }} min</strong>
+                </div>
+                <div class="info-item">
+                    <span><i class="fas fa-percent"></i> Passing Score</span>
+                    <strong>{{ exam.passing_score }}%</strong>
+                </div>
+                <div class="info-item">
+                    <span><i class="fas fa-list-ol"></i> Questions</span>
+                    <strong>{{ exam.total_questions_to_show }}</strong>
+                </div>
+                <div class="info-item">
+                    <span><i class="fas fa-flag-checkered"></i> Target Class</span>
+                    <strong>{{ exam.target_class }}</strong>
+                </div>
+            </div>
+            
+            {% if existing_attempt %}
+                {% if existing_attempt.status == 'pending' %}
+                    <div class="alert-custom alert-warning-custom">
+                        <i class="fas fa-hourglass-half"></i>
+                        <span>Your exam is pending admin review.</span>
+                    </div>
+                {% elif existing_attempt.status == 'approved' %}
+                    <div class="alert-custom alert-success-custom">
+                        <i class="fas fa-check-circle"></i>
+                        <span>Approved for {{ exam.target_class }}!</span>
+                    </div>
+                {% elif existing_attempt.status == 'rejected' %}
+                    <div class="alert-custom alert-danger-custom">
+                        <i class="fas fa-times-circle"></i>
+                        <span>Not approved. You may retake.</span>
+                    </div>
+                    {% if exam.active %}
+                    <button class="btn-start" onclick="openStartModal()">
+                        <i class="fas fa-play"></i> Retake Exam
+                    </button>
+                    {% else %}
+                    <div class="alert-custom alert-danger-custom" style="justify-content:center; margin-bottom: 0;">
+                        <i class="fas fa-lock"></i>
+                        <span>This exam is currently closed by Admin.</span>
+                    </div>
+                    {% endif %}
+                {% else %}
+                    {% if existing_attempt.is_paused == 1 %}
+                    <div class="alert-custom alert-warning-custom">
+                        <i class="fas fa-pause-circle"></i>
+                        <span>Exam Paused: {{ existing_attempt.pause_reason or "Proctor authorization required to resume." }}</span>
+                    </div>
+                    <button class="btn-start" style="background: #94a3b8; cursor: not-allowed;" disabled>
+                        <i class="fas fa-lock"></i> Resume Blocked (Proctor Authorization Required)
+                    </button>
+                    {% else %}
+                    <button class="btn-start" onclick="openResumeModal({{ existing_attempt.id }})">
+                        <i class="fas fa-undo-alt"></i> Resume Exam
+                    </button>
+                    {% endif %}
+                {% endif %}
+            {% else %}
+                {% if exam.active %}
+                <button class="btn-start" onclick="openStartModal()">
+                    <i class="fas fa-play"></i> Start Exam
+                </button>
+                {% else %}
+                <div class="alert-custom alert-danger-custom" style="justify-content:center; margin-bottom: 0;">
+                    <i class="fas fa-lock"></i>
+                    <span>This exam has not started yet. Please wait.</span>
+                </div>
+                {% endif %}
+            {% endif %}
+
+
+            
+            <div class="warning-text">
+                <i class="fas fa-exclamation-triangle"></i>
+                <span>5 warnings = auto-submit</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- COMPREHENSIVE GUIDELINES & REGULATIONS START MODAL -->
+    <div id="startModal" class="custom-modal-overlay">
+        <div class="custom-modal guidelines-modal">
+            <div class="modal-header-custom start">
+                <div class="modal-icon">
+                    <i class="fas fa-clipboard-check"></i>
+                </div>
+                <h3>Examination Guidelines</h3>
+                <p>{{ exam.title }} • {{ exam.duration }} mins • {{ exam.total_questions_to_show }} questions</p>
+            </div>
+            <div class="modal-body-custom guidelines-body">
+                <!-- Exam Overview Grid -->
+                <div class="guideline-stat-grid">
+                    <div class="guideline-stat-item">
+                        <span class="guideline-stat-label">Total Questions</span>
+                        <span class="guideline-stat-value">{{ exam.total_questions_to_show }} Questions</span>
+                    </div>
+                    <div class="guideline-stat-item">
+                        <span class="guideline-stat-label">Time Allowed</span>
+                        <span class="guideline-stat-value">{{ exam.duration }} Minutes</span>
+                    </div>
+                    <div class="guideline-stat-item">
+                        <span class="guideline-stat-label">Passing Cut-Off</span>
+                        <span class="guideline-stat-value">{{ exam.passing_score }}%</span>
+                    </div>
+                    <div class="guideline-stat-item">
+                        <span class="guideline-stat-label">Max Allowed Warnings</span>
+                        <span class="guideline-stat-value" style="color:#dc2626;">{{ exam.max_warnings if exam.max_warnings else 5 }} Violations</span>
+                    </div>
+                </div>
+
+                <!-- DO'S -->
+                <div class="rules-section dos">
+                    <div class="rules-section-title">
+                        <i class="fas fa-check-circle"></i> Candidate DO's (Best Practices)
+                    </div>
+                    <ul class="rules-list">
+                        <li><i class="fas fa-check"></i> <span>Keep your browser window in fullscreen mode throughout the test.</span></li>
+                        <li><i class="fas fa-check"></i> <span>Every selected answer is automatically and instantly saved to the database.</span></li>
+                        <li><i class="fas fa-check"></i> <span>Click any diagram, image, or reading passage to expand it to full size.</span></li>
+                        <li><i class="fas fa-check"></i> <span>Review all answered and unanswered questions using the question palette.</span></li>
+                        <li><i class="fas fa-check"></i> <span>Click the green "Submit Exam" button once you finish all questions.</span></li>
+                    </ul>
+                </div>
+
+                <!-- DON'TS & INTEGRITY WARNINGS -->
+                <div class="rules-section donts">
+                    <div class="rules-section-title">
+                        <i class="fas fa-exclamation-triangle"></i> Candidate DON'Ts (Misconduct Rules)
+                    </div>
+                    <ul class="rules-list">
+                        <li><i class="fas fa-times"></i> <span><strong>DO NOT switch tabs, minimize, or navigate away from this screen.</strong></span></li>
+                        <li><i class="fas fa-times"></i> <span><strong>DO NOT refresh or reload the page</strong> during active examination.</span></li>
+                        <li><i class="fas fa-times"></i> <span><strong>DO NOT inspect elements</strong>, open developer console, or use unauthorized shortcuts.</span></li>
+                        <li><i class="fas fa-ban"></i> <span style="color:#b91c1c; font-weight:700;">STRICT ENFORCEMENT: Reaching {{ exam.max_warnings if exam.max_warnings else 5 }} warnings will trigger IMMEDIATE and PERMANENT auto-submission!</span></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="modal-footer-custom">
+                <button class="modal-btn modal-btn-cancel" onclick="closeStartModal()">Cancel</button>
+                <button class="modal-btn modal-btn-confirm" onclick="confirmStartExam()"><i class="fas fa-play"></i> Start Examination</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- COMPACT RESUME MODAL -->
+    <div id="resumeModal" class="custom-modal-overlay">
+        <div class="custom-modal">
+            <div class="modal-header-custom resume">
+                <div class="modal-icon">
+                    <i class="fas fa-undo-alt"></i>
+                </div>
+                <h3>Resume Exam?</h3>
+                <p>Continue where you left off</p>
+            </div>
+            <div class="modal-body-custom">
+                <div class="modal-stats">
+                    <div class="stat-row">
+                        <span class="stat-label">Exam</span>
+                        <span class="stat-value">{{ exam.name }}</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Target</span>
+                        <span class="stat-value">{{ exam.target_class }}</span>
+                    </div>
+                </div>
+                <div class="modal-warning" style="background: #d1fae5; color: #065f46;">
+                    <i class="fas fa-save"></i>
+                    <span>Your progress will be restored</span>
+                </div>
+            </div>
+            <div class="modal-footer-custom">
+                <button class="modal-btn modal-btn-cancel" onclick="closeResumeModal()">Cancel</button>
+                <button class="modal-btn modal-btn-resume" id="resumeConfirmBtn">Resume</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let resumeAttemptId = null;
+        
+        function openStartModal() {
+            document.getElementById('startModal').classList.add('show');
+        }
+        
+        function closeStartModal() {
+            document.getElementById('startModal').classList.remove('show');
+        }
+        
+        function confirmStartExam() {
+            closeStartModal();
+            setTimeout(() => window.location.href = '/ce_start', 150);
+        }
+        
+        function openResumeModal(attemptId) {
+            resumeAttemptId = attemptId;
+            document.getElementById('resumeModal').classList.add('show');
+        }
+        
+        function closeResumeModal() {
+            document.getElementById('resumeModal').classList.remove('show');
+            resumeAttemptId = null;
+        }
+        
+        function confirmResumeExam() {
+            if (resumeAttemptId) {
+                closeResumeModal();
+                setTimeout(() => window.location.href = `/ce_start`, 150);
+            }
+        }
+        
+        document.getElementById('resumeConfirmBtn').addEventListener('click', confirmResumeExam);
+        
+        // Close on outside click
+        document.getElementById('startModal').addEventListener('click', function(e) {
+            if (e.target === this) closeStartModal();
+        });
+        document.getElementById('resumeModal').addEventListener('click', function(e) {
+            if (e.target === this) closeResumeModal();
+        });
+        
+        // Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeStartModal();
+                closeResumeModal();
+            }
+        });
+    </script>
+</body>
+</html>

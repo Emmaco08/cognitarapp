@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Register for Entrance Exam</title>
+    <link href="{{ url_for('static', filename='vendor/bootstrap/css/bootstrap.min.css') }}" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='vendor/fontawesome/css/all.min.css') }}">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; }
+        .register-card { background: white; border-radius: 32px; max-width: 550px; width: 100%; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); }
+        .card-header { background: linear-gradient(135deg, #1a56db 0%, #0e3b9e 100%); padding: 30px; text-align: center; color: white; }
+        .card-header i { font-size: 50px; margin-bottom: 15px; }
+        .card-header h2 { font-size: 24px; font-weight: 700; margin-bottom: 5px; }
+        .card-body { padding: 35px; }
+        .form-control-custom { width: 100%; padding: 12px 15px; border: 2px solid #e2e8f0; border-radius: 14px; font-size: 14px; transition: all 0.3s; background: #f8fafc; margin-bottom: 15px; }
+        .form-control-custom:focus { outline: none; border-color: #1a56db; box-shadow: 0 0 0 3px rgba(26,86,219,0.1); }
+        .btn-register { background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; border: none; padding: 14px; border-radius: 14px; font-weight: 600; width: 100%; cursor: pointer; transition: all 0.3s; }
+        .btn-register:hover { transform: translateY(-2px); box-shadow: 0 10px 20px -5px rgba(16,185,129,0.4); }
+        .alert-custom { background: #fee2e2; border-left: 4px solid #ef4444; padding: 12px 18px; border-radius: 12px; margin-bottom: 20px; color: #991b1b; }
+        .exam-option { border: 2px solid #e2e8f0; border-radius: 16px; padding: 15px; margin-bottom: 15px; cursor: pointer; transition: all 0.3s; }
+        .exam-option:hover { border-color: #1a56db; background: #f8fafc; }
+        .exam-option.selected { border-color: #10b981; background: #f0fdf4; }
+        .exam-option h4 { margin: 0 0 5px; font-size: 18px; }
+        .exam-option p { margin: 0; font-size: 13px; color: #64748b; }
+        .exam-option input { margin-right: 10px; transform: scale(1.2); }
+    </style>
+    <!-- CSRF Protection Shield -->
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <script>
+    window.CSRF_TOKEN = "{{ csrf_token() }}";
+    (function() {
+        if (window.fetch) {
+            const _origFetch = window.fetch;
+            window.fetch = function(url, options) {
+                options = options || {};
+                const method = (options.method || 'GET').toUpperCase();
+                if (!['GET', 'HEAD', 'OPTIONS', 'TRACE'].includes(method)) {
+                    options.headers = options.headers || {};
+                    const token = window.CSRF_TOKEN || (document.querySelector('meta[name="csrf-token"]') && document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
+                    if (token) {
+                        if (typeof Headers !== 'undefined' && options.headers instanceof Headers) {
+                            if (!options.headers.has('X-CSRFToken')) options.headers.set('X-CSRFToken', token);
+                        } else if (Array.isArray(options.headers)) {
+                            options.headers.push(['X-CSRFToken', token]);
+                        } else {
+                            if (!options.headers['X-CSRFToken']) options.headers['X-CSRFToken'] = token;
+                        }
+                    }
+                }
+                return _origFetch(url, options);
+            };
+        }
+        if (window.$ && $.ajaxSetup) {
+            $.ajaxSetup({
+                beforeSend: function(xhr, settings) {
+                    if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type)) {
+                        xhr.setRequestHeader("X-CSRFToken", window.CSRF_TOKEN);
+                    }
+                }
+            });
+        }
+        if (navigator.sendBeacon) {
+            const _origBeacon = navigator.sendBeacon.bind(navigator);
+            navigator.sendBeacon = function(url, data) {
+                if (data instanceof FormData) {
+                    if (!data.has('csrf_token')) data.append('csrf_token', window.CSRF_TOKEN);
+                } else if (typeof data === 'string') {
+                    try {
+                        const obj = JSON.parse(data);
+                        if (typeof obj === 'object' && obj !== null && !obj.csrf_token) {
+                            obj.csrf_token = window.CSRF_TOKEN;
+                            data = JSON.stringify(obj);
+                        }
+                    } catch(e) {}
+                }
+                return _origBeacon(url, data);
+            };
+        }
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('form[method="POST"], form[method="post"]').forEach(function(form) {
+                if (!form.querySelector('input[name="csrf_token"]')) {
+                    var input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = 'csrf_token';
+                    input.value = window.CSRF_TOKEN;
+                    form.appendChild(input);
+                }
+            });
+        });
+    })();
+    </script>
+</head>
+<body>
+    <div class="register-card">
+        <div class="card-header">
+            <i class="fas fa-door-open"></i>
+            <h2>Register for Entrance Exam</h2>
+            <p>Select your grade and create an account</p>
+        </div>
+        <div class="card-body">
+            {% if error %}
+            <div class="alert-custom"><i class="fas fa-exclamation-triangle"></i> {{ error }}</div>
+            {% endif %}
+            
+            <form method="POST" id="registerForm">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <!-- Exam Selection -->
+                <div class="mb-3">
+                    <label style="font-weight: 600; margin-bottom: 10px; display: block;">Select Entrance Exam:</label>
+                    {% for exam in active_exams %}
+                    <div class="exam-option" onclick="selectExam({{ exam.id }})">
+                        <input type="radio" name="exam_id" value="{{ exam.id }}" id="exam_{{ exam.id }}" required>
+                        <label for="exam_{{ exam.id }}" style="cursor: pointer; width: 100%;">
+                            <h4><i class="fas fa-graduation-cap"></i> {{ exam.name }}</h4>
+                            <p><i class="fas fa-flag-checkered"></i> Target Class: {{ exam.target_class }} | <i class="fas fa-hourglass-half"></i> {{ exam.duration }} mins | <i class="fas fa-percent"></i> Pass: {{ exam.passing_score }}%</p>
+                        </label>
+                    </div>
+                    {% endfor %}
+                </div>
+                
+                <div class="mb-3"><input type="text" name="full_name" class="form-control-custom" placeholder="Full Name" required></div>
+                <div class="mb-3"><input type="text" name="username" class="form-control-custom" placeholder="Username" required></div>
+                <div class="mb-3"><input type="email" name="email" class="form-control-custom" placeholder="Email Address" required></div>
+                <div class="mb-3"><input type="password" name="password" class="form-control-custom" placeholder="Password" required></div>
+                <div class="mb-3"><input type="text" name="phone" class="form-control-custom" placeholder="Phone Number (optional)"></div>
+                <div class="mb-3"><textarea name="address" class="form-control-custom" rows="2" placeholder="Address (optional)"></textarea></div>
+                
+                <button type="submit" class="btn-register"><i class="fas fa-user-plus"></i> Register</button>
+            </form>
+            
+            <div class="text-center mt-3">
+                <a href="/ce_login" style="color: #1a56db;">Already have an account? Login</a>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        function selectExam(examId) {
+            document.getElementById(`exam_${examId}`).checked = true;
+            document.querySelectorAll('.exam-option').forEach(opt => opt.classList.remove('selected'));
+            event.currentTarget.classList.add('selected');
+        }
+    </script>
+</body>
+</html>
+

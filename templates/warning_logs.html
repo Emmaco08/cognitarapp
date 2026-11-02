@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Warning Logs | COGNITARA EXAM SYSTEM</title>
+    <link href="{{ url_for('static', filename='vendor/bootstrap/css/bootstrap.min.css') }}" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='vendor/fontawesome/css/all.min.css') }}">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #e8edf5 100%);
+            font-family: 'Segoe UI', 'Poppins', Tahoma, Geneva, Verdana, sans-serif;
+            min-height: 100vh;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* Animated Educational Icons Background */
+        .edu-icon {
+            position: absolute;
+            color: rgba(239, 68, 68, 0.05);
+            pointer-events: none;
+            z-index: 0;
+            animation: floatIcon 20s infinite ease-in-out;
+        }
+
+        @keyframes floatIcon {
+            0% {
+                transform: translate(0, 0) rotate(0deg);
+                opacity: 0;
+            }
+            10% {
+                opacity: 0.08;
+            }
+            90% {
+                opacity: 0.08;
+            }
+            100% {
+                transform: translate(100px, -100px) rotate(360deg);
+                opacity: 0;
+            }
+        }
+
+        .edu-icon:nth-child(1) { top: 10%; left: 5%; animation-duration: 18s; font-size: 50px; }
+        .edu-icon:nth-child(2) { top: 70%; left: 15%; animation-duration: 22s; font-size: 40px; animation-delay: 2s; }
+        .edu-icon:nth-child(3) { top: 30%; left: 85%; animation-duration: 20s; font-size: 55px; animation-delay: 4s; }
+        .edu-icon:nth-child(4) { top: 80%; left: 80%; animation-duration: 25s; font-size: 35px; animation-delay: 1s; }
+        .edu-icon:nth-child(5) { top: 50%; left: 10%; animation-duration: 19s; font-size: 45px; animation-delay: 3s; }
+        .edu-icon:nth-child(6) { top: 20%; left: 70%; animation-duration: 23s; font-size: 60px; animation-delay: 5s; }
+        .edu-icon:nth-child(7) { top: 60%; left: 90%; animation-duration: 21s; font-size: 42px; animation-delay: 2.5s; }
+        .edu-icon:nth-child(8) { top: 85%; left: 25%; animation-duration: 24s; font-size: 38px; animation-delay: 6s; }
+        .edu-icon:nth-child(9) { top: 15%; left: 45%; animation-duration: 17s; font-size: 48px; animation-delay: 1.5s; }
+        .edu-icon:nth-child(10) { top: 45%; left: 75%; animation-duration: 26s; font-size: 52px; animation-delay: 3.5s; }
+
+        /* Main Container */
+        .logs-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 40px 30px;
+            position: relative;
+            z-index: 10;
+        }
+
+        /* Header Section */
+        .page-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .logo-icon {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+            animation: pulse 2s infinite;
+            box-shadow: 0 10px 25px rgba(239, 68, 68, 0.2);
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .logo-icon i {
+            font-size: 40px;
+            color: white;
+        }
+
+        .page-header h1 {
+            font-size: 36px;
+            font-weight: 800;
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 10px;
+        }
+
+        .page-header p {
+            font-size: 16px;
+            color: #64748b;
+        }
+
+        /* Stats Bar */
+        .stats-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .stats-cards {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 20px;
+            padding: 15px 25px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.03);
+        }
+
+        .stat-icon {
+            width: 45px;
+            height: 45px;
+            background: #fef2f2;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .stat-icon i {
+            font-size: 22px;
+            color: #ef4444;
+        }
+
+        .stat-info h3 {
+            font-size: 24px;
+            font-weight: 800;
+            color: #1e293b;
+            margin: 0;
+        }
+
+        .stat-info p {
+            margin: 0;
+            color: #64748b;
+            font-size: 12px;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 12px;
+        }
+
+        .btn-back, .btn-delete-all {
+            padding: 10px 20px;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 14px;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-back {
+            background: white;
+            border: 2px solid #e2e8f0;
+            color: #64748b;
+        }
+
+        .btn-back:hover {
+            border-color: #667eea;
+            color: #667eea;
+            transform: translateY(-2px);
+        }
+
+        .btn-delete-all {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            color: white;
+            border: none;
+        }
+
+        .btn-delete-all:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(239, 68, 68, 0.3);
+        }
+
+        /* Card Styles */
+        .card-custom {
+            background: white;
+            border-radius: 24px;
+            border: 1px solid #e2e8f0;
+            overflow: hidden;
+            margin-bottom: 30px;
+            transition: all 0.3s ease;
+        }
+
+        .card-custom:hover {
+            box-shadow: 0 10px 25px -10px rgba(0, 0, 0, 0.1);
+        }
+
+        .card-header-custom {
+            padding: 18px 25px;
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .card-header-custom.warning {
+            background: linear-gradient(135deg, #fef2f2 0%, #fff5f5 100%);
+        }
+
+        .card-header-custom.info {
+            background: linear-gradient(135deg, #eff6ff 0%, #f0f9ff 100%);
+        }
+
+        .card-header-custom.dark {
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+        }
+
+        .card-header-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .card-header-icon.warning {
+            background: #fee2e2;
+            color: #ef4444;
+        }
+
+        .card-header-icon.info {
+            background: #dbeafe;
+            color: #3b82f6;
+        }
+
+        .card-header-icon.dark {
+            background: #e2e8f0;
+            color: #475569;
+        }
+
+        .card-header-custom h5 {
+            margin: 0;
+            font-size: 16px;
+            font-weight: 600;
+            color: #1e293b;
+        }
+
+        .card-body-custom {
+            padding: 20px 25px;
+        }
+
+        /* Table Styles */
+        .custom-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .custom-table th {
+            padding: 12px 12px;
+            text-align: left;
+            font-size: 12px;
+            font-weight: 600;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 1px solid #e2e8f0;
+            background: #f8fafc;
+        }
+
+        .custom-table td {
+            padding: 12px 12px;
+            border-bottom: 1px solid #f0f2f5;
+            font-size: 13px;
+            color: #334155;
+            vertical-align: middle;
+        }
+
+        .custom-table tbody tr:hover {
+            background: #f8fafc;
+        }
+
+        /* Badge Styles */
+        .badge-warning-count {
+            background: #fef3c7;
+            color: #d97706;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .badge-exam-count {
+            background: #dbeafe;
+            color: #1d4ed8;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        /* Warning Level Colors */
+        .warning-high {
+            color: #dc2626;
+            font-weight: 700;
+        }
+
+        .warning-medium {
+            color: #f59e0b;
+            font-weight: 600;
+        }
+
+        .warning-low {
+            color: #10b981;
+        }
+
+        /* Scrollable Table */
+        .scrollable-table {
+            max-height: 400px;
+            overflow-y: auto;
+            border-radius: 12px;
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+        }
+
+        .empty-icon {
+            width: 80px;
+            height: 80px;
+            background: #f1f5f9;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        .empty-icon i {
+            font-size: 40px;
+            color: #94a3b8;
+        }
+
+        .empty-state h4 {
+            color: #1e293b;
+            margin-bottom: 8px;
+        }
+
+        .empty-state p {
+            color: #64748b;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .logs-container {
+                padding: 20px 15px;
+            }
+            
+            .page-header h1 {
+                font-size: 28px;
+            }
+            
+            .stats-bar {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .stats-cards {
+                justify-content: center;
+            }
+            
+            .action-buttons {
+                justify-content: center;
+            }
+            
+            .custom-table th, .custom-table td {
+                padding: 8px;
+                font-size: 11px;
+            }
+            
+            .card-header-custom {
+                padding: 15px 20px;
+            }
+            
+            .card-body-custom {
+                padding: 15px 20px;
+                overflow-x: auto;
+            }
+        }
+    </style>
+    <!-- CSRF Protection Shield -->
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <script>
+    window.CSRF_TOKEN = "{{ csrf_token() }}";
+    (function() {
+        if (window.fetch) {
+            const _origFetch = window.fetch;
+            window.fetch = function(url, options) {
+                options = options || {};
+                const method = (options.method || 'GET').toUpperCase();
+                if (!['GET', 'HEAD', 'OPTIONS', 'TRACE'].includes(method)) {
+                    options.headers = options.headers || {};
+                    const token = window.CSRF_TOKEN || (document.querySelector('meta[name="csrf-token"]') && document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
+                    if (token) {
+                        if (typeof Headers !== 'undefined' && options.headers instanceof Headers) {
+                            if (!options.headers.has('X-CSRFToken')) options.headers.set('X-CSRFToken', token);
+                        } else if (Array.isArray(options.headers)) {
+                            options.headers.push(['X-CSRFToken', token]);
+                        } else {
+                            if (!options.headers['X-CSRFToken']) options.headers['X-CSRFToken'] = token;
+                        }
+                    }
+                }
+                return _origFetch(url, options);
+            };
+        }
+        if (window.$ && $.ajaxSetup) {
+            $.ajaxSetup({
+                beforeSend: function(xhr, settings) {
+                    if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type)) {
+                        xhr.setRequestHeader("X-CSRFToken", window.CSRF_TOKEN);
+                    }
+                }
+            });
+        }
+        if (navigator.sendBeacon) {
+            const _origBeacon = navigator.sendBeacon.bind(navigator);
+            navigator.sendBeacon = function(url, data) {
+                if (data instanceof FormData) {
+                    if (!data.has('csrf_token')) data.append('csrf_token', window.CSRF_TOKEN);
+                } else if (typeof data === 'string') {
+                    try {
+                        const obj = JSON.parse(data);
+                        if (typeof obj === 'object' && obj !== null && !obj.csrf_token) {
+                            obj.csrf_token = window.CSRF_TOKEN;
+                            data = JSON.stringify(obj);
+                        }
+                    } catch(e) {}
+                }
+                return _origBeacon(url, data);
+            };
+        }
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('form[method="POST"], form[method="post"]').forEach(function(form) {
+                if (!form.querySelector('input[name="csrf_token"]')) {
+                    var input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = 'csrf_token';
+                    input.value = window.CSRF_TOKEN;
+                    form.appendChild(input);
+                }
+            });
+        });
+    })();
+    </script>
+</head>
+<body>
+
+    <!-- Animated Educational Icons Background -->
+    <div class="edu-icon"><i class="fas fa-exclamation-triangle"></i></div>
+    <div class="edu-icon"><i class="fas fa-shield-alt"></i></div>
+    <div class="edu-icon"><i class="fas fa-flag"></i></div>
+    <div class="edu-icon"><i class="fas fa-ban"></i></div>
+    <div class="edu-icon"><i class="fas fa-gavel"></i></div>
+    <div class="edu-icon"><i class="fas fa-eye"></i></div>
+    <div class="edu-icon"><i class="fas fa-user-secret"></i></div>
+    <div class="edu-icon"><i class="fas fa-clipboard-list"></i></div>
+    <div class="edu-icon"><i class="fas fa-chart-line"></i></div>
+    <div class="edu-icon"><i class="fas fa-school"></i></div>
+
+    <div class="logs-container">
+        <!-- Header -->
+        <div class="page-header">
+            <div class="logo-icon">
+                <i class="fas fa-exclamation-triangle"></i>
+            </div>
+            <h1>Student Warning Logs</h1>
+            <p>Monitor and manage student exam violations</p>
+        </div>
+
+        <!-- Stats Bar -->
+        <div class="stats-bar">
+            <div class="stats-cards">
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3>{{ summary|length }}</h3>
+                        <p>Students with Warnings</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3>{{ logs|length }}</h3>
+                        <p>Total Warning Events</p>
+                    </div>
+                </div>
+            </div>
+            <div class="action-buttons">
+                <a href="/admin" class="btn-back">
+                    <i class="fas fa-arrow-left"></i> Back
+                </a>
+                <a href="{{ url_for('delete_all_warning_logs') }}" 
+                   class="btn-delete-all" 
+                   onclick="return confirm(' Delete ALL warning logs? This action cannot be undone!')">
+                    <i class="fas fa-trash-alt"></i> Delete All Logs
+                </a>
+            </div>
+        </div>
+
+        <!-- Summary by Student -->
+        <div class="card-custom">
+            <div class="card-header-custom warning">
+                <div class="card-header-icon warning">
+                    <i class="fas fa-chart-pie"></i>
+                </div>
+                <h5>Warning Summary by Student</h5>
+            </div>
+            <div class="card-body-custom">
+                <table class="custom-table">
+                    <thead>
+                        <tr>
+                            <th>Student Name</th>
+                            <th>Total Warnings</th>
+                            <th>Exams with Warnings</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for s in summary %}
+                        <tr>
+                            <td><strong><i class="fas fa-user-graduate"></i> {{ s.student_name }}</strong></td>
+                            <td>
+                                {% set warning_count = s.total_warning_events %}
+                                <span class="badge-warning-count">
+                                    <i class="fas fa-exclamation-triangle"></i> {{ warning_count }} warning(s)
+                                </span>
+                            </td>
+                            <td>
+                                <span class="badge-exam-count">
+                                    <i class="fas fa-file-alt"></i> {{ s.exams_with_warnings }} exam(s)
+                                </span>
+                            </td>
+                            <td>
+                                <a href="{{ url_for('delete_student_warning_logs', student_name=s.student_name) }}" 
+                                   class="btn-delete-all" style="padding: 6px 15px; font-size: 12px;"
+                                   onclick="return confirm('Delete all warnings for {{ s.student_name }}?')">
+                                    <i class="fas fa-trash-alt"></i> Delete
+                                </a>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="4" class="text-center">No warnings recorded yet.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Breakdown by Student and Exam -->
+        <div class="card-custom">
+            <div class="card-header-custom info">
+                <div class="card-header-icon info">
+                    <i class="fas fa-chart-bar"></i>
+                </div>
+                <h5>Warning Breakdown by Student and Exam</h5>
+            </div>
+            <div class="card-body-custom">
+                <table class="custom-table">
+                    <thead>
+                        <tr>
+                            <th>Student</th>
+                            <th>Exam</th>
+                            <th>Warnings</th>
+                            <th>Warnings List</th>
+                            <th>First Warning</th>
+                            <th>Last Warning</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for exam in by_exam %}
+                        <tr>
+                            <td><i class="fas fa-user-graduate"></i> {{ exam.student_name }}</td>
+                            <td><i class="fas fa-file-alt"></i> {{ exam.exam_name }}</td>
+                            <td>
+                                <span class="badge-warning-count">
+                                    <i class="fas fa-exclamation-triangle"></i> {{ exam.warning_events_in_exam }}
+                                </span>
+                            </td>
+                            <td>
+                                <small class="text-muted">{{ exam.warnings_list[:80] }}{% if exam.warnings_list|length > 80 %}...{% endif %}</small>
+                            </td>
+                            <td><small>{{ exam.first_warning | wat_time if exam.first_warning else '-' }}</small></td>
+                            <td><small>{{ exam.last_warning | wat_time if exam.last_warning else '-' }}</small></td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="6" class="text-center">No warnings recorded yet.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- All Warning Events -->
+        <div class="card-custom">
+            <div class="card-header-custom dark">
+                <div class="card-header-icon dark">
+                    <i class="fas fa-list"></i>
+                </div>
+                <h5>All Warning Events</h5>
+            </div>
+            <div class="card-body-custom">
+                <div class="scrollable-table">
+                    <table class="custom-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Student</th>
+                                <th>Exam</th>
+                                <th>Warning Message</th>
+                                <th>Timestamp</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for log in logs %}
+                            <tr>
+                                <td>{{ log.id }}</td>
+                                <td><strong>{{ log.student_name }}</strong></td>
+                                <td>{{ log.exam_name }}</td>
+                                <td>
+                                    <span class="badge-warning-count">
+                                        <i class="fas fa-flag"></i> {{ log.warning_message }}
+                                    </span>
+                                </td>
+                                <td><small>{{ log.timestamp | wat_time }}</small></td>
+                                <td>
+                                    <a href="{{ url_for('delete_warning_log', log_id=log.id) }}" 
+                                       class="btn-delete-all" style="padding: 5px 12px; font-size: 11px;"
+                                       onclick="return confirm('Delete this warning?')">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="6" class="text-center">
+                                    <div class="empty-state">
+                                        <div class="empty-icon">
+                                            <i class="fas fa-check-circle"></i>
+                                        </div>
+                                        <h4>No Warnings Recorded</h4>
+                                        <p>All students are following exam rules properly.</p>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

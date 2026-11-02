@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ student.full_name or student.username }} - {{ exam.name }} Analysis</title>
+    <link href="{{ url_for('static', filename='vendor/bootstrap/css/bootstrap.min.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='vendor/fontawesome/css/all.min.css') }}" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='vendor/katex/katex.min.css') }}">
+    <script src="{{ url_for('static', filename='vendor/katex/katex.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='vendor/katex/contrib/mhchem.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='vendor/katex/contrib/auto-render.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='vendor/chartjs/chart.umd.min.js') }}"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        :root {
+            --primary: #1a56db; --primary-dark: #0e3b9e; --success: #10b981;
+            --warning: #f59e0b; --danger: #ef4444; --orange: #f97316;
+            --bg: #f1f5f9; --card: #ffffff; --border: #e2e8f0;
+            --text: #1e293b; --text-light: #64748b;
+            --grade-a: #10b981; --grade-b: #3b82f6; --grade-c: #f59e0b;
+            --grade-d: #f97316; --grade-f: #ef4444;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: linear-gradient(135deg, #f5f7fa 0%, #e8edf5 100%); font-family: 'Segoe UI', 'Poppins', 'Inter', system-ui, sans-serif; min-height: 100vh; }
+        
+        .container-custom { max-width: 1100px; margin: 0 auto; padding: 30px 20px; }
+        
+        /* Top Navigation */
+        .nav-row {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 24px; flex-wrap: wrap; gap: 12px;
+        }
+        .btn-back {
+            background: white; border: 2px solid var(--border); padding: 10px 22px;
+            border-radius: 12px; color: var(--text-light); text-decoration: none;
+            display: inline-flex; align-items: center; gap: 8px; font-weight: 600;
+            font-size: 13px; transition: all 0.3s;
+        }
+        .btn-back:hover { border-color: var(--primary); color: var(--primary); background: #eff6ff; transform: translateY(-2px); }
+        
+        .btn-export {
+            background: var(--success); color: white; border: none; padding: 10px 22px;
+            border-radius: 12px; cursor: pointer; font-weight: 600; font-size: 13px;
+            display: inline-flex; align-items: center; gap: 8px; transition: all 0.3s;
+        }
+        .btn-export:hover { transform: translateY(-2px); box-shadow: 0 6px 18px rgba(16,185,129,0.3); }
+        
+        /* Header Card */
+        .header-card {
+            background: linear-gradient(135deg, #1a56db 0%, #0e3b9e 100%);
+            color: white; border-radius: 24px; padding: 28px 30px; margin-bottom: 24px;
+            display: flex; justify-content: space-between; align-items: center;
+            flex-wrap: wrap; gap: 24px; box-shadow: 0 10px 30px rgba(26,86,219,0.2);
+        }
+        .header-card .student-info h2 { font-size: 24px; font-weight: 700; margin-bottom: 4px; }
+        .header-card .student-info p { font-size: 13px; opacity: 0.9; margin: 0; display: flex; align-items: center; gap: 6px; }
+        .header-card .student-info p i { width: 16px; }
+        
+        .score-display { text-align: center; }
+        .score-display .big-score { font-size: 48px; font-weight: 800; line-height: 1; }
+        .score-display .score-detail { font-size: 14px; opacity: 0.9; margin-top: 4px; }
+        .score-display .rank-badge-header {
+            display: inline-block; background: rgba(255,255,255,0.2); padding: 4px 14px;
+            border-radius: 20px; font-size: 12px; font-weight: 600; margin-top: 6px;
+        }
+        
+        /* Stats Row */
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 14px; margin-bottom: 24px; }
+        .stat-card {
+            background: var(--card); border-radius: 18px; padding: 18px; text-align: center;
+            border: 1px solid var(--border); transition: all 0.3s; position: relative; overflow: hidden;
+        }
+        .stat-card:hover { transform: translateY(-3px); box-shadow: 0 10px 25px -10px rgba(0,0,0,0.1); }
+        .stat-card i { font-size: 28px; margin-bottom: 8px; display: block; }
+        .stat-card h3 { font-size: 24px; font-weight: 800; margin: 5px 0; color: var(--text); }
+        .stat-card p { color: var(--text-light); font-size: 12px; margin: 0; }
+        
+        .stat-card.accent-green i { color: var(--success); }
+        .stat-card.accent-red i { color: var(--danger); }
+        .stat-card.accent-blue i { color: var(--primary); }
+        .stat-card.accent-amber i { color: var(--warning); }
+        .stat-card.accent-purple i { color: #8b5cf6; }
+        .stat-card.accent-orange i { color: var(--orange); }
+        
+        /* Speed Comparison Highlight */
+        .highlight-box {
+            border-radius: 16px; padding: 16px 20px; margin-bottom: 20px;
+            border-left: 4px solid; font-size: 14px; display: flex; align-items: center; gap: 12px;
+        }
+        .highlight-box.success { background: linear-gradient(135deg, #d1fae5 0%, #ecfdf5 100%); border-left-color: var(--success); color: #065f46; }
+        .highlight-box.warning { background: linear-gradient(135deg, #fef3c7 0%, #fffbeb 100%); border-left-color: var(--warning); color: #92400e; }
+        .highlight-box.info { background: linear-gradient(135deg, #dbeafe 0%, #eff6ff 100%); border-left-color: var(--primary); color: #1e40af; }
+        .highlight-box.danger { background: linear-gradient(135deg, #fee2e2 0%, #fef2f2 100%); border-left-color: var(--danger); color: #991b1b; }
+        .highlight-box i { font-size: 28px; flex-shrink: 0; }
+        
+        /* Comparison Card */
+        .comparison-card {
+            background: var(--card); border-radius: 18px; padding: 20px; margin-bottom: 24px;
+            border: 1px solid var(--border);
+        }
+        .comparison-card .compare-row {
+            display: flex; justify-content: space-between; flex-wrap: wrap; gap: 15px; margin-bottom: 12px;
+        }
+        .comparison-card .compare-item { text-align: center; }
+        .comparison-card .compare-item strong { display: block; font-size: 13px; color: var(--text); }
+        .comparison-card .compare-item span { font-size: 11px; color: var(--text-light); }
+        .progress-custom {
+            height: 10px; background: #e2e8f0; border-radius: 10px; overflow: hidden;
+        }
+        .progress-custom .progress-fill {
+            height: 100%; border-radius: 10px; transition: width 0.5s ease;
+        }
+        
+        /* Section Performance */
+        .section-card {
+            background: var(--card); border-radius: 18px; padding: 18px 20px; margin-bottom: 20px;
+            border: 1px solid var(--border);
+        }
+        .section-card h4 { font-size: 15px; font-weight: 700; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+        .section-row {
+            display: flex; align-items: center; gap: 12px; margin-bottom: 10px;
+        }
+        .section-row .section-name { flex: 1; font-size: 13px; font-weight: 600; min-width: 100px; }
+        .section-row .mini-bar {
+            flex: 2; height: 8px; background: #e2e8f0; border-radius: 10px; overflow: hidden;
+        }
+        .section-row .mini-bar-fill { height: 100%; border-radius: 10px; transition: width 0.5s ease; }
+        .section-row .section-pct { font-size: 12px; font-weight: 700; width: 40px; text-align: right; }
+        
+        /* Filter Buttons */
+        .filter-buttons { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+        .filter-btn {
+            padding: 9px 18px; border-radius: 10px; border: 1.5px solid var(--border);
+            background: white; cursor: pointer; transition: all 0.3s; font-weight: 600; font-size: 13px;
+            display: inline-flex; align-items: center; gap: 6px;
+        }
+        .filter-btn:hover { border-color: var(--primary); color: var(--primary); }
+        .filter-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
+        
+        /* Question Card */
+        .question-card {
+            background: var(--card); border-radius: 16px; padding: 20px; margin-bottom: 14px;
+            border: 1px solid var(--border); transition: all 0.3s; position: relative;
+        }
+        .question-card:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(0,0,0,0.05); }
+        .question-card.correct { border-left: 4px solid var(--success); background: linear-gradient(135deg, #ffffff 0%, #f0fdf4 100%); }
+        .question-card.incorrect { border-left: 4px solid var(--danger); background: linear-gradient(135deg, #ffffff 0%, #fff5f5 100%); }
+        
+        .q-header {
+            display: flex; justify-content: space-between; align-items: flex-start;
+            flex-wrap: wrap; gap: 10px; margin-bottom: 12px;
+        }
+        .q-header .q-number { font-weight: 700; color: var(--text); font-size: 14px; }
+        .q-header .q-section { font-size: 11px; color: var(--text-light); }
+        
+        .badge-correct {
+            background: #d1fae5; color: #065f46; padding: 4px 12px; border-radius: 20px;
+            font-size: 12px; font-weight: 600; display: inline-flex; align-items: center; gap: 5px;
+        }
+        .badge-incorrect {
+            background: #fee2e2; color: #991b1b; padding: 4px 12px; border-radius: 20px;
+            font-size: 12px; font-weight: 600; display: inline-flex; align-items: center; gap: 5px;
+        }
+        
+        .q-question { margin-bottom: 12px; font-size: 14px; line-height: 1.5; color: var(--text); }
+        .q-image { max-width: 180px; border-radius: 10px; margin-bottom: 10px; }
+        
+        .q-answers {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 10px;
+        }
+        @media (max-width: 500px) { .q-answers { grid-template-columns: 1fr; } }
+        
+        .q-answer-box {
+            padding: 10px 14px; border-radius: 10px; font-size: 13px;
+        }
+        .q-answer-box.your-answer { background: #f8fafc; border: 1.5px solid #e2e8f0; }
+        .q-answer-box.your-answer.wrong { background: #fef2f2; border-color: #fecaca; }
+        .q-answer-box.your-answer.right { background: #f0fdf4; border-color: #a7f3d0; }
+        .q-answer-box.correct-answer { background: #f0fdf4; border-color: #a7f3d0; }
+        .q-answer-box strong { display: block; font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+        
+        .time-badge {
+            background: #f1f5f9; padding: 4px 12px; border-radius: 20px; font-size: 12px;
+            display: inline-flex; align-items: center; gap: 6px; margin-top: 8px;
+        }
+        
+        /* Empty State */
+        .empty-state {
+            text-align: center; padding: 60px 20px; background: var(--card);
+            border-radius: 20px; border: 1px solid var(--border);
+        }
+        .empty-state i { font-size: 55px; margin-bottom: 15px; display: block; }
+        .empty-state h3 { color: var(--text); margin-bottom: 8px; }
+        .empty-state p { color: var(--text-light); }
+        
+        /* Custom Modal */
+        .custom-modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(15, 23, 42, 0.65); backdrop-filter: blur(6px);
+            z-index: 10000; display: flex; align-items: center; justify-content: center;
+            opacity: 0; visibility: hidden; transition: all 0.25s ease;
+        }
+        .custom-modal-overlay.active { opacity: 1; visibility: visible; }
+        .custom-modal {
+            background: white; border-radius: 22px; width: 90%; max-width: 480px;
+            overflow: hidden; transform: translateY(20px) scale(0.96);
+            transition: all 0.3s cubic-bezier(0.34, 1.2, 0.64, 1);
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.3);
+        }
+        .custom-modal-overlay.active .custom-modal { transform: translateY(0) scale(1); }
+        .modal-header-custom {
+            padding: 16px 20px; border-bottom: 1px solid #e2e8f0;
+            display: flex; align-items: center; justify-content: space-between; background: #fafbfc;
+        }
+        .modal-header-custom h4 { margin: 0; font-size: 15px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+        .modal-close {
+            width: 30px; height: 30px; border-radius: 50%; border: none; background: #f1f5f9;
+            cursor: pointer; font-size: 14px; transition: all 0.2s;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .modal-close:hover { background: #fee2e2; color: var(--danger); transform: rotate(90deg); }
+        .modal-body-custom { padding: 18px 20px; }
+        .modal-footer-custom {
+            padding: 12px 20px; border-top: 1px solid #e2e8f0;
+            display: flex; gap: 10px; justify-content: flex-end; background: #fafbfc;
+        }
+        .modal-btn {
+            padding: 8px 20px; border-radius: 10px; font-weight: 600; font-size: 13px;
+            cursor: pointer; transition: all 0.2s; border: none;
+        }
+        .modal-btn-primary { background: var(--primary); color: white; }
+        .modal-btn-primary:hover { background: var(--primary-dark); }
+        .modal-btn-danger { background: var(--danger); color: white; }
+        .modal-btn-danger:hover { background: #dc2626; }
+        .modal-btn-cancel { background: white; border: 1.5px solid #e2e8f0; color: var(--text-light); }
+        .modal-btn-cancel:hover { border-color: var(--primary); color: var(--primary); }
+    </style>
+    <!-- CSRF Protection Shield -->
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <script>
+    window.CSRF_TOKEN = "{{ csrf_token() }}";
+    (function() {
+        if (window.fetch) {
+            const _origFetch = window.fetch;
+            window.fetch = function(url, options) {
+                options = options || {};
+                const method = (options.method || 'GET').toUpperCase();
+                if (!['GET', 'HEAD', 'OPTIONS', 'TRACE'].includes(method)) {
+                    options.headers = options.headers || {};
+                    const token = window.CSRF_TOKEN || (document.querySelector('meta[name="csrf-token"]') && document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
+                    if (token) {
+                        if (typeof Headers !== 'undefined' && options.headers instanceof Headers) {
+                            if (!options.headers.has('X-CSRFToken')) options.headers.set('X-CSRFToken', token);
+                        } else if (Array.isArray(options.headers)) {
+                            options.headers.push(['X-CSRFToken', token]);
+                        } else {
+                            if (!options.headers['X-CSRFToken']) options.headers['X-CSRFToken'] = token;
+                        }
+                    }
+                }
+                return _origFetch(url, options);
+            };
+        }
+        if (window.$ && $.ajaxSetup) {
+            $.ajaxSetup({
+                beforeSend: function(xhr, settings) {
+                    if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type)) {
+                        xhr.setRequestHeader("X-CSRFToken", window.CSRF_TOKEN);
+                    }
+                }
+            });
+        }
+        if (navigator.sendBeacon) {
+            const _origBeacon = navigator.sendBeacon.bind(navigator);
+            navigator.sendBeacon = function(url, data) {
+                if (data instanceof FormData) {
+                    if (!data.has('csrf_token')) data.append('csrf_token', window.CSRF_TOKEN);
+                } else if (typeof data === 'string') {
+                    try {
+                        const obj = JSON.parse(data);
+                        if (typeof obj === 'object' && obj !== null && !obj.csrf_token) {
+                            obj.csrf_token = window.CSRF_TOKEN;
+                            data = JSON.stringify(obj);
+                        }
+                    } catch(e) {}
+                }
+                return _origBeacon(url, data);
+            };
+        }
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('form[method="POST"], form[method="post"]').forEach(function(form) {
+                if (!form.querySelector('input[name="csrf_token"]')) {
+                    var input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = 'csrf_token';
+                    input.value = window.CSRF_TOKEN;
+                    form.appendChild(input);
+                }
+            });
+        });
+    })();
+    </script>
+</head>
+<body>
+    <div class="container-custom">
+        <!-- Navigation -->
+        <div class="nav-row">
+            <a href="/teacher/student/{{ student.id }}" class="btn-back">
+                <i class="fas fa-arrow-left"></i> Back to Student Profile
+            </a>
+            <a href="/teacher/exam/{{ exam.id }}/analytics" class="btn-back">
+                <i class="fas fa-chart-bar"></i> Exam Analytics
+            </a>
+        </div>
+        
+        <!-- Header Card -->
+        <div class="header-card">
+            <div class="student-info">
+                <h2><i class="fas fa-user-graduate"></i> {{ student.full_name or student.username }}</h2>
+                <p><i class="fas fa-graduation-cap"></i> {{ student.class }} | <i class="fas fa-flask"></i> {{ student.specialisation or 'General' }}</p>
+                <p><i class="fas fa-file-alt"></i> Exam: {{ exam.name }}</p>
+            </div>
+            <div class="score-display">
+                <div class="big-score">{{ "%.1f"|format(percentage) }}%</div>
+                <div class="score-detail">Score: {{ score.score }}/{{ score.total }}</div>
+                <div class="score-detail">Grade: <strong>{{ grade }}</strong></div>
+                {% if rank %}
+                <div class="rank-badge-header"><i class="fas fa-trophy"></i> Rank: #{{ rank }} of {{ total_students_in_exam }}</div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Stats Cards -->
+        <div class="stats-grid">
+            <div class="stat-card accent-green">
+                <i class="fas fa-check-circle"></i>
+                <h3>{{ correct_questions|length }}</h3>
+                <p>Correct Answers</p>
+            </div>
+            <div class="stat-card accent-red">
+                <i class="fas fa-times-circle"></i>
+                <h3>{{ missed_questions|length }}</h3>
+                <p>Incorrect Answers</p>
+            </div>
+            <div class="stat-card accent-blue">
+                <i class="fas fa-clock"></i>
+                <h3>{{ ((score.time_spent_seconds or 0) / 60)|round(1) }} min</h3>
+                <p>Total Time</p>
+            </div>
+            <div class="stat-card accent-amber">
+                <i class="fas fa-tachometer-alt"></i>
+                <h3>#{{ speed_rank }}</h3>
+                <p>Speed Rank</p>
+            </div>
+            <div class="stat-card accent-purple">
+                <i class="fas fa-hourglass-half"></i>
+                <h3>{{ ((avg_time or 0) / 60)|round(1) }} min</h3>
+                <p>Class Avg Time</p>
+            </div>
+            <div class="stat-card accent-orange">
+                <i class="fas fa-crown"></i>
+                <h3>#{{ rank }}</h3>
+                <p>Overall Rank</p>
+            </div>
+        </div>
+        
+        <!-- Speed Comparison Highlight -->
+        {% if score.time_spent_seconds and fastest_time and score.time_spent_seconds <= fastest_time %}
+        <div class="highlight-box success">
+            <i class="fas fa-bolt"></i>
+            <div><strong><i class="fas fa-bolt"></i> Fastest Finisher!</strong><br>This student completed the exam faster than anyone else in the class.</div>
+        </div>
+        {% elif score.time_spent_seconds and avg_time and score.time_spent_seconds > avg_time * 1.3 %}
+        <div class="highlight-box warning">
+            <i class="fas fa-hourglass-end"></i>
+            <div><strong><i class="fas fa-hourglass-start"></i> Slower than Average</strong><br>Took {{ ((score.time_spent_seconds - avg_time) / 60)|round(1) }} minutes longer than the class average. May need time management support.</div>
+        </div>
+        {% elif score.time_spent_seconds and avg_time %}
+        <div class="highlight-box info">
+            <i class="fas fa-stopwatch"></i>
+            <div><strong><i class="fas fa-stopwatch"></i> Average Pace</strong><br>Completed the exam within the normal time range for this class.</div>
+        </div>
+        {% endif %}
+        
+        <!-- Comparison Card -->
+        <div class="comparison-card">
+            <div class="compare-row">
+                <div class="compare-item">
+                    <strong>{{ "%.1f"|format(percentage) }}%</strong>
+                    <span>Student Score</span>
+                </div>
+                <div class="compare-item">
+                    <strong>{{ "%.1f"|format(avg_time or 0) if avg_time else 'N/A' }}</strong>
+                    <span>Class Avg Time (sec)</span>
+                </div>
+                <div class="compare-item">
+                    <strong>{{ score.time_spent_seconds or 'N/A' }}</strong>
+                    <span>Student Time (sec)</span>
+                </div>
+                <div class="compare-item">
+                    <strong>{% if rank %}#{{ rank }} of {{ total_students_in_exam }}{% else %}N/A{% endif %}</strong>
+                    <span>Position in Class</span>
+                </div>
+            </div>
+            <div class="progress-custom">
+                <div class="progress-fill" style="width: {{ percentage }}%; background: {% if percentage >= 70 %}#10b981{% elif percentage >= 50 %}#f59e0b{% else %}#ef4444{% endif %};"></div>
+            </div>
+        </div>
+        
+        <!-- Section Performance -->
+        {% if section_performance %}
+        <div class="section-card">
+            <h4><i class="fas fa-layer-group" style="color: var(--primary);"></i> Section Performance</h4>
+            {% for section_name, data in section_performance.items() %}
+            {% set acc = (data.correct / data.total * 100)|round|int if data.total > 0 else 0 %}
+            <div class="section-row">
+                <span class="section-name">{{ section_name }}</span>
+                <div class="mini-bar">
+                    <div class="mini-bar-fill" style="width: {{ acc }}%; background: {% if acc < 40 %}#ef4444{% elif acc < 70 %}#f59e0b{% else %}#10b981{% endif %};"></div>
+                </div>
+                <span class="section-pct" style="color: {% if acc < 40 %}#ef4444{% elif acc < 70 %}#f59e0b{% else %}#10b981{% endif %};">{{ acc }}%</span>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        
+        <!-- Filter Buttons -->
+        {% if missed_questions or correct_questions %}
+        <div class="filter-buttons">
+            <button class="filter-btn active" onclick="filterQuestions('all')">
+                <i class="fas fa-list"></i> All Questions ({{ missed_questions|length + correct_questions|length }})
+            </button>
+            <button class="filter-btn" onclick="filterQuestions('correct')">
+                <i class="fas fa-check-circle"></i> Correct Only ({{ correct_questions|length }})
+            </button>
+            <button class="filter-btn" onclick="filterQuestions('incorrect')">
+                <i class="fas fa-times-circle"></i> Incorrect Only ({{ missed_questions|length }})
+            </button>
+        </div>
+        {% endif %}
+        
+        <!-- Questions Container -->
+        <div id="questions-container">
+            {% for q in correct_questions %}
+            <div class="question-card correct" data-status="correct">
+                <div class="q-header">
+                    <div>
+                        <span class="q-number">Question {{ loop.index }}</span>
+                        <span class="q-section"> | {{ q.section_name or 'General' }}</span>
+                    </div>
+                    <span class="badge-correct"><i class="fas fa-check-circle"></i> Correct</span>
+                </div>
+                <div class="q-question">{{ (q.question or '')|safe }}</div>
+                {% if q.image %}
+                <img src="/static/images/{{ q.image }}" class="q-image" alt="Question Image">
+                {% endif %}
+                <div class="q-answers">
+                    <div class="q-answer-box your-answer right">
+                        <strong>Your Answer</strong>
+                        {{ q.chosen_letter or '—' }}. {{ (q.user_answer or 'Not answered')|safe }}
+                    </div>
+                    <div class="q-answer-box correct-answer">
+                        <strong>Correct Answer</strong>
+                        {{ q.correct_letter or '—' }}. {{ (q.answer or '')|safe }}
+                    </div>
+                </div>
+                <span class="time-badge"><i class="fas fa-clock"></i> Time spent: {{ q.time_spent or 0 }} seconds</span>
+            </div>
+            {% endfor %}
+            
+            {% for q in missed_questions %}
+            <div class="question-card incorrect" data-status="incorrect">
+                <div class="q-header">
+                    <div>
+                        <span class="q-number">Question {{ correct_questions|length + loop.index }}</span>
+                        <span class="q-section"> | {{ q.section_name or 'General' }}</span>
+                    </div>
+                    <span class="badge-incorrect"><i class="fas fa-times-circle"></i> Incorrect</span>
+                </div>
+                <div class="q-question">{{ (q.question or '')|safe }}</div>
+                {% if q.image %}
+                <img src="/static/images/{{ q.image }}" class="q-image" alt="Question Image">
+                {% endif %}
+                <div class="q-answers">
+                    <div class="q-answer-box your-answer wrong">
+                        <strong>Your Answer</strong>
+                        {{ q.chosen_letter or '—' }}. {{ (q.user_answer or 'Not answered')|safe }}
+                    </div>
+                    <div class="q-answer-box correct-answer">
+                        <strong>Correct Answer</strong>
+                        {{ q.correct_letter or '—' }}. {{ (q.answer or '')|safe }}
+                    </div>
+                </div>
+                <span class="time-badge"><i class="fas fa-clock"></i> Time spent: {{ q.time_spent or 0 }} seconds</span>
+            </div>
+            {% endfor %}
+        </div>
+        
+        <!-- Empty State -->
+        {% if not missed_questions and not correct_questions %}
+        <div class="empty-state">
+            <i class="fas fa-clipboard-list" style="color: #94a3b8;"></i>
+            <h3>No Detailed Question Data Available</h3>
+            <p>This exam was taken before the detailed analytics system was enabled. Only overall scores are available for historical exams.</p>
+        </div>
+        {% endif %}
+    </div>
+    
+    <!-- Custom Modal -->
+    <div class="custom-modal-overlay" id="customModal">
+        <div class="custom-modal">
+            <div class="modal-header-custom">
+                <h4 id="modalTitle"><i class="fas fa-info-circle"></i> Details</h4>
+                <button class="modal-close" onclick="closeModal()"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body-custom" id="modalBody"></div>
+            <div class="modal-footer-custom">
+                <button class="modal-btn modal-btn-cancel" onclick="closeModal()">Close</button>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        function filterQuestions(type) {
+            // Update active button
+            document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            // Filter question cards
+            document.querySelectorAll('.question-card').forEach(card => {
+                const status = card.getAttribute('data-status');
+                if (type === 'all') {
+                    card.style.display = 'block';
+                    setTimeout(() => { card.style.opacity = '1'; }, 50);
+                } else if (type === 'correct' && status === 'correct') {
+                    card.style.display = 'block';
+                    setTimeout(() => { card.style.opacity = '1'; }, 50);
+                } else if (type === 'incorrect' && status === 'incorrect') {
+                    card.style.display = 'block';
+                    setTimeout(() => { card.style.opacity = '1'; }, 50);
+                } else {
+                    card.style.opacity = '0';
+                    setTimeout(() => { card.style.display = 'none'; }, 200);
+                }
+            });
+        }
+        
+        function openModal(title, content) {
+            document.getElementById('modalTitle').innerHTML = title;
+            document.getElementById('modalBody').innerHTML = content;
+            document.getElementById('customModal').classList.add('active');
+        }
+        
+        function closeModal() {
+            document.getElementById('customModal').classList.remove('active');
+        }
+        
+        document.getElementById('customModal').addEventListener('click', function(e) {
+            if (e.target === this) closeModal();
+        });
+        
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') closeModal();
+        });
+        
+        // Add fade animation to question cards
+        document.querySelectorAll('.question-card').forEach(card => {
+            card.style.transition = 'opacity 0.2s ease, transform 0.3s ease';
+            card.style.opacity = '1';
+        });
+
+        // Initialize KaTeX math rendering
+        document.addEventListener('DOMContentLoaded', function() {
+            if (typeof renderMathInElement === 'function') {
+                renderMathInElement(document.body, {
+                    delimiters: [
+                        {left: '$$', right: '$$', display: true},
+                        {left: '$', right: '$', display: false},
+                        {left: '\\(', right: '\\)', display: false},
+                        {left: '\\[', right: '\\]', display: true}
+                    ],
+                    throwOnError: false
+                });
+            }
+        });
+    </script>
+</body>
+</html>

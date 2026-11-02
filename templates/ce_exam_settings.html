@@ -1,0 +1,1169 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{% if exam %}Exam Settings | {{ exam.name }}{% else %}Create Entrance Exam{% endif %}</title>
+    <link href="{{ url_for('static', filename='vendor/bootstrap/css/bootstrap.min.css') }}" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='vendor/fontawesome/css/all.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='vendor/katex/katex.min.css') }}">
+    <script src="{{ url_for('static', filename='vendor/katex/katex.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='vendor/katex/contrib/mhchem.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='vendor/katex/contrib/auto-render.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='vendor/sweetalert2/sweetalert2.all.min.js') }}"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: linear-gradient(135deg, #f5f7fa 0%, #e8edf5 100%); font-family: 'Segoe UI', 'Poppins', sans-serif; }
+        
+        .settings-container { max-width: 1400px; margin: 0 auto; padding: 40px 30px; position: relative; z-index: 10; }
+        
+        .edu-icon { position: absolute; color: rgba(139, 92, 246, 0.05); pointer-events: none; z-index: 0; animation: floatIcon 20s infinite ease-in-out; }
+        @keyframes floatIcon { 0% { transform: translate(0, 0) rotate(0deg); opacity: 0; } 10% { opacity: 0.08; } 90% { opacity: 0.08; } 100% { transform: translate(100px, -100px) rotate(360deg); opacity: 0; } }
+        
+        .page-header { text-align: center; margin-bottom: 30px; }
+        .logo-icon { width: 80px; height: 80px; background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%); border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 20px; animation: pulse 2s infinite; box-shadow: 0 10px 25px rgba(139, 92, 246, 0.2); }
+        @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+        .logo-icon i { font-size: 40px; color: white; }
+        .page-header h1 { font-size: 32px; font-weight: 800; background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 8px; }
+        .page-header p { font-size: 15px; color: #64748b; }
+        
+        .card-custom { background: white; border-radius: 24px; border: 1px solid #e2e8f0; margin-bottom: 30px; overflow: hidden; box-shadow: 0 5px 15px rgba(0,0,0,0.03); transition: all 0.3s; }
+        .card-custom:hover { box-shadow: 0 10px 25px -10px rgba(0,0,0,0.1); }
+        .card-header-custom { padding: 20px 25px; border-bottom: 1px solid #e2e8f0; background: linear-gradient(135deg, #faf5ff 0%, #ffffff 100%); display: flex; align-items: center; gap: 12px; }
+        .card-header-custom i { font-size: 24px; color: #8b5cf6; }
+        .card-header-custom h3 { margin: 0; font-size: 18px; font-weight: 700; color: #1e293b; }
+        .card-body-custom { padding: 25px; }
+        
+        .form-group { margin-bottom: 20px; }
+        .form-label { font-weight: 600; color: #1e293b; margin-bottom: 8px; display: block; font-size: 13px; }
+        .form-label i { margin-right: 6px; color: #8b5cf6; }
+        .form-control-custom { width: 100%; padding: 12px 15px; border: 2px solid #e2e8f0; border-radius: 12px; font-size: 14px; transition: all 0.3s; background: #f8fafc; }
+        .form-control-custom:focus { outline: none; border-color: #8b5cf6; background: white; box-shadow: 0 0 0 3px rgba(139,92,246,0.1); }
+        
+        .btn-save { background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; border: none; padding: 12px 28px; border-radius: 14px; font-weight: 600; cursor: pointer; transition: all 0.3s; display: inline-flex; align-items: center; gap: 8px; font-size: 14px; }
+        .btn-save:hover { transform: translateY(-2px); box-shadow: 0 8px 20px -5px rgba(16,185,129,0.4); }
+        .btn-add { background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%); color: white; border: none; padding: 10px 22px; border-radius: 12px; font-weight: 600; font-size: 14px; cursor: pointer; transition: all 0.3s; display: inline-flex; align-items: center; gap: 8px; }
+        .btn-add:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(139,92,246,0.3); }
+        .btn-add:disabled, .btn-save:disabled, .update-section-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+        
+        /* Section Cards */
+        .sections-list { display: flex; flex-direction: column; gap: 16px; }
+        .section-card { background: #f8fafc; border-radius: 18px; border: 1px solid #e2e8f0; overflow: hidden; transition: all 0.3s; }
+        .section-card:hover { border-color: #8b5cf6; box-shadow: 0 5px 15px rgba(0,0,0,0.05); }
+        .section-card.deactivated { opacity: 0.65; background: #fef2f2; border-color: #fecaca; }
+        .section-card.deactivated .section-header { background: #fff5f5; }
+        .section-header { padding: 16px 20px; background: white; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; cursor: pointer; transition: all 0.2s; }
+        .section-header:hover { background: #faf5ff; }
+        .section-title { display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0; }
+        .section-title i { font-size: 20px; color: #8b5cf6; }
+        .section-title h4 { margin: 0; font-size: 16px; font-weight: 700; color: #1e293b; }
+        .section-stats { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+        .stat-chip { background: #f1f5f9; padding: 4px 12px; border-radius: 20px; font-size: 11px; color: #475569; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+        .stat-chip i { font-size: 10px; color: #8b5cf6; }
+        .stat-chip.deactivated-badge { background: #fee2e2; color: #ef4444; }
+        .stat-chip.deactivated-badge i { color: #ef4444; }
+        .section-toggle i { color: #94a3b8; transition: transform 0.3s; }
+        .section-card.expanded .section-toggle i { transform: rotate(180deg); }
+        
+        .section-body { padding: 0 20px 20px 20px; display: none; }
+        .section-card.expanded .section-body { display: block; animation: slideDown 0.3s ease; }
+        @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .edit-section-form { background: white; border-radius: 16px; padding: 20px; margin-bottom: 20px; border: 1px solid #e2e8f0; }
+        .edit-section-form .row { display: flex; flex-wrap: wrap; gap: 15px; align-items: flex-end; }
+        .edit-section-form .form-group-inline { flex: 1; min-width: 150px; }
+        .edit-section-form .form-group-inline label { font-size: 11px; font-weight: 600; color: #64748b; margin-bottom: 5px; display: block; }
+        .edit-section-form .form-control-sm { padding: 8px 12px; border: 2px solid #e2e8f0; border-radius: 10px; font-size: 13px; width: 100%; }
+        .edit-section-form .form-control-sm:focus { outline: none; border-color: #8b5cf6; }
+        .edit-section-form select.form-control-sm { background: #f8fafc; cursor: pointer; }
+        
+        .section-actions { display: flex; gap: 10px; margin-top: 15px; padding-top: 15px; border-top: 1px solid #e2e8f0; justify-content: flex-end; flex-wrap: wrap; align-items: center; }
+        .btn-group-action { 
+            padding: 8px 16px; 
+            border-radius: 10px; 
+            font-size: 12px; 
+            font-weight: 600; 
+            cursor: pointer; 
+            transition: all 0.2s; 
+            display: inline-flex; 
+            align-items: center; 
+            gap: 8px; 
+            border: none;
+            text-decoration: none;
+        }
+        .btn-manage-questions { 
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); 
+            color: white; 
+        }
+        .btn-manage-questions:hover { 
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); 
+            transform: translateY(-2px); 
+            box-shadow: 0 4px 10px rgba(59,130,246,0.3);
+            color: white;
+        }
+        .btn-manage-groups { 
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); 
+            color: white; 
+        }
+        .btn-manage-groups:hover { 
+            background: linear-gradient(135deg, #d97706 0%, #b45309 100%); 
+            transform: translateY(-2px); 
+            box-shadow: 0 4px 10px rgba(245,158,11,0.3);
+            color: white;
+        }
+        .btn-delete-section { 
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); 
+            color: white; 
+            border: none;
+        }
+        .btn-delete-section:hover { 
+            background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%); 
+            transform: translateY(-2px); 
+            box-shadow: 0 4px 10px rgba(239,68,68,0.3);
+            color: white;
+        }
+        
+        /* Toggle Active Button */
+        .btn-toggle-active {
+            padding: 8px 16px;
+            border-radius: 10px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            border: none;
+            margin-right: auto;
+        }
+        .btn-deactivate {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            color: white;
+        }
+        .btn-deactivate:hover {
+            background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(245,158,11,0.3);
+        }
+        .btn-activate {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+        }
+        .btn-activate:hover {
+            background: linear-gradient(135deg, #059669 0%, #047857 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(16,185,129,0.3);
+        }
+        
+        .btn-back { display: inline-flex; align-items: center; gap: 8px; background: white; border: 2px solid #e2e8f0; padding: 10px 25px; border-radius: 12px; text-decoration: none; color: #64748b; font-weight: 600; transition: all 0.3s; }
+        .btn-back:hover { border-color: #8b5cf6; color: #8b5cf6; background: #f5f3ff; transform: translateY(-2px); }
+        
+        .empty-sections { text-align: center; padding: 50px; background: #f8fafc; border-radius: 20px; border: 1px dashed #cbd5e1; }
+        .empty-sections i { font-size: 50px; color: #cbd5e1; margin-bottom: 15px; }
+        .empty-sections h4 { color: #1e293b; font-size: 18px; margin-bottom: 8px; }
+        .empty-sections p { color: #64748b; margin-bottom: 20px; }
+        
+        /* Toast notification */
+        .toast-notification {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: white;
+            border-radius: 12px;
+            padding: 12px 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1);
+            z-index: 1000;
+            animation: slideInRight 0.3s ease;
+            border-left: 4px solid #10b981;
+        }
+        .toast-notification.error { border-left-color: #ef4444; }
+        .toast-notification.error i { color: #ef4444; }
+        @keyframes slideInRight {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        .toast-notification i { font-size: 18px; color: #10b981; }
+        .toast-notification span { font-size: 13px; color: #1e293b; }
+        
+       /* ============ PREMIUM DELETE MODAL ============ */
+.premium-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.75);
+    backdrop-filter: blur(8px);
+    z-index: 10000;
+    display: none;
+    justify-content: center;
+    align-items: center;
+    animation: fadeIn 0.3s ease;
+}
+.premium-modal-overlay.show { display: flex; }
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+@keyframes modalPopIn {
+    from { transform: scale(0.95) translateY(-20px); opacity: 0; }
+    to { transform: scale(1) translateY(0); opacity: 1; }
+}
+.premium-modal-container {
+    background: white;
+    border-radius: 24px;
+    width: 380px;
+    max-width: 92%;
+    overflow: hidden;
+    animation: modalPopIn 0.3s cubic-bezier(0.34, 1.2, 0.64, 1);
+    box-shadow: 0 20px 40px -12px rgba(0, 0, 0, 0.4);
+}
+.premium-modal-header {
+    background: linear-gradient(135deg, #fef2f2 0%, #fff5f5 100%);
+    padding: 20px 24px 14px;
+    text-align: center;
+    position: relative;
+}
+.modal-icon-wrapper {
+    width: 60px;
+    height: 60px;
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 10px;
+    box-shadow: 0 6px 15px -3px rgba(239, 68, 68, 0.4);
+    animation: iconPulse 0.4s ease;
+}
+@keyframes iconPulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.06); }
+}
+.modal-icon-wrapper i {
+    font-size: 28px;
+    color: white;
+}
+.premium-modal-header h3 {
+    font-size: 20px;
+    font-weight: 800;
+    color: #991b1b;
+    margin-bottom: 4px;
+}
+.premium-modal-header p {
+    font-size: 12px;
+    color: #7f1d1d;
+    opacity: 0.8;
+    margin: 0;
+}
+.premium-modal-body {
+    padding: 16px 20px;
+}
+.warning-card {
+    background: #fef2f2;
+    border-radius: 16px;
+    padding: 12px 16px;
+    margin-bottom: 12px;
+    border-left: 4px solid #ef4444;
+}
+.warning-card .section-name {
+    font-size: 14px;
+    font-weight: 700;
+    color: #991b1b;
+    background: white;
+    padding: 6px 12px;
+    border-radius: 10px;
+    display: inline-block;
+    margin-top: 6px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+.consequences-list {
+    margin-top: 10px;
+}
+.consequence-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 0;
+    border-bottom: 1px solid #fee2e2;
+}
+.consequence-item:last-child { border-bottom: none; }
+.consequence-icon {
+    width: 28px;
+    height: 28px;
+    background: white;
+    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+.consequence-icon i { font-size: 12px; }
+.consequence-icon.warning { color: #ef4444; }
+.consequence-icon.info { color: #f59e0b; }
+.consequence-text { flex: 1; }
+.consequence-text strong { font-size: 12px; color: #1e293b; display: block; }
+.consequence-text span { font-size: 10px; color: #64748b; }
+.premium-modal-footer {
+    padding: 14px 20px 20px;
+    display: flex;
+    gap: 12px;
+    background: #fafafa;
+    border-top: 1px solid #f0f2f5;
+}
+.modal-btn {
+    flex: 1;
+    padding: 8px 16px;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    border: none;
+}
+.modal-btn-cancel {
+    background: white;
+    border: 1.5px solid #e2e8f0;
+    color: #64748b;
+}
+.modal-btn-cancel:hover {
+    border-color: #8b5cf6;
+    color: #8b5cf6;
+    transform: translateY(-1px);
+}
+.modal-btn-delete {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    color: white;
+    box-shadow: 0 3px 8px rgba(239, 68, 68, 0.3);
+}
+.modal-btn-delete:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 5px 12px rgba(239, 68, 68, 0.4);
+}
+.modal-btn-delete:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+        
+        @media (max-width: 768px) {
+            .settings-container { padding: 20px 15px; }
+            .page-header h1 { font-size: 26px; }
+            .edit-section-form .row { flex-direction: column; }
+            .edit-section-form .form-group-inline { width: 100%; }
+            .section-header { flex-direction: column; text-align: center; }
+            .section-stats { justify-content: center; }
+            .section-actions { justify-content: center; }
+            .premium-modal-container { width: 95%; }
+            .premium-modal-body { padding: 20px; }
+        }
+    </style>
+    <!-- CSRF Protection Shield -->
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <script>
+    window.CSRF_TOKEN = "{{ csrf_token() }}";
+    (function() {
+        if (window.fetch) {
+            const _origFetch = window.fetch;
+            window.fetch = function(url, options) {
+                options = options || {};
+                const method = (options.method || 'GET').toUpperCase();
+                if (!['GET', 'HEAD', 'OPTIONS', 'TRACE'].includes(method)) {
+                    options.headers = options.headers || {};
+                    const token = window.CSRF_TOKEN || (document.querySelector('meta[name="csrf-token"]') && document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
+                    if (token) {
+                        if (typeof Headers !== 'undefined' && options.headers instanceof Headers) {
+                            if (!options.headers.has('X-CSRFToken')) options.headers.set('X-CSRFToken', token);
+                        } else if (Array.isArray(options.headers)) {
+                            options.headers.push(['X-CSRFToken', token]);
+                        } else {
+                            if (!options.headers['X-CSRFToken']) options.headers['X-CSRFToken'] = token;
+                        }
+                    }
+                }
+                return _origFetch(url, options);
+            };
+        }
+        if (window.$ && $.ajaxSetup) {
+            $.ajaxSetup({
+                beforeSend: function(xhr, settings) {
+                    if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type)) {
+                        xhr.setRequestHeader("X-CSRFToken", window.CSRF_TOKEN);
+                    }
+                }
+            });
+        }
+        if (navigator.sendBeacon) {
+            const _origBeacon = navigator.sendBeacon.bind(navigator);
+            navigator.sendBeacon = function(url, data) {
+                if (data instanceof FormData) {
+                    if (!data.has('csrf_token')) data.append('csrf_token', window.CSRF_TOKEN);
+                } else if (typeof data === 'string') {
+                    try {
+                        const obj = JSON.parse(data);
+                        if (typeof obj === 'object' && obj !== null && !obj.csrf_token) {
+                            obj.csrf_token = window.CSRF_TOKEN;
+                            data = JSON.stringify(obj);
+                        }
+                    } catch(e) {}
+                }
+                return _origBeacon(url, data);
+            };
+        }
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('form[method="POST"], form[method="post"]').forEach(function(form) {
+                if (!form.querySelector('input[name="csrf_token"]')) {
+                    var input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = 'csrf_token';
+                    input.value = window.CSRF_TOKEN;
+                    form.appendChild(input);
+                }
+            });
+        });
+    })();
+    </script>
+</head>
+<body>
+    <div class="edu-icon"><i class="fas fa-cog"></i></div>
+    <div class="edu-icon"><i class="fas fa-sliders-h"></i></div>
+    <div class="edu-icon"><i class="fas fa-door-open"></i></div>
+
+    <div class="settings-container">
+        <div class="page-header">
+            <div class="logo-icon"><i class="fas fa-door-open"></i></div>
+            <h1>{% if exam %}{{ exam.name }}{% else %}Create New Entrance Exam{% endif %}</h1>
+            <p>Configure exam settings, sections, and question groups</p>
+        </div>
+
+        <!-- Exam Settings Form -->
+        <div class="card-custom">
+            <div class="card-header-custom">
+                <i class="fas fa-sliders-h"></i>
+                <h3>Exam Configuration</h3>
+            </div>
+            <div class="card-body-custom">
+                <form id="examSettingsForm" method="POST" action="{% if exam %}/admin/ce_exam/{{ exam.id }}{% else %}/admin/ce_exam/create{% endif %}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label"><i class="fas fa-tag"></i> Exam Name</label>
+                                <input type="text" name="name" class="form-control-custom" value="{{ exam.name if exam else '' }}" placeholder="e.g., Entrance Examination 2025" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label"><i class="fas fa-flag-checkered"></i> Target Class</label>
+                                <input type="text" name="target_class" class="form-control-custom" value="{{ exam.target_class if exam else 'Grade 7' }}" placeholder="e.g., Grade 7, Form 1" required>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label class="form-label"><i class="fas fa-hourglass-half"></i> Duration (minutes)</label>
+                                <input type="number" name="duration" class="form-control-custom" value="{{ exam.duration if exam else 60 }}" min="1" required>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label class="form-label"><i class="fas fa-percent"></i> Passing Score (%)</label>
+                                <input type="number" name="passing_score" class="form-control-custom" value="{{ exam.passing_score if exam else 50 }}" required>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label class="form-label"><i class="fas fa-list-ol"></i> Questions per Student</label>
+                                <input type="number" name="total_questions_to_show" class="form-control-custom" value="{{ exam.total_questions_to_show if exam else 100 }}" required>
+                                <small class="text-muted">Total questions each student will see</small>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label class="form-label"><i class="fas fa-power-off"></i> Exam Status</label>
+                                <div class="mt-2">
+                                    <label style="cursor: pointer;">
+                                        <input type="checkbox" name="active" {% if exam and exam.active %}checked{% endif %}> 
+                                        <span class="ms-2">Active (students can take this exam)</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label class="form-label"><i class="fas fa-exclamation-triangle"></i> Max Warnings</label>
+                                <input type="number" name="max_warnings" class="form-control-custom" value="{{ exam.max_warnings if exam else 5 }}" min="1" max="20" required>
+                                <small class="text-muted">Number of warnings before auto-submit (1-20)</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label class="form-label"><i class="fas fa-calculator"></i> Calculator</label>
+                                <select name="calculator_type" class="form-control-custom">
+                                    <option value="none" {% if exam and exam.calculator_type == 'none' %}selected{% endif %}>None</option>
+                                    <option value="simple" {% if exam and exam.calculator_type == 'simple' %}selected{% endif %}>Simple Calculator</option>
+                                    <option value="advanced" {% if exam and exam.calculator_type == 'advanced' %}selected{% endif %}>Advanced Calculator</option>
+                                </select>
+                                <small class="text-muted">Allow students to use calculator during exam</small>
+                            </div>
+                        </div>
+
+                    </div>
+                    <button type="submit" class="btn-save"><i class="fas fa-save"></i> {% if exam %}Save Settings{% else %}Create Exam{% endif %}</button>
+                </form>
+            </div>
+        </div>
+
+        {% if exam %}
+        <!-- Sections Management -->
+        <div class="card-custom">
+            <div class="card-header-custom">
+                <i class="fas fa-layer-group"></i>
+                <h3>Exam Sections</h3>
+            </div>
+            <div class="card-body-custom">
+                <!-- Add Section Form - AJAX -->
+                <div style="margin-bottom: 25px; padding: 20px; background: #f8fafc; border-radius: 20px;">
+                    <div class="row" style="display: flex; flex-wrap: wrap; gap: 15px; align-items: flex-end;">
+                        <div style="flex: 2; min-width: 180px;">
+                            <label class="form-label" style="margin-bottom: 5px;"><i class="fas fa-folder"></i> Section Name</label>
+                            <input type="text" id="newSectionName" class="form-control-custom" placeholder="e.g., Mathematics, English, Science" required>
+                        </div>
+                        <div style="flex: 1; min-width: 120px;">
+                            <label class="form-label" style="margin-bottom: 5px;"><i class="fas fa-list-ol"></i> Questions to Show</label>
+                            <input type="number" id="newQuestionsToShow" class="form-control-custom" placeholder="0 = All" value="0">
+                        </div>
+                        <div style="flex: 1; min-width: 140px;">
+                            <label class="form-label" style="margin-bottom: 5px;"><i class="fas fa-random"></i> Randomize Order</label>
+                            <select id="newRandomize" class="form-control-custom">
+                                <option value="1">Yes, Randomize</option>
+                                <option value="0">No, Keep Order</option>
+                            </select>
+                        </div>
+                        <div>
+                            <button type="button" id="addSectionBtn" class="btn-add"><i class="fas fa-plus"></i> Add Section</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="sectionsListContainer" class="sections-list">
+                    {% if sections and sections|length > 0 %}
+                        {% for section in sections %}
+                        <div class="section-card {% if not section.active %}deactivated{% endif %}" id="section-card-{{ section.id }}" data-section-id="{{ section.id }}" data-section-name="{{ section.section_name }}" data-active="{{ section.active }}">
+                            <div class="section-header" onclick="toggleSection({{ section.id }})">
+                                <div class="section-title">
+                                    <i class="fas fa-folder-open"></i>
+                                    <h4>{{ section.section_name }}</h4>
+                                </div>
+                                <div class="section-stats" id="section-stats-{{ section.id }}">
+                                    {% if not section.active %}
+                                    <span class="stat-chip deactivated-badge"><i class="fas fa-ban"></i> Deactivated</span>
+                                    {% endif %}
+                                    <span class="stat-chip"><i class="fas fa-question-circle"></i> {{ section.question_count }} Questions</span>
+                                    <span class="stat-chip"><i class="fas fa-eye"></i> Showing: {{ section.questions_to_show if section.questions_to_show > 0 else 'All' }}</span>
+                                    <span class="stat-chip"><i class="fas fa-shuffle"></i> Randomize: {{ 'Yes' if section.randomize else 'No' }}</span>
+                                </div>
+                                <div class="section-toggle">
+                                    <i class="fas fa-chevron-down"></i>
+                                </div>
+                            </div>
+                            <div class="section-body" id="section-body-{{ section.id }}">
+                                <!-- Edit Section Form - AJAX Update -->
+                                <div class="edit-section-form">
+                                    <div class="row">
+                                        <div class="form-group-inline">
+                                            <label><i class="fas fa-folder"></i> Section Name</label>
+                                            <input type="text" id="edit-section-name-{{ section.id }}" class="form-control-sm" value="{{ section.section_name }}" required>
+                                        </div>
+                                        <div class="form-group-inline">
+                                            <label><i class="fas fa-list-ol"></i> Questions to Show</label>
+                                            <input type="number" id="edit-questions-to-show-{{ section.id }}" class="form-control-sm" value="{{ section.questions_to_show }}" placeholder="0 = All">
+                                        </div>
+                                        <div class="form-group-inline">
+                                            <label><i class="fas fa-random"></i> Randomize Order</label>
+                                            <select id="edit-randomize-{{ section.id }}" class="form-control-sm">
+                                                <option value="1" {% if section.randomize %}selected{% endif %}>Yes, Randomize</option>
+                                                <option value="0" {% if not section.randomize %}selected{% endif %}>No, Keep Order</option>
+                                            </select>
+                                        </div>
+                                        <div class="form-group-inline" style="flex: 0 0 auto;">
+                                            <button type="button" class="btn-save update-section-btn" data-section-id="{{ section.id }}" style="padding: 8px 20px; font-size: 13px;"><i class="fas fa-save"></i> Update</button>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="section-actions">
+                                    <button class="btn-group-action btn-toggle-active {% if section.active %}btn-deactivate{% else %}btn-activate{% endif %}" 
+                                            id="toggle-btn-{{ section.id }}"
+                                            data-section-id="{{ section.id }}" 
+                                            data-active="{{ section.active }}"
+                                            data-section-name="{{ section.section_name }}"
+                                            onclick="toggleSectionActive({{ section.id }}, {{ 'true' if section.active else 'false' }}, '{{ section.section_name }}')">
+                                        <i class="fas {% if section.active %}fa-ban{% else %}fa-check-circle{% endif %}"></i> 
+                                        {% if section.active %}Deactivate Section{% else %}Activate Section{% endif %}
+                                    </button>
+                                    <a href="/admin/ce_section/{{ section.id }}/questions" class="btn-group-action btn-manage-questions">
+                                        <i class="fas fa-plus-circle"></i> Manage Questions
+                                    </a>
+                                    <a href="/admin/ce_section/{{ section.id }}/groups" class="btn-group-action btn-manage-groups">
+                                        <i class="fas fa-layer-group"></i> Question Groups
+                                    </a>
+                                    <button class="btn-group-action btn-delete-section" data-section-id="{{ section.id }}" data-section-name="{{ section.section_name }}">
+                                        <i class="fas fa-trash"></i> Delete Section
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div id="emptySectionsPlaceholder">
+                            <div class="empty-sections">
+                                <i class="fas fa-layer-group"></i>
+                                <h4>No Sections Created Yet</h4>
+                                <p>Add your first section to start building your exam</p>
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 20px; flex-wrap: wrap; gap: 15px;">
+            <a href="/admin/common-entrance" class="btn-back"><i class="fas fa-arrow-left"></i> Back to Dashboard</a>
+        </div>
+        {% else %}
+        <div class="text-center" style="margin-top: 20px;">
+            <a href="/admin/common-entrance" class="btn-back"><i class="fas fa-arrow-left"></i> Back to Dashboard</a>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- PREMIUM DELETE MODAL -->
+    <div id="deleteModal" class="premium-modal-overlay">
+        <div class="premium-modal-container">
+            <div class="premium-modal-header">
+                <div class="modal-icon-wrapper">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </div>
+                <h3>Delete Section?</h3>
+                <p>This action cannot be undone</p>
+            </div>
+            <div class="premium-modal-body">
+                <div class="warning-card">
+                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
+                        <i class="fas fa-folder-open" style="color: #ef4444;"></i>
+                        <span style="font-weight: 600; color: #991b1b;">Section to be deleted:</span>
+                    </div>
+                    <div class="section-name" id="deleteSectionName">Loading...</div>
+                </div>
+                <div class="consequences-list">
+                    <div class="consequence-item">
+                        <div class="consequence-icon warning">
+                            <i class="fas fa-trash-alt"></i>
+                        </div>
+                        <div class="consequence-text">
+                            <strong>All Questions Deleted</strong>
+                            <span>Every question in this section will be permanently removed</span>
+                        </div>
+                    </div>
+                    <div class="consequence-item">
+                        <div class="consequence-icon warning">
+                            <i class="fas fa-layer-group"></i>
+                        </div>
+                        <div class="consequence-text">
+                            <strong>Question Groups Removed</strong>
+                            <span>All groups and their questions will be deleted</span>
+                        </div>
+                    </div>
+                    <div class="consequence-item">
+                        <div class="consequence-icon info">
+                            <i class="fas fa-history"></i>
+                        </div>
+                        <div class="consequence-text">
+                            <strong>No Recovery</strong>
+                            <span>Deleted data cannot be restored. This is permanent!</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="premium-modal-footer">
+                <button class="modal-btn modal-btn-cancel" id="cancelDeleteBtn">
+                    <i class="fas fa-times"></i> Cancel
+                </button>
+                <button class="modal-btn modal-btn-delete" id="confirmDeleteBtn">
+                    <i class="fas fa-trash-alt"></i> Yes, Delete Section
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const examId = {{ exam.id if exam else 'null' }};
+        let pendingDeleteSectionId = null;
+        let pendingDeleteSectionName = null;
+        
+        // Show toast notification
+        function showToast(message, type = 'success') {
+            const existingToast = document.querySelector('.toast-notification');
+            if (existingToast) existingToast.remove();
+            
+            const toast = document.createElement('div');
+            toast.className = `toast-notification ${type === 'error' ? 'error' : ''}`;
+            toast.innerHTML = `
+                <i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-triangle'}"></i>
+                <span>${message}</span>
+            `;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
+        }
+        
+        // ============ TOGGLE SECTION ACTIVE/INACTIVE ============
+        async function toggleSectionActive(sectionId, currentActive, sectionName) {
+            const btn = document.getElementById(`toggle-btn-${sectionId}`);
+            if (!btn) return;
+            
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+            btn.disabled = true;
+            
+            try {
+                const response = await fetch(`/admin/ce_section/${sectionId}/toggle_active`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    const card = document.getElementById(`section-card-${sectionId}`);
+                    const statsSpan = document.getElementById(`section-stats-${sectionId}`);
+                    
+                    if (data.active) {
+                        // Section is now active
+                        card.classList.remove('deactivated');
+                        btn.className = 'btn-group-action btn-toggle-active btn-deactivate';
+                        btn.innerHTML = '<i class="fas fa-ban"></i> Deactivate Section';
+                        btn.setAttribute('data-active', '1');
+                        
+                        // Remove deactivated badge
+                        const badge = statsSpan.querySelector('.deactivated-badge');
+                        if (badge) badge.remove();
+                    } else {
+                        // Section is now inactive
+                        card.classList.add('deactivated');
+                        btn.className = 'btn-group-action btn-toggle-active btn-activate';
+                        btn.innerHTML = '<i class="fas fa-check-circle"></i> Activate Section';
+                        btn.setAttribute('data-active', '0');
+                        
+                        // Add deactivated badge
+                        if (!statsSpan.querySelector('.deactivated-badge')) {
+                            const badge = document.createElement('span');
+                            badge.className = 'stat-chip deactivated-badge';
+                            badge.innerHTML = '<i class="fas fa-ban"></i> Deactivated';
+                            statsSpan.insertBefore(badge, statsSpan.firstChild);
+                        }
+                    }
+                    
+                    showToast(data.message, 'success');
+                } else {
+                    showToast(data.error || 'Failed to toggle section', 'error');
+                }
+            } catch (error) {
+                showToast('Network error. Please try again.', 'error');
+            } finally {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
+        }
+        
+        // ============ PREMIUM DELETE MODAL FUNCTIONS ============
+        function showDeleteModal(sectionId, sectionName) {
+            pendingDeleteSectionId = sectionId;
+            pendingDeleteSectionName = sectionName;
+            
+            const modal = document.getElementById('deleteModal');
+            const sectionNameSpan = document.getElementById('deleteSectionName');
+            sectionNameSpan.innerHTML = `<i class="fas fa-folder-open me-2"></i>${escapeHtml(sectionName)}`;
+            
+            modal.classList.add('show');
+            document.body.style.overflow = 'hidden';
+        }
+        
+        function closeDeleteModal() {
+            const modal = document.getElementById('deleteModal');
+            modal.classList.remove('show');
+            document.body.style.overflow = '';
+            pendingDeleteSectionId = null;
+            pendingDeleteSectionName = null;
+        }
+        
+        async function confirmDeleteSection() {
+            if (!pendingDeleteSectionId) return;
+            
+            const confirmBtn = document.getElementById('confirmDeleteBtn');
+            const originalText = confirmBtn.innerHTML;
+            confirmBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Deleting...';
+            confirmBtn.disabled = true;
+            
+            try {
+                const response = await fetch(`/admin/ce_section/${pendingDeleteSectionId}/delete`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    closeDeleteModal();
+                    showToast(data.message, 'success');
+                    
+                    // Remove the section card from DOM
+                    const sectionCard = document.getElementById(`section-card-${pendingDeleteSectionId}`);
+                    if (sectionCard) sectionCard.remove();
+                    
+                    // Show empty state if no sections left
+                    const remainingSections = document.querySelectorAll('.section-card').length;
+                    if (remainingSections === 0) {
+                        const sectionsList = document.getElementById('sectionsListContainer');
+                        sectionsList.innerHTML = `
+                            <div id="emptySectionsPlaceholder">
+                                <div class="empty-sections">
+                                    <i class="fas fa-layer-group"></i>
+                                    <h4>No Sections Created Yet</h4>
+                                    <p>Add your first section to start building your exam</p>
+                                </div>
+                            </div>
+                        `;
+                    }
+                } else {
+                    showToast(data.error || 'Failed to delete section', 'error');
+                    closeDeleteModal();
+                }
+            } catch (error) {
+                showToast('Network error. Please try again.', 'error');
+                closeDeleteModal();
+            } finally {
+                confirmBtn.innerHTML = originalText;
+                confirmBtn.disabled = false;
+            }
+        }
+        
+        // Toggle section expansion - all closed by default
+        function toggleSection(sectionId) {
+            const card = document.getElementById(`section-card-${sectionId}`);
+            // Close all other sections first
+            document.querySelectorAll('.section-card').forEach(otherCard => {
+                if (otherCard.id !== `section-card-${sectionId}`) {
+                    otherCard.classList.remove('expanded');
+                }
+            });
+            // Toggle current section
+            card.classList.toggle('expanded');
+        }
+        
+        // ============ ADD SECTION (AJAX) ============
+        document.getElementById('addSectionBtn')?.addEventListener('click', async function() {
+            const sectionName = document.getElementById('newSectionName').value.trim();
+            const questionsToShow = document.getElementById('newQuestionsToShow').value;
+            const randomize = document.getElementById('newRandomize').value;
+            
+            if (!sectionName) {
+                showToast('Please enter a section name', 'error');
+                return;
+            }
+            
+            const btn = this;
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Adding...';
+            btn.disabled = true;
+            
+            try {
+                const response = await fetch(`/admin/ce_exam/${examId}/sections`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: new URLSearchParams({
+                        section_name: sectionName,
+                        questions_to_show: questionsToShow,
+                        randomize: randomize
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Clear form
+                    document.getElementById('newSectionName').value = '';
+                    document.getElementById('newQuestionsToShow').value = '0';
+                    document.getElementById('newRandomize').value = '1';
+                    
+                    // Remove empty state placeholder if exists
+                    const emptyPlaceholder = document.getElementById('emptySectionsPlaceholder');
+                    if (emptyPlaceholder) {
+                        emptyPlaceholder.remove();
+                    }
+                    
+                    // Add new section to the list
+                    const sectionsList = document.getElementById('sectionsListContainer');
+                    const newSectionHtml = `
+                        <div class="section-card" id="section-card-${data.section.id}" data-section-id="${data.section.id}" data-active="1">
+                            <div class="section-header" onclick="toggleSection(${data.section.id})">
+                                <div class="section-title">
+                                    <i class="fas fa-folder-open"></i>
+                                    <h4>${escapeHtml(data.section.section_name)}</h4>
+                                </div>
+                                <div class="section-stats" id="section-stats-${data.section.id}">
+                                    <span class="stat-chip"><i class="fas fa-question-circle"></i> 0 Questions</span>
+                                    <span class="stat-chip"><i class="fas fa-eye"></i> Showing: ${data.section.questions_to_show === 0 ? 'All' : data.section.questions_to_show}</span>
+                                    <span class="stat-chip"><i class="fas fa-shuffle"></i> Randomize: ${data.section.randomize === 1 ? 'Yes' : 'No'}</span>
+                                </div>
+                                <div class="section-toggle">
+                                    <i class="fas fa-chevron-down"></i>
+                                </div>
+                            </div>
+                            <div class="section-body" id="section-body-${data.section.id}">
+                                <div class="edit-section-form">
+                                    <div class="row">
+                                        <div class="form-group-inline">
+                                            <label><i class="fas fa-folder"></i> Section Name</label>
+                                            <input type="text" id="edit-section-name-${data.section.id}" class="form-control-sm" value="${escapeHtml(data.section.section_name)}" required>
+                                        </div>
+                                        <div class="form-group-inline">
+                                            <label><i class="fas fa-list-ol"></i> Questions to Show</label>
+                                            <input type="number" id="edit-questions-to-show-${data.section.id}" class="form-control-sm" value="${data.section.questions_to_show}" placeholder="0 = All">
+                                        </div>
+                                        <div class="form-group-inline">
+                                            <label><i class="fas fa-random"></i> Randomize Order</label>
+                                            <select id="edit-randomize-${data.section.id}" class="form-control-sm">
+                                                <option value="1" ${data.section.randomize === 1 ? 'selected' : ''}>Yes, Randomize</option>
+                                                <option value="0" ${data.section.randomize === 0 ? 'selected' : ''}>No, Keep Order</option>
+                                            </select>
+                                        </div>
+                                        <div class="form-group-inline" style="flex: 0 0 auto;">
+                                            <button type="button" class="btn-save update-section-btn" data-section-id="${data.section.id}" style="padding: 8px 20px; font-size: 13px;"><i class="fas fa-save"></i> Update</button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="section-actions">
+                                    <button class="btn-group-action btn-toggle-active btn-deactivate" 
+                                            id="toggle-btn-${data.section.id}"
+                                            data-section-id="${data.section.id}" 
+                                            data-active="1"
+                                            data-section-name="${escapeHtml(data.section.section_name)}"
+                                            onclick="toggleSectionActive(${data.section.id}, true, '${escapeHtml(data.section.section_name)}')">
+                                        <i class="fas fa-ban"></i> Deactivate Section
+                                    </button>
+                                    <a href="/admin/ce_section/${data.section.id}/questions" class="btn-group-action btn-manage-questions">
+                                        <i class="fas fa-plus-circle"></i> Manage Questions
+                                    </a>
+                                    <a href="/admin/ce_section/${data.section.id}/groups" class="btn-group-action btn-manage-groups">
+                                        <i class="fas fa-layer-group"></i> Question Groups
+                                    </a>
+                                    <button class="btn-group-action btn-delete-section" data-section-id="${data.section.id}" data-section-name="${escapeHtml(data.section.section_name)}">
+                                        <i class="fas fa-trash"></i> Delete Section
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    sectionsList.insertAdjacentHTML('beforeend', newSectionHtml);
+                    
+                    // Attach update event listeners to the new update button
+                    attachUpdateEventListeners();
+                    attachDeleteEventListeners();
+                    
+                    showToast(data.message, 'success');
+                } else {
+                    showToast(data.error || 'Failed to add section', 'error');
+                }
+            } catch (error) {
+                showToast('Network error. Please try again.', 'error');
+            } finally {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
+        });
+        
+        // ============ UPDATE SECTION (AJAX) ============
+        function attachUpdateEventListeners() {
+            document.querySelectorAll('.update-section-btn').forEach(btn => {
+                btn.removeEventListener('click', handleUpdateClick);
+                btn.addEventListener('click', handleUpdateClick);
+            });
+        }
+        
+        async function handleUpdateClick(e) {
+            const btn = e.currentTarget;
+            const sectionId = btn.getAttribute('data-section-id');
+            
+            const sectionName = document.getElementById(`edit-section-name-${sectionId}`).value;
+            const questionsToShow = document.getElementById(`edit-questions-to-show-${sectionId}`).value;
+            const randomize = document.getElementById(`edit-randomize-${sectionId}`).value;
+            
+            if (!sectionName) {
+                showToast('Please enter a section name', 'error');
+                return;
+            }
+            
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Updating...';
+            btn.disabled = true;
+            
+            try {
+                const response = await fetch(`/admin/ce_section/${sectionId}/update`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: new URLSearchParams({
+                        section_name: sectionName,
+                        questions_to_show: questionsToShow,
+                        randomize: randomize
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Update the stats display
+                    const statsSpan = document.getElementById(`section-stats-${sectionId}`);
+                    const showText = questionsToShow === '0' ? 'All' : questionsToShow;
+                    const randomizeText = randomize === '1' ? 'Yes' : 'No';
+                    const questionCount = statsSpan.querySelector('.stat-chip:not(.deactivated-badge)')?.innerHTML.match(/\d+/)?.[0] || '0';
+                    
+                    // Preserve deactivated badge if exists
+                    const deactivatedBadge = statsSpan.querySelector('.deactivated-badge');
+                    statsSpan.innerHTML = `
+                        ${deactivatedBadge ? deactivatedBadge.outerHTML : ''}
+                        <span class="stat-chip"><i class="fas fa-question-circle"></i> ${questionCount} Questions</span>
+                        <span class="stat-chip"><i class="fas fa-eye"></i> Showing: ${showText}</span>
+                        <span class="stat-chip"><i class="fas fa-shuffle"></i> Randomize: ${randomizeText}</span>
+                    `;
+                    
+                    // Update title
+                    const titleH4 = document.querySelector(`#section-card-${sectionId} .section-title h4`);
+                    if (titleH4) titleH4.textContent = sectionName;
+                    
+                    showToast(data.message, 'success');
+                } else {
+                    showToast(data.error || 'Failed to update section', 'error');
+                }
+            } catch (error) {
+                showToast('Network error. Please try again.', 'error');
+            } finally {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
+        }
+        
+        // ============ DELETE SECTION - Premium Modal ============
+        function attachDeleteEventListeners() {
+            document.querySelectorAll('.btn-delete-section').forEach(btn => {
+                btn.removeEventListener('click', handleDeleteClick);
+                btn.addEventListener('click', handleDeleteClick);
+            });
+        }
+        
+        function handleDeleteClick(e) {
+            const btn = e.currentTarget;
+            const sectionId = btn.getAttribute('data-section-id');
+            const sectionName = btn.getAttribute('data-section-name');
+            showDeleteModal(sectionId, sectionName);
+        }
+        
+        // Modal event listeners
+        document.getElementById('cancelDeleteBtn')?.addEventListener('click', closeDeleteModal);
+        document.getElementById('confirmDeleteBtn')?.addEventListener('click', confirmDeleteSection);
+        
+        // Close modal when clicking outside
+        document.getElementById('deleteModal')?.addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeDeleteModal();
+            }
+        });
+        
+        // Close modal with Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeDeleteModal();
+            }
+        });
+        
+        // ============ EXAM SETTINGS FORM (AJAX) ============
+        document.getElementById('examSettingsForm')?.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const form = e.target;
+            const formData = new FormData(form);
+            const submitBtn = form.querySelector('button[type="submit"]');
+            const originalText = submitBtn.innerHTML;
+            
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+            submitBtn.disabled = true;
+            
+            try {
+                const response = await fetch(form.action, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showToast(data.message, 'success');
+                    if (data.redirect) {
+                        setTimeout(() => {
+                            window.location.href = data.redirect;
+                        }, 1500);
+                    }
+                } else {
+                    showToast(data.error || 'Failed to save settings', 'error');
+                }
+            } catch (error) {
+                showToast('Network error. Please try again.', 'error');
+            } finally {
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+            }
+        });
+        
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        // Initialize event listeners
+        attachUpdateEventListeners();
+        attachDeleteEventListeners();
+        
+        // No sections expanded on load - all closed by default
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('.section-card').forEach(card => {
+                card.classList.remove('expanded');
+            });
+            if (typeof renderMathInElement === 'function') {
+                renderMathInElement(document.body, {
+                    delimiters: [
+                        {left: '$$', right: '$$', display: true},
+                        {left: '$', right: '$', display: false},
+                        {left: '\\(', right: '\\)', display: false},
+                        {left: '\\[', right: '\\]', display: true}
+                    ],
+                    throwOnError: false
+                });
+            }
+        });
+    </script>
+</body>
+</html>

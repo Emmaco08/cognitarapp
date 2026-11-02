@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{{ student.full_name }} - Exam Analysis</title>
+    <link href="{{ url_for('static', filename='vendor/bootstrap/css/bootstrap.min.css') }}" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='vendor/fontawesome/css/all.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='vendor/katex/katex.min.css') }}">
+    <script src="{{ url_for('static', filename='vendor/katex/katex.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='vendor/katex/contrib/mhchem.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='vendor/katex/contrib/auto-render.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='vendor/chartjs/chart.umd.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='vendor/sweetalert2/sweetalert2.all.min.js') }}"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: linear-gradient(135deg, #f5f7fa 0%, #e8edf5 100%); font-family: 'Segoe UI', 'Poppins', sans-serif; }
+        .container-custom { max-width: 1200px; margin: 0 auto; padding: 30px; }
+        .header-card { background: linear-gradient(135deg, #1a56db 0%, #0e3b9e 100%); color: white; border-radius: 24px; padding: 30px; margin-bottom: 30px; }
+        .stat-card { background: white; border-radius: 20px; padding: 20px; text-align: center; border: 1px solid #e2e8f0; transition: all 0.3s; }
+        .stat-card:hover { transform: translateY(-3px); box-shadow: 0 10px 20px -10px rgba(0,0,0,0.1); }
+        .question-card { background: white; border-radius: 16px; padding: 20px; margin-bottom: 15px; border: 1px solid #e2e8f0; transition: all 0.3s; }
+        .question-card.correct { border-left: 4px solid #10b981; }
+        .question-card.incorrect { border-left: 4px solid #ef4444; }
+        .badge-correct { background: #d1fae5; color: #065f46; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+        .badge-incorrect { background: #fee2e2; color: #991b1b; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+        .badge-pending { background: #fef3c7; color: #d97706; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+        .badge-approved { background: #d1fae5; color: #065f46; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+        .badge-rejected { background: #fee2e2; color: #991b1b; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+        .badge-not-started { background: #e2e8f0; color: #64748b; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+        .btn-back { background: white; border: 2px solid #e2e8f0; padding: 10px 25px; border-radius: 12px; color: #64748b; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; transition: all 0.3s; }
+        .btn-back:hover { border-color: #8b5cf6; color: #8b5cf6; }
+        .btn-export { background: #10b981; color: white; border: none; padding: 10px 20px; border-radius: 10px; cursor: pointer; transition: all 0.3s; }
+        .btn-export:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(16,185,129,0.3); }
+        .btn-approve { background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; border: none; padding: 12px 24px; border-radius: 12px; font-weight: 600; cursor: pointer; transition: all 0.3s; }
+        .btn-approve:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(16,185,129,0.3); }
+        .btn-reject { background: white; border: 2px solid #ef4444; color: #ef4444; padding: 10px 22px; border-radius: 12px; font-weight: 600; cursor: pointer; transition: all 0.3s; }
+        .btn-reject:hover { background: #ef4444; color: white; transform: translateY(-2px); }
+        .filter-buttons { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+        .filter-btn { padding: 8px 16px; border-radius: 10px; border: 1px solid #e2e8f0; background: white; cursor: pointer; transition: all 0.3s; }
+        .filter-btn.active { background: #1a56db; color: white; border-color: #1a56db; }
+        .time-badge { background: #f1f5f9; padding: 4px 12px; border-radius: 20px; font-size: 12px; display: inline-flex; align-items: center; gap: 6px; }
+        @media (max-width: 768px) { .container-custom { padding: 15px; } }
+        /* Question Text Wrapping */
+.question-card .mb-3,
+.q-question {
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    word-break: break-word;
+    white-space: normal;
+    max-width: 100%;
+    overflow-x: hidden;
+    line-height: 1.6;
+}
+
+/* For the CE template's question div */
+.question-card .mb-3 {
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    word-break: break-word;
+    white-space: normal;
+    max-width: 100%;
+}
+
+/* Prevent images from overflowing */
+.question-card img,
+.q-image {
+    max-width: 100%;
+    height: auto;
+    word-wrap: break-word;
+}
+
+/* Code/pre blocks inside questions */
+.question-card pre,
+.question-card code,
+.q-question pre,
+.q-question code {
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    max-width: 100%;
+}
+
+/* Table wrapping inside questions */
+.question-card table,
+.q-question table {
+    max-width: 100%;
+    word-wrap: break-word;
+    overflow-x: auto;
+    display: block;
+}
+
+/* Long unbroken strings (URLs, etc.) */
+.question-card *,
+.q-question * {
+    overflow-wrap: break-word;
+    word-wrap: break-word;
+    word-break: break-word;
+}
+
+/* Answer boxes text wrapping */
+.q-answer-box {
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    word-break: break-word;
+    white-space: normal;
+    max-width: 100%;
+}
+
+/* Your Answer / Correct Answer text */
+.q-answer-box span,
+.q-answer-box strong {
+    display: block;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+}
+
+/* Section name wrapping */
+.q-header .q-section {
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+}
+    </style>
+    <!-- CSRF Protection Shield -->
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <script>
+    window.CSRF_TOKEN = "{{ csrf_token() }}";
+    (function() {
+        if (window.fetch) {
+            const _origFetch = window.fetch;
+            window.fetch = function(url, options) {
+                options = options || {};
+                const method = (options.method || 'GET').toUpperCase();
+                if (!['GET', 'HEAD', 'OPTIONS', 'TRACE'].includes(method)) {
+                    options.headers = options.headers || {};
+                    const token = window.CSRF_TOKEN || (document.querySelector('meta[name="csrf-token"]') && document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
+                    if (token) {
+                        if (typeof Headers !== 'undefined' && options.headers instanceof Headers) {
+                            if (!options.headers.has('X-CSRFToken')) options.headers.set('X-CSRFToken', token);
+                        } else if (Array.isArray(options.headers)) {
+                            options.headers.push(['X-CSRFToken', token]);
+                        } else {
+                            if (!options.headers['X-CSRFToken']) options.headers['X-CSRFToken'] = token;
+                        }
+                    }
+                }
+                return _origFetch(url, options);
+            };
+        }
+        if (window.$ && $.ajaxSetup) {
+            $.ajaxSetup({
+                beforeSend: function(xhr, settings) {
+                    if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type)) {
+                        xhr.setRequestHeader("X-CSRFToken", window.CSRF_TOKEN);
+                    }
+                }
+            });
+        }
+        if (navigator.sendBeacon) {
+            const _origBeacon = navigator.sendBeacon.bind(navigator);
+            navigator.sendBeacon = function(url, data) {
+                if (data instanceof FormData) {
+                    if (!data.has('csrf_token')) data.append('csrf_token', window.CSRF_TOKEN);
+                } else if (typeof data === 'string') {
+                    try {
+                        const obj = JSON.parse(data);
+                        if (typeof obj === 'object' && obj !== null && !obj.csrf_token) {
+                            obj.csrf_token = window.CSRF_TOKEN;
+                            data = JSON.stringify(obj);
+                        }
+                    } catch(e) {}
+                }
+                return _origBeacon(url, data);
+            };
+        }
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('form[method="POST"], form[method="post"]').forEach(function(form) {
+                if (!form.querySelector('input[name="csrf_token"]')) {
+                    var input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = 'csrf_token';
+                    input.value = window.CSRF_TOKEN;
+                    form.appendChild(input);
+                }
+            });
+        });
+    })();
+    </script>
+</head>
+<body>
+    <div class="container-custom">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 15px;">
+            <a href="/admin/ce_analytics/{{ exam.id }}" class="btn-back"><i class="fas fa-arrow-left"></i> Back to Analytics</a>
+            <button class="btn-export" onclick="exportStudentCSV()"><i class="fas fa-download"></i> Export Student Data</button>
+        </div>
+        
+        <div class="header-card">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px;">
+                <div>
+                    <h2><i class="fas fa-user-graduate"></i> {{ student.full_name }}</h2>
+                    <p><i class="fas fa-envelope"></i> {{ student.email }} | <i class="fas fa-at"></i> {{ student.username }}</p>
+                    <p><i class="fas fa-file-alt"></i> Exam: {{ student.exam_name }}</p>
+                </div>
+                <div style="text-align: center;">
+                    {% if attempt_status == 'approved' %}
+                        <div style="font-size: 48px; font-weight: 800;">{{ score_percentage }}%</div>
+                        <div>Score: {{ correct_count }}/{{ total_questions }}</div>
+                        {% if rank %}<div>Rank: #{{ rank }}</div>{% endif %}
+                    {% elif attempt_status == 'pending' %}
+                        <div class="badge-pending" style="font-size: 18px; padding: 8px 20px;"><i class="fas fa-hourglass-half"></i> Pending Review</div>
+                    {% elif attempt_status == 'rejected' %}
+                        <div class="badge-rejected" style="font-size: 18px; padding: 8px 20px;"><i class="fas fa-times-circle"></i> Rejected</div>
+                    {% else %}
+                        <div class="badge-not-started" style="font-size: 18px; padding: 8px 20px;"><i class="fas fa-clock"></i> Not Started Yet</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Action Buttons for Admin -->
+        {% if attempt_status == 'pending' %}
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="stat-card" style="text-align: center; background: #fef3c7; border-color: #f59e0b;">
+                    <h4><i class="fas fa-user-check"></i> Pending Approval</h4>
+                    <p>Review this student's exam performance and decide</p>
+                    <div style="display: flex; gap: 15px; justify-content: center; margin-top: 15px;">
+                        <button class="btn-approve" onclick="approveStudent()"><i class="fas fa-check-circle"></i> Approve Student</button>
+                        <button class="btn-reject" onclick="rejectStudent()"><i class="fas fa-times-circle"></i> Reject Student</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Stats Cards (only if exam taken) -->
+        {% if attempt_status in ['approved', 'pending', 'rejected'] and total_questions > 0 %}
+        <div class="row mb-4">
+            <div class="col-md-3"><div class="stat-card"><i class="fas fa-check-circle" style="font-size: 32px; color: #10b981;"></i><h3>{{ correct_count }}</h3><p>Correct Answers</p></div></div>
+            <div class="col-md-3"><div class="stat-card"><i class="fas fa-times-circle" style="font-size: 32px; color: #ef4444;"></i><h3>{{ incorrect_count }}</h3><p>Incorrect Answers</p></div></div>
+            <div class="col-md-3"><div class="stat-card"><i class="fas fa-clock" style="font-size: 32px; color: #3b82f6;"></i><h3>{{ (total_time_spent/60)|round(1) }} min</h3><p>Total Time on Questions</p></div></div>
+            <div class="col-md-3"><div class="stat-card"><i class="fas fa-hourglass-half" style="font-size: 32px; color: #f59e0b;"></i><h3>{{ avg_time_per_question }}s</h3><p>Avg Time/Question</p></div></div>
+        </div>
+        
+        <!-- Comparison Card -->
+        <div class="stat-card mb-4">
+            <div style="display: flex; justify-content: space-between; flex-wrap: wrap; gap: 15px;">
+                <div><strong><i class="fas fa-chart-simple"></i> Class Average:</strong> {{ class_avg }}%</div>
+                <div><strong><i class="fas fa-tachometer-alt"></i> Student Score:</strong> {{ score_percentage }}%</div>
+                <div><strong><i class="fas fa-chart-line"></i> Difference:</strong> {% if score_percentage > class_avg %}+{% endif %}{{ (score_percentage - class_avg)|round(1) }}%</div>
+            </div>
+            <div class="progress mt-2">
+                <div class="progress-bar bg-success" style="width: {{ score_percentage }}%">{{ score_percentage }}%</div>
+            </div>
+        </div>
+        
+        <!-- Filter Buttons -->
+        <div class="filter-buttons">
+            <button class="filter-btn active" onclick="filterQuestions('all')"><i class="fas fa-list"></i> All Questions ({{ total_questions }})</button>
+            <button class="filter-btn" onclick="filterQuestions('correct')"><i class="fas fa-check-circle"></i> Correct Only ({{ correct_count }})</button>
+            <button class="filter-btn" onclick="filterQuestions('incorrect')"><i class="fas fa-times-circle"></i> Incorrect Only ({{ incorrect_count }})</button>
+        </div>
+        
+        <!-- Questions Container -->
+        <div id="questions-container">
+            {% for q in question_breakdown %}
+            <div class="question-card {% if q.is_correct %}correct{% else %}incorrect{% endif %}" data-status="{% if q.is_correct %}correct{% else %}incorrect{% endif %}">
+                <div style="display: flex; justify-content: space-between; align-items: start; flex-wrap: wrap; gap: 10px; margin-bottom: 10px;">
+                    <strong>Question {{ q.number }}: {{ q.section }}</strong>
+                    {% if q.is_correct %}
+                        <span class="badge-correct"><i class="fas fa-check-circle"></i> Correct</span>
+                    {% else %}
+                        <span class="badge-incorrect"><i class="fas fa-times-circle"></i> Incorrect</span>
+                    {% endif %}
+                </div>
+                <div class="mb-3">{{ q.question|safe }}</div>
+                {% if q.image %}
+                <div class="mb-2"><img src="/static/images/{{ q.image }}" style="max-width: 150px; border-radius: 10px;"></div>
+                {% endif %}
+                <div class="row mt-2">
+                    <div class="col-md-6"><strong>Your Answer:</strong> <span class="{% if not q.is_correct %}text-danger{% else %}text-success{% endif %}">{{ q.selected_letter }}. {{ (q.selected or '')|safe }}</span></div>
+                    <div class="col-md-6"><strong>Correct Answer:</strong> <span class="text-success">{{ q.correct_letter }}. {{ (q.correct_answer or '')|safe }}</span></div>
+                </div>
+                <div class="mt-2">
+                    <span class="time-badge"><i class="fas fa-clock"></i> Time spent: {{ q.time_spent }} seconds</span>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% elif attempt_status == 'not_started' %}
+        <div class="stat-card text-center" style="padding: 60px;">
+            <i class="fas fa-hourglass-start" style="font-size: 60px; color: #94a3b8;"></i>
+            <h3 class="mt-3">Student Has Not Started the Exam</h3>
+            <p>This student has registered but hasn't taken the exam yet.</p>
+        </div>
+        {% elif attempt_status == 'rejected' %}
+        <div class="stat-card text-center" style="padding: 60px;">
+            <i class="fas fa-times-circle" style="font-size: 60px; color: #ef4444;"></i>
+            <h3 class="mt-3">Student Was Rejected</h3>
+            <p>This student's exam was rejected. They can retake the exam.</p>
+        </div>
+        {% endif %}
+    </div>
+    
+    <script>
+        function filterQuestions(type) {
+            document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            document.querySelectorAll('.question-card').forEach(card => {
+                if (type === 'all') {
+                    card.style.display = 'block';
+                } else if (type === 'correct') {
+                    card.style.display = card.classList.contains('correct') ? 'block' : 'none';
+                } else if (type === 'incorrect') {
+                    card.style.display = card.classList.contains('incorrect') ? 'block' : 'none';
+                }
+            });
+        }
+        
+        function exportStudentCSV() {
+            window.location.href = `/admin/ce_export_student/{{ student.id }}/{{ exam.id }}/csv`;
+        }
+        
+        function approveStudent() {
+            Swal.fire({
+                title: 'Approve Student?',
+                html: `Approve <strong>{{ student.full_name }}</strong>? They will be added to the target class.`,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#10b981',
+                cancelButtonColor: '#64748b',
+                confirmButtonText: 'Yes, Approve!'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    Swal.fire({ title: 'Processing...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+                    
+                    fetch(`/admin/ce_student_approve/{{ student.id }}/{{ exam.id }}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            Swal.fire({ title: 'Approved!', text: data.message, icon: 'success', timer: 2000, showConfirmButton: false });
+                            setTimeout(() => { location.reload(); }, 2000);
+                        } else {
+                            Swal.fire({ title: 'Error!', text: data.error || 'Failed to approve', icon: 'error' });
+                        }
+                    })
+                    .catch(error => {
+                        Swal.fire({ title: 'Error!', text: 'Network error', icon: 'error' });
+                    });
+                }
+            });
+        }
+        
+        function rejectStudent() {
+            Swal.fire({
+                title: 'Reject Student?',
+                html: `Reject <strong>{{ student.full_name }}</strong>? They can retake the exam.`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#ef4444',
+                cancelButtonColor: '#64748b',
+                confirmButtonText: 'Yes, Reject'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    Swal.fire({ title: 'Processing...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+                    
+                    fetch(`/admin/ce_student_reject/{{ student.id }}/{{ exam.id }}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            Swal.fire({ title: 'Rejected!', text: data.message, icon: 'success', timer: 2000, showConfirmButton: false });
+                            setTimeout(() => { location.reload(); }, 2000);
+                        } else {
+                            Swal.fire({ title: 'Error!', text: data.error || 'Failed to reject', icon: 'error' });
+                        }
+                    })
+                    .catch(error => {
+                        Swal.fire({ title: 'Error!', text: 'Network error', icon: 'error' });
+                    });
+                }
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            if (typeof renderMathInElement === 'function') {
+                renderMathInElement(document.body, {
+                    delimiters: [
+                        {left: '$$', right: '$$', display: true},
+                        {left: '$', right: '$', display: false},
+                        {left: '\\(', right: '\\)', display: false},
+                        {left: '\\[', right: '\\]', display: true}
+                    ],
+                    throwOnError: false
+                });
+            }
+        });
+    </script>
+</body>
+</html>
+

@@ -1,0 +1,4 @@
+/* SweetAlert2 styles bundled in sweetalert2.all.min.js */
+.swal2-container {
+    z-index: 1060 !important;
+}

@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{{ exam.name }} | Start Exam</title>
+    <link href="{{ url_for('static', filename='vendor/bootstrap/css/bootstrap.min.css') }}" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='vendor/fontawesome/css/all.min.css') }}">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: linear-gradient(135deg, #e0e7ff 0%, #f3e8ff 100%); font-family: 'Inter', 'Segoe UI', sans-serif; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; }
+        
+        .bg-shape { position: fixed; pointer-events: none; z-index: 0; }
+        .bg-shape-1 { top: -20%; right: -10%; width: 500px; height: 500px; background: radial-gradient(circle, rgba(26,86,219,0.08) 0%, transparent 70%); border-radius: 50%; animation: float 25s infinite ease-in-out; }
+        .bg-shape-2 { bottom: -10%; left: -5%; width: 400px; height: 400px; background: radial-gradient(circle, rgba(139,92,246,0.08) 0%, transparent 70%); border-radius: 50%; animation: float 30s infinite ease-in-out reverse; }
+        @keyframes float { 0%,100% { transform: translate(0,0) rotate(0deg); } 50% { transform: translate(40px,-30px) rotate(180deg); } }
+        
+        .start-card { background: white; border-radius: 32px; max-width: 500px; width: 100%; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); position: relative; z-index: 10; }
+        .card-header { background: linear-gradient(135deg, #1a56db 0%, #0e3b9e 100%); padding: 35px 30px; text-align: center; color: white; }
+        .logo-icon { width: 70px; height: 70px; background: rgba(255,255,255,0.2); border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 15px; animation: pulse 2s infinite; }
+        @keyframes pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+        .logo-icon i { font-size: 32px; color: white; }
+        .card-header h2 { font-size: 24px; font-weight: 700; margin-bottom: 5px; }
+        .card-header p { font-size: 13px; opacity: 0.9; }
+        
+        .card-body { padding: 28px; }
+        .exam-info { background: #f8fafc; border-radius: 20px; padding: 15px 20px; margin-bottom: 20px; }
+        .info-item { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e2e8f0; }
+        .info-item:last-child { border-bottom: none; }
+        .info-item span { font-size: 13px; color: #64748b; display: flex; align-items: center; gap: 8px; }
+        .info-item span i { color: #1a56db; width: 18px; }
+        .info-item strong { font-size: 14px; font-weight: 700; color: #1e293b; }
+        
+        .alert-custom { border-radius: 16px; padding: 12px 16px; margin-bottom: 18px; display: flex; align-items: center; gap: 10px; font-size: 13px; }
+        .alert-warning-custom { background: #fef3c7; border-left: 3px solid #f59e0b; color: #92400e; }
+        .alert-danger-custom { background: #fee2e2; border-left: 3px solid #ef4444; color: #991b1b; }
+        .alert-custom i { font-size: 18px; }
+        
+        .btn-start { background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; border: none; padding: 14px; border-radius: 16px; font-weight: 600; width: 100%; font-size: 15px; cursor: pointer; transition: all 0.3s; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .btn-start:hover { transform: translateY(-2px); box-shadow: 0 8px 20px -5px rgba(16,185,129,0.4); }
+        
+        .warning-text { text-align: center; margin-top: 15px; font-size: 11px; color: #94a3b8; display: flex; align-items: center; justify-content: center; gap: 5px; }
+        
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); backdrop-filter: blur(4px); z-index: 10000; display: none; justify-content: center; align-items: center; }
+        .modal-overlay.show { display: flex; }
+        .modal-custom { background: white; border-radius: 24px; width: 360px; max-width: 90%; overflow: hidden; animation: modalPop 0.3s ease; }
+        @keyframes modalPop { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        .modal-header-custom { padding: 20px 20px 15px; text-align: center; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; }
+        .modal-icon { width: 50px; height: 50px; background: rgba(255,255,255,0.2); border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 10px; }
+        .modal-icon i { font-size: 24px; color: white; }
+        .modal-header-custom h3 { font-size: 18px; font-weight: 700; margin-bottom: 3px; }
+        .modal-header-custom p { font-size: 11px; opacity: 0.8; }
+        .modal-body-custom { padding: 15px 20px; }
+        .modal-stats { background: #f8fafc; border-radius: 14px; padding: 10px 15px; margin-bottom: 12px; }
+        .stat-row { display: flex; justify-content: space-between; font-size: 12px; padding: 5px 0; }
+        .stat-label { color: #64748b; }
+        .stat-value { font-weight: 600; color: #1e293b; }
+        .modal-warning { background: #fef3c7; border-radius: 10px; padding: 8px 12px; font-size: 11px; color: #92400e; display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+        .modal-footer-custom { padding: 12px 20px 20px; display: flex; gap: 10px; }
+        .modal-btn { flex: 1; padding: 10px; border-radius: 12px; font-weight: 600; font-size: 13px; cursor: pointer; transition: all 0.2s; border: none; display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+        .modal-btn-cancel { background: white; border: 1.5px solid #e2e8f0; color: #64748b; }
+        .modal-btn-cancel:hover { border-color: #ef4444; color: #ef4444; }
+        .modal-btn-confirm { background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; }
+        .modal-btn-confirm:hover { transform: translateY(-1px); }
+        
+        @media (max-width: 480px) { .card-body { padding: 20px; } .card-header { padding: 25px 20px; } }
+    </style>
+    <!-- CSRF Protection Shield -->
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <script>
+    window.CSRF_TOKEN = "{{ csrf_token() }}";
+    (function() {
+        if (window.fetch) {
+            const _origFetch = window.fetch;
+            window.fetch = function(url, options) {
+                options = options || {};
+                const method = (options.method || 'GET').toUpperCase();
+                if (!['GET', 'HEAD', 'OPTIONS', 'TRACE'].includes(method)) {
+                    options.headers = options.headers || {};
+                    const token = window.CSRF_TOKEN || (document.querySelector('meta[name="csrf-token"]') && document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
+                    if (token) {
+                        if (typeof Headers !== 'undefined' && options.headers instanceof Headers) {
+                            if (!options.headers.has('X-CSRFToken')) options.headers.set('X-CSRFToken', token);
+                        } else if (Array.isArray(options.headers)) {
+                            options.headers.push(['X-CSRFToken', token]);
+                        } else {
+                            if (!options.headers['X-CSRFToken']) options.headers['X-CSRFToken'] = token;
+                        }
+                    }
+                }
+                return _origFetch(url, options);
+            };
+        }
+        if (window.$ && $.ajaxSetup) {
+            $.ajaxSetup({
+                beforeSend: function(xhr, settings) {
+                    if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type)) {
+                        xhr.setRequestHeader("X-CSRFToken", window.CSRF_TOKEN);
+                    }
+                }
+            });
+        }
+        if (navigator.sendBeacon) {
+            const _origBeacon = navigator.sendBeacon.bind(navigator);
+            navigator.sendBeacon = function(url, data) {
+                if (data instanceof FormData) {
+                    if (!data.has('csrf_token')) data.append('csrf_token', window.CSRF_TOKEN);
+                } else if (typeof data === 'string') {
+                    try {
+                        const obj = JSON.parse(data);
+                        if (typeof obj === 'object' && obj !== null && !obj.csrf_token) {
+                            obj.csrf_token = window.CSRF_TOKEN;
+                            data = JSON.stringify(obj);
+                        }
+                    } catch(e) {}
+                }
+                return _origBeacon(url, data);
+            };
+        }
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('form[method="POST"], form[method="post"]').forEach(function(form) {
+                if (!form.querySelector('input[name="csrf_token"]')) {
+                    var input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = 'csrf_token';
+                    input.value = window.CSRF_TOKEN;
+                    form.appendChild(input);
+                }
+            });
+        });
+    })();
+    </script>
+</head>
+<body>
+{% include 'components/startup_splash.html' %}
+    <div class="bg-shape bg-shape-1"></div>
+    <div class="bg-shape bg-shape-2"></div>
+
+    <div class="start-card">
+        <div class="card-header">
+            <div class="logo-icon"><i class="fas fa-file-alt"></i></div>
+            <h2>{{ exam.name }}</h2>
+            <p>Welcome, {{ student_name }}</p>
+        </div>
+        
+        <div class="card-body">
+            <div class="exam-info">
+                <div class="info-item"><span><i class="fas fa-hourglass-half"></i> Duration</span><strong>{{ exam.duration }} min</strong></div>
+                <div class="info-item"><span><i class="fas fa-users"></i> Class</span><strong>{{ exam.class }}</strong></div>
+                <div class="info-item"><span><i class="fas fa-flask"></i> Specialisation</span><strong>{{ exam.specialisation_tag or 'General' }}</strong></div>
+                <div class="info-item"><span><i class="fas fa-book"></i> Subject</span><strong>{{ exam.subject_tag or 'General' }}</strong></div>
+            </div>
+            
+            {% if error %}
+            <div class="alert-custom alert-danger-custom"><i class="fas fa-times-circle"></i><span>{{ error }}</span></div>
+            {% else %}
+            <button class="btn-start" onclick="openStartModal()"><i class="fas fa-play"></i> Start Exam</button>
+            {% endif %}
+            
+            <div class="warning-text"><i class="fas fa-exclamation-triangle"></i><span>5 warnings = auto-submit</span></div>
+        </div>
+    </div>
+
+    <!-- Start Modal -->
+    <div id="startModal" class="modal-overlay">
+        <div class="modal-custom">
+            <div class="modal-header-custom">
+                <div class="modal-icon"><i class="fas fa-play"></i></div>
+                <h3>Start Exam?</h3>
+                <p>{{ exam.duration }} minutes</p>
+            </div>
+            <div class="modal-body-custom">
+                <div class="modal-stats">
+                    <div class="stat-row"><span class="stat-label">Class</span><span class="stat-value">{{ exam.class }}</span></div>
+                    <div class="stat-row"><span class="stat-label">Specialisation</span><span class="stat-value">{{ exam.specialisation_tag or 'General' }}</span></div>
+                </div>
+                <div class="modal-warning"><i class="fas fa-exclamation-triangle"></i><span>No tab switching • 5 warnings = auto-submit</span></div>
+            </div>
+            <div class="modal-footer-custom">
+                <button class="modal-btn modal-btn-cancel" onclick="closeStartModal()">Cancel</button>
+                <button class="modal-btn modal-btn-confirm" onclick="confirmStartExam()">Start</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function openStartModal() { document.getElementById('startModal').classList.add('show'); }
+        function closeStartModal() { document.getElementById('startModal').classList.remove('show'); }
+        function confirmStartExam() { closeStartModal(); setTimeout(() => window.location.href = '/exam_begin/{{ exam.id }}', 150); }
+        
+        document.getElementById('startModal').addEventListener('click', function(e) { if (e.target === this) closeStartModal(); });
+        document.addEventListener('keydown', function(e) { if (e.key === 'Escape') closeStartModal(); });
+    </script>
+</body>
+</html>

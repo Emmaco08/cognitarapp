@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Question Groups | {{ section.section_name }}</title>
+    <link href="{{ url_for('static', filename='vendor/bootstrap/css/bootstrap.min.css') }}" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='vendor/fontawesome/css/all.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='vendor/katex/katex.min.css') }}">
+    <script src="{{ url_for('static', filename='vendor/katex/katex.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='vendor/katex/contrib/mhchem.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='vendor/katex/contrib/auto-render.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='vendor/sweetalert2/sweetalert2.all.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/cognitara-katex-editor.js') }}?v=20261020_v8"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        :root {
+            --primary: #4f46e5; --primary-dark: #3730a3; --success: #10b981;
+            --warning: #f59e0b; --danger: #ef4444; --purple: #8b5cf6;
+            --bg: #f1f5f9; --card: #ffffff; --border: #e5e7eb;
+            --text: #0f172a; --text-light: #64748b;
+            --shadow-sm: 0 1px 2px rgba(0,0,0,0.04);
+            --shadow: 0 4px 6px -1px rgba(0,0,0,0.06);
+            --shadow-lg: 0 10px 25px -5px rgba(0,0,0,0.08);
+            --radius: 12px; --radius-lg: 16px; --radius-xl: 20px;
+            --transition: all 0.25s cubic-bezier(0.4,0,0.2,1);
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: linear-gradient(135deg, #f8fafc 0%, #eef2ff 40%, #f8fafc 100%); font-family: 'Segoe UI', 'Inter', system-ui, sans-serif; color: var(--text); min-height: 100vh; }
+
+        .bg-shape { position: fixed; pointer-events: none; z-index: 0; border-radius: 50%; filter: blur(100px); opacity: 0.08; }
+        .bg-shape-1 { top: -5%; right: -5%; width: 400px; height: 400px; background: #a78bfa; animation: floatShape 20s infinite ease-in-out; }
+        @keyframes floatShape { 0%,100% { transform: translate(0,0) rotate(0deg) scale(1); } 50% { transform: translate(30px,-20px) rotate(180deg) scale(1.1); } }
+
+        .groups-container { max-width: 1200px; margin: 0 auto; padding: 32px 22px; position: relative; z-index: 10; }
+        
+        .page-header { text-align: center; margin-bottom: 28px; animation: fadeInDown 0.5s ease; }
+        @keyframes fadeInDown { from { opacity:0; transform:translateY(-20px); } to { opacity:1; transform:translateY(0); } }
+        .logo-icon { width: 64px; height: 64px; background: linear-gradient(135deg, #8b5cf6, #6d28d9); border-radius: 18px; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 14px; box-shadow: 0 8px 25px rgba(139,92,246,0.25); }
+        .logo-icon i { font-size: 30px; color: white; }
+        .page-header h1 { font-size: 26px; font-weight: 800; color: var(--text); margin-bottom: 4px; }
+        .page-header p { font-size: 14px; color: var(--text-light); }
+
+        .top-bar { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 22px; animation: fadeInUp 0.5s ease 0.1s both; }
+        @keyframes fadeInUp { from { opacity:0; transform:translateY(15px); } to { opacity:1; transform:translateY(0); } }
+        .btn-back { background: var(--card); border: 1.5px solid var(--border); padding: 9px 18px; border-radius: 10px; color: var(--text-light); text-decoration: none; font-weight: 600; font-size: 13px; display: inline-flex; align-items: center; gap: 7px; transition: var(--transition); }
+        .btn-back:hover { border-color: var(--purple); color: var(--purple); background: #f5f3ff; }
+        .btn-add { background: linear-gradient(135deg, #10b981, #059669); color: white; border: none; padding: 10px 22px; border-radius: 12px; font-weight: 600; font-size: 13px; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; transition: var(--transition); box-shadow: 0 4px 15px rgba(16,185,129,0.2); }
+        .btn-add:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(16,185,129,0.3); }
+
+        .group-card { background: var(--card); border-radius: var(--radius-xl); padding: 20px 22px; margin-bottom: 16px; border: 1px solid var(--border); transition: var(--transition); box-shadow: var(--shadow-sm); animation: fadeInUp 0.4s ease both; }
+        .group-card:hover { border-color: var(--purple); box-shadow: var(--shadow); }
+        .g-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 10px; }
+        .g-title { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 15px; color: var(--text); }
+        .g-title i { color: var(--purple); font-size: 18px; }
+        .g-type { background: #ede9fe; color: #6d28d9; padding: 3px 12px; border-radius: 15px; font-size: 10px; font-weight: 700; display: inline-flex; align-items: center; gap: 5px; }
+        .g-content { background: #fafbfc; padding: 14px 16px; border-radius: 10px; margin: 10px 0; border-left: 3px solid var(--purple); word-wrap: break-word; overflow-wrap: break-word; line-height: 1.6; font-size: 13px; max-width: 100%; overflow: hidden; }
+        .g-content sup { font-size: 0.7em; vertical-align: super; }
+        .g-content sub { font-size: 0.7em; vertical-align: sub; }
+        .g-image { max-width: 150px; max-height: 110px; border-radius: 10px; margin-top: 8px; object-fit: cover; border: 1px solid var(--border); padding: 3px; }
+        .g-questions { margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--border); }
+        .g-q-item { background: white; border-radius: 10px; padding: 10px 14px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; border: 1px solid var(--border); transition: var(--transition); }
+        .g-q-item:hover { border-color: var(--primary); background: #fafbff; }
+        .g-q-info { flex: 1; font-size: 12px; line-height: 1.5; word-wrap: break-word; overflow-wrap: break-word; max-width: 100%; }
+        .g-q-meta { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+        .meta-chip { background: #f1f5f9; padding: 2px 8px; border-radius: 12px; font-size: 10px; color: var(--text-light); display: inline-flex; align-items: center; gap: 4px; }
+        .meta-chip.star { background: #fef3c7; color: #d97706; }
+        .g-q-actions { display: flex; gap: 6px; flex-shrink: 0; }
+        .btn-sm { padding: 4px 10px; border-radius: 6px; font-size: 10px; font-weight: 600; cursor: pointer; border: none; display: inline-flex; align-items: center; gap: 4px; transition: var(--transition); }
+        .btn-view { background: var(--primary); color: white; } .btn-view:hover { background: var(--primary-dark); }
+        .btn-edit-sm { background: #f59e0b; color: white; } .btn-edit-sm:hover { background: #d97706; }
+        .btn-remove { background: none; border: none; color: #ef4444; cursor: pointer; font-size: 14px; padding: 2px 6px; }
+        .btn-remove:hover { background: #fee2e2; border-radius: 4px; }
+        .g-actions-bar { display: flex; gap: 8px; margin-top: 12px; justify-content: flex-end; flex-wrap: wrap; }
+        .btn-g-act { padding: 6px 14px; border-radius: 8px; font-size: 11px; font-weight: 600; cursor: pointer; border: none; display: inline-flex; align-items: center; gap: 5px; transition: var(--transition); }
+        .btn-g-addq { background: #3b82f6; color: white; } .btn-g-addq:hover { background: #2563eb; }
+        .btn-g-edit { background: #f59e0b; color: white; } .btn-g-edit:hover { background: #d97706; }
+        .btn-g-delete { background: #fee2e2; color: #ef4444; } .btn-g-delete:hover { background: #ef4444; color: white; }
+        .empty-state { text-align: center; padding: 50px; color: #94a3b8; }
+        .empty-state i { font-size: 50px; display: block; margin-bottom: 12px; opacity: 0.5; }
+
+        /* ============ MODAL ============ */
+        .shared-toolbar {
+            display: flex; flex-wrap: wrap; gap: 3px; padding: 7px 10px;
+            background: #f1f5f9; border: 1px solid var(--border); border-radius: 12px; margin-bottom: 14px;
+        }
+        .t-group { display: flex; gap: 2px; align-items: center; padding: 0 6px; border-right: 1px solid var(--border); }
+        .t-group:last-child { border-right: none; }
+        .t-btn {
+            width: 32px; height: 30px; border: 1px solid transparent; border-radius: 6px;
+            background: transparent; cursor: pointer; font-size: 12px; display: flex;
+            align-items: center; justify-content: center; transition: 0.12s; color: #475569;
+        }
+        .t-btn:hover { background: #e2e8f0; }
+        .t-btn.on { background: var(--primary) !important; color: white !important; border-color: var(--primary) !important; box-shadow: 0 0 0 2px rgba(79,70,229,0.2); }
+        .t-btn sup { font-size: 7px; vertical-align: super; position: relative; top: -2px; line-height: 0; }
+        .t-btn sub { font-size: 7px; vertical-align: sub; position: relative; bottom: -1px; line-height: 0; }
+
+        .math-drop {
+            display: none; flex-wrap: wrap; gap: 3px; padding: 8px 10px;
+            background: #fffbeb; border: 1px solid #fde68a; border-radius: 10px;
+            margin-bottom: 12px; max-height: 160px; overflow-y: auto;
+        }
+        .math-drop.show { display: flex; }
+        .math-label { width: 100%; font-size: 9px; color: #92400e; font-weight: 700; margin: 3px 0 1px; text-transform: uppercase; letter-spacing: 0.5px; border-top: 1px solid #fde68a; padding-top: 5px; }
+        .math-label:first-child { border-top: none; padding-top: 0; }
+        .m-btn {
+            width: 30px; height: 26px; border: 1px solid #e2e8f0; border-radius: 4px;
+            background: white; cursor: pointer; font-size: 12px; font-weight: 600;
+            transition: 0.12s; display: flex; align-items: center; justify-content: center;
+            color: #475569; font-family: 'Times New Roman', serif;
+        }
+        .m-btn:hover { background: var(--primary); color: white; border-color: var(--primary); }
+        .m-btn.wide { width: auto; padding: 0 8px; font-size: 10px; font-family: 'Segoe UI', sans-serif; }
+
+        .editor-area {
+            min-height: 80px; max-height: 200px; overflow-y: auto;
+            padding: 10px 14px; border: 1.5px solid var(--border); border-radius: 10px;
+            background: white; font-size: 14px; line-height: 1.7; color: var(--text);
+            outline: none; word-wrap: break-word; overflow-wrap: break-word; white-space: pre-wrap;
+        }
+        .editor-area:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(79,70,229,0.08); }
+        .editor-area:empty::before { content: attr(placeholder); color: #94a3b8; }
+        .editor-area sup { font-size: 0.7em; vertical-align: super; position: relative; top: -0.3em; line-height: 0; }
+        .editor-area sub { font-size: 0.7em; vertical-align: sub; position: relative; bottom: -0.1em; line-height: 0; }
+        .math-fraction { display: inline-flex !important; flex-direction: column !important; align-items: center !important; vertical-align: middle !important; line-height: 1 !important; margin: 0 2px !important; }
+        .frac-num, .frac-den { outline: none; min-width: 14px; cursor: text; }
+        .frac-num:focus, .frac-den:focus { background: #eff6ff; border-radius: 2px; }
+        .frac-num { border-bottom: 2px solid #1e293b !important; padding: 0 5px !important; font-size: 0.8em !important; text-align: center !important; display: inline-block !important; }
+        .frac-den { padding: 0 5px !important; font-size: 0.8em !important; text-align: center !important; display: inline-block !important; }
+        .editor-label { font-weight: 700; font-size: 13px; margin-bottom: 5px; display: flex; align-items: center; gap: 6px; color: var(--text); }
+        .editor-label i { color: var(--primary); font-size: 14px; }
+        .editor-section { margin-bottom: 14px; }
+
+        @media (max-width: 768px) {
+            .groups-container { padding: 16px 10px; }
+            .g-q-item { flex-direction: column; }
+            .g-q-actions { justify-content: flex-end; width: 100%; }
+        }
+    </style>
+    <!-- CSRF Protection Shield -->
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <script>
+    window.CSRF_TOKEN = "{{ csrf_token() }}";
+    (function() {
+        if (window.fetch) {
+            const _origFetch = window.fetch;
+            window.fetch = function(url, options) {
+                options = options || {};
+                const method = (options.method || 'GET').toUpperCase();
+                if (!['GET', 'HEAD', 'OPTIONS', 'TRACE'].includes(method)) {
+                    options.headers = options.headers || {};
+                    const token = window.CSRF_TOKEN || (document.querySelector('meta[name="csrf-token"]') && document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
+                    if (token) {
+                        if (typeof Headers !== 'undefined' && options.headers instanceof Headers) {
+                            if (!options.headers.has('X-CSRFToken')) options.headers.set('X-CSRFToken', token);
+                        } else if (Array.isArray(options.headers)) {
+                            options.headers.push(['X-CSRFToken', token]);
+                        } else {
+                            if (!options.headers['X-CSRFToken']) options.headers['X-CSRFToken'] = token;
+                        }
+                    }
+                }
+                return _origFetch(url, options);
+            };
+        }
+        if (window.$ && $.ajaxSetup) {
+            $.ajaxSetup({
+                beforeSend: function(xhr, settings) {
+                    if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type)) {
+                        xhr.setRequestHeader("X-CSRFToken", window.CSRF_TOKEN);
+                    }
+                }
+            });
+        }
+        if (navigator.sendBeacon) {
+            const _origBeacon = navigator.sendBeacon.bind(navigator);
+            navigator.sendBeacon = function(url, data) {
+                if (data instanceof FormData) {
+                    if (!data.has('csrf_token')) data.append('csrf_token', window.CSRF_TOKEN);
+                } else if (typeof data === 'string') {
+                    try {
+                        const obj = JSON.parse(data);
+                        if (typeof obj === 'object' && obj !== null && !obj.csrf_token) {
+                            obj.csrf_token = window.CSRF_TOKEN;
+                            data = JSON.stringify(obj);
+                        }
+                    } catch(e) {}
+                }
+                return _origBeacon(url, data);
+            };
+        }
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('form[method="POST"], form[method="post"]').forEach(function(form) {
+                if (!form.querySelector('input[name="csrf_token"]')) {
+                    var input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = 'csrf_token';
+                    input.value = window.CSRF_TOKEN;
+                    form.appendChild(input);
+                }
+            });
+        });
+    })();
+    </script>
+</head>
+<body>
+
+    <div class="bg-shape bg-shape-1"></div>
+
+    <div class="groups-container">
+        <div class="page-header">
+            <div class="logo-icon"><i class="fas fa-layer-group"></i></div>
+            <h1>{{ section.section_name }} - Question Groups</h1>
+            <p>Create groups for comprehension passages or sequential questions</p>
+        </div>
+
+        <div class="top-bar">
+            <a href="/teacher/exam/{{ section.exam_id }}/settings" class="btn-back"><i class="fas fa-arrow-left"></i> Back to Settings</a>
+            <button type="button" class="btn-add" onclick="openAddGroupModal()"><i class="fas fa-plus"></i> Add Question Group</button>
+        </div>
+
+        {% if groups and groups|length > 0 %}
+            {% for group in groups %}
+            <div class="group-card" style="animation-delay:{{ loop.index * 0.06 }}s;">
+                <div class="g-header">
+                    <div class="g-title"><i class="fas fa-layer-group"></i> {{ group.group_name }}</div>
+                    <span class="g-type">
+                        {% if group.group_type == 'comprehension' %}<i class="fas fa-book-open"></i> Comprehension
+                        {% elif group.group_type == 'sequence' %}<i class="fas fa-list-ol"></i> Sequential
+                        {% else %}<i class="fas fa-folder"></i> Normal{% endif %}
+                    </span>
+                </div>
+                {% if group.instruction_text %}<div class="g-content"><strong><i class="fas fa-info-circle"></i> Instruction:</strong> <span>{{ group.instruction_text | safe }}</span></div>{% endif %}
+                {% if group.group_content %}<div class="g-content"><strong><i class="fas fa-file-alt"></i> Passage:</strong> <span>{{ group.group_content | safe }}</span></div>{% endif %}
+                {% if group.group_image %}<img src="/static/images/{{ group.group_image }}" class="g-image">{% endif %}
+                
+                <div class="g-questions">
+                    <strong style="font-size:12px;color:var(--text-light);"><i class="fas fa-question-circle"></i> Questions ({{ group.questions|length }})</strong>
+                    {% for q in group.questions %}
+                    <div class="g-q-item">
+                        <div class="g-q-info">
+                            <strong>{{ loop.index }}.</strong> {{ q.question[:100] | striptags }}{% if q.question|striptags|length > 100 %}...{% endif %}
+                            <div class="g-q-meta">
+                                <span class="meta-chip"><i class="fas fa-check-circle"></i> {% if q.answer == q.option1 %}A{% elif q.answer == q.option2 %}B{% elif q.answer == q.option3 %}C{% else %}D{% endif %}</span>
+                                {% if q.mandatory %}<span class="meta-chip star"><i class="fas fa-star"></i> Mandatory</span>{% endif %}
+                                {% if q.image %}<span class="meta-chip"><i class="fas fa-image"></i> Image</span>{% endif %}
+                            </div>
+                        </div>
+                        <div class="g-q-actions">
+                            <button type="button" class="btn-sm btn-view" onclick="viewQuestion({{ q.id }})"><i class="fas fa-eye"></i></button>
+                            <button type="button" class="btn-sm btn-edit-sm" onclick="editQuestion({{ q.id }})"><i class="fas fa-edit"></i></button>
+                            <button type="button" class="btn-remove" onclick="removeFromGroup({{ q.id }}, {{ group.id }})"><i class="fas fa-times-circle"></i></button>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                
+                <div class="g-actions-bar">
+                    <button type="button" class="btn-g-act btn-g-addq" onclick="openAddQuestionToGroupModal({{ group.id }})"><i class="fas fa-plus-circle"></i> Add Question</button>
+                    <button type="button" class="btn-g-act btn-g-edit" onclick="editGroup({{ group.id }})"><i class="fas fa-edit"></i> Edit Group</button>
+                    <button type="button" class="btn-g-act btn-g-delete" onclick="deleteGroup({{ group.id }})"><i class="fas fa-trash"></i> Delete Group</button>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="group-card"><div class="empty-state"><i class="fas fa-inbox"></i><h3>No Groups Yet</h3><p>Click "Add Question Group" to create one</p></div></div>
+        {% endif %}
+    </div>
+
+    <!-- ============ ADD GROUP MODAL ============ -->
+    <div class="modal fade" id="addGroupModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content" style="border-radius:18px;overflow:hidden;border:none;box-shadow:0 25px 50px -12px rgba(0,0,0,0.2);">
+                <div class="modal-header" style="background:linear-gradient(135deg,#8b5cf6,#6d28d9);color:white;border:none;padding:16px 22px;">
+                    <h5 class="modal-title"><i class="fas fa-plus-circle"></i> Add Question Group</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <form method="POST" action="/teacher/exam_section/{{ section.id }}/groups" enctype="multipart/form-data">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="modal-body" style="padding:18px 22px;">
+                        <div class="mb-3"><label class="form-label fw-bold">Group Name *</label><input type="text" name="group_name" class="form-control" required></div>
+                        <div class="mb-3"><label class="form-label fw-bold">Group Type</label><select name="group_type" class="form-select"><option value="normal">Normal</option><option value="comprehension">Comprehension</option><option value="sequence">Sequential</option></select></div>
+                        <div class="mb-3"><label class="form-label fw-bold">Instruction Text</label><textarea name="instruction_text" class="form-control" rows="2"></textarea></div>
+                        <div class="mb-3"><label class="form-label fw-bold">Group Content</label><textarea name="group_content" class="form-control" rows="5"></textarea></div>
+                        <div class="mb-3"><label class="form-label fw-bold">Group Image</label><input type="file" name="group_image" class="form-control" accept="image/*"></div>
+                    </div>
+                    <div class="modal-footer"><button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button><button type="submit" class="btn btn-primary" style="background:var(--purple);border:none;"><i class="fas fa-save"></i> Create Group</button></div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============ ADD QUESTION TO GROUP MODAL ============ -->
+    <div class="modal fade" id="addQuestionToGroupModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content" style="border-radius:18px;overflow:hidden;border:none;box-shadow:0 25px 50px -12px rgba(0,0,0,0.2);">
+                <div class="modal-header" style="background:linear-gradient(135deg,#4f46e5,#3730a3);color:white;border:none;padding:16px 22px;">
+                    <h5><i class="fas fa-plus-circle"></i> Add Question to Group</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <form method="POST" action="" id="addQForm" enctype="multipart/form-data" onsubmit="return saveGroupQuestion()">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="modal-body" style="padding:18px 22px;">
+                        <div class="shared-toolbar" id="gToolbar">
+                            <div class="t-group">
+                                <button type="button" class="t-btn" data-cmd="bold"><strong>B</strong></button>
+                                <button type="button" class="t-btn" data-cmd="italic"><em>I</em></button>
+                                <button type="button" class="t-btn" data-cmd="underline"><u>U</u></button>
+                            </div>
+                            <div class="t-group">
+                                <button type="button" class="t-btn" data-cmd="superscript">x<sup>2</sup></button>
+                                <button type="button" class="t-btn" data-cmd="subscript">x<sub>2</sub></button>
+                            </div>
+                            <div class="t-group f-btn-group">
+                                <button type="button" class="f-btn" onclick="CogniTaraKaTeX.openBuilderWithTemplate()" title="Insert Math &amp; Science Formulas"><i class="fas fa-square-root-alt"></i> Formulas</button>
+                            </div>
+                            <div class="t-group">
+                                <button type="button" class="t-btn" id="gMathBtn" title="More Math Symbols" style="color:#8b5cf6;font-weight:700;"><i class="fas fa-calculator"></i></button>
+                            </div>
+                        </div>
+
+                        <div class="math-drop" id="gMathDrop">
+                            <button type="button" class="m-btn" onclick="gIns('+')">+</button><button type="button" class="m-btn" onclick="gIns('−')">−</button><button type="button" class="m-btn" onclick="gIns('×')">×</button><button type="button" class="m-btn" onclick="gIns('÷')">÷</button><button type="button" class="m-btn" onclick="gIns('±')">±</button><button type="button" class="m-btn" onclick="gIns('=')">=</button><button type="button" class="m-btn" onclick="gIns('π')">π</button><button type="button" class="m-btn" onclick="gIns('θ')">θ</button><button type="button" class="m-btn" onclick="gIns('°')">°</button><button type="button" class="m-btn" onclick="gIns('≤')">≤</button><button type="button" class="m-btn" onclick="gIns('≥')">≥</button><button type="button" class="m-btn" onclick="gIns('∞')">∞</button><button type="button" class="m-btn" onclick="gIns('≈')">≈</button><button type="button" class="m-btn" onclick="gIns('≠')">≠</button>
+                        </div>
+
+                        <div class="editor-section">
+                            <div class="editor-label"><i class="fas fa-question-circle"></i> Question</div>
+                            <div class="editor-area" id="gQ" contenteditable="true" placeholder="Type your question here..."></div>
+                        </div>
+                        <textarea name="question" id="gQH" style="display:none;"></textarea>
+
+                        <div class="mb-3"><label style="font-size:12px;">Image (optional)</label><input type="file" name="image" class="form-control form-control-sm" accept="image/*"></div>
+
+                        <div class="editor-label"><i class="fas fa-list"></i> Options</div>
+                        <div class="row">
+                            {% for o in [{'id':'gA','n':'option1','h':'gAH'},{'id':'gB','n':'option2','h':'gBH'},{'id':'gC','n':'option3','h':'gCH'},{'id':'gD','n':'option4','h':'gDH'}] %}
+                            <div class="col-md-6 editor-section">
+                                <div class="editor-label" style="font-size:12px;">{{ loop.index0 | string | replace('0','A') | replace('1','B') | replace('2','C') | replace('3','D') }}.</div>
+                                <div class="editor-area" id="{{ o.id }}" contenteditable="true" placeholder="Option {{ loop.index0 | string | replace('0','A') | replace('1','B') | replace('2','C') | replace('3','D') }}" style="min-height:50px;max-height:120px;font-size:13px;"></div>
+                                <input type="hidden" name="{{ o.n }}" id="{{ o.h }}">
+                            </div>
+                            {% endfor %}
+                        </div>
+
+                        <div class="row mt-3">
+                            <div class="col-md-6"><label class="form-label fw-bold" style="font-size:13px;">Correct Answer</label><select name="answer" class="form-select form-select-sm" required><option value="">Select</option><option value="1">A</option><option value="2">B</option><option value="3">C</option><option value="4">D</option></select></div>
+                            <div class="col-md-6 d-flex align-items-end"><label style="font-size:13px;cursor:pointer;"><input type="checkbox" name="mandatory" value="1"> Mandatory</label></div>
+                        </div>
+                    </div>
+                    <div class="modal-footer"><button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button><button type="submit" class="btn btn-primary" style="background:var(--primary);border:none;"><i class="fas fa-save"></i> Save</button></div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Preview Modal -->
+    <div class="modal fade" id="previewModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content" style="border-radius:14px;">
+                <div class="modal-header" style="background:#f8fafc;"><h5><i class="fas fa-eye"></i> Question Preview</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+                <div class="modal-body" id="previewBody" style="word-wrap:break-word;overflow-wrap:break-word;max-width:100%;"><div class="text-center py-3 text-muted">Loading...</div></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='vendor/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
+    <script>
+        // ============ MODAL OPENERS ============
+        function openAddGroupModal() { new bootstrap.Modal(document.getElementById('addGroupModal')).show(); }
+
+        let currentGid = null;
+        const eds = ['gQ','gA','gB','gC','gD'];
+        let actEd = 'gQ';
+
+        function E(id){return document.getElementById(id);}
+        function H(id){return document.getElementById(id+'H');}
+        function upd(id){
+            const e=E(id);const h=H(id);
+            if(e&&h){
+                h.value = window.CogniTaraKaTeX ? window.CogniTaraKaTeX.serializeEditor(e) : e.innerHTML;
+            }
+        }
+
+        function getAct(){return document.activeElement&&eds.includes(document.activeElement.id)?document.activeElement.id:actEd;}
+        function selAll(el){const r=document.createRange();r.selectNodeContents(el);const s=window.getSelection();s.removeAllRanges();s.addRange(r);}
+
+        function syncBtns(){
+            const id=getAct();if(!id)return;actEd=id;
+            ['bold','italic','underline','superscript','subscript'].forEach(c=>{
+                const b=document.querySelector(`#gToolbar .t-btn[data-cmd="${c}"]`);
+                if(b)b.classList.toggle('on',document.queryCommandState(c));
+            });
+        }
+
+        function gIns(sym){
+            if (sym && (sym.startsWith('$') || sym.startsWith('\\(') || sym.startsWith('\\ce'))) {
+                let clean = sym.replace(/^\$+|\$+$/g, '').replace(/^\\\(|\\\)$/g, '');
+                if (window.CogniTaraKaTeX) {
+                    window.CogniTaraKaTeX.insertFormula(clean);
+                    return;
+                }
+            }
+            const id=getAct();const e=E(id);if(!e)return;e.focus();
+            const sel=window.getSelection();
+            if(sel.rangeCount){const r=sel.getRangeAt(0);r.deleteContents();const t=document.createTextNode(sym);r.insertNode(t);r.setStartAfter(t);r.setEndAfter(t);sel.removeAllRanges();sel.addRange(r);}
+            upd(id);
+        }
+
+        function gFrac(){
+            const id=getAct();const e=E(id);if(!e)return;e.focus();
+            const w=document.createElement('span');w.style.cssText='display:inline-block;';w.className='fraction-wrapper';
+            const c=document.createElement('span');c.style.cssText='display:inline-flex;flex-direction:column;align-items:center;vertical-align:middle;line-height:1;margin:0 2px;';c.className='math-fraction';
+            const n=document.createElement('span');n.style.cssText='border-bottom:2px solid #1e293b;padding:0 5px;font-size:0.8em;text-align:center;min-width:14px;display:inline-block;';n.contentEditable='true';n.className='frac-num';n.textContent='a';
+            const d=document.createElement('span');d.style.cssText='padding:0 5px;font-size:0.8em;text-align:center;min-width:14px;display:inline-block;';d.contentEditable='true';d.className='frac-den';d.textContent='b';
+            c.appendChild(n);c.appendChild(d);const sp=document.createTextNode('\u200B');w.appendChild(c);w.appendChild(sp);
+            const sel=window.getSelection();
+            if(sel.rangeCount){const r=sel.getRangeAt(0);r.deleteContents();r.insertNode(w);r.setStartAfter(w);r.setEndAfter(w);sel.removeAllRanges();sel.addRange(r);}
+            upd(id);
+        }
+
+        function openAddQuestionToGroupModal(gid){
+            currentGid=gid;
+            document.getElementById('addQForm').reset();
+            eds.forEach(id=>{const el=E(id);if(el)el.innerHTML='';});
+            const drop = E('gMathDrop'); if (drop) drop.classList.remove('show');
+            const btn = E('gMathBtn'); if (btn) btn.classList.remove('on');
+            document.querySelectorAll('#gToolbar .t-btn.on').forEach(b=>b.classList.remove('on'));
+            document.getElementById('addQForm').action=`/teacher/exam_group/${gid}/add_question`;
+            actEd='gQ';
+            if (window.CogniTaraKaTeX) window.CogniTaraKaTeX.init(eds);
+            new bootstrap.Modal(document.getElementById('addQuestionToGroupModal')).show();
+            setTimeout(()=>E('gQ')?.focus(),300);
+        }
+
+        // Toolbar clicks
+        document.querySelectorAll('#gToolbar .t-btn[data-cmd]').forEach(btn=>{
+            btn.addEventListener('click',function(e){
+                e.preventDefault();
+                const cmd=this.dataset.cmd,id=getAct(),ed=E(id);if(!ed)return;ed.focus();
+                if(cmd==='superscript'&&document.queryCommandState('subscript'))document.execCommand('subscript',false,null);
+                if(cmd==='subscript'&&document.queryCommandState('superscript'))document.execCommand('superscript',false,null);
+                const m={bold:'bold',italic:'italic',underline:'underline',superscript:'superscript',subscript:'subscript'};
+                if(m[cmd])document.execCommand(m[cmd],false,null);
+                setTimeout(()=>{syncBtns();upd(id);},15);
+            });
+        });
+
+        const gMathBtn = E('gMathBtn');
+        if (gMathBtn) {
+            gMathBtn.addEventListener('click', function(){
+                const d = E('gMathDrop');
+                if (d) d.classList.toggle('show');
+                this.classList.toggle('on');
+            });
+        }
+
+        eds.forEach(id=>{
+            const ed=E(id);if(!ed)return;
+            ed.addEventListener('focus',()=>{actEd=id;syncBtns();});
+            ed.addEventListener('input',()=>upd(id));
+            ed.addEventListener('keyup',()=>{upd(id);syncBtns();});
+            ed.addEventListener('click',()=>{actEd=id;setTimeout(syncBtns,10);});
+            ed.addEventListener('keydown',function(e){
+                if(e.ctrlKey||e.metaKey){const k=e.key.toLowerCase();const m={'b':'bold','i':'italic','u':'underline'};
+                    if(m[k]){e.preventDefault();const b=document.querySelector(`#gToolbar .t-btn[data-cmd="${m[k]}"]`);if(b)b.click();return;}}
+                const ae=document.activeElement;const isF=ae.classList.contains('frac-num')||ae.classList.contains('frac-den');
+                if(isF){const sel=window.getSelection();
+                    if(e.key==='ArrowRight'&&sel.rangeCount&&sel.getRangeAt(0).startOffset>=(ae.textContent||'').length){e.preventDefault();const w=ae.closest('.fraction-wrapper');if(w?.nextSibling){const r=document.createRange();r.setStartAfter(w);r.setEndAfter(w);sel.removeAllRanges();sel.addRange(r);}}
+                    if(e.key==='ArrowLeft'&&sel.rangeCount&&sel.getRangeAt(0).startOffset===0){e.preventDefault();const w=ae.closest('.fraction-wrapper');if(w){const r=document.createRange();r.setStartBefore(w);r.setEndBefore(w);sel.removeAllRanges();sel.addRange(r);}}
+                    if(e.key==='ArrowDown'&&ae.classList.contains('frac-num')){e.preventDefault();const d=ae.parentElement.querySelector('.frac-den');if(d){d.focus();selAll(d);}}
+                    if(e.key==='ArrowUp'&&ae.classList.contains('frac-den')){e.preventDefault();const n=ae.parentElement.querySelector('.frac-num');if(n){n.focus();selAll(n);}}
+                    if(e.key==='Tab'&&!e.shiftKey&&ae.classList.contains('frac-num')){e.preventDefault();const d=ae.parentElement.querySelector('.frac-den');if(d){d.focus();selAll(d);}}
+                    if(e.key==='Tab'&&e.shiftKey&&ae.classList.contains('frac-den')){e.preventDefault();const n=ae.parentElement.querySelector('.frac-num');if(n){n.focus();selAll(n);}}
+                }
+            });
+        });
+
+        // FIXED: Save function that properly populates hidden fields before submit
+        function saveGroupQuestion() {
+            // Update ALL hidden fields from their editors
+            eds.forEach(id => upd(id));
+            
+            // Now check if question is filled
+            const qval = E('gQH').value.trim();
+            if (!qval || qval === '<br>' || qval === '<div><br></div>' || qval === '') {
+                alert('<i class="fas fa-exclamation-triangle"></i> Please enter a question before saving.');
+                return false;
+            }
+            return true;
+        }
+
+        // ============ EXISTING FUNCTIONS ============
+        function deleteGroup(gid){Swal.fire({title:'Delete Group?',text:'All questions in this group will be deleted!',icon:'warning',showCancelButton:true,confirmButtonColor:'#ef4444',confirmButtonText:'Delete'}).then(r=>{if(r.isConfirmed)window.location.href=`/teacher/exam_group/${gid}/delete`;});}
+        function editGroup(gid){window.location.href=`/teacher/exam_group/${gid}/edit`;}
+        function editQuestion(qid){window.location.href=`/teacher/exam_group_question/${qid}/edit`;}
+        function removeFromGroup(qid,gid){Swal.fire({title:'Remove from Group?',icon:'question',showCancelButton:true,confirmButtonColor:'#ef4444',confirmButtonText:'Remove'}).then(r=>{if(r.isConfirmed)window.location.href=`/teacher/exam_question/${qid}/remove_from_group`;});}
+        
+        function viewQuestion(qid){
+            E('previewBody').innerHTML='<div class="text-center py-3"><div class="spinner-border text-primary"></div></div>';
+            const m=new bootstrap.Modal(document.getElementById('previewModal'));m.show();
+            fetch(`/teacher/exam_question/${qid}/data`).then(r=>r.json()).then(d=>{
+                if(d.success){
+                    const q=d.question;const opts=[q.option1,q.option2,q.option3,q.option4];
+                    let oh='';const l=['A','B','C','D'];
+                    for(let i=0;i<opts.length;i++){const c=opts[i]===q.answer;oh+=`<div style="padding:10px;background:#f8fafc;border-radius:8px;margin-bottom:6px;border-left:3px solid ${c?'#10b981':'#e2e8f0'};word-wrap:break-word;overflow-wrap:break-word;"><strong>${l[i]}.</strong> ${opts[i]} ${c?'<span class="badge bg-success"><i class="fas fa-check"></i></span>':''}</div>`;}
+                    E('previewBody').innerHTML=`<div style="background:#f8fafc;border-radius:10px;padding:12px;margin-bottom:12px;word-wrap:break-word;overflow-wrap:break-word;"><strong>Question:</strong><div style="margin-top:6px;">${q.question}</div></div>${q.image?`<img src="/static/images/${q.image}" style="max-width:200px;border-radius:8px;margin-bottom:10px;">`:''}${oh}`;
+                    if (typeof renderMathInElement === 'function') {
+                        renderMathInElement(E('previewBody'), {
+                            delimiters: [
+                                {left: '$$', right: '$$', display: true},
+                                {left: '$', right: '$', display: false},
+                                {left: '\\(', right: '\\)', display: false},
+                                {left: '\\[', right: '\\]', display: true}
+                            ],
+                            throwOnError: false
+                        });
+                    }
+                }else{E('previewBody').innerHTML='<div class="alert alert-danger">Could not load question</div>';}
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            if (window.CogniTaraKaTeX) window.CogniTaraKaTeX.init(eds);
+            if (typeof renderMathInElement === 'function') {
+                renderMathInElement(document.body, {
+                    delimiters: [
+                        {left: '$$', right: '$$', display: true},
+                        {left: '$', right: '$', display: false},
+                        {left: '\\(', right: '\\)', display: false},
+                        {left: '\\[', right: '\\]', display: true}
+                    ],
+                    throwOnError: false
+                });
+            }
+        });
+    </script>
+</body>
+</html>

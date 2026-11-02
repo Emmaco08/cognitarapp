@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Manage Questions | {{ section.section_name }}</title>
+    <link href="{{ url_for('static', filename='vendor/bootstrap/css/bootstrap.min.css') }}" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='vendor/fontawesome/css/all.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='vendor/katex/katex.min.css') }}">
+    <script src="{{ url_for('static', filename='vendor/katex/katex.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='vendor/katex/contrib/mhchem.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='vendor/katex/contrib/auto-render.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='vendor/sweetalert2/sweetalert2.all.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/cognitara-katex-editor.js') }}?v=20261020_v8"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        :root {
+            --primary: #4f46e5; --primary-dark: #3730a3; --success: #10b981;
+            --warning: #f59e0b; --danger: #ef4444; --purple: #8b5cf6;
+            --bg: #f1f5f9; --card: #ffffff; --border: #e5e7eb;
+            --text: #0f172a; --text-light: #64748b;
+            --shadow-sm: 0 1px 2px rgba(0,0,0,0.04);
+            --shadow: 0 4px 6px -1px rgba(0,0,0,0.06);
+            --shadow-lg: 0 10px 25px -5px rgba(0,0,0,0.08);
+            --radius: 12px; --radius-lg: 16px; --radius-xl: 20px;
+            --transition: all 0.25s cubic-bezier(0.4,0,0.2,1);
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: linear-gradient(135deg, #f8fafc 0%, #eef2ff 40%, #f8fafc 100%); font-family: 'Segoe UI', 'Inter', system-ui, sans-serif; color: var(--text); min-height: 100vh; }
+
+        .bg-shape { position: fixed; pointer-events: none; z-index: 0; border-radius: 50%; filter: blur(100px); opacity: 0.08; }
+        .bg-shape-1 { top: -5%; right: -5%; width: 400px; height: 400px; background: #818cf8; animation: floatShape 20s infinite ease-in-out; }
+        @keyframes floatShape { 0%,100% { transform: translate(0,0) rotate(0deg) scale(1); } 50% { transform: translate(30px,-20px) rotate(180deg) scale(1.1); } }
+
+        .questions-container { max-width: 1200px; margin: 0 auto; padding: 32px 22px; position: relative; z-index: 10; }
+        
+        .page-header { text-align: center; margin-bottom: 28px; animation: fadeInDown 0.5s ease; }
+        @keyframes fadeInDown { from { opacity:0; transform:translateY(-20px); } to { opacity:1; transform:translateY(0); } }
+        .logo-icon { width: 64px; height: 64px; background: linear-gradient(135deg, #4f46e5, #3730a3); border-radius: 18px; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 14px; box-shadow: 0 8px 25px rgba(79,70,229,0.25); }
+        .logo-icon i { font-size: 30px; color: white; }
+        .page-header h1 { font-size: 26px; font-weight: 800; color: var(--text); margin-bottom: 4px; }
+        .page-header p { font-size: 14px; color: var(--text-light); }
+
+        .top-bar { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 22px; animation: fadeInUp 0.5s ease 0.1s both; }
+        @keyframes fadeInUp { from { opacity:0; transform:translateY(15px); } to { opacity:1; transform:translateY(0); } }
+        .btn-back { background: var(--card); border: 1.5px solid var(--border); padding: 9px 18px; border-radius: 10px; color: var(--text-light); text-decoration: none; font-weight: 600; font-size: 13px; display: inline-flex; align-items: center; gap: 7px; transition: var(--transition); }
+        .btn-back:hover { border-color: var(--primary); color: var(--primary); background: #eef2ff; }
+        .btn-add { background: linear-gradient(135deg, #10b981, #059669); color: white; border: none; padding: 10px 22px; border-radius: 12px; font-weight: 600; font-size: 13px; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; transition: var(--transition); box-shadow: 0 4px 15px rgba(16,185,129,0.2); }
+        .btn-add:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(16,185,129,0.3); }
+
+        .question-card { background: var(--card); border-radius: var(--radius-xl); padding: 20px 22px; margin-bottom: 14px; border: 1px solid var(--border); transition: var(--transition); box-shadow: var(--shadow-sm); animation: fadeInUp 0.4s ease both; }
+        .question-card:hover { border-color: var(--primary); box-shadow: var(--shadow); }
+        .q-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px; }
+        .q-number { font-weight: 700; color: var(--primary); font-size: 14px; display: flex; align-items: center; gap: 8px; }
+        .mandatory-badge { background: #fef3c7; color: #d97706; padding: 3px 10px; border-radius: 15px; font-size: 10px; font-weight: 700; display: inline-flex; align-items: center; gap: 4px; }
+        .q-display { font-size: 14px; color: var(--text); margin-bottom: 12px; line-height: 1.7; word-wrap: break-word; overflow-wrap: break-word; white-space: pre-line; max-width: 100%; }
+        .q-display sup { font-size: 0.7em; vertical-align: super; position: relative; top: -0.3em; }
+        .q-display sub { font-size: 0.7em; vertical-align: sub; position: relative; bottom: -0.1em; }
+        .q-display .math-fraction { display: inline-flex !important; flex-direction: column !important; align-items: center !important; vertical-align: middle !important; line-height: 1 !important; margin: 0 2px !important; }
+        .q-display .frac-num { border-bottom: 2px solid #1e293b !important; padding: 0 5px !important; font-size: 0.8em !important; display: inline-block !important; }
+        .q-display .frac-den { padding: 0 5px !important; font-size: 0.8em !important; display: inline-block !important; }
+        .q-options { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-top: 8px; }
+        @media (max-width: 600px) { .q-options { grid-template-columns: 1fr; } }
+       .q-opt {
+    padding: 8px 12px;
+    background: #f8fafc;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    font-size: 12px;
+    word-wrap: break-word !important;
+    overflow-wrap: break-word !important;
+    word-break: break-word !important;
+    white-space: normal !important;
+    line-height: 1.5;
+    max-width: 100%;
+    overflow: hidden;
+    
+}
+.q-opt sup { font-size: 0.7em; vertical-align: super; }
+.q-opt sub { font-size: 0.7em; vertical-align: sub; }
+.q-opt .math-fraction { display: inline-flex !important; flex-direction: column !important; align-items: center !important; vertical-align: middle !important; line-height: 1 !important; margin: 0 2px !important; }
+.q-opt .frac-num { border-bottom: 2px solid #1e293b !important; padding: 0 4px !important; font-size: 0.8em !important; display: inline-block !important; }
+.q-opt .frac-den { padding: 0 4px !important; font-size: 0.8em !important; display: inline-block !important; }
+.q-opt.correct { background: #d1fae5; border-color: #a7f3d0; color: #065f46; }
+
+
+.q-display {
+    font-size: 14px;
+    color: var(--text);
+    margin-bottom: 12px;
+    line-height: 1.7;
+    word-wrap: break-word !important;
+    overflow-wrap: break-word !important;
+    word-break: break-word !important;
+    white-space: pre-line !important;
+    max-width: 100%;
+    overflow: hidden;
+}
+
+        .q-actions { margin-top: 12px; display: flex; gap: 8px; justify-content: flex-end; }
+        .btn-act { padding: 5px 14px; border-radius: 7px; font-size: 11px; font-weight: 600; cursor: pointer; border: none; display: inline-flex; align-items: center; gap: 5px; transition: var(--transition); }
+        .btn-edit { background: #f59e0b; color: white; } .btn-edit:hover { background: #d97706; }
+        .btn-delete { background: #fee2e2; color: #ef4444; } .btn-delete:hover { background: #ef4444; color: white; }
+        .q-image { max-width: 180px; max-height: 130px; border-radius: 10px; margin-top: 8px; }
+        .empty-state { text-align: center; padding: 50px; color: #94a3b8; }
+        .empty-state i { font-size: 50px; display: block; margin-bottom: 12px; opacity: 0.5; }
+
+        /* ============ MODAL & EDITOR STYLES ============ */
+        .modal-dialog { max-width: 850px; }
+        .shared-toolbar {
+            display: flex; flex-wrap: wrap; gap: 3px; padding: 7px 10px;
+            background: #f1f5f9; border: 1px solid var(--border); border-radius: 12px;
+            margin-bottom: 14px; position: sticky; top: 0; z-index: 5;
+        }
+        .t-group { display: flex; gap: 2px; align-items: center; padding: 0 6px; border-right: 1px solid var(--border); }
+        .t-group:last-child { border-right: none; }
+        .t-btn {
+            width: 32px; height: 30px; border: 1px solid transparent; border-radius: 6px;
+            background: transparent; cursor: pointer; font-size: 12px; display: flex;
+            align-items: center; justify-content: center; transition: 0.12s;
+            color: #475569; position: relative;
+        }
+        .t-btn:hover { background: #e2e8f0; }
+        .t-btn.on { background: var(--primary) !important; color: white !important; border-color: var(--primary) !important; box-shadow: 0 0 0 2px rgba(79,70,229,0.2); }
+        .t-btn sup, .t-btn sub { font-size: 7px; line-height: 0; }
+        .t-btn sup { vertical-align: super; position: relative; top: -2px; }
+        .t-btn sub { vertical-align: sub; position: relative; bottom: -1px; }
+
+        .math-drop {
+            display: none; flex-wrap: wrap; gap: 3px; padding: 8px 10px;
+            background: #fffbeb; border: 1px solid #fde68a; border-radius: 10px;
+            margin-bottom: 12px; max-height: 160px; overflow-y: auto;
+        }
+        .math-drop.show { display: flex; }
+        .math-label { width: 100%; font-size: 9px; color: #92400e; font-weight: 700; margin: 3px 0 1px; text-transform: uppercase; letter-spacing: 0.5px; border-top: 1px solid #fde68a; padding-top: 5px; }
+        .math-label:first-child { border-top: none; padding-top: 0; }
+        .m-btn {
+            width: 30px; height: 26px; border: 1px solid #e2e8f0; border-radius: 4px;
+            background: white; cursor: pointer; font-size: 12px; font-weight: 600;
+            transition: 0.12s; display: flex; align-items: center; justify-content: center;
+            color: #475569; font-family: 'Times New Roman', serif;
+        }
+        .m-btn:hover { background: var(--primary); color: white; border-color: var(--primary); }
+        .m-btn.wide { width: auto; padding: 0 8px; font-size: 10px; font-family: 'Segoe UI', sans-serif; }
+
+        .editor-area {
+            min-height: 80px; max-height: 200px; overflow-y: auto;
+            padding: 10px 14px; border: 1.5px solid var(--border); border-radius: 10px;
+            background: white; font-size: 14px; line-height: 1.7; color: var(--text);
+            outline: none; word-wrap: break-word; overflow-wrap: break-word; white-space: pre-wrap;
+            font-family: 'Segoe UI', 'Inter', sans-serif; transition: var(--transition);
+        }
+        .editor-area:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(79,70,229,0.08); }
+        .editor-area:empty::before { content: attr(placeholder); color: #94a3b8; }
+        .editor-area sup { font-size: 0.7em; vertical-align: super; position: relative; top: -0.3em; line-height: 0; }
+        .editor-area sub { font-size: 0.7em; vertical-align: sub; position: relative; bottom: -0.1em; line-height: 0; }
+        .math-fraction { display: inline-flex !important; flex-direction: column !important; align-items: center !important; vertical-align: middle !important; line-height: 1 !important; margin: 0 2px !important; }
+        .frac-num, .frac-den { outline: none; min-width: 14px; cursor: text; }
+        .frac-num:focus, .frac-den:focus { background: #eff6ff; border-radius: 2px; }
+        .frac-num { border-bottom: 2px solid #1e293b !important; padding: 0 5px !important; font-size: 0.8em !important; text-align: center !important; display: inline-block !important; }
+        .frac-den { padding: 0 5px !important; font-size: 0.8em !important; text-align: center !important; display: inline-block !important; }
+        .fraction-wrapper { display: inline-flex !important; align-items: center !important; vertical-align: middle !important; }
+
+        .editor-label { font-weight: 700; font-size: 13px; margin-bottom: 5px; display: flex; align-items: center; gap: 6px; color: var(--text); }
+        .editor-label i { color: var(--primary); font-size: 14px; }
+        .editor-section { margin-bottom: 14px; }
+
+        @media (max-width: 768px) {
+            .questions-container { padding: 16px 10px; }
+            .shared-toolbar { gap: 1px; padding: 5px 6px; }
+            .t-btn { width: 28px; height: 26px; font-size: 10px; }
+        }
+    </style>
+    <!-- CSRF Protection Shield -->
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <script>
+    window.CSRF_TOKEN = "{{ csrf_token() }}";
+    (function() {
+        if (window.fetch) {
+            const _origFetch = window.fetch;
+            window.fetch = function(url, options) {
+                options = options || {};
+                const method = (options.method || 'GET').toUpperCase();
+                if (!['GET', 'HEAD', 'OPTIONS', 'TRACE'].includes(method)) {
+                    options.headers = options.headers || {};
+                    const token = window.CSRF_TOKEN || (document.querySelector('meta[name="csrf-token"]') && document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
+                    if (token) {
+                        if (typeof Headers !== 'undefined' && options.headers instanceof Headers) {
+                            if (!options.headers.has('X-CSRFToken')) options.headers.set('X-CSRFToken', token);
+                        } else if (Array.isArray(options.headers)) {
+                            options.headers.push(['X-CSRFToken', token]);
+                        } else {
+                            if (!options.headers['X-CSRFToken']) options.headers['X-CSRFToken'] = token;
+                        }
+                    }
+                }
+                return _origFetch(url, options);
+            };
+        }
+        if (window.$ && $.ajaxSetup) {
+            $.ajaxSetup({
+                beforeSend: function(xhr, settings) {
+                    if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type)) {
+                        xhr.setRequestHeader("X-CSRFToken", window.CSRF_TOKEN);
+                    }
+                }
+            });
+        }
+        if (navigator.sendBeacon) {
+            const _origBeacon = navigator.sendBeacon.bind(navigator);
+            navigator.sendBeacon = function(url, data) {
+                if (data instanceof FormData) {
+                    if (!data.has('csrf_token')) data.append('csrf_token', window.CSRF_TOKEN);
+                } else if (typeof data === 'string') {
+                    try {
+                        const obj = JSON.parse(data);
+                        if (typeof obj === 'object' && obj !== null && !obj.csrf_token) {
+                            obj.csrf_token = window.CSRF_TOKEN;
+                            data = JSON.stringify(obj);
+                        }
+                    } catch(e) {}
+                }
+                return _origBeacon(url, data);
+            };
+        }
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('form[method="POST"], form[method="post"]').forEach(function(form) {
+                if (!form.querySelector('input[name="csrf_token"]')) {
+                    var input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = 'csrf_token';
+                    input.value = window.CSRF_TOKEN;
+                    form.appendChild(input);
+                }
+            });
+        });
+    })();
+    </script>
+</head>
+<body>
+
+    <div class="bg-shape bg-shape-1"></div>
+
+    <div class="questions-container">
+        <div class="page-header">
+            <div class="logo-icon"><i class="fas fa-folder-open"></i></div>
+            <h1>{{ section.section_name }}</h1>
+            <p>Manage questions for this section</p>
+        </div>
+
+        <div class="top-bar">
+            <a href="/admin/ce_exam/{{ section.exam_id }}/settings" class="btn-back"><i class="fas fa-arrow-left"></i> Back to Settings</a>
+            <button class="btn-add" onclick="openAddQuestionModal()"><i class="fas fa-plus"></i> Add Question</button>
+        </div>
+
+        {% if questions and questions|length > 0 %}
+            {% for q in questions %}
+            <div class="question-card" style="animation-delay:{{ loop.index * 0.05 }}s;">
+                <div class="q-header">
+                    <span class="q-number"><i class="fas fa-circle" style="font-size:6px;color:var(--primary);"></i> Question {{ loop.index }}</span>
+                    {% if q.mandatory %}<span class="mandatory-badge"><i class="fas fa-star"></i> Mandatory</span>{% endif %}
+                </div>
+                <div class="q-display">{{ q.question | sanitize | safe }}</div>
+                {% if q.image %}<img src="/static/images/{{ q.image }}" class="q-image">{% endif %}
+                <div class="q-options">
+                    <div class="q-opt {% if q.answer == q.option1 %}correct{% endif %}"><strong>A.</strong> {{ q.option1 | sanitize | safe }}</div>
+                    <div class="q-opt {% if q.answer == q.option2 %}correct{% endif %}"><strong>B.</strong> {{ q.option2 | sanitize | safe }}</div>
+                    <div class="q-opt {% if q.answer == q.option3 %}correct{% endif %}"><strong>C.</strong> {{ q.option3 | sanitize | safe }}</div>
+                    <div class="q-opt {% if q.answer == q.option4 %}correct{% endif %}"><strong>D.</strong> {{ q.option4 | sanitize | safe }}</div>
+                </div>
+                <div class="q-actions">
+                    <button class="btn-act btn-edit" onclick="editQuestion({{ q.id }})"><i class="fas fa-edit"></i> Edit</button>
+                    <button class="btn-act btn-delete" onclick="deleteQuestion({{ q.id }})"><i class="fas fa-trash"></i> Delete</button>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="question-card"><div class="empty-state"><i class="fas fa-inbox"></i><h3>No Questions Yet</h3><p>Click "Add Question" to get started</p></div></div>
+        {% endif %}
+    </div>
+
+    <!-- Add Question Modal -->
+    <div id="addQuestionModal" class="modal fade" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content" style="border-radius: 18px; overflow: hidden; border: none; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.2);">
+                <div class="modal-header" style="background: linear-gradient(135deg, #4f46e5, #3730a3); color: white; border: none; padding: 16px 22px;">
+                    <h5 class="modal-title"><i class="fas fa-plus-circle"></i> Add New Question</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <form method="POST" action="/admin/ce_section/{{ section.id }}/questions" enctype="multipart/form-data" id="addQuestionForm" onsubmit="return prepareSubmit()">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="modal-body" style="padding: 18px 22px;">
+                        
+                        <!-- SHARED TOOLBAR - used by all editors -->
+                        <div class="shared-toolbar" id="sharedToolbar">
+                            <div class="t-group">
+                                <button type="button" class="t-btn" data-cmd="bold" title="Bold (Ctrl+B)"><strong>B</strong></button>
+                                <button type="button" class="t-btn" data-cmd="italic" title="Italic (Ctrl+I)"><em>I</em></button>
+                                <button type="button" class="t-btn" data-cmd="underline" title="Underline (Ctrl+U)"><u>U</u></button>
+                            </div>
+                            <div class="t-group">
+                                <button type="button" class="t-btn" data-cmd="superscript" title="Superscript (Ctrl+.)">x<sup>2</sup></button>
+                                <button type="button" class="t-btn" data-cmd="subscript" title="Subscript (Ctrl+,)">x<sub>2</sub></button>
+                            </div>
+                            <div class="t-group">
+                                <button type="button" class="t-btn" data-cmd="insertUnorderedList" title="Bullet List"><i class="fas fa-list-ul"></i></button>
+                                <button type="button" class="t-btn" data-cmd="insertOrderedList" title="Numbered List"><i class="fas fa-list-ol"></i></button>
+                            </div>
+                            <div class="t-group f-btn-group">
+                                <button type="button" class="f-btn" onclick="CogniTaraKaTeX.openBuilderWithTemplate()" title="Insert Math &amp; Science Formulas"><i class="fas fa-square-root-alt"></i> Formulas</button>
+                            </div>
+                            <div class="t-group">
+                                <button type="button" class="t-btn math-toggle" id="mathToggleBtn" title="More Math Symbols" style="color:#8b5cf6;font-weight:700;"><i class="fas fa-calculator"></i></button>
+                            </div>
+                        </div>
+
+                        <!-- Math Symbols Dropdown -->
+                        <div class="math-drop" id="mathDrop">
+                            <span class="math-label">Operators</span>
+                            <button type="button" class="m-btn" onclick="insertAtCursor('+')">+</button>
+                            <button type="button" class="m-btn" onclick="insertAtCursor('−')">−</button>
+                            <button type="button" class="m-btn" onclick="insertAtCursor('×')">×</button>
+                            <button type="button" class="m-btn" onclick="insertAtCursor('÷')">÷</button>
+                            <button type="button" class="m-btn" onclick="insertAtCursor('±')">±</button>
+                            <button type="button" class="m-btn" onclick="insertAtCursor('=')">=</button>
+                            <button type="button" class="m-btn" onclick="insertAtCursor('≈')">≈</button>
+                            <button type="button" class="m-btn" onclick="insertAtCursor('≠')">≠</button>
+                            <button type="button" class="m-btn" onclick="insertAtCursor('<')">&lt;</button>
+                            <button type="button" class="m-btn" onclick="insertAtCursor('>')">&gt;</button>
+                            <button type="button" class="m-btn" onclick="insertAtCursor('≤')">≤</button>
+                            <button type="button" class="m-btn" onclick="insertAtCursor('≥')">≥</button>
+                            <span class="math-label">Roots & Powers (Visual Builder)</span>
+                            <button type="button" class="m-btn" onclick="CogniTaraKaTeX.openBuilderWithTemplate('root')" title="Square Root">√</button>
+                            <button type="button" class="m-btn" onclick="CogniTaraKaTeX.openBuilderWithTemplate('root', '3')" title="Cube Root">∛</button>
+                            <button type="button" class="m-btn" onclick="CogniTaraKaTeX.openBuilderWithTemplate('power')" title="Power xⁿ">xⁿ</button>
+                            <button type="button" class="m-btn" onclick="CogniTaraKaTeX.openBuilderWithTemplate('power', '2')" title="Power x²">²</button>
+                            <button type="button" class="m-btn" onclick="CogniTaraKaTeX.openBuilderWithTemplate('power', '3')" title="Power x³">³</button>
+                            <span class="math-label">Greek</span>
+                            <button type="button" class="m-btn" onclick="insertAtCursor('α')">α</button>
+                            <button type="button" class="m-btn" onclick="insertAtCursor('β')">β</button>
+                            <button type="button" class="m-btn" onclick="insertAtCursor('γ')">γ</button>
+                            <button type="button" class="m-btn" onclick="insertAtCursor('θ')">θ</button>
+                            <button type="button" class="m-btn" onclick="insertAtCursor('λ')">λ</button>
+                            <button type="button" class="m-btn" onclick="insertAtCursor('μ')">μ</button>
+                            <button type="button" class="m-btn" onclick="insertAtCursor('π')">π</button>
+                            <button type="button" class="m-btn" onclick="insertAtCursor('σ')">σ</button>
+                            <button type="button" class="m-btn" onclick="insertAtCursor('φ')">φ</button>
+                            <button type="button" class="m-btn" onclick="insertAtCursor('ω')">ω</button>
+                            <button type="button" class="m-btn" onclick="insertAtCursor('Δ')">Δ</button>
+                            <button type="button" class="m-btn" onclick="insertAtCursor('Σ')">Σ</button>
+                            <span class="math-label">Symbols</span>
+                            <button type="button" class="m-btn" onclick="insertAtCursor('∠')">∠</button>
+                            <button type="button" class="m-btn" onclick="insertAtCursor('°')">°</button>
+                            <button type="button" class="m-btn" onclick="insertAtCursor('∞')">∞</button>
+                            <button type="button" class="m-btn" onclick="insertAtCursor('%')">%</button>
+                            <span class="math-label">LaTeX Formulas & Fractions (Visual Preview in Box)</span>
+                            <button type="button" class="m-btn wide" onclick="CogniTaraKaTeX.openBuilderWithTemplate('fraction')">$\frac{a}{b}$</button>
+                            <button type="button" class="m-btn wide" onclick="CogniTaraKaTeX.openBuilderWithTemplate('root')">$\sqrt{x}$</button>
+                            <button type="button" class="m-btn wide" onclick="CogniTaraKaTeX.openBuilderWithTemplate('root', '3')">$\sqrt[n]{x}$</button>
+                            <button type="button" class="m-btn wide" onclick="CogniTaraKaTeX.openBuilderWithTemplate('power')">$x^n$</button>
+                            <button type="button" class="m-btn wide" onclick="CogniTaraKaTeX.openBuilderWithTemplate('subscript')">$x_n$</button>
+                            <button type="button" class="m-btn wide" onclick="CogniTaraKaTeX.openBuilderWithTemplate('general', '\\int_{a}^{b} f(x) dx')">$\int$</button>
+                            <button type="button" class="m-btn wide" onclick="CogniTaraKaTeX.openBuilderWithTemplate('general', '\\sum_{i=1}^{n} x_i')">$\sum$</button>
+                            <button type="button" class="m-btn wide" onclick="CogniTaraKaTeX.openBuilderWithTemplate('general')"><i class="fas fa-edit"></i> Custom Formula...</button>
+                            <button type="button" class="m-btn wide" onclick="insertFraction()"><i class="fas fa-divide"></i> HTML Frac</button>
+                            <span class="math-label">Chemistry & Reactions (\ce)</span>
+                            <button type="button" class="m-btn wide" onclick="CogniTaraKaTeX.openBuilderWithTemplate('chemistry', 'H2O')">H₂O</button>
+                            <button type="button" class="m-btn wide" onclick="CogniTaraKaTeX.openBuilderWithTemplate('chemistry', 'CO2')">CO₂</button>
+                            <button type="button" class="m-btn wide" onclick="CogniTaraKaTeX.openBuilderWithTemplate('chemistry', 'NaCl')">NaCl</button>
+                            <button type="button" class="m-btn wide" onclick="CogniTaraKaTeX.openBuilderWithTemplate('chemistry', 'CaCO3 -> CaO + CO2')">CaCO₃ →</button>
+                            <button type="button" class="m-btn wide" onclick="CogniTaraKaTeX.openBuilderWithTemplate('chemistry', '2H2 + O2 -> 2H2O')">2H₂ + O₂ →</button>
+                            <button type="button" class="m-btn wide" onclick="CogniTaraKaTeX.openBuilderWithTemplate('chemistry', 'H+ + OH- <=> H2O')">H⁺ + OH⁻ ⇌</button>
+                            <button type="button" class="m-btn wide" onclick="CogniTaraKaTeX.openBuilderWithTemplate('chemistry', '->')">→</button>
+                            <button type="button" class="m-btn wide" onclick="CogniTaraKaTeX.openBuilderWithTemplate('chemistry', '<=>')">⇌</button>
+                        </div>
+
+                        <!-- QUESTION -->
+                        <div class="editor-section">
+                            <div class="editor-label"><i class="fas fa-question-circle"></i> Question</div>
+                            <div class="editor-area" id="qEditor" contenteditable="true" placeholder="Type your question here..."></div>
+                            <textarea name="question" id="qEditorHidden" style="display:none;"></textarea>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label" style="font-size:12px;">Question Image (optional)</label>
+                            <input type="file" name="image" class="form-control form-control-sm" accept="image/*">
+                        </div>
+
+                        <!-- OPTIONS -->
+                        <div class="editor-label"><i class="fas fa-list"></i> Answer Options</div>
+                        <div class="row">
+                            {% for opt in [{'id':'optA','label':'A','name':'option1','h':'optAHidden'},{'id':'optB','label':'B','name':'option2','h':'optBHidden'},{'id':'optC','label':'C','name':'option3','h':'optCHidden'},{'id':'optD','label':'D','name':'option4','h':'optDHidden'}] %}
+                            <div class="col-md-6 editor-section">
+                                <div class="editor-label" style="font-size:12px;">{{ opt.label }}.</div>
+                                <div class="editor-area" id="{{ opt.id }}" contenteditable="true" placeholder="Option {{ opt.label }}" style="min-height:50px;max-height:120px;font-size:13px;"></div>
+                                <input type="hidden" name="{{ opt.name }}" id="{{ opt.h }}">
+                            </div>
+                            {% endfor %}
+                        </div>
+
+                        <div class="row mt-3">
+                            <div class="col-md-6 mb-2">
+                                <label class="form-label fw-bold" style="font-size:13px;">Correct Answer</label>
+                                <select name="answer" class="form-select form-select-sm" required>
+                                    <option value="">Select...</option>
+                                    <option value="1">A</option><option value="2">B</option><option value="3">C</option><option value="4">D</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-2 d-flex align-items-end">
+                                <label style="font-size:13px;cursor:pointer;"><input type="checkbox" name="mandatory" value="1" style="width:16px;height:16px;margin-right:6px;"> Mandatory Question</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer" style="background: #fafbfc; border-top: 1px solid #e5e7eb;">
+                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary" style="background: var(--primary); border: none;"><i class="fas fa-save"></i> Save Question</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='vendor/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
+    <script>
+        let modal, activeEditor = 'qEditor';
+        const editors = ['qEditor', 'optA', 'optB', 'optC', 'optD'];
+
+        function openAddQuestionModal() {
+            if (!modal) modal = new bootstrap.Modal(document.getElementById('addQuestionModal'));
+            document.getElementById('addQuestionForm').reset();
+            editors.forEach(id => { const el = document.getElementById(id); if (el) el.innerHTML = ''; });
+            document.getElementById('mathDrop').classList.remove('show');
+            document.getElementById('mathToggleBtn').classList.remove('on');
+            document.querySelectorAll('.t-btn.on').forEach(b => b.classList.remove('on'));
+            activeEditor = 'qEditor';
+            if (window.CogniTaraKaTeX) window.CogniTaraKaTeX.init(editors);
+            modal.show();
+            setTimeout(() => document.getElementById('qEditor').focus(), 300);
+        }
+
+        function E(id) { return document.getElementById(id); }
+        function H(id) { return document.getElementById(id + 'Hidden'); }
+        function updateHidden(id) { 
+            const e = E(id); 
+            const h = H(id); 
+            if (e && h) {
+                h.value = window.CogniTaraKaTeX ? window.CogniTaraKaTeX.serializeEditor(e) : e.innerHTML;
+            }
+        }
+        function getActiveEditor() { return document.activeElement && editors.includes(document.activeElement.id) ? document.activeElement.id : activeEditor; }
+        
+        function syncActiveButtons() {
+            const id = getActiveEditor();
+            if (!id) return;
+            activeEditor = id;
+            ['bold','italic','underline','superscript','subscript'].forEach(cmd => {
+                const btn = document.querySelector(`.t-btn[data-cmd="${cmd}"]`);
+                if (btn) btn.classList.toggle('on', document.queryCommandState(cmd));
+            });
+        }
+
+        function selectAllText(el) { const r = document.createRange(); r.selectNodeContents(el); const s = window.getSelection(); s.removeAllRanges(); s.addRange(r); }
+
+        function insertAtCursor(symbol) {
+            if (symbol && (symbol.startsWith('$') || symbol.startsWith('\\(') || symbol.startsWith('\\ce'))) {
+                let clean = symbol.replace(/^\$+|\$+$/g, '').replace(/^\\\(|\\\)$/g, '');
+                if (window.CogniTaraKaTeX) {
+                    window.CogniTaraKaTeX.insertFormula(clean);
+                    return;
+                }
+            }
+            const id = getActiveEditor();
+            const editor = E(id); if (!editor) return;
+            editor.focus();
+            const sel = window.getSelection();
+            if (sel.rangeCount) {
+                const r = sel.getRangeAt(0); r.deleteContents();
+                const t = document.createTextNode(symbol);
+                r.insertNode(t); r.setStartAfter(t); r.setEndAfter(t);
+                sel.removeAllRanges(); sel.addRange(r);
+            }
+            updateHidden(id);
+        }
+
+        function insertFraction() {
+            const id = getActiveEditor();
+            const editor = E(id); if (!editor) return;
+            editor.focus();
+            const wrapper = document.createElement('span');
+            wrapper.style.cssText = 'display:inline-block;'; wrapper.className = 'fraction-wrapper';
+            const container = document.createElement('span');
+            container.style.cssText = 'display:inline-flex;flex-direction:column;align-items:center;vertical-align:middle;line-height:1;margin:0 2px;'; container.className = 'math-fraction';
+            const num = document.createElement('span');
+            num.style.cssText = 'border-bottom:2px solid #1e293b;padding:0 5px;font-size:0.8em;text-align:center;min-width:14px;display:inline-block;';
+            num.contentEditable = 'true'; num.className = 'frac-num'; num.textContent = 'a';
+            const den = document.createElement('span');
+            den.style.cssText = 'padding:0 5px;font-size:0.8em;text-align:center;min-width:14px;display:inline-block;';
+            den.contentEditable = 'true'; den.className = 'frac-den'; den.textContent = 'b';
+            container.appendChild(num); container.appendChild(den);
+            const spacer = document.createTextNode('\u200B');
+            wrapper.appendChild(container); wrapper.appendChild(spacer);
+            const sel = window.getSelection();
+            if (sel.rangeCount) { const r = sel.getRangeAt(0); r.deleteContents(); r.insertNode(wrapper); r.setStartAfter(wrapper); r.setEndAfter(wrapper); sel.removeAllRanges(); sel.addRange(r); }
+            updateHidden(id);
+        }
+
+        // Shared toolbar buttons
+        document.querySelectorAll('.t-btn[data-cmd]').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                const cmd = this.dataset.cmd, id = getActiveEditor(), editor = E(id);
+                if (!editor) return;
+                editor.focus();
+                if (cmd === 'superscript' && document.queryCommandState('subscript')) document.execCommand('subscript', false, null);
+                if (cmd === 'subscript' && document.queryCommandState('superscript')) document.execCommand('superscript', false, null);
+                const map = { bold:'bold', italic:'italic', underline:'underline', superscript:'superscript', subscript:'subscript', insertUnorderedList:'insertUnorderedList', insertOrderedList:'insertOrderedList' };
+                if (map[cmd]) document.execCommand(map[cmd], false, null);
+                setTimeout(() => { syncActiveButtons(); updateHidden(id); }, 15);
+            });
+        });
+
+        // Math toggle
+        document.getElementById('mathToggleBtn').addEventListener('click', function() {
+            document.getElementById('mathDrop').classList.toggle('show');
+            this.classList.toggle('on');
+        });
+
+        // Track which editor has focus
+        editors.forEach(id => {
+            const editor = E(id); if (!editor) return;
+            editor.addEventListener('focus', () => { activeEditor = id; syncActiveButtons(); });
+            editor.addEventListener('input', () => updateHidden(id));
+            editor.addEventListener('keyup', () => { updateHidden(id); syncActiveButtons(); });
+            editor.addEventListener('click', () => { activeEditor = id; setTimeout(syncActiveButtons, 10); });
+            editor.addEventListener('keydown', function(e) {
+                if (e.ctrlKey || e.metaKey) {
+                    const k = e.key.toLowerCase();
+                    const map = { 'b': 'bold', 'i': 'italic', 'u': 'underline', '.': 'superscript', ',': 'subscript' };
+                    if (map[k]) { e.preventDefault(); const b = document.querySelector(`.t-btn[data-cmd="${map[k]}"]`); if (b) b.click(); return; }
+                }
+                const ae = document.activeElement;
+                const isFrac = ae.classList.contains('frac-num') || ae.classList.contains('frac-den');
+                if (isFrac) {
+                    const sel = window.getSelection();
+                    if (e.key === 'ArrowRight' && sel.rangeCount && sel.getRangeAt(0).startOffset >= (ae.textContent||'').length) {
+                        e.preventDefault(); const w = ae.closest('.fraction-wrapper');
+                        if (w?.nextSibling) { const r = document.createRange(); r.setStartAfter(w); r.setEndAfter(w); sel.removeAllRanges(); sel.addRange(r); }
+                    }
+                    if (e.key === 'ArrowLeft' && sel.rangeCount && sel.getRangeAt(0).startOffset === 0) {
+                        e.preventDefault(); const w = ae.closest('.fraction-wrapper');
+                        if (w) { const r = document.createRange(); r.setStartBefore(w); r.setEndBefore(w); sel.removeAllRanges(); sel.addRange(r); }
+                    }
+                    if (e.key === 'ArrowDown' && ae.classList.contains('frac-num')) { e.preventDefault(); const d = ae.parentElement.querySelector('.frac-den'); if (d) { d.focus(); selectAllText(d); } }
+                    if (e.key === 'ArrowUp' && ae.classList.contains('frac-den')) { e.preventDefault(); const n = ae.parentElement.querySelector('.frac-num'); if (n) { n.focus(); selectAllText(n); } }
+                    if (e.key === 'Tab' && !e.shiftKey && ae.classList.contains('frac-num')) { e.preventDefault(); const d = ae.parentElement.querySelector('.frac-den'); if (d) { d.focus(); selectAllText(d); } }
+                    if (e.key === 'Tab' && e.shiftKey && ae.classList.contains('frac-den')) { e.preventDefault(); const n = ae.parentElement.querySelector('.frac-num'); if (n) { n.focus(); selectAllText(n); } }
+                }
+            });
+        });
+
+        function prepareSubmit() {
+            editors.forEach(id => updateHidden(id));
+            const q = E('qEditorHidden').value.trim();
+            if (!q || q === '<br>' || q === '<div><br></div>') { alert('Please enter a question.'); return false; }
+            for (const o of ['optAHidden','optBHidden','optCHidden','optDHidden']) {
+                if (!E(o).value.trim() || E(o).value.trim() === '<br>') { alert('Please fill all options.'); return false; }
+            }
+            return true;
+        }
+
+        document.getElementById('addQuestionModal').addEventListener('hidden.bs.modal', function() {
+            document.getElementById('mathDrop').classList.remove('show');
+            document.getElementById('mathToggleBtn').classList.remove('on');
+            document.querySelectorAll('.t-btn.on').forEach(b => b.classList.remove('on'));
+        });
+
+        function deleteQuestion(qid) { 
+    Swal.fire({ 
+        title: 'Delete?', 
+        text: 'Cannot be undone!', 
+        icon: 'warning', 
+        showCancelButton: true, 
+        confirmButtonColor: '#ef4444', 
+        confirmButtonText: 'Delete' 
+    }).then(r => { 
+        if(r.isConfirmed) {
+            // Changed ${questionId} to ${qid}
+            window.location.href = `/admin/ce_question/${qid}/delete`; 
+        }
+    });
+}
+
+function editQuestion(qid) { 
+    // Changed ${questionId} to ${qid}
+    window.location.href = `/admin/ce_question/${qid}/edit`; 
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    if (window.CogniTaraKaTeX) window.CogniTaraKaTeX.init(editors);
+    if (typeof renderMathInElement === 'function') {
+        renderMathInElement(document.body, {
+            delimiters: [
+                {left: '$$', right: '$$', display: true},
+                {left: '$', right: '$', display: false},
+                {left: '\\(', right: '\\)', display: false},
+                {left: '\\[', right: '\\]', display: true}
+            ],
+            throwOnError: false
+        });
+    }
+});
+    </script>
+</body>
+</html>

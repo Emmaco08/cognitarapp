@@ -1,0 +1,1170 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Teacher - Add Exam | COGNITARA EXAM SYSTEM</title>
+    <link href="{{ url_for('static', filename='vendor/bootstrap/css/bootstrap.min.css') }}" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='vendor/fontawesome/css/all.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='vendor/katex/katex.min.css') }}">
+    <script src="{{ url_for('static', filename='vendor/katex/katex.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='vendor/katex/contrib/mhchem.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='vendor/katex/contrib/auto-render.min.js') }}"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #e8edf5 100%);
+            font-family: 'Segoe UI', 'Poppins', Tahoma, Geneva, Verdana, sans-serif;
+            min-height: 100vh;
+            position: relative;
+            overflow-x: hidden;
+        }
+        /* Animated Educational Icons Background */
+        .edu-icon {
+            position: absolute;
+            color: rgba(26, 86, 219, 0.06);
+            pointer-events: none;
+            z-index: 0;
+            animation: floatIcon 20s infinite ease-in-out;
+        }
+        @keyframes floatIcon {
+            0% {
+                transform: translate(0, 0) rotate(0deg);
+                opacity: 0;
+            }
+            10% {
+                opacity: 0.08;
+            }
+            90% {
+                opacity: 0.08;
+            }
+            100% {
+                transform: translate(100px, -100px) rotate(360deg);
+                opacity: 0;
+            }
+        }
+        .edu-icon:nth-child(1) { top: 10%; left: 5%; animation-duration: 18s; font-size: 50px; }
+        .edu-icon:nth-child(2) { top: 70%; left: 15%; animation-duration: 22s; font-size: 40px; animation-delay: 2s; }
+        .edu-icon:nth-child(3) { top: 30%; left: 85%; animation-duration: 20s; font-size: 55px; animation-delay: 4s; }
+        .edu-icon:nth-child(4) { top: 80%; left: 80%; animation-duration: 25s; font-size: 35px; animation-delay: 1s; }
+        .edu-icon:nth-child(5) { top: 50%; left: 10%; animation-duration: 19s; font-size: 45px; animation-delay: 3s; }
+        .edu-icon:nth-child(6) { top: 20%; left: 70%; animation-duration: 23s; font-size: 60px; animation-delay: 5s; }
+        .edu-icon:nth-child(7) { top: 60%; left: 90%; animation-duration: 21s; font-size: 42px; animation-delay: 2.5s; }
+        .edu-icon:nth-child(8) { top: 85%; left: 25%; animation-duration: 24s; font-size: 38px; animation-delay: 6s; }
+        .edu-icon:nth-child(9) { top: 15%; left: 45%; animation-duration: 17s; font-size: 48px; animation-delay: 1.5s; }
+        .edu-icon:nth-child(10) { top: 45%; left: 75%; animation-duration: 26s; font-size: 52px; animation-delay: 3.5s; }
+        /* Main Container */
+        .add-exam-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 30px;
+            position: relative;
+            z-index: 10;
+        }
+        /* Header Section */
+        .page-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        .logo-icon {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, #1a56db 0%, #0e3b9e 100%);
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+            animation: pulse 2s infinite;
+            box-shadow: 0 10px 25px rgba(26, 86, 219, 0.2);
+        }
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        .logo-icon i {
+            font-size: 40px;
+            color: white;
+        }
+        .page-header h1 {
+            font-size: 36px;
+            font-weight: 800;
+            background: linear-gradient(135deg, #1a56db 0%, #0e3b9e 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 10px;
+        }
+        .page-header p {
+            font-size: 16px;
+            color: #64748b;
+        }
+        /* Form Container */
+        .form-container {
+            background: white;
+            border-radius: 28px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.05);
+            padding: 35px;
+            border: 1px solid #e2e8f0;
+        }
+        /* Form Groups */
+        .form-group {
+            margin-bottom: 25px;
+        }
+        .input-group-custom {
+            position: relative;
+        }
+        .input-group-custom i.input-icon {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #94a3b8;
+            font-size: 16px;
+            z-index: 1;
+        }
+        .form-control-custom {
+            width: 100%;
+            padding: 13px 15px 13px 45px;
+            border: 2px solid #e2e8f0;
+            border-radius: 14px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            background: #f8fafc;
+        }
+        .form-control-custom:focus {
+            outline: none;
+            border-color: #1a56db;
+            background: white;
+            box-shadow: 0 0 0 3px rgba(26, 86, 219, 0.1);
+        }
+        .form-control-custom[readonly] {
+            background: #f1f5f9;
+            cursor: not-allowed;
+        }
+        label {
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 8px;
+            display: block;
+            font-size: 14px;
+        }
+        label i {
+            margin-right: 8px;
+            color: #1a56db;
+        }
+        /* Question Card */
+        .question-card {
+            background: #f8fafc;
+            border-radius: 20px;
+            padding: 25px;
+            margin-bottom: 25px;
+            border: 1px solid #e2e8f0;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+        .question-card:hover {
+            border-color: #1a56db;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+        }
+        .question-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e2e8f0;
+        }
+        .question-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #1a56db;
+        }
+        .remove-btn {
+            background: #fee2e2;
+            border: none;
+            color: #ef4444;
+            padding: 6px 15px;
+            border-radius: 10px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .remove-btn:hover {
+            background: #ef4444;
+            color: white;
+        }
+        /* Enhanced Toolbar */
+        .question-toolbar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 15px;
+            padding: 10px;
+            background: white;
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+        }
+        .toolbar-btn {
+            padding: 6px 12px;
+            font-size: 13px;
+            cursor: pointer;
+            border: 1px solid #e2e8f0;
+            background: white;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .toolbar-btn:hover {
+            background: #1a56db;
+            color: white;
+            border-color: #1a56db;
+        }
+        .toolbar-divider {
+            width: 1px;
+            background: #e2e8f0;
+            margin: 0 5px;
+        }
+        .question-textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            font-size: 14px;
+            font-family: inherit;
+            resize: vertical;
+            transition: all 0.3s ease;
+        }
+        .question-textarea:focus {
+            outline: none;
+            border-color: #1a56db;
+            box-shadow: 0 0 0 3px rgba(26, 86, 219, 0.1);
+        }
+        /* Live Preview */
+        .formatted-preview {
+            background: #f1f5f9;
+            border-radius: 12px;
+            padding: 12px;
+            margin-top: 10px;
+            display: none;
+            border-left: 4px solid #1a56db;
+        }
+        .preview-content {
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        .preview-content b, .preview-content strong {
+            font-weight: bold;
+        }
+        .preview-content i, .preview-content em {
+            font-style: italic;
+        }
+        .preview-content u {
+            text-decoration: underline;
+        }
+        .preview-content sup {
+            font-size: 10px;
+            vertical-align: super;
+        }
+        .preview-content sub {
+            font-size: 10px;
+            vertical-align: sub;
+        }
+        /* Image Preview */
+        .image-preview {
+            max-width: 150px;
+            max-height: 120px;
+            margin-top: 10px;
+            display: none;
+            border: 2px solid #1a56db;
+            border-radius: 12px;
+            padding: 5px;
+        }
+        .image-status {
+            font-size: 12px;
+            margin-top: 8px;
+            padding: 8px 12px;
+            border-radius: 10px;
+            display: none;
+        }
+        .image-status.error {
+            color: #991b1b;
+            background-color: #fee2e2;
+            border-left: 3px solid #ef4444;
+        }
+        .image-status.success {
+            color: #065f46;
+            background-color: #d1fae5;
+            border-left: 3px solid #10b981;
+        }
+        .image-status.warning {
+            color: #92400e;
+            background-color: #fef3c7;
+            border-left: 3px solid #f59e0b;
+        }
+        /* Options Grid */
+        .options-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin: 15px 0;
+        }
+        .option-input {
+            width: 100%;
+            padding: 10px 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 13px;
+            transition: all 0.3s ease;
+        }
+        .option-input:focus {
+            outline: none;
+            border-color: #1a56db;
+        }
+        .answer-select {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 13px;
+            background: white;
+            cursor: pointer;
+        }
+        /* Buttons */
+        .btn-add-question {
+            background: linear-gradient(135deg, #1a56db 0%, #0e3b9e 100%);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin-right: 15px;
+        }
+        .btn-add-question:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(26, 86, 219, 0.3);
+        }
+        .btn-submit {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .btn-submit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(16, 185, 129, 0.3);
+        }
+        .btn-back {
+            background: white;
+            border: 2px solid #e2e8f0;
+            padding: 10px 25px;
+            border-radius: 14px;
+            color: #64748b;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+        }
+        .btn-back:hover {
+            border-color: #1a56db;
+            color: #1a56db;
+            background: #eff6ff;
+        }
+        .button-group {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: 30px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        /* Responsive */
+        @media (max-width: 768px) {
+            .add-exam-container {
+                padding: 20px 15px;
+            }
+            
+            .page-header h1 {
+                font-size: 28px;
+            }
+            
+            .form-container {
+                padding: 20px;
+            }
+            
+            .options-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .question-toolbar {
+                justify-content: center;
+            }
+            
+            .button-group {
+                flex-direction: column;
+            }
+        }
+    </style>
+    <!-- CSRF Protection Shield -->
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <script>
+    window.CSRF_TOKEN = "{{ csrf_token() }}";
+    (function() {
+        if (window.fetch) {
+            const _origFetch = window.fetch;
+            window.fetch = function(url, options) {
+                options = options || {};
+                const method = (options.method || 'GET').toUpperCase();
+                if (!['GET', 'HEAD', 'OPTIONS', 'TRACE'].includes(method)) {
+                    options.headers = options.headers || {};
+                    const token = window.CSRF_TOKEN || (document.querySelector('meta[name="csrf-token"]') && document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
+                    if (token) {
+                        if (typeof Headers !== 'undefined' && options.headers instanceof Headers) {
+                            if (!options.headers.has('X-CSRFToken')) options.headers.set('X-CSRFToken', token);
+                        } else if (Array.isArray(options.headers)) {
+                            options.headers.push(['X-CSRFToken', token]);
+                        } else {
+                            if (!options.headers['X-CSRFToken']) options.headers['X-CSRFToken'] = token;
+                        }
+                    }
+                }
+                return _origFetch(url, options);
+            };
+        }
+        if (window.$ && $.ajaxSetup) {
+            $.ajaxSetup({
+                beforeSend: function(xhr, settings) {
+                    if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type)) {
+                        xhr.setRequestHeader("X-CSRFToken", window.CSRF_TOKEN);
+                    }
+                }
+            });
+        }
+        if (navigator.sendBeacon) {
+            const _origBeacon = navigator.sendBeacon.bind(navigator);
+            navigator.sendBeacon = function(url, data) {
+                if (data instanceof FormData) {
+                    if (!data.has('csrf_token')) data.append('csrf_token', window.CSRF_TOKEN);
+                } else if (typeof data === 'string') {
+                    try {
+                        const obj = JSON.parse(data);
+                        if (typeof obj === 'object' && obj !== null && !obj.csrf_token) {
+                            obj.csrf_token = window.CSRF_TOKEN;
+                            data = JSON.stringify(obj);
+                        }
+                    } catch(e) {}
+                }
+                return _origBeacon(url, data);
+            };
+        }
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('form[method="POST"], form[method="post"]').forEach(function(form) {
+                if (!form.querySelector('input[name="csrf_token"]')) {
+                    var input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = 'csrf_token';
+                    input.value = window.CSRF_TOKEN;
+                    form.appendChild(input);
+                }
+            });
+        });
+    })();
+    </script>
+</head>
+<body>
+    <!-- Animated Educational Icons Background -->
+    <div class="edu-icon"><i class="fas fa-chalkboard-teacher"></i></div>
+    <div class="edu-icon"><i class="fas fa-file-alt"></i></div>
+    <div class="edu-icon"><i class="fas fa-pen-fancy"></i></div>
+    <div class="edu-icon"><i class="fas fa-question-circle"></i></div>
+    <div class="edu-icon"><i class="fas fa-tasks"></i></div>
+    <div class="edu-icon"><i class="fas fa-edit"></i></div>
+    <div class="edu-icon"><i class="fas fa-clipboard-list"></i></div>
+    <div class="edu-icon"><i class="fas fa-chalkboard"></i></div>
+    <div class="edu-icon"><i class="fas fa-school"></i></div>
+    <div class="edu-icon"><i class="fas fa-book"></i></div>
+    <div class="add-exam-container">
+        <!-- Header -->
+        <div class="page-header">
+            <div class="logo-icon">
+                <i class="fas fa-chalkboard-teacher"></i>
+            </div>
+            <h1>Create New Exam</h1>
+            <p>Design your exam with rich text formatting and images</p>
+        </div>
+        <!-- Form Container -->
+        <div class="form-container">
+            <form method="POST" enctype="multipart/form-data" id="examForm">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <!-- Exam Details -->
+                <div class="form-group">
+                    <label><i class="fas fa-tag"></i> Exam Name</label>
+                    <div class="input-group-custom">
+                        <i class="fas fa-file-alt input-icon"></i>
+                        <input type="text" class="form-control-custom" name="exam_name" placeholder="e.g., Mathematics Final Exam" required>
+                    </div>
+                </div>
+<!-- Add this to teacher_add_exam.html after the exam name field -->
+<div class="form-group">
+    <label><i class="fas fa-users"></i> Target Class & Specialisation</label>
+    <div class="row">
+        <div class="col-md-6">
+            <select class="form-control-custom" name="target_class" id="targetClass" required onchange="updateSpecialisations()">
+                <option value="">-- Select Class --</option>
+                {% for class_name, specs in classes_taught.items() %}
+                <option value="{{ class_name }}" data-specs="{{ specs|join(',') }}">
+                    {{ class_name }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-6">
+            <select class="form-control-custom" name="specialisation_tag" id="specialisationTag" required>
+                <option value="">-- Select Specialisation --</option>
+            </select>
+        </div>
+    </div>
+    <small class="text-muted" id="specHint" style="display:none;">
+        <i class="fas fa-info-circle"></i> 
+        <span id="specHintText"></span>
+    </small>
+</div>
+<div class="form-group">
+    <label><i class="fas fa-tag"></i> Subject Name</label>
+    <div class="input-group-custom">
+        <i class="fas fa-book input-icon"></i>
+        <input type="text" class="form-control-custom" name="subject_tag" 
+               placeholder="e.g., Mathematics, English, Physics" value="General">
+    </div>
+</div>
+<script>
+// Store specialisations data from server - ONLY what this teacher is assigned to
+const specialisationsData = {};
+{% for class_name, specs in classes_taught.items() %}
+specialisationsData['{{ class_name }}'] = {{ specs|tojson }};
+{% endfor %}
+function updateSpecialisations() {
+    const classSelect = document.getElementById('targetClass');
+    const specSelect = document.getElementById('specialisationTag');
+    const specHint = document.getElementById('specHint');
+    const specHintText = document.getElementById('specHintText');
+    const selectedClass = classSelect.value;
+    
+    // Clear and reset
+    specSelect.innerHTML = '<option value="">-- Select Specialisation --</option>';
+    specHint.style.display = 'none';
+    
+    if (selectedClass && specialisationsData[selectedClass]) {
+        const specs = specialisationsData[selectedClass];
+        specs.forEach(spec => {
+            const option = document.createElement('option');
+            option.value = spec;
+            if (spec === 'General') {
+                option.textContent = 'General — broadcasts to ALL students in ' + selectedClass;
+            } else {
+                option.textContent = spec + ' — only ' + spec + ' students in ' + selectedClass;
+            }
+            specSelect.appendChild(option);
+        });
+        
+        // Auto-select if only one option
+        if (specs.length === 1) {
+            specSelect.value = specs[0];
+            specSelect.dispatchEvent(new Event('change'));
+        }
+        
+        // Show contextual hint
+        specHint.style.display = 'block';
+        if (specs.includes('General') && specs.length === 1) {
+            specHintText.textContent = 'This exam will be visible to every student in ' + selectedClass + '.';
+        } else if (!specs.includes('General')) {
+            specHintText.textContent = 'You are a specialist teacher. Only your assigned department will see this exam.';
+        } else {
+            specHintText.textContent = 'Choose "General" to reach all departments, or pick a specific one.';
+        }
+    }
+}
+</script>
+                
+                <div class="form-group">
+                    <label><i class="fas fa-hourglass-half"></i> Duration (minutes)</label>
+                    <div class="input-group-custom">
+                        <i class="fas fa-clock input-icon"></i>
+                        <input type="number" class="form-control-custom" name="duration" min="1" placeholder="30" required>
+                    </div>
+                </div>
+                <hr style="margin: 30px 0; border-color: #e2e8f0;">
+                <!-- Questions Section -->
+                <h4 style="margin-bottom: 20px;"><i class="fas fa-list-ol"></i> Questions</h4>
+                <div id="questionsContainer"></div>
+                <div style="margin: 20px 0;">
+                    <button type="button" class="btn-add-question" onclick="addQuestion()">
+                        <i class="fas fa-plus-circle"></i> Add Question
+                    </button>
+                </div>
+                <!-- Buttons -->
+                <div class="button-group">
+                    <button type="submit" class="btn-submit" id="submitBtn">
+                        <i class="fas fa-save"></i> Save Exam
+                    </button>
+                    <a href="{{ url_for('teacher_dashboard') }}" class="btn-back">
+                        <i class="fas fa-arrow-left"></i> Back to Dashboard
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+    <script>
+        let questionCount = 0;
+        let imageValid = {};
+        // Function to wrap selected text with HTML tags
+        function wrapText(textarea, openTag, closeTag) {
+            const start = textarea.selectionStart;
+            const end = textarea.selectionEnd;
+            const selectedText = textarea.value.substring(start, end);
+            const beforeText = textarea.value.substring(0, start);
+            const afterText = textarea.value.substring(end);
+            
+            let newText;
+            if (selectedText) {
+                newText = beforeText + openTag + selectedText + closeTag + afterText;
+            } else {
+                newText = beforeText + openTag + closeTag + afterText;
+            }
+            
+            textarea.value = newText;
+            
+            // Set cursor position inside the tags if no text was selected
+            if (!selectedText) {
+                textarea.selectionStart = start + openTag.length;
+                textarea.selectionEnd = start + openTag.length;
+            } else {
+                textarea.selectionStart = start + openTag.length;
+                textarea.selectionEnd = end + openTag.length;
+            }
+            
+            textarea.focus();
+            return newText;
+        }
+        // Format text function
+        function formatText(tag, textareaId, questionNum) {
+            const textarea = document.getElementById(textareaId);
+            if (!textarea) return;
+            
+            switch(tag) {
+                case 'b':
+                    wrapText(textarea, '<strong>', '</strong>');
+                    break;
+                case 'i':
+                    wrapText(textarea, '<em>', '</em>');
+                    break;
+                case 'u':
+                    wrapText(textarea, '<u>', '</u>');
+                    break;
+                case 'sup':
+                    wrapText(textarea, '<sup>', '</sup>');
+                    break;
+                case 'sub':
+                    wrapText(textarea, '<sub>', '</sub>');
+                    break;
+                case 'power':
+                    wrapText(textarea, '^', '');
+                    break;
+                default:
+                    break;
+            }
+            
+            updatePreview(questionNum);
+        }
+        // Update live preview
+        function updatePreview(questionNum) {
+            const textarea = document.getElementById(`question${questionNum}`);
+            const preview = document.getElementById(`preview${questionNum}`);
+            
+            if (textarea && preview) {
+                let previewContent = preview.querySelector('.preview-content');
+                if (!previewContent) {
+                    previewContent = document.createElement('div');
+                    previewContent.className = 'preview-content mt-1';
+                    preview.appendChild(previewContent);
+                }
+                let content = textarea.value;
+                // Convert ^power to superscript for preview
+                content = content.replace(/\^([^\s]+)/g, '<sup>$1</sup>');
+                previewContent.innerHTML = content;
+                if (typeof renderMathInElement === 'function') {
+                    renderMathInElement(previewContent, {
+                        delimiters: [
+                            {left: '$$', right: '$$', display: true},
+                            {left: '$', right: '$', display: false},
+                            {left: '\\(', right: '\\)', display: false},
+                            {left: '\\[', right: '\\]', display: true}
+                        ],
+                        throwOnError: false
+                    });
+                }
+                preview.style.display = 'block';
+            }
+        }
+        // Image validation function
+        function validateImage(input, questionNum) {
+            const file = input.files[0];
+            const statusDiv = document.getElementById(`imageStatus${questionNum}`);
+            const previewImg = document.getElementById(`preview${questionNum}_img`);
+            
+            if (!file) {
+                if (statusDiv) statusDiv.style.display = 'none';
+                if (previewImg) previewImg.style.display = 'none';
+                imageValid[questionNum] = true;
+                return true;
+            }
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                if (previewImg) {
+                    previewImg.src = e.target.result;
+                    previewImg.style.display = 'block';
+                }
+            };
+            reader.readAsDataURL(file);
+            
+            if (!file.type.startsWith('image/')) {
+                statusDiv.className = 'image-status error';
+                statusDiv.innerHTML = '<i class="fas fa-times-circle"></i> Only image files are allowed!';
+                statusDiv.style.display = 'block';
+                imageValid[questionNum] = false;
+                input.value = '';
+                if (previewImg) previewImg.style.display = 'none';
+                return false;
+            }
+            
+            const sizeKB = file.size / 1024;
+            const sizeMB = file.size / (1024 * 1024);
+            const sizeFormatted = sizeMB >= 1 ? sizeMB.toFixed(1) + 'MB' : sizeKB.toFixed(1) + 'KB';
+            
+            if (file.size > 16 * 1024 * 1024) {
+                statusDiv.className = 'image-status error';
+                statusDiv.innerHTML = `<i class="fas fa-times-circle"></i> Image is ${sizeFormatted}. Please choose an image under 16MB.`;
+                statusDiv.style.display = 'block';
+                imageValid[questionNum] = false;
+                input.value = '';
+                if (previewImg) previewImg.style.display = 'none';
+                return false;
+            }
+            
+            statusDiv.className = 'image-status success';
+            statusDiv.innerHTML = `<i class="fas fa-check-circle"></i> Image selected (${sizeFormatted}) - Full quality preserved`;
+            statusDiv.style.display = 'block';
+            imageValid[questionNum] = true;
+            return true;
+        }
+        // Add new question (modified to save after adding)
+function addQuestion() {
+    questionCount++;
+    const container = document.getElementById("questionsContainer");
+    const newId = questionCount;
+    imageValid[newId] = true;
+    
+    const html = `
+<div class="question-card" id="q${newId}">
+    <div class="question-header">
+        <span class="question-title"><i class="fas fa-question-circle"></i> Question ${newId}</span>
+        <button type="button" class="remove-btn" onclick="removeQuestion(${newId})">
+            <i class="fas fa-trash-alt"></i> Remove
+        </button>
+    </div>
+    
+    <!-- Enhanced Toolbar -->
+    <div class="question-toolbar">
+        <button type="button" class="toolbar-btn" onclick="formatText('b', 'question${newId}', ${newId})">
+            <i class="fas fa-bold"></i> Bold
+        </button>
+        <button type="button" class="toolbar-btn" onclick="formatText('i', 'question${newId}', ${newId})">
+            <i class="fas fa-italic"></i> Italic
+        </button>
+        <button type="button" class="toolbar-btn" onclick="formatText('u', 'question${newId}', ${newId})">
+            <i class="fas fa-underline"></i> Underline
+        </button>
+        <span class="toolbar-divider"></span>
+        <button type="button" class="toolbar-btn" onclick="formatText('sup', 'question${newId}', ${newId})">
+            <i class="fas fa-superscript"></i> Superscript
+        </button>
+        <button type="button" class="toolbar-btn" onclick="formatText('sub', 'question${newId}', ${newId})">
+            <i class="fas fa-subscript"></i> Subscript
+        </button>
+        <button type="button" class="toolbar-btn" onclick="formatText('power', 'question${newId}', ${newId})">
+            <i class="fas fa-square-root-alt"></i> Power (x²)
+        </button>
+    </div>
+    
+    <textarea class="question-textarea" 
+              name="question${newId}" 
+              id="question${newId}" 
+              rows="3" 
+              placeholder="Enter question (use toolbar for formatting, e.g., x^2 for x²)"
+              required
+              oninput="updatePreview(${newId}); saveExamToSession();"></textarea>
+    
+    <div class="formatted-preview" id="preview${newId}" style="display:none;">
+        <strong><i class="fas fa-eye"></i> Preview:</strong>
+        <div class="preview-content mt-1"></div>
+    </div>
+    <div style="margin: 15px 0;">
+        <label style="font-size: 13px;"><i class="fas fa-image"></i> Question Image (optional)</label>
+        <input type="file" class="form-control" style="padding: 8px;" name="image${newId}" accept="image/*" 
+               onchange="validateImage(this, ${newId}); saveExamToSession();">
+        <img id="preview${newId}_img" class="image-preview" alt="Preview">
+        <div id="imageStatus${newId}" class="image-status"></div>
+        <small class="text-muted"><i class="fas fa-info-circle"></i> Original resolution, full quality (no size limit)</small>
+    </div>
+    <div class="options-grid">
+        <input type="text" class="option-input" name="option${newId}_1" placeholder="Option A" required oninput="saveExamToSession();">
+        <input type="text" class="option-input" name="option${newId}_2" placeholder="Option B" required oninput="saveExamToSession();">
+        <input type="text" class="option-input" name="option${newId}_3" placeholder="Option C" required oninput="saveExamToSession();">
+        <input type="text" class="option-input" name="option${newId}_4" placeholder="Option D" required oninput="saveExamToSession();">
+    </div>
+    
+    <select class="answer-select" name="answer${newId}" required onchange="saveExamToSession();">
+        <option value="">-- Select Correct Answer --</option>
+        <option value="1">A</option>
+        <option value="2">B</option>
+        <option value="3">C</option>
+        <option value="4">D</option>
+    </select>
+</div>`;
+    
+    container.insertAdjacentHTML('beforeend', html);
+    
+    // Auto-save after adding
+    setTimeout(saveExamToSession, 100);
+}
+            
+        function removeQuestion(id) {
+            document.getElementById(`q${id}`).remove();
+        }
+        // Validate all images before submit
+        function validateAllImages() {
+            let allValid = true;
+            for (let i = 1; i <= questionCount; i++) {
+                if (imageValid[i] === false) {
+                    allValid = false;
+                    const statusDiv = document.getElementById(`imageStatus${i}`);
+                    if (statusDiv) {
+                        statusDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                }
+            }
+            
+            if (!allValid) {
+                alert('<i class="fas fa-times-circle"></i> Please fix image issues before submitting.');
+                return false;
+            }
+            
+            const submitBtn = document.querySelector('.btn-submit');
+            const originalText = submitBtn.innerHTML;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving Exam...';
+            submitBtn.disabled = true;
+            
+            setTimeout(() => {
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+            }, 3000);
+            
+            return true;
+        }
+        // Initialize with first question
+        addQuestion();
+        // Form submit handler
+        document.getElementById('examForm').onsubmit = validateAllImages;
+    </script>
+    <script>
+    // ============ SESSION STORAGE FUNCTIONS ============
+    
+    // Save entire exam data to session storage
+    function saveExamToSession() {
+        const examData = {
+            exam_name: document.querySelector('input[name="exam_name"]')?.value || '',
+            duration: document.querySelector('input[name="duration"]')?.value || '',
+            questions: []
+        };
+        
+        // Get all question cards
+        const questionCards = document.querySelectorAll('.question-card');
+        
+        questionCards.forEach((card, index) => {
+            const qNum = index + 1;
+            const questionData = {
+                question: document.getElementById(`question${qNum}`)?.value || '',
+                option1: document.querySelector(`input[name="option${qNum}_1"]`)?.value || '',
+                option2: document.querySelector(`input[name="option${qNum}_2"]`)?.value || '',
+                option3: document.querySelector(`input[name="option${qNum}_3"]`)?.value || '',
+                option4: document.querySelector(`input[name="option${qNum}_4"]`)?.value || '',
+                answer: document.querySelector(`select[name="answer${qNum}"]`)?.value || '',
+                imageData: null
+            };
+            
+            // Get image preview data if exists
+            const imgElement = document.getElementById(`preview${qNum}_img`);
+            if (imgElement && imgElement.src && imgElement.style.display !== 'none') {
+                questionData.imageData = imgElement.src;
+            }
+            
+            examData.questions.push(questionData);
+        });
+        
+        sessionStorage.setItem('teacher_exam_draft', JSON.stringify(examData));
+        sessionStorage.setItem('teacher_question_count', questionCount);
+        
+        // Save image valid status
+        sessionStorage.setItem('teacher_image_valid', JSON.stringify(imageValid));
+        
+        console.log('Exam saved to session storage');
+    }
+    
+    // Load exam data from session storage
+    function loadExamFromSession() {
+        const savedData = sessionStorage.getItem('teacher_exam_draft');
+        if (!savedData) return false;
+        
+        try {
+            const examData = JSON.parse(savedData);
+            const savedQuestionCount = sessionStorage.getItem('teacher_question_count');
+            
+            if (!examData.questions || examData.questions.length === 0) return false;
+            
+            // Clear existing questions
+            const container = document.getElementById('questionsContainer');
+            container.innerHTML = '';
+            questionCount = 0;
+            
+            // Load exam name and duration
+            if (examData.exam_name) {
+                document.querySelector('input[name="exam_name"]').value = examData.exam_name;
+            }
+            if (examData.duration) {
+                document.querySelector('input[name="duration"]').value = examData.duration;
+            }
+            
+            // Load each question
+            examData.questions.forEach((q, index) => {
+                addQuestion(); // Create new question
+                const qNum = questionCount;
+                
+                // Set question text
+                const questionTextarea = document.getElementById(`question${qNum}`);
+                if (questionTextarea && q.question) {
+                    questionTextarea.value = q.question;
+                    updatePreview(qNum);
+                }
+                
+                // Set options
+                const opt1 = document.querySelector(`input[name="option${qNum}_1"]`);
+                const opt2 = document.querySelector(`input[name="option${qNum}_2"]`);
+                const opt3 = document.querySelector(`input[name="option${qNum}_3"]`);
+                const opt4 = document.querySelector(`input[name="option${qNum}_4"]`);
+                if (opt1 && q.option1) opt1.value = q.option1;
+                if (opt2 && q.option2) opt2.value = q.option2;
+                if (opt3 && q.option3) opt3.value = q.option3;
+                if (opt4 && q.option4) opt4.value = q.option4;
+                
+                // Set answer
+                const answerSelect = document.querySelector(`select[name="answer${qNum}"]`);
+                if (answerSelect && q.answer) answerSelect.value = q.answer;
+                
+                // Set image if exists
+                if (q.imageData) {
+                    const previewImg = document.getElementById(`preview${qNum}_img`);
+                    if (previewImg) {
+                        previewImg.src = q.imageData;
+                        previewImg.style.display = 'block';
+                        imageValid[qNum] = true;
+                        
+                        // Show success status
+                        const statusDiv = document.getElementById(`imageStatus${qNum}`);
+                        if (statusDiv) {
+                            statusDiv.className = 'image-status success';
+                            statusDiv.innerHTML = '<i class="fas fa-check-circle"></i> Image loaded from draft';
+                            statusDiv.style.display = 'block';
+                        }
+                    }
+                }
+            });
+            
+            // Load image valid status
+            const savedImageValid = sessionStorage.getItem('teacher_image_valid');
+            if (savedImageValid) {
+                const loadedValid = JSON.parse(savedImageValid);
+                Object.assign(imageValid, loadedValid);
+            }
+            
+            console.log('Exam loaded from session storage');
+            return true;
+        } catch(e) {
+            console.error('Error loading exam from session:', e);
+            return false;
+        }
+    }
+    
+    // Auto-save function (saves every 30 seconds)
+    let autoSaveInterval;
+    function startAutoSave() {
+        if (autoSaveInterval) clearInterval(autoSaveInterval);
+        autoSaveInterval = setInterval(() => {
+            if (questionCount > 0) {
+                saveExamToSession();
+                showAutoSaveNotification();
+            }
+        }, 30000); // Save every 30 seconds
+    }
+    
+    // Show auto-save notification
+    let notificationTimeout;
+    function showAutoSaveNotification() {
+        const notification = document.getElementById('autoSaveNotification');
+        if (notification) {
+            notification.style.display = 'block';
+            clearTimeout(notificationTimeout);
+            notificationTimeout = setTimeout(() => {
+                notification.style.display = 'none';
+            }, 2000);
+        }
+    }
+    
+    // Clear session storage (call after successful submission)
+    function clearExamSession() {
+        sessionStorage.removeItem('teacher_exam_draft');
+        sessionStorage.removeItem('teacher_question_count');
+        sessionStorage.removeItem('teacher_image_valid');
+        console.log('Exam session cleared');
+    }
+    
+    // Save on any input change
+    function attachAutoSaveListeners() {
+        // Save when typing in exam name
+        const examNameInput = document.querySelector('input[name="exam_name"]');
+        if (examNameInput) {
+            examNameInput.addEventListener('input', () => setTimeout(saveExamToSession, 500));
+        }
+        
+        // Save when duration changes
+        const durationInput = document.querySelector('input[name="duration"]');
+        if (durationInput) {
+            durationInput.addEventListener('input', () => setTimeout(saveExamToSession, 500));
+        }
+    }
+    
+    // Create auto-save notification element
+    function createNotificationElement() {
+        if (document.getElementById('autoSaveNotification')) return;
+        
+        const notification = document.createElement('div');
+        notification.id = 'autoSaveNotification';
+        notification.innerHTML = `
+            <i class="fas fa-save"></i> Draft saved automatically
+        `;
+        notification.style.cssText = `
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #10b981;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 500;
+            z-index: 9999;
+            display: none;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            animation: slideInRight 0.3s ease;
+        `;
+        document.body.appendChild(notification);
+        
+        // Add animation style
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideInRight {
+                from {
+                    transform: translateX(100%);
+                    opacity: 0;
+                }
+                to {
+                    transform: translateX(0);
+                    opacity: 1;
+                }
+            }
+        `;
+        document.head.appendChild(style);
+    }
+    
+    // Save before page unload
+    window.addEventListener('beforeunload', function() {
+        if (questionCount > 0) {
+            saveExamToSession();
+        }
+    });
+    
+    // Load draft on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        createNotificationElement();
+        attachAutoSaveListeners();
+        
+        // Check if there's a saved draft
+        const savedDraft = sessionStorage.getItem('teacher_exam_draft');
+        if (savedDraft) {
+            // Show restore prompt
+            const restore = confirm('You have an unsaved exam draft. Would you like to restore it?');
+            if (restore) {
+                loadExamFromSession();
+            } else {
+                clearExamSession();
+            }
+        }
+        
+        startAutoSave();
+        
+        // Save when questions are modified (through add/remove)
+        const originalAddQuestion = addQuestion;
+        window.addQuestion = function() {
+            originalAddQuestion();
+            setTimeout(saveExamToSession, 100);
+        };
+        
+        const originalRemoveQuestion = removeQuestion;
+        window.removeQuestion = function(id) {
+            originalRemoveQuestion(id);
+            setTimeout(saveExamToSession, 100);
+        };
+    });
+    
+    // Override form submit to clear session after successful save
+    const originalSubmit = document.getElementById('examForm').onsubmit;
+    document.getElementById('examForm').onsubmit = function() {
+        saveExamToSession(); // Save one last time
+        // Clear after successful submit (will be cleared on next page load)
+        setTimeout(() => {
+            clearExamSession();
+        }, 1000);
+        return validateAllImages();
+    };
+</script>
+</body>
+</html>

@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Active Exams | COGNITARA EXAM SYSTEM</title>
+    <link href="{{ url_for('static', filename='vendor/bootstrap/css/bootstrap.min.css') }}" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='vendor/fontawesome/css/all.min.css') }}">
+    <script src="{{ url_for('static', filename='vendor/sweetalert2/sweetalert2.all.min.js') }}"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body { background: linear-gradient(135deg, #f5f7fa 0%, #e8edf5 100%); font-family: 'Segoe UI', 'Poppins', sans-serif; }
+        .container-custom { max-width: 1200px; margin: 0 auto; padding: 40px 20px; }
+        .card-custom { background: white; border-radius: 24px; border: 1px solid #e2e8f0; overflow: hidden; margin-bottom: 25px; }
+        .card-header-custom { padding: 18px 25px; border-bottom: 1px solid #e2e8f0; background: #f8fafc; display: flex; justify-content: space-between; align-items: center; }
+        .attempt-card { background: #f8fafc; border-radius: 16px; padding: 20px; margin-bottom: 15px; border: 1px solid #e2e8f0; transition: all 0.3s; }
+        .attempt-card:hover { border-color: #8b5cf6; }
+        .btn-pause { background: #f59e0b; color: white; border: none; padding: 8px 20px; border-radius: 10px; cursor: pointer; }
+        .btn-resume { background: #10b981; color: white; border: none; padding: 8px 20px; border-radius: 10px; cursor: pointer; }
+        .badge-paused { background: #fef3c7; color: #d97706; padding: 4px 12px; border-radius: 20px; font-size: 12px; }
+        .badge-active { background: #d1fae5; color: #065f46; padding: 4px 12px; border-radius: 20px; font-size: 12px; }
+        .btn-refresh { background: #1a56db; color: white; border: none; padding: 10px 20px; border-radius: 12px; cursor: pointer; }
+    </style>
+    <!-- CSRF Protection Shield -->
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <script>
+    window.CSRF_TOKEN = "{{ csrf_token() }}";
+    (function() {
+        if (window.fetch) {
+            const _origFetch = window.fetch;
+            window.fetch = function(url, options) {
+                options = options || {};
+                const method = (options.method || 'GET').toUpperCase();
+                if (!['GET', 'HEAD', 'OPTIONS', 'TRACE'].includes(method)) {
+                    options.headers = options.headers || {};
+                    const token = window.CSRF_TOKEN || (document.querySelector('meta[name="csrf-token"]') && document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
+                    if (token) {
+                        if (typeof Headers !== 'undefined' && options.headers instanceof Headers) {
+                            if (!options.headers.has('X-CSRFToken')) options.headers.set('X-CSRFToken', token);
+                        } else if (Array.isArray(options.headers)) {
+                            options.headers.push(['X-CSRFToken', token]);
+                        } else {
+                            if (!options.headers['X-CSRFToken']) options.headers['X-CSRFToken'] = token;
+                        }
+                    }
+                }
+                return _origFetch(url, options);
+            };
+        }
+        if (window.$ && $.ajaxSetup) {
+            $.ajaxSetup({
+                beforeSend: function(xhr, settings) {
+                    if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type)) {
+                        xhr.setRequestHeader("X-CSRFToken", window.CSRF_TOKEN);
+                    }
+                }
+            });
+        }
+        if (navigator.sendBeacon) {
+            const _origBeacon = navigator.sendBeacon.bind(navigator);
+            navigator.sendBeacon = function(url, data) {
+                if (data instanceof FormData) {
+                    if (!data.has('csrf_token')) data.append('csrf_token', window.CSRF_TOKEN);
+                } else if (typeof data === 'string') {
+                    try {
+                        const obj = JSON.parse(data);
+                        if (typeof obj === 'object' && obj !== null && !obj.csrf_token) {
+                            obj.csrf_token = window.CSRF_TOKEN;
+                            data = JSON.stringify(obj);
+                        }
+                    } catch(e) {}
+                }
+                return _origBeacon(url, data);
+            };
+        }
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('form[method="POST"], form[method="post"]').forEach(function(form) {
+                if (!form.querySelector('input[name="csrf_token"]')) {
+                    var input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = 'csrf_token';
+                    input.value = window.CSRF_TOKEN;
+                    form.appendChild(input);
+                }
+            });
+        });
+    })();
+    </script>
+</head>
+<body>
+    <div class="container-custom">
+        <div class="card-custom">
+            <div class="card-header-custom">
+                <h3><i class="fas fa-play-circle"></i> Active Exams</h3>
+                <button class="btn-refresh" onclick="location.reload()"><i class="fas fa-sync-alt"></i> Refresh</button>
+            </div>
+            <div class="card-body-custom" style="padding: 25px;">
+                {% if active_attempts %}
+                    {% for attempt in active_attempts %}
+                    <div class="attempt-card" id="attempt-{{ attempt.id }}">
+                        <div class="d-flex justify-content-between align-items-start flex-wrap gap-3">
+                            <div>
+                                <h5><i class="fas fa-user-graduate"></i> {{ attempt.full_name }}</h5>
+                                <p class="mb-1"><i class="fas fa-envelope"></i> {{ attempt.email }} | <i class="fas fa-at"></i> {{ attempt.username }}</p>
+                                <p class="mb-0"><i class="fas fa-file-alt"></i> Exam: {{ attempt.exam_name }} | <i class="fas fa-flag-checkered"></i> Target: {{ attempt.target_class }}</p>
+                                <p class="mb-0"><i class="fas fa-clock"></i> Started: {{ attempt.started_at }}</p>
+                            </div>
+                            <div class="text-end">
+                                {% if attempt.is_paused %}
+                                    <span class="badge-paused"><i class="fas fa-pause-circle"></i> Paused by {{ attempt.paused_by }}</span>
+                                    <button class="btn-resume mt-2" onclick="resumeExam({{ attempt.id }})"><i class="fas fa-play"></i> Resume Exam</button>
+                                {% else %}
+                                    <span class="badge-active"><i class="fas fa-play-circle"></i> In Progress</span>
+                                    <button class="btn-pause mt-2" onclick="pauseExam({{ attempt.id }})"><i class="fas fa-pause"></i> Pause Exam</button>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-check-circle" style="font-size: 60px; color: #10b981;"></i>
+                        <h4 class="mt-3">No Active Exams</h4>
+                        <p>All students have completed their exams or none are currently taking one.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="text-center mt-3">
+            <a href="/admin/common-entrance" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Back to Dashboard</a>
+        </div>
+    </div>
+    
+    <script>
+        async function pauseExam(attemptId) {
+            const result = await Swal.fire({
+                title: 'Pause Exam?',
+                text: 'This will pause the student\'s exam timer and freeze their screen.',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#f59e0b',
+                confirmButtonText: 'Yes, Pause'
+            });
+            
+            if (result.isConfirmed) {
+                Swal.fire({ title: 'Processing...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+                
+                const response = await fetch(`/admin/ce_pause_exam/${attemptId}`, { method: 'POST' });
+                const data = await response.json();
+                
+                if (data.success) {
+                    Swal.fire({ title: 'Paused!', text: data.message, icon: 'success', timer: 1500, showConfirmButton: false });
+                    setTimeout(() => location.reload(), 1500);
+                } else {
+                    Swal.fire({ title: 'Error!', text: data.error, icon: 'error' });
+                }
+            }
+        }
+        
+        async function resumeExam(attemptId) {
+            const result = await Swal.fire({
+                title: 'Resume Exam?',
+                text: 'This will allow the student to continue their exam.',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#10b981',
+                confirmButtonText: 'Yes, Resume'
+            });
+            
+            if (result.isConfirmed) {
+                Swal.fire({ title: 'Processing...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+                
+                const response = await fetch(`/admin/ce_resume_exam/${attemptId}`, { method: 'POST' });
+                const data = await response.json();
+                
+                if (data.success) {
+                    Swal.fire({ title: 'Resumed!', text: data.message, icon: 'success', timer: 1500, showConfirmButton: false });
+                    setTimeout(() => location.reload(), 1500);
+                } else {
+                    Swal.fire({ title: 'Error!', text: data.error, icon: 'error' });
+                }
+            }
+        }
+    </script>
+</body>
+</html>

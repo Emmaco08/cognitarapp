@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Question Groups | {{ section.section_name }}</title>
+    <link href="{{ url_for('static', filename='vendor/bootstrap/css/bootstrap.min.css') }}" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='vendor/fontawesome/css/all.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='vendor/katex/katex.min.css') }}">
+    <script src="{{ url_for('static', filename='vendor/katex/katex.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='vendor/katex/contrib/mhchem.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='vendor/katex/contrib/auto-render.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='vendor/sweetalert2/sweetalert2.all.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/cognitara-katex-editor.js') }}?v=20261020_v8"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: linear-gradient(135deg, #f5f7fa 0%, #e8edf5 100%); font-family: 'Segoe UI', 'Poppins', sans-serif; }
+        
+        .groups-container { max-width: 1400px; margin: 0 auto; padding: 40px 30px; position: relative; z-index: 10; }
+        .page-header { text-align: center; margin-bottom: 30px; }
+        .logo-icon { width: 70px; height: 70px; background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%); border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 15px; animation: pulse 2s infinite; }
+        @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+        .logo-icon i { font-size: 35px; color: white; }
+        .page-header h1 { font-size: 28px; font-weight: 800; background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 5px; }
+        
+        .card-custom { background: white; border-radius: 24px; border: 1px solid #e2e8f0; margin-bottom: 25px; overflow: hidden; }
+        .card-header-custom { padding: 18px 25px; border-bottom: 1px solid #e2e8f0; background: #f8fafc; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; }
+        .card-header-custom h3 { margin: 0; font-size: 18px; font-weight: 600; color: #1e293b; }
+        .btn-add { background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; border: none; padding: 10px 20px; border-radius: 10px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; }
+        .btn-back { background: white; border: 2px solid #e2e8f0; padding: 8px 20px; border-radius: 10px; color: #64748b; text-decoration: none; font-weight: 600; display: inline-flex; align-items: center; gap: 8px; }
+        .btn-back:hover { border-color: #8b5cf6; color: #8b5cf6; }
+        
+        .group-card { background: #f8fafc; border-radius: 20px; padding: 20px; margin-bottom: 20px; border: 1px solid #e2e8f0; transition: all 0.3s; }
+        .group-card:hover { border-color: #8b5cf6; }
+        .group-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px; }
+        .group-type { background: #dbeafe; color: #1d4ed8; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+        .group-content { 
+            background: white; 
+            padding: 15px; 
+            border-radius: 12px; 
+            margin: 10px 0; 
+            border-left: 4px solid #8b5cf6;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            white-space: normal;
+            max-width: 100%;
+        }
+        .group-content p, .group-content div {
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            white-space: normal;
+        }
+        .group-image { max-width: 150px; max-height: 120px; border-radius: 10px; object-fit: cover; margin-top: 10px; }
+        .group-actions { margin-top: 15px; display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap; }
+        .btn-edit-group { background: #f59e0b; color: white; border: none; padding: 6px 15px; border-radius: 8px; font-size: 12px; cursor: pointer; }
+        .btn-delete-group { background: #fee2e2; color: #ef4444; border: none; padding: 6px 15px; border-radius: 8px; font-size: 12px; cursor: pointer; }
+        .btn-add-question { background: #3b82f6; color: white; border: none; padding: 6px 15px; border-radius: 8px; font-size: 12px; cursor: pointer; }
+        .btn-add-question:hover { background: #2563eb; transform: translateY(-1px); }
+        
+        .questions-list { margin-top: 15px; padding-top: 10px; border-top: 1px solid #e2e8f0; }
+        .question-item { 
+            background: white; 
+            border-radius: 12px; 
+            padding: 12px 15px; 
+            margin-bottom: 10px; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: flex-start;
+            gap: 10px;
+            border: 1px solid #e2e8f0;
+            transition: all 0.2s;
+        }
+        .question-item:hover { border-color: #8b5cf6; background: #faf5ff; }
+        .question-info { flex: 1; }
+        .question-text-small { 
+            font-size: 13px; 
+            color: #334155;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            white-space: normal;
+            display: block;
+            margin-bottom: 8px;
+        }
+        .question-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 5px;
+        }
+        .meta-badge {
+            background: #f1f5f9;
+            padding: 2px 8px;
+            border-radius: 20px;
+            font-size: 10px;
+            color: #64748b;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .meta-badge i { font-size: 9px; }
+        .question-actions { display: flex; gap: 8px; flex-shrink: 0; }
+        .btn-edit-question { background: #f59e0b; color: white; border: none; padding: 4px 10px; border-radius: 6px; font-size: 11px; cursor: pointer; }
+        .btn-edit-question:hover { background: #d97706; }
+        .btn-view-question { background: #8b5cf6; color: white; border: none; padding: 4px 10px; border-radius: 6px; font-size: 11px; cursor: pointer; }
+        .btn-view-question:hover { background: #7c3aed; }
+        .btn-remove-question { background: none; border: none; color: #ef4444; cursor: pointer; font-size: 14px; padding: 4px 8px; }
+        .btn-remove-question:hover { color: #dc2626; }
+        
+        /* Question Preview Modal */
+        .preview-modal .modal-dialog { max-width: 800px; }
+        .preview-question-text {
+            font-size: 16px;
+            line-height: 1.6;
+            padding: 15px;
+            background: #f8fafc;
+            border-radius: 12px;
+            margin-bottom: 15px;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+        }
+        .preview-options {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        .preview-option {
+            padding: 10px 15px;
+            background: #f8fafc;
+            border-radius: 10px;
+            border-left: 3px solid;
+        }
+        .preview-option.correct { border-left-color: #10b981; background: #f0fdf4; }
+        .preview-option.incorrect { border-left-color: #e2e8f0; }
+        .preview-image { max-width: 200px; max-height: 150px; border-radius: 10px; margin-top: 10px; }
+        
+        .toolbar-btn { 
+            padding: 6px 12px; 
+            font-size: 12px; 
+            cursor: pointer; 
+            border: 1px solid #e2e8f0; 
+            background: white; 
+            border-radius: 6px; 
+            transition: all 0.2s;
+        }
+        .toolbar-btn:hover { background: #8b5cf6; color: white; border-color: #8b5cf6; }
+        
+        @media (max-width: 768px) {
+            .groups-container { padding: 20px 15px; }
+            .card-header-custom { flex-direction: column; text-align: center; }
+            .group-header { flex-direction: column; text-align: center; }
+            .group-actions { justify-content: center; }
+            .question-item { flex-direction: column; }
+            .question-actions { justify-content: flex-end; width: 100%; }
+        }
+    </style>
+    <!-- CSRF Protection Shield -->
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <script>
+    window.CSRF_TOKEN = "{{ csrf_token() }}";
+    (function() {
+        if (window.fetch) {
+            const _origFetch = window.fetch;
+            window.fetch = function(url, options) {
+                options = options || {};
+                const method = (options.method || 'GET').toUpperCase();
+                if (!['GET', 'HEAD', 'OPTIONS', 'TRACE'].includes(method)) {
+                    options.headers = options.headers || {};
+                    const token = window.CSRF_TOKEN || (document.querySelector('meta[name="csrf-token"]') && document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
+                    if (token) {
+                        if (typeof Headers !== 'undefined' && options.headers instanceof Headers) {
+                            if (!options.headers.has('X-CSRFToken')) options.headers.set('X-CSRFToken', token);
+                        } else if (Array.isArray(options.headers)) {
+                            options.headers.push(['X-CSRFToken', token]);
+                        } else {
+                            if (!options.headers['X-CSRFToken']) options.headers['X-CSRFToken'] = token;
+                        }
+                    }
+                }
+                return _origFetch(url, options);
+            };
+        }
+        if (window.$ && $.ajaxSetup) {
+            $.ajaxSetup({
+                beforeSend: function(xhr, settings) {
+                    if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type)) {
+                        xhr.setRequestHeader("X-CSRFToken", window.CSRF_TOKEN);
+                    }
+                }
+            });
+        }
+        if (navigator.sendBeacon) {
+            const _origBeacon = navigator.sendBeacon.bind(navigator);
+            navigator.sendBeacon = function(url, data) {
+                if (data instanceof FormData) {
+                    if (!data.has('csrf_token')) data.append('csrf_token', window.CSRF_TOKEN);
+                } else if (typeof data === 'string') {
+                    try {
+                        const obj = JSON.parse(data);
+                        if (typeof obj === 'object' && obj !== null && !obj.csrf_token) {
+                            obj.csrf_token = window.CSRF_TOKEN;
+                            data = JSON.stringify(obj);
+                        }
+                    } catch(e) {}
+                }
+                return _origBeacon(url, data);
+            };
+        }
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('form[method="POST"], form[method="post"]').forEach(function(form) {
+                if (!form.querySelector('input[name="csrf_token"]')) {
+                    var input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = 'csrf_token';
+                    input.value = window.CSRF_TOKEN;
+                    form.appendChild(input);
+                }
+            });
+        });
+    })();
+    </script>
+</head>
+<body>
+    <div class="groups-container">
+        <div class="page-header">
+            <div class="logo-icon"><i class="fas fa-layer-group"></i></div>
+            <h1>{{ section.section_name }} - Question Groups</h1>
+            <p>Create groups for comprehension passages or sequential questions</p>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 15px;">
+            <a href="/admin/ce_exam/{{ section.exam_id }}/settings" class="btn-back"><i class="fas fa-arrow-left"></i> Back to Settings</a>
+            <button class="btn-add" onclick="openAddGroupModal()"><i class="fas fa-plus"></i> Add Question Group</button>
+        </div>
+
+        {% if groups and groups|length > 0 %}
+            {% for group in groups %}
+            <div class="group-card" id="group-card-{{ group.id }}">
+                <div class="group-header">
+                    <h4><i class="fas fa-layer-group"></i> {{ group.group_name }}</h4>
+                    <span class="group-type">
+                        {% if group.group_type == 'comprehension' %}
+                            <i class="fas fa-book-open"></i> Comprehension Passage
+                        {% elif group.group_type == 'sequence' %}
+                            <i class="fas fa-list-ol"></i> Sequential Questions
+                        {% else %}
+                            <i class="fas fa-folder"></i> Normal Group
+                        {% endif %}
+                    </span>
+                </div>
+                
+                {% if group.instruction_text %}
+                <div class="group-content">
+                    <strong><i class="fas fa-info-circle"></i> Instruction:</strong>
+                    <p class="mt-1">{{ group.instruction_text | safe }}</p>
+                </div>
+                {% endif %}
+                
+                {% if group.group_content %}
+                <div class="group-content">
+                    <strong><i class="fas fa-file-alt"></i> Passage Content:</strong>
+                    <div class="mt-1">{{ group.group_content | safe }}</div>
+                </div>
+                {% endif %}
+                
+                {% if group.group_image %}
+                <div class="mt-2">
+                    <img src="/static/images/{{ group.group_image }}" class="group-image" alt="Group Image">
+                </div>
+                {% endif %}
+                
+                <!-- Questions in this group -->
+                <div class="questions-list">
+                    <strong><i class="fas fa-question-circle"></i> Questions in this group ({{ group.questions|length }}):</strong>
+                    <div class="mt-2">
+                        {% for q in group.questions %}
+                        <div class="question-item" id="group-question-{{ q.id }}">
+                            <div class="question-info">
+                                <div class="question-text-small">
+                                    <strong>{{ loop.index }}.</strong> 
+                                    {{ q.question[:100] | safe }}{% if q.question|length > 100 %}...{% endif %}
+                                </div>
+                                <div class="question-meta">
+                                    <span class="meta-badge"><i class="fas fa-check-circle"></i> Answer: 
+                                        {% if q.answer == q.option1 %}A
+                                        {% elif q.answer == q.option2 %}B
+                                        {% elif q.answer == q.option3 %}C
+                                        {% else %}D
+                                        {% endif %}
+                                    </span>
+                                    {% if q.mandatory %}
+                                    <span class="meta-badge" style="background:#fef3c7; color:#d97706;"><i class="fas fa-star"></i> Mandatory</span>
+                                    {% endif %}
+                                    {% if q.image %}
+                                    <span class="meta-badge"><i class="fas fa-image"></i> Has Image</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="question-actions">
+                                <button class="btn-view-question" onclick="viewQuestion({{ q.id }})" title="Preview">
+                                    <i class="fas fa-eye"></i> Preview
+                                </button>
+                                <button class="btn-edit-question" onclick="editQuestion({{ q.id }})" title="Edit">
+                                    <i class="fas fa-edit"></i> Edit
+                                </button>
+                                <button class="btn-remove-question" onclick="removeQuestionFromGroup({{ q.id }}, {{ group.id }})" title="Remove from group">
+                                    <i class="fas fa-times-circle"></i>
+                                </button>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                
+                <div class="group-actions">
+                    <button class="btn-add-question" onclick="openAddQuestionToGroupModal({{ group.id }})">
+                        <i class="fas fa-plus-circle"></i> Add Question to Group
+                    </button>
+                    <button class="btn-edit-group" onclick="editGroup({{ group.id }})"><i class="fas fa-edit"></i> Edit Group</button>
+                    <button class="btn-delete-group" onclick="deleteGroup({{ group.id }})"><i class="fas fa-trash"></i> Delete Group</button>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="card-custom">
+                <div class="card-body-custom" style="text-align: center; padding: 60px;">
+                    <i class="fas fa-layer-group" style="font-size: 60px; color: #cbd5e1;"></i>
+                    <h3>No Question Groups</h3>
+                    <p>Create groups for comprehension passages or sequential questions</p>
+                    <button class="btn-add" onclick="openAddGroupModal()"><i class="fas fa-plus"></i> Create Group</button>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Add Group Modal -->
+    <div id="addGroupModal" class="modal fade" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <form method="POST" action="/admin/ce_section/{{ section.id }}/groups" enctype="multipart/form-data" id="addGroupForm">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="modal-header">
+                        <h5 class="modal-title"><i class="fas fa-plus-circle"></i> Add Question Group</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label">Group Name</label>
+                            <input type="text" name="group_name" class="form-control" placeholder="e.g., Reading Passage 1, Math Problem Set" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Group Type</label>
+                            <select name="group_type" class="form-select">
+                                <option value="normal">Normal Group</option>
+                                <option value="comprehension">Comprehension Passage</option>
+                                <option value="sequence">Sequential Questions</option>
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Instruction Text (optional)</label>
+                            <textarea name="instruction_text" class="form-control" rows="2" placeholder="Read the passage carefully and answer the questions below..."></textarea>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Group Content (Passage/Instructions)</label>
+                            <textarea name="group_content" class="form-control" rows="5" placeholder="Enter the passage text or content here..."></textarea>
+                            <small class="text-muted">You can use HTML formatting (bold, italic, etc.)</small>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Group Image (optional)</label>
+                            <input type="file" name="group_image" class="form-control" accept="image/*">
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-success">Create Group</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Question to Group Modal -->
+    <div id="addQuestionToGroupModal" class="modal fade" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <form method="POST" action="" id="addQuestionToGroupForm" enctype="multipart/form-data">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="modal-header">
+                        <h5 class="modal-title"><i class="fas fa-plus-circle"></i> Add Question to Group</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div style="margin-bottom: 10px; display: flex; flex-wrap: wrap; gap: 5px; align-items: center;">
+                            <button type="button" class="toolbar-btn" onclick="formatTextGroup('b', 'groupQuestionText')"><strong>B</strong></button>
+                            <button type="button" class="toolbar-btn" onclick="formatTextGroup('i', 'groupQuestionText')"><em>I</em></button>
+                            <button type="button" class="toolbar-btn" onclick="formatTextGroup('u', 'groupQuestionText')"><u>U</u></button>
+                            <button type="button" class="toolbar-btn" onclick="formatTextGroup('sup', 'groupQuestionText')">x²</button>
+                            <button type="button" class="toolbar-btn" onclick="formatTextGroup('sub', 'groupQuestionText')">x₂</button>
+                            <div class="f-btn-group" style="display:inline-flex; gap:3px; background:#eef2ff; padding:2px 6px; border-radius:8px; border:1px solid #c7d2fe;">
+                                <button type="button" class="f-btn" onclick="CogniTaraKaTeX.openBuilderWithTemplate()" title="Insert Math &amp; Science Formulas"><i class="fas fa-square-root-alt"></i> Formulas</button>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Question</label>
+                            <textarea name="question" id="groupQuestionText" class="form-control" rows="4" required></textarea>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Question Image (optional)</label>
+                            <input type="file" name="image" class="form-control" accept="image/*">
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Option A</label>
+                                <input type="text" name="option1" class="form-control" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Option B</label>
+                                <input type="text" name="option2" class="form-control" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Option C</label>
+                                <input type="text" name="option3" class="form-control" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Option D</label>
+                                <input type="text" name="option4" class="form-control" required>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Correct Answer</label>
+                                <select name="answer" class="form-select" required>
+                                    <option value="">Select...</option>
+                                    <option value="1">A</option>
+                                    <option value="2">B</option>
+                                    <option value="3">C</option>
+                                    <option value="4">D</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">
+                                    <input type="checkbox" name="mandatory" value="1"> Mandatory Question
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-success">Add to Group</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Question Preview Modal -->
+    <div id="questionPreviewModal" class="modal fade preview-modal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-eye"></i> Question Preview</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="previewModalBody">
+                    <div class="text-center py-3">Loading...</div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='vendor/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
+    <script>
+        let addGroupModal, addQuestionToGroupModal, questionPreviewModal;
+        let currentGroupId = null;
+        
+        function openAddGroupModal() {
+            if (!addGroupModal) {
+                addGroupModal = new bootstrap.Modal(document.getElementById('addGroupModal'));
+            }
+            document.getElementById('addGroupForm').reset();
+            addGroupModal.show();
+        }
+        
+        function openAddQuestionToGroupModal(groupId) {
+            currentGroupId = groupId;
+            if (!addQuestionToGroupModal) {
+                addQuestionToGroupModal = new bootstrap.Modal(document.getElementById('addQuestionToGroupModal'));
+            }
+            document.getElementById('addQuestionToGroupForm').reset();
+            document.getElementById('addQuestionToGroupForm').action = `/admin/ce_group/${groupId}/add_question`;
+            addQuestionToGroupModal.show();
+        }
+        
+        function formatTextGroup(tag, textareaId) {
+            const textarea = document.getElementById(textareaId);
+            const start = textarea.selectionStart;
+            const end = textarea.selectionEnd;
+            const selectedText = textarea.value.substring(start, end);
+            let wrappedText;
+            if (tag === 'sup') wrappedText = `<sup>${selectedText || 'superscript'}</sup>`;
+            else if (tag === 'sub') wrappedText = `<sub>${selectedText || 'subscript'}</sub>`;
+            else wrappedText = `<${tag}>${selectedText}</${tag}>`;
+            textarea.value = textarea.value.substring(0, start) + wrappedText + textarea.value.substring(end);
+            textarea.focus();
+        }
+        
+        function deleteGroup(groupId) {
+            Swal.fire({
+                title: 'Delete Group?',
+                text: 'This will also delete all questions in this group!',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#ef4444',
+                confirmButtonText: 'Yes, delete it!'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    window.location.href = `/admin/ce_group/${groupId}/delete`;
+                }
+            });
+        }
+        
+        function editGroup(groupId) {
+            window.location.href = `/admin/ce_group/${groupId}/edit`;
+        }
+        
+        function editQuestion(questionId) {
+            window.location.href = `/admin/ce_group_question/${questionId}/edit`;
+        }
+        
+        function viewQuestion(questionId) {
+    // Show loading state
+    document.getElementById('previewModalBody').innerHTML = '<div class="text-center py-5"><div class="spinner-border text-primary"></div><p class="mt-2">Loading question...</p></div>';
+    
+    if (!questionPreviewModal) {
+        questionPreviewModal = new bootstrap.Modal(document.getElementById('questionPreviewModal'));
+    }
+    questionPreviewModal.show();
+    
+    // Fetch question data via AJAX
+    fetch(`/admin/ce_question/${questionId}/data`)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.success) {
+                const q = data.question;
+                const options = [q.option1, q.option2, q.option3, q.option4];
+                
+                // Find which option is correct
+                let correctLetter = '';
+                let correctText = '';
+                const letters = ['A', 'B', 'C', 'D'];
+                for (let i = 0; i < options.length; i++) {
+                    if (options[i] === q.answer) {
+                        correctLetter = letters[i];
+                        correctText = options[i];
+                        break;
+                    }
+                }
+                
+                let imageHtml = '';
+                if (q.image && q.image !== 'null' && q.image !== '') {
+                    imageHtml = `<div class="text-center mt-3"><img src="/static/images/${q.image}" class="preview-image" alt="Question Image" style="max-width: 200px; max-height: 150px; border-radius: 10px;"></div>`;
+                }
+                
+                let optionsHtml = '<div class="preview-options">';
+                for (let i = 0; i < options.length; i++) {
+                    const isCorrect = options[i] === q.answer;
+                    optionsHtml += `
+                        <div class="preview-option ${isCorrect ? 'correct' : 'incorrect'}" style="padding: 10px 15px; background: #f8fafc; border-radius: 10px; margin-bottom: 8px; border-left: 3px solid ${isCorrect ? '#10b981' : '#e2e8f0'}">
+                            <strong>${letters[i]}.</strong> ${escapeHtml(options[i])}
+                            ${isCorrect ? ' <span class="badge bg-success float-end"><i class="fas fa-check"></i> Correct Answer</span>' : ''}
+                        </div>
+                    `;
+                }
+                optionsHtml += '</div>';
+                
+                const modalBody = `
+                    <div class="preview-question-text" style="font-size: 16px; line-height: 1.6; padding: 15px; background: #f8fafc; border-radius: 12px; margin-bottom: 15px;">
+                        <strong><i class="fas fa-question-circle"></i> Question:</strong><br>
+                        <div style="margin-top: 10px;">${q.question}</div>
+                    </div>
+                    ${imageHtml}
+                    ${optionsHtml}
+                    <div class="mt-3 pt-2 border-top">
+                        <div class="row">
+                            <div class="col-6">
+                                <small class="text-muted"><i class="fas fa-tag"></i> Question ID: ${q.id}</small>
+                            </div>
+                            <div class="col-6 text-end">
+                                ${q.mandatory == 1 ? '<span class="badge bg-warning text-dark"><i class="fas fa-star"></i> Mandatory</span>' : ''}
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                document.getElementById('previewModalBody').innerHTML = modalBody;
+            } else {
+                document.getElementById('previewModalBody').innerHTML = `<div class="alert alert-danger">${data.error || 'Could not load question'}</div>`;
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            document.getElementById('previewModalBody').innerHTML = `<div class="alert alert-danger">Network error: ${error.message}</div>`;
+        });
+}
+
+function escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+        
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        function removeQuestionFromGroup(questionId, groupId) {
+            Swal.fire({
+                title: 'Remove Question?',
+                text: 'Remove this question from the group? It will become a normal question.',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#ef4444',
+                confirmButtonText: 'Yes, remove it!'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    window.location.href = `/admin/ce_question/${questionId}/remove_from_group`;
+                }
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            if (typeof renderMathInElement === 'function') {
+                renderMathInElement(document.body, {
+                    delimiters: [
+                        {left: '$$', right: '$$', display: true},
+                        {left: '$', right: '$', display: false},
+                        {left: '\\(', right: '\\)', display: false},
+                        {left: '\\[', right: '\\]', display: true}
+                    ],
+                    throwOnError: false
+                });
+            }
+        });
+    </script>
+</body>
+</html>
+

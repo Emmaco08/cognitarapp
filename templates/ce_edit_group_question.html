@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Edit Group Question | COGNITARA EXAM SYSTEM</title>
+    <link href="{{ url_for('static', filename='vendor/bootstrap/css/bootstrap.min.css') }}" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='vendor/fontawesome/css/all.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='vendor/katex/katex.min.css') }}">
+    <script src="{{ url_for('static', filename='vendor/katex/katex.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='vendor/katex/contrib/mhchem.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='vendor/katex/contrib/auto-render.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/cognitara-katex-editor.js') }}?v=20261020_v8"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body { background: linear-gradient(135deg, #f5f7fa 0%, #e8edf5 100%); padding: 40px; font-family: 'Segoe UI', 'Poppins', sans-serif; }
+        .edit-container { max-width: 800px; margin: 0 auto; }
+        .card-custom { background: white; border-radius: 24px; border: 1px solid #e2e8f0; overflow: hidden; }
+        .card-header-custom { padding: 20px 25px; border-bottom: 1px solid #e2e8f0; background: #f8fafc; }
+        .card-header-custom h3 { margin: 0; font-size: 20px; font-weight: 700; }
+        .card-body-custom { padding: 25px; }
+        .form-control-custom { width: 100%; padding: 12px 15px; border: 2px solid #e2e8f0; border-radius: 12px; margin-bottom: 15px; }
+        .btn-save { background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; border: none; padding: 12px 25px; border-radius: 12px; font-weight: 600; cursor: pointer; }
+        .btn-back { background: white; border: 2px solid #e2e8f0; padding: 10px 25px; border-radius: 12px; text-decoration: none; color: #64748b; }
+        .toolbar-btn { padding: 6px 12px; font-size: 12px; cursor: pointer; border: 1px solid #e2e8f0; background: white; border-radius: 6px; }
+        .toolbar-btn:hover { background: #8b5cf6; color: white; border-color: #8b5cf6; }
+        .current-image { max-width: 150px; border-radius: 10px; margin-top: 5px; border: 1px solid #e2e8f0; padding: 5px; }
+        .group-badge {
+            background: #ede9fe;
+            color: #6d28d9;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            display: inline-block;
+            margin-bottom: 15px;
+        }
+    </style>
+    <!-- CSRF Protection Shield -->
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <script>
+    window.CSRF_TOKEN = "{{ csrf_token() }}";
+    (function() {
+        if (window.fetch) {
+            const _origFetch = window.fetch;
+            window.fetch = function(url, options) {
+                options = options || {};
+                const method = (options.method || 'GET').toUpperCase();
+                if (!['GET', 'HEAD', 'OPTIONS', 'TRACE'].includes(method)) {
+                    options.headers = options.headers || {};
+                    const token = window.CSRF_TOKEN || (document.querySelector('meta[name="csrf-token"]') && document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
+                    if (token) {
+                        if (typeof Headers !== 'undefined' && options.headers instanceof Headers) {
+                            if (!options.headers.has('X-CSRFToken')) options.headers.set('X-CSRFToken', token);
+                        } else if (Array.isArray(options.headers)) {
+                            options.headers.push(['X-CSRFToken', token]);
+                        } else {
+                            if (!options.headers['X-CSRFToken']) options.headers['X-CSRFToken'] = token;
+                        }
+                    }
+                }
+                return _origFetch(url, options);
+            };
+        }
+        if (window.$ && $.ajaxSetup) {
+            $.ajaxSetup({
+                beforeSend: function(xhr, settings) {
+                    if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type)) {
+                        xhr.setRequestHeader("X-CSRFToken", window.CSRF_TOKEN);
+                    }
+                }
+            });
+        }
+        if (navigator.sendBeacon) {
+            const _origBeacon = navigator.sendBeacon.bind(navigator);
+            navigator.sendBeacon = function(url, data) {
+                if (data instanceof FormData) {
+                    if (!data.has('csrf_token')) data.append('csrf_token', window.CSRF_TOKEN);
+                } else if (typeof data === 'string') {
+                    try {
+                        const obj = JSON.parse(data);
+                        if (typeof obj === 'object' && obj !== null && !obj.csrf_token) {
+                            obj.csrf_token = window.CSRF_TOKEN;
+                            data = JSON.stringify(obj);
+                        }
+                    } catch(e) {}
+                }
+                return _origBeacon(url, data);
+            };
+        }
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('form[method="POST"], form[method="post"]').forEach(function(form) {
+                if (!form.querySelector('input[name="csrf_token"]')) {
+                    var input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = 'csrf_token';
+                    input.value = window.CSRF_TOKEN;
+                    form.appendChild(input);
+                }
+            });
+        });
+    })();
+    </script>
+</head>
+<body>
+    <div class="edit-container">
+        <div class="card-custom">
+            <div class="card-header-custom">
+                <h3><i class="fas fa-edit"></i> Edit Group Question</h3>
+                {% if group_name %}
+                <div class="group-badge">
+                    <i class="fas fa-layer-group"></i> Group: {{ group_name }}
+                </div>
+                {% endif %}
+            </div>
+            <div class="card-body-custom">
+                <form method="POST" enctype="multipart/form-data">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div style="margin-bottom: 10px; display: flex; flex-wrap: wrap; gap: 5px; align-items: center;">
+                        <button type="button" class="toolbar-btn" onclick="formatText('b', 'questionText')"><strong>B</strong></button>
+                        <button type="button" class="toolbar-btn" onclick="formatText('i', 'questionText')"><em>I</em></button>
+                        <button type="button" class="toolbar-btn" onclick="formatText('u', 'questionText')"><u>U</u></button>
+                        <button type="button" class="toolbar-btn" onclick="formatText('sup', 'questionText')">x²</button>
+                        <button type="button" class="toolbar-btn" onclick="formatText('sub', 'questionText')">x₂</button>
+                        <div class="f-btn-group" style="display:inline-flex; gap:3px; background:#eef2ff; padding:2px 6px; border-radius:8px; border:1px solid #c7d2fe;">
+                            <button type="button" class="f-btn" onclick="CogniTaraKaTeX.openBuilderWithTemplate(null, null, 'questionText')" title="Insert Math &amp; Science Formulas"><i class="fas fa-square-root-alt"></i> Formulas</button>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Question</label>
+                        <textarea name="question" id="questionText" class="form-control-custom" rows="4" required>{{ question.question | safe }}</textarea>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Current Image</label>
+                        {% if question.image %}
+                            <div><img src="/static/images/{{ question.image }}" class="current-image"></div>
+                        {% else %}
+                            <p class="text-muted">No image</p>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Change Image (optional)</label>
+                        <input type="file" name="image" class="form-control" accept="image/*">
+                        <small class="text-muted">Images will be compressed to 50KB automatically</small>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Option A</label>
+                            <input type="text" name="option1" class="form-control" value="{{ question.option1 }}" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Option B</label>
+                            <input type="text" name="option2" class="form-control" value="{{ question.option2 }}" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Option C</label>
+                            <input type="text" name="option3" class="form-control" value="{{ question.option3 }}" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Option D</label>
+                            <input type="text" name="option4" class="form-control" value="{{ question.option4 }}" required>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Correct Answer</label>
+                            <select name="answer" class="form-select" required>
+                                <option value="1" {% if question.answer == question.option1 %}selected{% endif %}>A</option>
+                                <option value="2" {% if question.answer == question.option2 %}selected{% endif %}>B</option>
+                                <option value="3" {% if question.answer == question.option3 %}selected{% endif %}>C</option>
+                                <option value="4" {% if question.answer == question.option4 %}selected{% endif %}>D</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">
+                                <input type="checkbox" name="mandatory" value="1" {% if question.mandatory %}checked{% endif %}> Mandatory Question
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4">
+                        <button type="submit" class="btn-save"><i class="fas fa-save"></i> Save Changes</button>
+                        <a href="/admin/ce_section/{{ section_id }}/groups" class="btn-back" style="margin-left: 10px;">
+                            <i class="fas fa-arrow-left"></i> Back to Groups
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        function formatText(tag, textareaId) {
+            const textarea = document.getElementById(textareaId);
+            const start = textarea.selectionStart;
+            const end = textarea.selectionEnd;
+            const selectedText = textarea.value.substring(start, end);
+            let wrappedText;
+            if (tag === 'sup') wrappedText = `<sup>${selectedText || 'superscript'}</sup>`;
+            else if (tag === 'sub') wrappedText = `<sub>${selectedText || 'subscript'}</sub>`;
+            else wrappedText = `<${tag}>${selectedText}</${tag}>`;
+            textarea.value = textarea.value.substring(0, start) + wrappedText + textarea.value.substring(end);
+            textarea.focus();
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            if (typeof renderMathInElement === 'function') {
+                renderMathInElement(document.body, {
+                    delimiters: [
+                        {left: '$$', right: '$$', display: true},
+                        {left: '$', right: '$', display: false},
+                        {left: '\\(', right: '\\)', display: false},
+                        {left: '\\[', right: '\\]', display: true}
+                    ],
+                    throwOnError: false
+                });
+            }
+        });
+    </script>
+</body>
+</html>

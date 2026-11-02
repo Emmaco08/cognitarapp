@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Import Exam | Teacher Portal</title>
+    <link href="{{ url_for('static', filename='vendor/bootstrap/css/bootstrap.min.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='vendor/fontawesome/css/all.min.css') }}" rel="stylesheet">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='vendor/katex/katex.min.css') }}">
+    <script src="{{ url_for('static', filename='vendor/katex/katex.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='vendor/katex/contrib/mhchem.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='vendor/katex/contrib/auto-render.min.js') }}"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #f0f2f5; font-family: 'Segoe UI', system-ui, sans-serif; }
+        
+        .import-container { max-width: 800px; margin: 30px auto; padding: 0 16px; }
+        
+        .page-header {
+            background: linear-gradient(135deg, #1a56db 0%, #0e3b9e 100%);
+            border-radius: 20px; padding: 24px; margin-bottom: 20px; color: white; text-align: center;
+        }
+        .page-header h1 { font-size: 22px; font-weight: 700; margin-bottom: 5px; }
+        .page-header p { font-size: 13px; opacity: 0.9; }
+        
+        .card {
+            background: white; border-radius: 16px; padding: 20px; margin-bottom: 16px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05); border: 1px solid #e2e8f0;
+        }
+        .card-title {
+            font-size: 16px; font-weight: 700; color: #1e293b; margin-bottom: 15px;
+            display: flex; align-items: center; gap: 8px;
+        }
+        .card-title i { color: #1a56db; }
+        
+        .upload-zone {
+            border: 2px dashed #cbd5e1; border-radius: 16px; padding: 35px 20px;
+            text-align: center; cursor: pointer; transition: all 0.2s; background: #f8fafc;
+        }
+        .upload-zone:hover { border-color: #1a56db; background: #eff6ff; }
+        .upload-zone i { font-size: 44px; color: #1a56db; margin-bottom: 12px; }
+        .upload-zone.drag-over { border-color: #10b981; background: #f0fdf4; }
+        
+        .file-info {
+            display: flex; align-items: center; gap: 10px; padding: 12px 16px;
+            background: #f0fdf4; border-radius: 12px; margin-top: 12px;
+        }
+        
+        .exam-summary {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+            gap: 10px; margin-bottom: 15px;
+        }
+        .summary-chip {
+            background: #f1f5f9; border-radius: 10px; padding: 10px; text-align: center;
+        }
+        .summary-chip .value { font-size: 20px; font-weight: 700; color: #1e293b; }
+        .summary-chip .label { font-size: 10px; color: #64748b; }
+        
+        .section-preview {
+            border: 1px solid #e2e8f0; border-radius: 12px; margin-bottom: 8px; overflow: hidden;
+        }
+        .section-header-click {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 10px 14px; background: #f8fafc; cursor: pointer; font-weight: 600;
+        }
+        .section-header-click:hover { background: #eff6ff; }
+        .section-body-preview { display: none; padding: 10px 14px; }
+        .section-body-preview.open { display: block; }
+        
+        .q-preview {
+            background: #f8fafc; border-radius: 8px; padding: 10px; margin-bottom: 6px;
+            font-size: 13px; border-left: 3px solid #1a56db;
+        }
+        .group-preview {
+            background: #eff6ff; border-radius: 8px; padding: 10px; margin-bottom: 6px;
+            font-size: 13px; border-left: 3px solid #8b5cf6;
+        }
+        
+        .btn {
+            padding: 12px 24px; border-radius: 12px; font-weight: 600; font-size: 14px;
+            cursor: pointer; border: none; display: inline-flex; align-items: center; gap: 8px;
+            transition: all 0.2s; width: 100%; justify-content: center;
+        }
+        .btn-success { background: #10b981; color: white; }
+        .btn-success:hover { background: #059669; }
+        .btn-success:disabled { background: #9ca3af; cursor: not-allowed; }
+        .btn-back {
+            background: white; border: 1.5px solid #e2e8f0; color: #64748b; text-decoration: none;
+            display: inline-flex; align-items: center; gap: 6px; padding: 10px 20px; border-radius: 10px;
+            font-weight: 600; font-size: 13px;
+        }
+        
+        .loading-spinner {
+            display: inline-block; width: 18px; height: 18px; border: 2px solid rgba(255,255,255,0.3);
+            border-top-color: white; border-radius: 50%; animation: spin 0.6s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        
+        @media (max-width: 480px) {
+            .import-container { padding: 0 8px; margin-top: 15px; }
+            .page-header { padding: 16px; }
+            .exam-summary { grid-template-columns: repeat(2, 1fr); }
+        }
+    </style>
+    <!-- CSRF Protection Shield -->
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <script>
+    window.CSRF_TOKEN = "{{ csrf_token() }}";
+    (function() {
+        if (window.fetch) {
+            const _origFetch = window.fetch;
+            window.fetch = function(url, options) {
+                options = options || {};
+                const method = (options.method || 'GET').toUpperCase();
+                if (!['GET', 'HEAD', 'OPTIONS', 'TRACE'].includes(method)) {
+                    options.headers = options.headers || {};
+                    const token = window.CSRF_TOKEN || (document.querySelector('meta[name="csrf-token"]') && document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
+                    if (token) {
+                        if (typeof Headers !== 'undefined' && options.headers instanceof Headers) {
+                            if (!options.headers.has('X-CSRFToken')) options.headers.set('X-CSRFToken', token);
+                        } else if (Array.isArray(options.headers)) {
+                            options.headers.push(['X-CSRFToken', token]);
+                        } else {
+                            if (!options.headers['X-CSRFToken']) options.headers['X-CSRFToken'] = token;
+                        }
+                    }
+                }
+                return _origFetch(url, options);
+            };
+        }
+        if (window.$ && $.ajaxSetup) {
+            $.ajaxSetup({
+                beforeSend: function(xhr, settings) {
+                    if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type)) {
+                        xhr.setRequestHeader("X-CSRFToken", window.CSRF_TOKEN);
+                    }
+                }
+            });
+        }
+        if (navigator.sendBeacon) {
+            const _origBeacon = navigator.sendBeacon.bind(navigator);
+            navigator.sendBeacon = function(url, data) {
+                if (data instanceof FormData) {
+                    if (!data.has('csrf_token')) data.append('csrf_token', window.CSRF_TOKEN);
+                } else if (typeof data === 'string') {
+                    try {
+                        const obj = JSON.parse(data);
+                        if (typeof obj === 'object' && obj !== null && !obj.csrf_token) {
+                            obj.csrf_token = window.CSRF_TOKEN;
+                            data = JSON.stringify(obj);
+                        }
+                    } catch(e) {}
+                }
+                return _origBeacon(url, data);
+            };
+        }
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('form[method="POST"], form[method="post"]').forEach(function(form) {
+                if (!form.querySelector('input[name="csrf_token"]')) {
+                    var input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = 'csrf_token';
+                    input.value = window.CSRF_TOKEN;
+                    form.appendChild(input);
+                }
+            });
+        });
+    })();
+    </script>
+</head>
+<body>
+    <div class="import-container">
+        <!-- Header -->
+        <div class="page-header">
+            <h1><i class="fas fa-upload"></i> Import Exam</h1>
+            <p>Upload a JSON Exam Package or CSV Question Bank (with KaTeX Formula Support)</p>
+        </div>
+        
+        <!-- Upload Card -->
+        <div class="card">
+            <div class="card-title"><i class="fas fa-cloud-upload-alt"></i> Upload Exam File</div>
+            
+            <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()">
+                <i class="fas fa-file-upload"></i>
+                <p style="font-weight:600;margin:0;">Click to select JSON or CSV Question File</p>
+                <p style="font-size:12px;color:#64748b;margin:4px 0 0;">or drag & drop here</p>
+                <input type="file" id="fileInput" accept=".json,.csv,text/csv,application/json" style="display:none;" onchange="handleFileSelect(this.files[0])">
+            </div>
+            
+            <div id="fileInfo" style="display:none;"></div>
+        </div>
+        
+        <!-- Preview Card -->
+        <div class="card" id="previewCard" style="display:none;">
+            <div class="card-title"><i class="fas fa-eye"></i> Exam Preview</div>
+            
+            <div class="exam-summary" id="examSummary"></div>
+            
+            <div style="margin-bottom:12px;">
+                <strong style="font-size:13px;"><i class="fas fa-list"></i> Sections & Questions</strong>
+            </div>
+            <div id="sectionsPreview"></div>
+            
+            <button class="btn btn-success" id="importBtn" onclick="importExam()">
+                <i class="fas fa-check-circle"></i> Confirm Import
+            </button>
+        </div>
+        
+        <!-- Instructions -->
+        <div class="card">
+            <div class="card-title"><i class="fas fa-info-circle"></i> How to Import</div>
+            <ol style="font-size:13px;color:#475569;padding-left:20px;margin:0;">
+                <li style="margin-bottom:8px;">Click the upload area above or drag & drop a JSON file</li>
+                <li style="margin-bottom:8px;">Review the exam preview with all sections & groups</li>
+                <li style="margin-bottom:8px;">Click "Confirm Import" to add the exam to your account</li>
+                <li>You'll be redirected to the exam settings page to review</li>
+            </ol>
+            <div style="margin-top:12px;padding:10px;background:#fef3c7;border-radius:8px;font-size:12px;color:#92400e;">
+                <i class="fas fa-exclamation-triangle"></i> Use the <strong>Offline Exam Builder</strong> to create compatible JSON files.
+            </div>
+            <div style="display:flex; gap:10px; margin-top:14px; flex-wrap:wrap;">
+                <button type="button" class="btn-back" onclick="downloadCsvTemplate()" style="cursor:pointer; background:#f0fdf4; border-color:#86efac; color:#166534;">
+                    <i class="fas fa-file-csv" style="color:#16a34a;"></i> Download CSV Formula Template
+                </button>
+                <a href="/teacher/download_builder" class="btn-back">
+                    <i class="fas fa-download"></i> Download Offline Builder
+                </a>
+            </div>
+        </div>
+        
+        <div style="text-align:center;margin-top:10px;">
+            <a href="/teacher" class="btn-back"><i class="fas fa-arrow-left"></i> Back to Dashboard</a>
+        </div>
+    </div>
+    
+    <script>
+        let examData = null;
+        const uploadZone = document.getElementById('uploadZone');
+        const fileInput = document.getElementById('fileInput');
+        
+        // Drag & drop
+        uploadZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadZone.classList.add('drag-over');
+        });
+        uploadZone.addEventListener('dragleave', () => {
+            uploadZone.classList.remove('drag-over');
+        });
+        uploadZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadZone.classList.remove('drag-over');
+            const file = e.dataTransfer.files[0];
+            if (file) handleFileSelect(file);
+        });
+        
+        let uploadedRawFile = null;
+
+        function downloadCsvTemplate() {
+            const csvContent = 'question,option1,option2,option3,option4,answer,explanation\n' +
+                '"Solve for $x$: $\\frac{x}{2} + 5 = 11$",10,12,14,16,12,"Subtract 5: $\\frac{x}{2} = 6 \\implies x = 12$"\n' +
+                '"What is the derivative of $f(x) = \\sqrt{x}$?","$\\frac{1}{2\\sqrt{x}}$","$\\frac{1}{\\sqrt{x}}$","$2\\sqrt{x}$","$\\frac{1}{2x}$","$\\frac{1}{2\\sqrt{x}}$","Using power rule: $\\frac{d}{dx} x^{1/2} = \\frac{1}{2\\sqrt{x}}$"\n' +
+                '"Balance chemical reaction: $\\ce{H2 + O2 -> H2O}$","2, 1, 2","1, 1, 1","2, 2, 1","1, 2, 2","2, 1, 2","2 molecules of hydrogen react with 1 molecule of oxygen"\n' +
+                '"Calculate $\\int 2x \\, dx$","$x^2 + C$","$2x^2 + C$","$x + C$","$x^3 + C$","$x^2 + C$","Power rule: $\\int 2x dx = x^2 + C$"';
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.setAttribute('download', 'cognitara_questions_template.csv');
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        function parseCsvRows(text) {
+            const p = [];
+            let row = [''];
+            let inQuotes = false;
+            for (let i = 0; i < text.length; i++) {
+                const c = text[i];
+                const next = text[i + 1];
+                if (c === '"') {
+                    if (inQuotes && next === '"') {
+                        row[row.length - 1] += '"';
+                        i++;
+                    } else {
+                        inQuotes = !inQuotes;
+                    }
+                } else if (c === ',' && !inQuotes) {
+                    row.push('');
+                } else if ((c === '\r' || c === '\n') && !inQuotes) {
+                    if (c === '\r' && next === '\n') i++;
+                    p.push(row);
+                    row = [''];
+                } else {
+                    row[row.length - 1] += c;
+                }
+            }
+            if (row.length > 1 || (row.length === 1 && row[0].trim())) p.push(row);
+            return p;
+        }
+
+        function handleFileSelect(file) {
+            if (!file) return;
+            uploadedRawFile = file;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const text = e.target.result;
+                if (file.name.toLowerCase().endsWith('.csv')) {
+                    try {
+                        const rows = parseCsvRows(text);
+                        if (!rows || rows.length === 0) {
+                            alert('The selected CSV file is empty.');
+                            return;
+                        }
+                        const hdr = rows[0].map(h => h.trim().toLowerCase());
+                        const hasHdr = hdr.some(h => h.includes('question') || h === 'q');
+                        const dataRows = hasHdr ? rows.slice(1) : rows;
+
+                        const colMap = { question: 0, option1: 1, option2: 2, option3: 3, option4: 4, answer: 5, explanation: 6 };
+                        if (hasHdr) {
+                            hdr.forEach((h, idx) => {
+                                if (h.includes('question') || h === 'q') colMap.question = idx;
+                                else if (h.includes('option1') || h.includes('opt1') || h === 'a') colMap.option1 = idx;
+                                else if (h.includes('option2') || h.includes('opt2') || h === 'b') colMap.option2 = idx;
+                                else if (h.includes('option3') || h.includes('opt3') || h === 'c') colMap.option3 = idx;
+                                else if (h.includes('option4') || h.includes('opt4') || h === 'd') colMap.option4 = idx;
+                                else if (h.includes('answer') || h.includes('ans') || h.includes('correct')) colMap.answer = idx;
+                                else if (h.includes('explanation') || h.includes('exp')) colMap.explanation = idx;
+                            });
+                        }
+
+                        const parsedQuestions = [];
+                        dataRows.forEach(r => {
+                            if (!r || r.every(c => !c.trim())) return;
+                            const gv = (k, d = '') => {
+                                const idx = colMap[k];
+                                return idx !== undefined && idx < r.length ? r[idx].trim() : d;
+                            };
+                            const qText = gv('question');
+                            if (!qText) return;
+                            const o1 = gv('option1'), o2 = gv('option2'), o3 = gv('option3'), o4 = gv('option4');
+                            const ansR = gv('answer');
+                            const exp = gv('explanation');
+                            let ansNum = 1;
+                            const ansClean = ansR.trim().toUpperCase();
+                            if (ansClean === '2' || ansClean === 'B' || ansR === o2) ansNum = 2;
+                            else if (ansClean === '3' || ansClean === 'C' || ansR === o3) ansNum = 3;
+                            else if (ansClean === '4' || ansClean === 'D' || ansR === o4) ansNum = 4;
+
+                            parsedQuestions.push({
+                                text: qText,
+                                opt1: o1, opt2: o2, opt3: o3, opt4: o4,
+                                answer: ansNum,
+                                explanation: exp,
+                                mandatory: false
+                            });
+                        });
+
+                        examData = {
+                            name: file.name.replace(/\.[^/.]+$/, "").replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase()),
+                            class: "{{ session.get('class', 'SS 1') }}",
+                            subject: "General",
+                            specialisation: "General",
+                            duration: 60,
+                            maxWarnings: 5,
+                            calculator: "none",
+                            sections: [{
+                                name: "Section 1",
+                                questionsToShow: parsedQuestions.length,
+                                randomize: 1,
+                                questions: parsedQuestions
+                            }]
+                        };
+                        showPreview(examData);
+                    } catch(err) {
+                        alert('Could not parse CSV file. Ensure it conforms to standard question format.');
+                    }
+                } else {
+                    try {
+                        examData = JSON.parse(text);
+                        showPreview(examData);
+                    } catch(err) {
+                        alert('Invalid JSON file. Please use a file from the Offline Exam Builder or upload a CSV question file.');
+                    }
+                }
+            };
+            reader.readAsText(file);
+        }
+        
+        function showPreview(data) {
+            // File info
+            const fileInfo = document.getElementById('fileInfo');
+            fileInfo.style.display = 'flex';
+            fileInfo.className = 'file-info';
+            fileInfo.innerHTML = `
+                <i class="fas fa-check-circle" style="color:#10b981;font-size:20px;"></i>
+                <div style="flex:1;">
+                    <strong>${escapeHtml(data.name || 'Imported Exam')}</strong><br>
+                    <small>Class: ${escapeHtml(data.class || 'N/A')} | Specialisation: ${escapeHtml(data.specialisation || 'General')}</small>
+                </div>
+            `;
+            
+            // Summary
+            const totalQuestions = countQuestions(data.sections || []);
+            const totalSections = (data.sections || []).length;
+            const totalGroups = countGroups(data.sections || []);
+            
+            document.getElementById('examSummary').innerHTML = `
+                <div class="summary-chip">
+                    <div class="value">${totalSections}</div>
+                    <div class="label">Sections</div>
+                </div>
+                <div class="summary-chip">
+                    <div class="value">${totalQuestions}</div>
+                    <div class="label">Questions</div>
+                </div>
+                <div class="summary-chip">
+                    <div class="value">${totalGroups}</div>
+                    <div class="label">Groups</div>
+                </div>
+                <div class="summary-chip">
+                    <div class="value">${data.duration || 60}m</div>
+                    <div class="label">Duration</div>
+                </div>
+            `;
+            
+            // Sections preview
+            const sectionsContainer = document.getElementById('sectionsPreview');
+            sectionsContainer.innerHTML = '';
+            
+            (data.sections || []).forEach((section, idx) => {
+                const secDiv = document.createElement('div');
+                secDiv.className = 'section-preview';
+                secDiv.innerHTML = `
+                    <div class="section-header-click" onclick="this.nextElementSibling.classList.toggle('open'); this.querySelector('i').classList.toggle('fa-chevron-down'); this.querySelector('i').classList.toggle('fa-chevron-right');">
+                        <span><i class="fas fa-folder"></i> ${escapeHtml(section.name || 'Section ' + (idx+1))}</span>
+                        <span><small>${(section.questions || []).length} Q | ${(section.groups || []).length} Groups</small> <i class="fas fa-chevron-right"></i></span>
+                    </div>
+                    <div class="section-body-preview">
+                        ${(section.questions || []).map(q => `
+                            <div class="q-preview">
+                                <strong>Q:</strong> ${escapeHtml((q.text || '').substring(0, 80))}...
+                                ${q.mandatory ? '<span class="badge bg-warning" style="font-size:9px;">Mandatory</span>' : ''}
+                            </div>
+                        `).join('')}
+                        ${(section.groups || []).map(g => `
+                            <div class="group-preview">
+                                <strong><i class="fas fa-layer-group"></i> ${escapeHtml(g.name || 'Group')}</strong>
+                                <small>(${g.type || 'normal'})</small>
+                                <div>${(g.questions || []).length} questions</div>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+                sectionsContainer.appendChild(secDiv);
+            });
+            
+            document.getElementById('previewCard').style.display = 'block';
+            if (window.renderMathInElement) {
+                renderMathInElement(document.getElementById('previewCard'), {
+                    delimiters: [
+                        { left: '$$', right: '$$', display: true },
+                        { left: '$', right: '$', display: false },
+                        { left: '\\(', right: '\\)', display: false },
+                        { left: '\\[', right: '\\]', display: true }
+                    ],
+                    throwOnError: false
+                });
+            }
+            document.getElementById('previewCard').scrollIntoView({ behavior: 'smooth' });
+        }
+        
+        function countQuestions(sections) {
+            let count = 0;
+            sections.forEach(s => {
+                count += (s.questions || []).length;
+                (s.groups || []).forEach(g => count += (g.questions || []).length);
+            });
+            return count;
+        }
+        
+        function countGroups(sections) {
+            let count = 0;
+            sections.forEach(s => count += (s.groups || []).length);
+            return count;
+        }
+        
+        async function importExam() {
+            if (!examData) return;
+            
+            const btn = document.getElementById('importBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="loading-spinner"></span> Importing...';
+            
+            const formData = new FormData();
+            if (uploadedRawFile && uploadedRawFile.name.toLowerCase().endsWith('.csv')) {
+                formData.append('csv_file', uploadedRawFile);
+                formData.append('name', examData.name || '');
+                formData.append('class', examData.class || '');
+                formData.append('duration', examData.duration || 60);
+            } else {
+                formData.append('json_file', new Blob([JSON.stringify(examData)], {type: 'application/json'}), 'exam.json');
+            }
+            
+            try {
+                const response = await fetch('/teacher/import_exam', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert('<i class="fas fa-check-circle"></i> ' + result.message);
+                    window.location.href = result.redirect;
+                } else {
+                    alert('<i class="fas fa-times-circle"></i> Import failed: ' + (result.error || 'Unknown error'));
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-check-circle"></i> Confirm Import';
+                }
+            } catch(e) {
+                alert('<i class="fas fa-times-circle"></i> Network error. Please try again.');
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-check-circle"></i> Confirm Import';
+            }
+        }
+        
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+    </script>
+</body>
+</html>

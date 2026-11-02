@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Pending Approvals | Entrance Exam</title>
+    <link href="{{ url_for('static', filename='vendor/bootstrap/css/bootstrap.min.css') }}" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='vendor/fontawesome/css/all.min.css') }}">
+    <script src="{{ url_for('static', filename='vendor/sweetalert2/sweetalert2.all.min.js') }}"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: linear-gradient(135deg, #f5f7fa 0%, #e8edf5 100%); font-family: 'Segoe UI', 'Poppins', sans-serif; }
+        
+        .approvals-container { max-width: 1400px; margin: 0 auto; padding: 40px 30px; position: relative; z-index: 10; }
+        
+        .edu-icon { position: absolute; color: rgba(26, 86, 219, 0.05); pointer-events: none; z-index: 0; animation: floatIcon 20s infinite ease-in-out; }
+        @keyframes floatIcon { 0% { transform: translate(0, 0) rotate(0deg); opacity: 0; } 10% { opacity: 0.08; } 90% { opacity: 0.08; } 100% { transform: translate(100px, -100px) rotate(360deg); opacity: 0; } }
+        
+        .page-header { text-align: center; margin-bottom: 30px; }
+        .logo-icon { width: 80px; height: 80px; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 20px; animation: pulse 2s infinite; }
+        @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+        .logo-icon i { font-size: 40px; color: white; }
+        .page-header h1 { font-size: 32px; font-weight: 800; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 5px; }
+        
+        .stats-bar { background: white; border-radius: 20px; padding: 20px 30px; margin-bottom: 30px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px; border: 1px solid #e2e8f0; }
+        .stats-info { display: flex; align-items: center; gap: 15px; }
+        .stats-icon { width: 50px; height: 50px; background: #fef3c7; border-radius: 15px; display: flex; align-items: center; justify-content: center; }
+        .stats-icon i { font-size: 24px; color: #f59e0b; }
+        .stats-text h3 { font-size: 28px; font-weight: 800; color: #1e293b; margin: 0; }
+        .stats-text p { margin: 0; color: #64748b; font-size: 13px; }
+        .btn-back { background: white; border: 2px solid #e2e8f0; padding: 10px 25px; border-radius: 12px; color: #64748b; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; transition: all 0.3s ease; }
+        .btn-back:hover { border-color: #8b5cf6; color: #8b5cf6; }
+        
+        .student-card { background: white; border-radius: 24px; margin-bottom: 25px; border: 1px solid #e2e8f0; overflow: hidden; transition: all 0.3s ease; }
+        .student-card:hover { transform: translateY(-3px); box-shadow: 0 10px 25px -10px rgba(0,0,0,0.1); }
+        .student-header { padding: 20px 25px; border-bottom: 1px solid #e2e8f0; background: #f8fafc; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; }
+        .student-name h3 { font-size: 18px; font-weight: 700; color: #1e293b; margin: 0; }
+        .student-name p { color: #64748b; font-size: 13px; margin: 5px 0 0; }
+        .score-badge { background: #8b5cf6; color: white; padding: 5px 15px; border-radius: 30px; font-size: 14px; font-weight: 600; }
+        .student-body { padding: 20px 25px; display: flex; flex-wrap: wrap; gap: 20px; justify-content: space-between; align-items: center; }
+        .student-details { display: flex; flex-wrap: wrap; gap: 20px; }
+        .detail { background: #f8fafc; padding: 8px 15px; border-radius: 12px; }
+        .detail i { margin-right: 8px; color: #8b5cf6; }
+        .detail span { font-size: 13px; color: #475569; }
+        .detail strong { color: #1e293b; }
+        .action-buttons { display: flex; gap: 12px; }
+        .btn-approve { background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; border: none; padding: 10px 25px; border-radius: 12px; font-weight: 600; cursor: pointer; transition: all 0.3s ease; display: inline-flex; align-items: center; gap: 8px; }
+        .btn-approve:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(16, 185, 129, 0.3); }
+        .btn-reject { background: white; border: 2px solid #fee2e2; color: #ef4444; padding: 8px 23px; border-radius: 12px; font-weight: 600; cursor: pointer; transition: all 0.3s ease; display: inline-flex; align-items: center; gap: 8px; }
+        .btn-reject:hover { background: #fef2f2; border-color: #ef4444; transform: translateY(-2px); }
+        
+        .empty-state { text-align: center; padding: 60px; background: white; border-radius: 24px; border: 1px solid #e2e8f0; }
+        .empty-icon { width: 100px; height: 100px; background: #f1f5f9; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 20px; }
+        .empty-icon i { font-size: 50px; color: #94a3b8; }
+        
+        @media (max-width: 768px) {
+            .approvals-container { padding: 20px 15px; }
+            .student-header { flex-direction: column; text-align: center; }
+            .student-body { flex-direction: column; text-align: center; }
+            .student-details { justify-content: center; }
+            .action-buttons { justify-content: center; }
+        }
+    </style>
+    <!-- CSRF Protection Shield -->
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <script>
+    window.CSRF_TOKEN = "{{ csrf_token() }}";
+    (function() {
+        if (window.fetch) {
+            const _origFetch = window.fetch;
+            window.fetch = function(url, options) {
+                options = options || {};
+                const method = (options.method || 'GET').toUpperCase();
+                if (!['GET', 'HEAD', 'OPTIONS', 'TRACE'].includes(method)) {
+                    options.headers = options.headers || {};
+                    const token = window.CSRF_TOKEN || (document.querySelector('meta[name="csrf-token"]') && document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
+                    if (token) {
+                        if (typeof Headers !== 'undefined' && options.headers instanceof Headers) {
+                            if (!options.headers.has('X-CSRFToken')) options.headers.set('X-CSRFToken', token);
+                        } else if (Array.isArray(options.headers)) {
+                            options.headers.push(['X-CSRFToken', token]);
+                        } else {
+                            if (!options.headers['X-CSRFToken']) options.headers['X-CSRFToken'] = token;
+                        }
+                    }
+                }
+                return _origFetch(url, options);
+            };
+        }
+        if (window.$ && $.ajaxSetup) {
+            $.ajaxSetup({
+                beforeSend: function(xhr, settings) {
+                    if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type)) {
+                        xhr.setRequestHeader("X-CSRFToken", window.CSRF_TOKEN);
+                    }
+                }
+            });
+        }
+        if (navigator.sendBeacon) {
+            const _origBeacon = navigator.sendBeacon.bind(navigator);
+            navigator.sendBeacon = function(url, data) {
+                if (data instanceof FormData) {
+                    if (!data.has('csrf_token')) data.append('csrf_token', window.CSRF_TOKEN);
+                } else if (typeof data === 'string') {
+                    try {
+                        const obj = JSON.parse(data);
+                        if (typeof obj === 'object' && obj !== null && !obj.csrf_token) {
+                            obj.csrf_token = window.CSRF_TOKEN;
+                            data = JSON.stringify(obj);
+                        }
+                    } catch(e) {}
+                }
+                return _origBeacon(url, data);
+            };
+        }
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('form[method="POST"], form[method="post"]').forEach(function(form) {
+                if (!form.querySelector('input[name="csrf_token"]')) {
+                    var input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = 'csrf_token';
+                    input.value = window.CSRF_TOKEN;
+                    form.appendChild(input);
+                }
+            });
+        });
+    })();
+    </script>
+    <script src="{{ url_for('static', filename='js/cognitara-actions.js') }}"></script>
+</head>
+<body>
+    <div class="edu-icon"><i class="fas fa-user-check"></i></div>
+    <div class="edu-icon"><i class="fas fa-clipboard-list"></i></div>
+
+    <div class="approvals-container">
+        <div class="page-header">
+            <div class="logo-icon"><i class="fas fa-user-check"></i></div>
+            <h1>Pending Approvals</h1>
+            <p>Review and approve entrance exam results</p>
+        </div>
+
+        <div class="stats-bar">
+            <div class="stats-info">
+                <div class="stats-icon"><i class="fas fa-hourglass-half"></i></div>
+                <div class="stats-text">
+                    <h3>{{ pending|length }}</h3>
+                    <p>Pending Approvals</p>
+                </div>
+            </div>
+            <a href="/admin/common-entrance" class="btn-back"><i class="fas fa-arrow-left"></i> Back to Exams</a>
+        </div>
+
+        {% if pending %}
+            {% for student in pending %}
+            <div class="student-card" id="student-card-{{ student.id }}">
+                <div class="student-header">
+                    <div class="student-name">
+                        <h3><i class="fas fa-user-graduate"></i> {{ student.full_name }}</h3>
+                        <p><i class="fas fa-at"></i> {{ student.username }} | <i class="fas fa-envelope"></i> {{ student.email }}</p>
+                    </div>
+                    <div class="score-badge">
+                        <i class="fas fa-percent"></i> {{ student.percentage|round|int }}% - {{ student.score }}/{{ student.total }}
+                    </div>
+                </div>
+                <div class="student-body">
+                    <div class="student-details">
+                        <div class="detail"><i class="fas fa-door-open"></i> <span>Exam:</span> <strong>{{ student.exam_name }}</strong></div>
+                        <div class="detail"><i class="fas fa-flag-checkered"></i> <span>Target Class:</span> <strong>{{ student.target_class }}</strong></div>
+                        <div class="detail"><i class="fas fa-calendar"></i> <span>Completed:</span> <strong>{{ student.completed_at[:16] if student.completed_at else 'N/A' }}</strong></div>
+                        <div class="detail"><i class="fas fa-chart-line"></i> <span>Passing Score:</span> <strong>{{ student.passing_score if student.passing_score else 50 }}%</strong></div>
+                    </div>
+                    <div class="action-buttons">
+                        <button class="btn-approve" onclick="approveStudent({{ student.id }}, '{{ student.full_name }}')"><i class="fas fa-check-circle"></i> Approve & Add to {{ student.target_class }}</button>
+                        <button class="btn-reject" onclick="rejectStudent({{ student.id }}, '{{ student.full_name }}')"><i class="fas fa-times-circle"></i> Reject</button>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="empty-state">
+                <div class="empty-icon"><i class="fas fa-check-circle"></i></div>
+                <h3>No Pending Approvals</h3>
+                <p>All entrance exam results have been processed</p>
+                <a href="/admin/common-entrance" class="btn-back" style="display: inline-flex; margin-top: 15px;">Back to Exams</a>
+            </div>
+        {% endif %}
+    </div>
+
+    <script>
+        async function approveStudent(attemptId, studentName) {
+            const r = await Swal.fire({
+                title: 'Approve Student?',
+                html: `Approve <strong>${studentName}</strong>?<br>They will be added to the target class and can login to the main portal.`,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#10b981',
+                cancelButtonColor: '#64748b',
+                confirmButtonText: 'Yes, Approve!',
+                cancelButtonText: 'Cancel'
+            });
+            if (!r.isConfirmed) return;
+            Swal.fire({ title: 'Approving...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+            try {
+                const res = await fetch(`/admin/ce_approve/${attemptId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                const data = await res.json();
+                Swal.close();
+                if (data.success || data.ok) {
+                    Swal.fire({
+                        title: 'Approved!',
+                        text: data.message || `Student ${studentName} approved successfully.`,
+                        icon: 'success',
+                        timer: 2000,
+                        showConfirmButton: false
+                    });
+                    const card = document.getElementById(`student-card-${attemptId}`);
+                    if (card) {
+                        card.style.opacity = '0';
+                        card.style.transform = 'scale(0.96)';
+                        card.style.transition = 'all 0.3s ease';
+                        setTimeout(() => {
+                            card.remove();
+                            const remaining = document.querySelectorAll('.student-card');
+                            const countEl = document.querySelector('.stats-text h3');
+                            if (countEl) countEl.innerText = remaining.length;
+                            if (remaining.length === 0) {
+                                location.reload();
+                            }
+                        }, 320);
+                    }
+                } else {
+                    Swal.fire('Error', data.error || 'Failed to approve student.', 'error');
+                }
+            } catch (e) {
+                Swal.close();
+                Swal.fire('Error', 'Network error during approval.', 'error');
+            }
+        }
+        
+        async function rejectStudent(attemptId, studentName) {
+            const r = await Swal.fire({
+                title: 'Reject Student?',
+                html: `Reject <strong>${studentName}</strong>?<br>They will be notified and can retake the exam.`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#ef4444',
+                cancelButtonColor: '#64748b',
+                confirmButtonText: 'Yes, Reject',
+                cancelButtonText: 'Cancel'
+            });
+            if (!r.isConfirmed) return;
+            Swal.fire({ title: 'Rejecting...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+            try {
+                const res = await fetch(`/admin/ce_reject/${attemptId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                const data = await res.json();
+                Swal.close();
+                if (data.success || data.ok) {
+                    Swal.fire({
+                        title: 'Rejected',
+                        text: data.message || `Student ${studentName} was rejected.`,
+                        icon: 'info',
+                        timer: 2000,
+                        showConfirmButton: false
+                    });
+                    const card = document.getElementById(`student-card-${attemptId}`);
+                    if (card) {
+                        card.style.opacity = '0';
+                        card.style.transform = 'scale(0.96)';
+                        card.style.transition = 'all 0.3s ease';
+                        setTimeout(() => {
+                            card.remove();
+                            const remaining = document.querySelectorAll('.student-card');
+                            const countEl = document.querySelector('.stats-text h3');
+                            if (countEl) countEl.innerText = remaining.length;
+                            if (remaining.length === 0) {
+                                location.reload();
+                            }
+                        }, 320);
+                    }
+                } else {
+                    Swal.fire('Error', data.error || 'Failed to reject student.', 'error');
+                }
+            } catch (e) {
+                Swal.close();
+                Swal.fire('Error', 'Network error during rejection.', 'error');
+            }
+        }
+    </script>
+</body>
+</html>
+

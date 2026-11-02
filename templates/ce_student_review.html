@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{{ student.full_name }} - Exam Review | COGNITARA EXAM SYSTEM</title>
+    <link href="{{ url_for('static', filename='vendor/bootstrap/css/bootstrap.min.css') }}" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='vendor/fontawesome/css/all.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='vendor/katex/katex.min.css') }}">
+    <script src="{{ url_for('static', filename='vendor/katex/katex.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='vendor/katex/contrib/mhchem.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='vendor/katex/contrib/auto-render.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='vendor/chartjs/chart.umd.min.js') }}"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: linear-gradient(135deg, #f5f7fa 0%, #e8edf5 100%); font-family: 'Segoe UI', 'Poppins', sans-serif; }
+        
+        .review-container { max-width: 1200px; margin: 0 auto; padding: 30px; }
+        
+        /* Header Card */
+        .header-card { background: linear-gradient(135deg, #1a56db 0%, #0e3b9e 100%); color: white; border-radius: 24px; padding: 30px; margin-bottom: 30px; }
+        
+        /* Stat Cards */
+        .stat-card { background: white; border-radius: 20px; padding: 20px; text-align: center; border: 1px solid #e2e8f0; transition: all 0.3s; height: 100%; }
+        .stat-card:hover { transform: translateY(-3px); box-shadow: 0 10px 20px -10px rgba(0,0,0,0.1); }
+        .stat-card i { font-size: 32px; margin-bottom: 10px; }
+        .stat-card h3 { font-size: 32px; font-weight: 800; margin: 5px 0; }
+        .stat-card p { color: #64748b; font-size: 13px; margin: 0; }
+        
+        /* Question Cards */
+        .question-card { background: white; border-radius: 16px; padding: 20px; margin-bottom: 15px; border: 1px solid #e2e8f0; transition: all 0.3s; }
+        .question-card.correct { border-left: 4px solid #10b981; }
+        .question-card.incorrect { border-left: 4px solid #ef4444; }
+        .question-card:hover { transform: translateX(5px); box-shadow: 0 5px 15px rgba(0,0,0,0.05); }
+        
+        /* Badges */
+        .badge-correct { background: #d1fae5; color: #065f46; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+        .badge-incorrect { background: #fee2e2; color: #991b1b; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+        .badge-pending { background: #fef3c7; color: #d97706; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+        
+        /* Buttons */
+        .btn-back { background: white; border: 2px solid #e2e8f0; padding: 10px 25px; border-radius: 12px; color: #64748b; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; transition: all 0.3s; }
+        .btn-back:hover { border-color: #8b5cf6; color: #8b5cf6; transform: translateY(-2px); }
+        .btn-approve { background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; border: none; padding: 12px 24px; border-radius: 12px; font-weight: 600; cursor: pointer; transition: all 0.3s; }
+        .btn-approve:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(16,185,129,0.3); }
+        .btn-reject { background: white; border: 2px solid #ef4444; color: #ef4444; padding: 10px 22px; border-radius: 12px; font-weight: 600; cursor: pointer; transition: all 0.3s; }
+        .btn-reject:hover { background: #ef4444; color: white; transform: translateY(-2px); }
+        .btn-export { background: #3b82f6; color: white; border: none; padding: 10px 20px; border-radius: 10px; cursor: pointer; transition: all 0.3s; display: inline-flex; align-items: center; gap: 8px; }
+        .btn-export:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(59,130,246,0.3); }
+        
+        /* Filter Buttons */
+        .filter-buttons { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+        .filter-btn { padding: 8px 16px; border-radius: 10px; border: 1px solid #e2e8f0; background: white; cursor: pointer; transition: all 0.3s; font-size: 13px; }
+        .filter-btn.active { background: #1a56db; color: white; border-color: #1a56db; }
+        .filter-btn:hover { background: #e2e8f0; }
+        
+        /* Progress Bar */
+        .progress-custom { height: 10px; background: #e2e8f0; border-radius: 10px; overflow: hidden; margin: 10px 0; }
+        .progress-fill { height: 100%; border-radius: 10px; transition: width 0.5s; }
+        
+        /* Score Ring */
+        .score-ring {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 15px;
+        }
+        .score-ring-inner {
+            width: 96px;
+            height: 96px;
+            background: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        
+        /* Time Badge */
+        .time-badge { background: #f1f5f9; padding: 4px 12px; border-radius: 20px; font-size: 11px; display: inline-flex; align-items: center; gap: 6px; }
+        
+        /* Section Header */
+        .section-header { background: #f8fafc; padding: 12px 16px; border-radius: 12px; margin-bottom: 15px; border-left: 4px solid #8b5cf6; }
+        .section-header h4 { margin: 0; font-size: 16px; font-weight: 600; color: #1e293b; }
+        
+        @media (max-width: 768px) {
+            .review-container { padding: 15px; }
+            .stat-card { padding: 15px; }
+            .stat-card h3 { font-size: 24px; }
+            .question-card { padding: 15px; }
+        }
+    </style>
+    <!-- CSRF Protection Shield -->
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <script>
+    window.CSRF_TOKEN = "{{ csrf_token() }}";
+    (function() {
+        if (window.fetch) {
+            const _origFetch = window.fetch;
+            window.fetch = function(url, options) {
+                options = options || {};
+                const method = (options.method || 'GET').toUpperCase();
+                if (!['GET', 'HEAD', 'OPTIONS', 'TRACE'].includes(method)) {
+                    options.headers = options.headers || {};
+                    const token = window.CSRF_TOKEN || (document.querySelector('meta[name="csrf-token"]') && document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
+                    if (token) {
+                        if (typeof Headers !== 'undefined' && options.headers instanceof Headers) {
+                            if (!options.headers.has('X-CSRFToken')) options.headers.set('X-CSRFToken', token);
+                        } else if (Array.isArray(options.headers)) {
+                            options.headers.push(['X-CSRFToken', token]);
+                        } else {
+                            if (!options.headers['X-CSRFToken']) options.headers['X-CSRFToken'] = token;
+                        }
+                    }
+                }
+                return _origFetch(url, options);
+            };
+        }
+        if (window.$ && $.ajaxSetup) {
+            $.ajaxSetup({
+                beforeSend: function(xhr, settings) {
+                    if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type)) {
+                        xhr.setRequestHeader("X-CSRFToken", window.CSRF_TOKEN);
+                    }
+                }
+            });
+        }
+        if (navigator.sendBeacon) {
+            const _origBeacon = navigator.sendBeacon.bind(navigator);
+            navigator.sendBeacon = function(url, data) {
+                if (data instanceof FormData) {
+                    if (!data.has('csrf_token')) data.append('csrf_token', window.CSRF_TOKEN);
+                } else if (typeof data === 'string') {
+                    try {
+                        const obj = JSON.parse(data);
+                        if (typeof obj === 'object' && obj !== null && !obj.csrf_token) {
+                            obj.csrf_token = window.CSRF_TOKEN;
+                            data = JSON.stringify(obj);
+                        }
+                    } catch(e) {}
+                }
+                return _origBeacon(url, data);
+            };
+        }
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('form[method="POST"], form[method="post"]').forEach(function(form) {
+                if (!form.querySelector('input[name="csrf_token"]')) {
+                    var input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = 'csrf_token';
+                    input.value = window.CSRF_TOKEN;
+                    form.appendChild(input);
+                }
+            });
+        });
+    })();
+    </script>
+</head>
+<body>
+<div class="review-container">
+    <!-- Back Button -->
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 15px;">
+        <a href="/admin/common-entrance" class="btn-back"><i class="fas fa-arrow-left"></i> Back to Dashboard</a>
+        <button class="btn-export" onclick="exportStudentData()"><i class="fas fa-download"></i> Export Report</button>
+    </div>
+    
+    <!-- Header Card -->
+    <div class="header-card">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px;">
+            <div>
+                <h2><i class="fas fa-user-graduate"></i> {{ student.full_name }}</h2>
+                <p><i class="fas fa-envelope"></i> {{ student.email }} | <i class="fas fa-at"></i> {{ student.username }}</p>
+                <p><i class="fas fa-file-alt"></i> Exam: {{ student.exam_name }} | <i class="fas fa-flag-checkered"></i> Target: {{ student.target_class }}</p>
+                <p><i class="fas fa-percent"></i> Passing Score Required: {{ student.passing_score }}%</p>
+            </div>
+            <div style="text-align: center;">
+                {% if attempt_status == 'approved' %}
+                    <div class="score-ring" style="background: conic-gradient(from 0deg, #10b981 0deg, #10b981 {{ score_percentage * 3.6 }}deg, #e2e8f0 {{ score_percentage * 3.6 }}deg);">
+                        <div class="score-ring-inner">
+                            <span style="font-size: 36px; font-weight: 800; color: #10b981;">{{ score_percentage }}%</span>
+                            <span style="font-size: 12px; color: #64748b;">Score</span>
+                        </div>
+                    </div>
+                    <div><span class="badge-correct"><i class="fas fa-check-circle"></i> Approved</span></div>
+                {% elif attempt_status == 'pending' %}
+                    <div class="score-ring" style="background: conic-gradient(from 0deg, #f59e0b 0deg, #f59e0b {{ score_percentage * 3.6 }}deg, #e2e8f0 {{ score_percentage * 3.6 }}deg);">
+                        <div class="score-ring-inner">
+                            <span style="font-size: 36px; font-weight: 800; color: #f59e0b;">{{ score_percentage }}%</span>
+                            <span style="font-size: 12px; color: #64748b;">Score</span>
+                        </div>
+                    </div>
+                    <div><span class="badge-pending"><i class="fas fa-hourglass-half"></i> Pending Review</span></div>
+                {% elif attempt_status == 'rejected' %}
+                    <div class="score-ring" style="background: conic-gradient(from 0deg, #ef4444 0deg, #ef4444 {{ score_percentage * 3.6 }}deg, #e2e8f0 {{ score_percentage * 3.6 }}deg);">
+                        <div class="score-ring-inner">
+                            <span style="font-size: 36px; font-weight: 800; color: #ef4444;">{{ score_percentage }}%</span>
+                            <span style="font-size: 12px; color: #64748b;">Score</span>
+                        </div>
+                    </div>
+                    <div><span class="badge-incorrect"><i class="fas fa-times-circle"></i> Rejected</span></div>
+                {% else %}
+                    <div style="background: #e2e8f0; border-radius: 60px; padding: 20px; text-align: center;">
+                        <i class="fas fa-clock" style="font-size: 48px; color: #64748b;"></i>
+                        <p class="mt-2">Not Started Yet</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Action Buttons for Pending -->
+    {% if attempt_status == 'pending' %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="stat-card" style="text-align: center; background: #fef3c7; border-color: #f59e0b;">
+                <h4><i class="fas fa-user-check"></i> Pending Approval</h4>
+                <p>Review this student's exam performance and decide</p>
+                <div style="display: flex; gap: 15px; justify-content: center; margin-top: 15px;">
+                    <button class="btn-approve" onclick="approveStudent()"><i class="fas fa-check-circle"></i> Approve Student</button>
+                    <button class="btn-reject" onclick="rejectStudent()"><i class="fas fa-times-circle"></i> Reject Student</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- Stats Cards -->
+    {% if attempt_status in ['approved', 'pending', 'rejected'] and total_questions > 0 %}
+    <div class="row mb-4">
+        <div class="col-md-3 col-sm-6 mb-3">
+            <div class="stat-card">
+                <i class="fas fa-check-circle" style="color: #10b981;"></i>
+                <h3>{{ correct_count }}</h3>
+                <p>Correct Answers</p>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6 mb-3">
+            <div class="stat-card">
+                <i class="fas fa-times-circle" style="color: #ef4444;"></i>
+                <h3>{{ incorrect_count }}</h3>
+                <p>Incorrect Answers</p>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6 mb-3">
+            <div class="stat-card">
+                <i class="fas fa-clock" style="color: #3b82f6;"></i>
+                <h3>{{ (total_time_spent/60)|round(1) }} min</h3>
+                <p>Total Time on Questions</p>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6 mb-3">
+            <div class="stat-card">
+                <i class="fas fa-hourglass-half" style="color: #f59e0b;"></i>
+                <h3>{{ avg_time_per_question }}s</h3>
+                <p>Avg Time per Question</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Comparison Card -->
+    <div class="stat-card mb-4">
+        <div style="display: flex; justify-content: space-between; flex-wrap: wrap; gap: 15px;">
+            <div><strong><i class="fas fa-chart-simple"></i> Class Average:</strong> {{ class_avg }}%</div>
+            <div><strong><i class="fas fa-tachometer-alt"></i> Student Score:</strong> {{ score_percentage }}%</div>
+            <div><strong><i class="fas fa-chart-line"></i> Difference:</strong> 
+                {% if score_percentage > class_avg %}
+                    <span style="color: #10b981;">+{{ (score_percentage - class_avg)|round(1) }}%</span>
+                {% elif score_percentage < class_avg %}
+                    <span style="color: #ef4444;">{{ (score_percentage - class_avg)|round(1) }}%</span>
+                {% else %}
+                    {{ (score_percentage - class_avg)|round(1) }}%
+                {% endif %}
+            </div>
+        </div>
+        <div class="progress-custom">
+            <div class="progress-fill" style="width: {{ score_percentage }}%; background: {% if score_percentage >= 70 %}#10b981{% elif score_percentage >= 50 %}#f59e0b{% else %}#ef4444{% endif %};"></div>
+        </div>
+    </div>
+    
+    <!-- Filter Buttons -->
+    <div class="filter-buttons">
+        <button class="filter-btn active" onclick="filterQuestions('all')"><i class="fas fa-list"></i> All Questions ({{ total_questions }})</button>
+        <button class="filter-btn" onclick="filterQuestions('correct')"><i class="fas fa-check-circle"></i> Correct Only ({{ correct_count }})</button>
+        <button class="filter-btn" onclick="filterQuestions('incorrect')"><i class="fas fa-times-circle"></i> Incorrect Only ({{ incorrect_count }})</button>
+    </div>
+    
+    <!-- Questions by Section -->
+    <div id="questions-container">
+        {% set current_section = '' %}
+        {% for q in question_breakdown %}
+            {% if current_section != q.section %}
+                {% set current_section = q.section %}
+                <div class="section-header">
+                    <h4><i class="fas fa-folder-open"></i> {{ q.section }}</h4>
+                </div>
+            {% endif %}
+            <div class="question-card {% if q.is_correct %}correct{% else %}incorrect{% endif %}" data-status="{% if q.is_correct %}correct{% else %}incorrect{% endif %}">
+                <div style="display: flex; justify-content: space-between; align-items: start; flex-wrap: wrap; gap: 10px; margin-bottom: 12px;">
+                    <strong>Question {{ q.number }}</strong>
+                    {% if q.is_correct %}
+                        <span class="badge-correct"><i class="fas fa-check-circle"></i> Correct</span>
+                    {% else %}
+                        <span class="badge-incorrect"><i class="fas fa-times-circle"></i> Incorrect</span>
+                    {% endif %}
+                </div>
+                <div class="mb-3" style="font-size: 15px; line-height: 1.5;">{{ q.question|safe }}</div>
+                {% if q.image %}
+                <div class="mb-2"><img src="/static/images/{{ q.image }}" style="max-width: 150px; border-radius: 10px; border: 1px solid #e2e8f0;"></div>
+                {% endif %}
+                <div class="row mt-2">
+                    <div class="col-md-6">
+                        <strong>Student's Answer:</strong> 
+                        <span class="{% if not q.is_correct %}text-danger{% else %}text-success{% endif %}" style="font-weight: 500;">
+                            {{ q.selected_letter }}. {{ (q.selected or '')|safe }}
+                        </span>
+                    </div>
+                    <div class="col-md-6">
+                        <strong>Correct Answer:</strong> 
+                        <span class="text-success" style="font-weight: 500;">
+                            {{ q.correct_letter }}. {{ (q.correct_answer or '')|safe }}
+                        </span>
+                    </div>
+                </div>
+                <div class="mt-2">
+                    <span class="time-badge"><i class="fas fa-clock"></i> Time spent: {{ q.time_spent }} seconds</span>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+    
+    {% elif attempt_status == 'not_started' %}
+    <div class="stat-card text-center" style="padding: 60px;">
+        <i class="fas fa-hourglass-start" style="font-size: 60px; color: #94a3b8;"></i>
+        <h3 class="mt-3">Student Has Not Started the Exam</h3>
+        <p>This student has registered but hasn't taken the exam yet.</p>
+    </div>
+    {% endif %}
+</div>
+
+<script src="{{ url_for('static', filename='vendor/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
+<script>
+    // Filter Questions
+    function filterQuestions(type) {
+        document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+        event.target.classList.add('active');
+        
+        document.querySelectorAll('.question-card').forEach(card => {
+            if (type === 'all') {
+                card.style.display = 'block';
+            } else if (type === 'correct') {
+                card.style.display = card.classList.contains('correct') ? 'block' : 'none';
+            } else if (type === 'incorrect') {
+                card.style.display = card.classList.contains('incorrect') ? 'block' : 'none';
+            }
+        });
+    }
+    
+    // Export Student Data as CSV
+    function exportStudentData() {
+        const studentName = "{{ student.full_name }}";
+        const examName = "{{ student.exam_name }}";
+        const score = "{{ correct_count }}/{{ total_questions }}";
+        const percentage = "{{ score_percentage }}%";
+        const status = "{{ attempt_status }}";
+        
+        let csvContent = "Student Name,Exam,Score,Percentage,Status,Question,Student Answer,Correct Answer,Status\n";
+        
+        {% for q in question_breakdown %}
+        csvContent += `"{{ student.full_name }}","{{ student.exam_name }}","{{ correct_count }}/{{ total_questions }}","{{ score_percentage }}%","{{ attempt_status }}","{{ q.question|replace('"', '""') }}","{{ q.selected|replace('"', '""') }}","{{ q.correct_answer|replace('"', '""') }}","{% if q.is_correct %}Correct{% else %}Incorrect{% endif %}"\n`;
+        {% endfor %}
+        
+        const blob = new Blob([csvContent], { type: 'text/csv' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `{{ student.full_name }}_exam_report.csv`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
+    
+    // Approve Student
+    function approveStudent() {
+        const pct = {{ score_percentage }};
+        let message = '';
+        
+        if (pct >= 80) {
+            message = `This student scored ${pct}% which is EXCELLENT! Highly recommended for approval.`;
+        } else if (pct >= 60) {
+            message = `This student scored ${pct}% which is GOOD. Recommended for approval.`;
+        } else if (pct >= 50) {
+            message = `This student scored ${pct}% which meets the passing requirement. Consider approval.`;
+        } else {
+            message = `This student scored ${pct}% which is below passing. Consider carefully before approving.`;
+        }
+        
+        if (confirm(`Approve {{ student.full_name }}?\n\nScore: ${pct}%\n${message}\n\nThis will add the student to {{ student.target_class }} class.`)) {
+            fetch(`/admin/ce_student_approve/{{ student.id }}/{{ student.exam_id }}`, { method: 'POST', headers: { 'Content-Type': 'application/json' } })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('<i class="fas fa-check"></i> Student approved successfully!');
+                    window.location.href = '/admin/common-entrance';
+                } else {
+                    alert('<i class="fas fa-times"></i> Error: ' + data.error);
+                }
+            })
+            .catch(error => {
+                alert('<i class="fas fa-times"></i> Network error. Please try again.');
+            });
+        }
+    }
+    
+    // Reject Student
+    function rejectStudent() {
+        const pct = {{ score_percentage }};
+        let message = '';
+        
+        if (pct >= 80) {
+            message = `<i class="fas fa-exclamation-triangle"></i> WARNING: This student scored ${pct}% which is EXCELLENT. Rejecting is strongly discouraged!`;
+        } else if (pct >= 60) {
+            message = `<i class="fas fa-exclamation-triangle"></i> WARNING: This student scored ${pct}% which is GOOD. Consider approval instead.`;
+        } else if (pct >= 50) {
+            message = `<i class="fas fa-exclamation-triangle"></i> CAUTION: This student scored ${pct}% which meets the passing requirement.`;
+        } else {
+            message = `This student scored ${pct}% which is below passing. Rejection may be appropriate.`;
+        }
+        
+        if (confirm(`Reject {{ student.full_name }}?\n\nScore: ${pct}%\n${message}\n\nThe student can retake the exam.`)) {
+            fetch(`/admin/ce_student_reject/{{ student.id }}/{{ student.exam_id }}`, { method: 'POST', headers: { 'Content-Type': 'application/json' } })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('<i class="fas fa-check"></i> Student rejected successfully!');
+                    window.location.href = '/admin/common-entrance';
+                } else {
+                    alert('<i class="fas fa-times"></i> Error: ' + data.error);
+                }
+            })
+            .catch(error => {
+                alert('<i class="fas fa-times"></i> Network error. Please try again.');
+            });
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        if (typeof renderMathInElement === 'function') {
+            renderMathInElement(document.body, {
+                delimiters: [
+                    {left: '$$', right: '$$', display: true},
+                    {left: '$', right: '$', display: false},
+                    {left: '\\(', right: '\\)', display: false},
+                    {left: '\\[', right: '\\]', display: true}
+                ],
+                throwOnError: false
+            });
+        }
+    });
+</script>
+</body>
+</html>

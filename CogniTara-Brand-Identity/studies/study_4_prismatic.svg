@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <rect width="100%" height="100%" fill="#0A0E1A" rx="32"/>
+  <path d="M 149.5,70.5
+           A 70 70 0 1 0 149.5,129.5
+           L 133,113
+           A 46 46 0 1 1 133,87 Z" fill="#FFFFFF" />
+  <!-- Central horizontal-vertical crosshair node forming a subtle T/Star apex -->
+  <polygon points="120,100 148,88 140,100 148,112" fill="#FFFFFF" />
+</svg>

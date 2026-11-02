@@ -1,0 +1,1429 @@
+[
+  {
+    "rule": "/",
+    "endpoint": "start",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "rule": "/admin",
+    "endpoint": "admin_dashboard",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "rule": "/admin/add_exam",
+    "endpoint": "add_exam",
+    "methods": [
+      "GET",
+      "POST"
+    ]
+  },
+  {
+    "rule": "/admin/add_question/<int:exam_id>",
+    "endpoint": "add_question",
+    "methods": [
+      "GET",
+      "POST"
+    ]
+  },
+  {
+    "rule": "/admin/add_student",
+    "endpoint": "add_student",
+    "methods": [
+      "GET",
+      "POST"
+    ]
+  },
+  {
+    "rule": "/admin/add_teacher",
+    "endpoint": "add_teacher",
+    "methods": [
+      "GET",
+      "POST"
+    ]
+  },
+  {
+    "rule": "/admin/approve_student/<int:student_id>",
+    "endpoint": "approve_student",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "rule": "/admin/ce_active_exams",
+    "endpoint": "admin_ce_active_exams",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "rule": "/admin/ce_add_time/<int:attempt_id>/<int:minutes>",
+    "endpoint": "ce_add_time",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "rule": "/admin/ce_analytics/<int:exam_id>",
+    "endpoint": "ce_analytics",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "rule": "/admin/ce_approve/<int:attempt_id>",
+    "endpoint": "ce_approve",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "rule": "/admin/ce_approve_all_pending",
+    "endpoint": "ce_approve_all_pending",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "rule": "/admin/ce_approve_resume/<int:attempt_id>",
+    "endpoint": "admin_ce_approve_resume",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "rule": "/admin/ce_approve_resume_request/<int:attempt_id>",
+    "endpoint": "ce_approve_resume_request",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "rule": "/admin/ce_delete_all_students",
+    "endpoint": "admin_ce_delete_all_students",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "rule": "/admin/ce_delete_all_warnings",
+    "endpoint": "ce_delete_all_warnings",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "rule": "/admin/ce_delete_student/<int:student_id>",
+    "endpoint": "admin_ce_delete_student",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "rule": "/admin/ce_delete_student_warnings/<int:student_id>/<int:exam_id>",
+    "endpoint": "ce_delete_student_warnings",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "rule": "/admin/ce_delete_warning_log/<int:log_id>",
+    "endpoint": "ce_delete_warning_log",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "rule": "/admin/ce_exam/<int:exam_id>",
+    "endpoint": "update_ce_exam",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "rule": "/admin/ce_exam/<int:exam_id>/delete",
+    "endpoint": "delete_ce_exam",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "rule": "/admin/ce_exam/<int:exam_id>/sections",
+    "endpoint": "add_ce_section",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "rule": "/admin/ce_exam/<int:exam_id>/settings",
+    "endpoint": "ce_exam_settings_page",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "rule": "/admin/ce_exam/<int:exam_id>/toggle",
+    "endpoint": "toggle_ce_exam_status",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "rule": "/admin/ce_exam/create",
+    "endpoint": "create_ce_exam",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "rule": "/admin/ce_exam/create",
+    "endpoint": "create_ce_exam_ajax",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "rule": "/admin/ce_exam/create",
+    "endpoint": "create_ce_exam_page",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "rule": "/admin/ce_export/<int:exam_id>/csv",
+    "endpoint": "ce_export_csv",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "rule": "/admin/ce_export/<int:exam_id>/excel",
+    "endpoint": "ce_export_excel",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "rule": "/admin/ce_export_student/<int:student_id>/<int:exam_id>/csv",
+    "endpoint": "ce_export_student_csv",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "rule": "/admin/ce_force_submit/<int:attempt_id>",
+    "endpoint": "ce_force_submit",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "rule": "/admin/ce_force_submit_all",
+    "endpoint": "ce_force_submit_all",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "rule": "/admin/ce_get_student_stats/<int:student_id>/<int:exam_id>",
+    "endpoint": "ce_get_student_stats",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "rule": "/admin/ce_get_students_by_status",
+    "endpoint": "ce_get_students_by_status",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "rule": "/admin/ce_group/<int:group_id>/add_question",
+    "endpoint": "add_question_to_group",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "rule": "/admin/ce_group/<int:group_id>/delete",
+    "endpoint": "delete_ce_group",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "rule": "/admin/ce_group/<int:group_id>/edit",
+    "endpoint": "edit_ce_group",
+    "methods": [
+      "GET",
+      "POST"
+    ]
+  },
+  {
+    "rule": "/admin/ce_group_question/<int:question_id>/edit",
+    "endpoint": "edit_ce_group_question",
+    "methods": [
+      "GET",
+      "POST"
+    ]
+  },
+  {
+    "rule": "/admin/ce_live_data",
+    "endpoint": "ce_live_data",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "rule": "/admin/ce_pause_all_exams",
+    "endpoint": "ce_pause_all_exams",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "rule": "/admin/ce_pause_exam/<int:attempt_id>",
+    "endpoint": "admin_ce_pause_exam",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "rule": "/admin/ce_question/<int:question_id>/data",
+    "endpoint": "ce_question_data",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "rule": "/admin/ce_question/<int:question_id>/delete",
+    "endpoint": "delete_ce_question",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "rule": "/admin/ce_question/<int:question_id>/edit",
+    "endpoint": "edit_ce_question",
+    "methods": [
+      "GET",
+      "POST"
+    ]
+  },
+  {
+    "rule": "/admin/ce_question/<int:question_id>/remove_from_group",
+    "endpoint": "remove_question_from_group",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "rule": "/admin/ce_register_student",
+    "endpoint": "admin_ce_register_student",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "rule": "/admin/ce_reject/<int:attempt_id>",
+    "endpoint": "ce_reject",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "rule": "/admin/ce_reset_all_students_exams",
+    "endpoint": "ce_reset_all_students_exams",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "rule": "/admin/ce_reset_student_exam/<int:student_id>/<int:exam_id>",
+    "endpoint": "ce_reset_student_exam",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "rule": "/admin/ce_reset_warnings/<int:attempt_id>",
+    "endpoint": "ce_reset_warnings",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "rule": "/admin/ce_resume_all_exams",
+    "endpoint": "ce_resume_all_exams",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "rule": "/admin/ce_resume_exam/<int:attempt_id>",
+    "endpoint": "admin_ce_resume_exam",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "rule": "/admin/ce_section/<int:section_id>/delete",
+    "endpoint": "delete_ce_section",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "rule": "/admin/ce_section/<int:section_id>/groups",
+    "endpoint": "add_ce_group",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "rule": "/admin/ce_section/<int:section_id>/groups",
+    "endpoint": "ce_section_groups",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "rule": "/admin/ce_section/<int:section_id>/questions",
+    "endpoint": "add_ce_question",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "rule": "/admin/ce_section/<int:section_id>/questions",
+    "endpoint": "ce_section_questions",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "rule": "/admin/ce_section/<int:section_id>/toggle_active",
+    "endpoint": "toggle_ce_section_active",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "rule": "/admin/ce_section/<int:section_id>/update",
+    "endpoint": "update_ce_section",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "rule": "/admin/ce_student_analytics/<int:student_id>/<int:exam_id>",
+    "endpoint": "ce_student_analytics",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "rule": "/admin/ce_student_approve/<int:student_id>/<int:exam_id>",
+    "endpoint": "ce_student_approve",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "rule": "/admin/ce_student_reject/<int:student_id>/<int:exam_id>",
+    "endpoint": "ce_student_reject",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "rule": "/admin/ce_student_review/<int:student_id>/<int:exam_id>",
+    "endpoint": "ce_student_review",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "rule": "/admin/ce_subtract_time/<int:attempt_id>/<int:minutes>",
+    "endpoint": "ce_subtract_time",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "rule": "/admin/ce_tech_pause/<int:attempt_id>",
+    "endpoint": "ce_tech_pause",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "rule": "/admin/ce_tech_resume/<int:attempt_id>",
+    "endpoint": "ce_tech_resume",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "rule": "/admin/ce_technical_support",
+    "endpoint": "ce_technical_support",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "rule": "/admin/ce_technical_support_count",
+    "endpoint": "ce_technical_support_count",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "rule": "/admin/class/<class_name>/analytics",
+    "endpoint": "admin_class_analytics",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "rule": "/admin/common-entrance",
+    "endpoint": "admin_common_entrance",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "rule": "/admin/delete_all_warning_logs",
+    "endpoint": "delete_all_warning_logs",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "rule": "/admin/delete_exam/<int:exam_id>",
+    "endpoint": "delete_exam",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "rule": "/admin/delete_student/<int:student_id>",
+    "endpoint": "delete_student",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "rule": "/admin/delete_student_warning_logs/<string:student_name>",
+    "endpoint": "delete_student_warning_logs",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "rule": "/admin/delete_teacher/<int:teacher_id>",
+    "endpoint": "delete_teacher",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "rule": "/admin/delete_warning_log/<int:log_id>",
+    "endpoint": "delete_warning_log",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "rule": "/admin/edit_student/<int:student_id>",
+    "endpoint": "edit_student",
+    "methods": [
+      "GET",
+      "POST"
+    ]
+  },
+  {
+    "rule": "/admin/edit_teacher/<int:teacher_id>",
+    "endpoint": "edit_teacher",
+    "methods": [
+      "GET",
+      "POST"
+    ]
+  },
+  {
+    "rule": "/admin/exam/<int:exam_id>/deactivate",
+    "endpoint": "admin_deactivate_exam",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "rule": "/admin/exam/<int:exam_id>/delete",
+    "endpoint": "admin_delete_exam_ajax",
+    "methods": [
+      "DELETE"
+    ]
+  },
+  {
+    "rule": "/admin/exam/<int:exam_id>/details",
+    "endpoint": "admin_exam_details",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "rule": "/admin/exam/<int:exam_id>/export-json",
+    "endpoint": "admin_export_exam_json",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "rule": "/admin/exam/<int:exam_id>/live-data",
+    "endpoint": "admin_exam_live_monitoring",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "rule": "/admin/exam/<int:exam_id>/preview",
+    "endpoint": "admin_exam_preview",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "rule": "/admin/exam/<int:exam_id>/reactivate",
+    "endpoint": "admin_reactivate_exam",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "rule": "/admin/exam/<int:exam_id>/settings",
+    "endpoint": "update_exam_settings",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "rule": "/admin/exam/<int:exam_id>/test-run",
+    "endpoint": "admin_exam_test_run",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "rule": "/admin/exam/<int:exam_id>/toggle-status",
+    "endpoint": "admin_toggle_exam_status",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "rule": "/admin/exam_add_time/<int:attempt_id>/<int:minutes>",
+    "endpoint": "admin_exam_add_time",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "rule": "/admin/exam_attempts",
+    "endpoint": "exam_attempts",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "rule": "/admin/exam_force_submit/<int:attempt_id>",
+    "endpoint": "admin_exam_force_submit",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "rule": "/admin/exam_force_submit_all",
+    "endpoint": "admin_exam_force_submit_all",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "rule": "/admin/exam_live_data",
+    "endpoint": "admin_exam_live_data",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "rule": "/admin/exam_pause/<int:attempt_id>",
+    "endpoint": "admin_exam_pause",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "rule": "/admin/exam_pause_all",
+    "endpoint": "admin_exam_pause_all",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "rule": "/admin/exam_reset_warnings/<int:attempt_id>",
+    "endpoint": "admin_exam_reset_warnings",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "rule": "/admin/exam_resume/<int:attempt_id>",
+    "endpoint": "admin_exam_resume",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "rule": "/admin/exam_resume_all",
+    "endpoint": "admin_exam_resume_all",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "rule": "/admin/exam_subtract_time/<int:attempt_id>/<int:minutes>",
+    "endpoint": "admin_exam_subtract_time",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "rule": "/admin/exam_technical_support",
+    "endpoint": "admin_exam_technical_support",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "rule": "/admin/exams-management",
+    "endpoint": "admin_exams_management",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "rule": "/admin/exams/bulk-action",
+    "endpoint": "admin_exams_bulk_action",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "rule": "/admin/logs",
+    "endpoint": "admin_logs",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "rule": "/admin/pending_students",
+    "endpoint": "pending_students",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "rule": "/admin/reject_student/<int:student_id>",
+    "endpoint": "reject_student",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "rule": "/admin/reset_exam/<int:student_id>/<int:exam_id>",
+    "endpoint": "reset_exam",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "rule": "/admin/results",
+    "endpoint": "view_results",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "rule": "/admin/school-analytics",
+    "endpoint": "admin_school_analytics",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "rule": "/admin/student/<int:student_id>",
+    "endpoint": "admin_student_profile",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "rule": "/admin/student/<int:student_id>/exam/<int:exam_id>",
+    "endpoint": "admin_student_exam_detail",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "rule": "/admin/toggle_exam/<int:exam_id>",
+    "endpoint": "toggle_exam",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "rule": "/admin/warning_logs",
+    "endpoint": "warning_logs",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "rule": "/api/calculate",
+    "endpoint": "api_calculate",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "rule": "/api/stats",
+    "endpoint": "api_stats",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "rule": "/avatar",
+    "endpoint": "avatar",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "rule": "/ce_auto_save",
+    "endpoint": "ce_auto_save",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "rule": "/ce_auto_submit_close",
+    "endpoint": "ce_auto_submit_close",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "rule": "/ce_check_active_session/<int:attempt_id>",
+    "endpoint": "ce_check_active_session",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "rule": "/ce_check_pause/<int:attempt_id>",
+    "endpoint": "ce_check_pause",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "rule": "/ce_check_resume_approved/<int:attempt_id>",
+    "endpoint": "ce_check_resume_approved",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "rule": "/ce_clear_auto_lock/<int:attempt_id>",
+    "endpoint": "ce_clear_auto_lock",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "rule": "/ce_dashboard",
+    "endpoint": "ce_dashboard_page",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "rule": "/ce_exam/<int:attempt_id>",
+    "endpoint": "ce_exam_page",
+    "methods": [
+      "GET",
+      "POST"
+    ]
+  },
+  {
+    "rule": "/ce_get_exam_state/<int:attempt_id>",
+    "endpoint": "ce_get_exam_state",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "rule": "/ce_get_saved_state/<int:attempt_id>",
+    "endpoint": "ce_get_saved_state",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "rule": "/ce_log_warning",
+    "endpoint": "ce_log_warning",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "rule": "/ce_login",
+    "endpoint": "ce_login_page",
+    "methods": [
+      "GET",
+      "POST"
+    ]
+  },
+  {
+    "rule": "/ce_request_resume",
+    "endpoint": "ce_request_resume",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "rule": "/ce_start",
+    "endpoint": "ce_start_exam",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "rule": "/ce_submitted",
+    "endpoint": "ce_submitted",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "rule": "/check_ce_username",
+    "endpoint": "check_ce_username",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "rule": "/check_student_username",
+    "endpoint": "check_student_username",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "rule": "/check_teacher_username",
+    "endpoint": "check_teacher_username",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "rule": "/dashboard",
+    "endpoint": "dashboard",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "rule": "/edit_exam/<int:exam_id>",
+    "endpoint": "edit_exam",
+    "methods": [
+      "GET",
+      "POST"
+    ]
+  },
+  {
+    "rule": "/exam/<int:exam_id>",
+    "endpoint": "exam_page",
+    "methods": [
+      "GET",
+      "POST"
+    ]
+  },
+  {
+    "rule": "/exam_auto_save",
+    "endpoint": "exam_auto_save",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "rule": "/exam_auto_submit_close",
+    "endpoint": "exam_auto_submit_close",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "rule": "/exam_begin/<int:exam_id>",
+    "endpoint": "exam_begin",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "rule": "/exam_check_active_session/<int:attempt_id>",
+    "endpoint": "exam_check_active_session",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "rule": "/exam_check_pause/<int:attempt_id>",
+    "endpoint": "exam_check_pause",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "rule": "/exam_check_resume_approved/<int:attempt_id>",
+    "endpoint": "exam_check_resume_approved",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "rule": "/exam_clear_auto_lock/<int:attempt_id>",
+    "endpoint": "exam_clear_auto_lock",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "rule": "/exam_get_state/<int:attempt_id>",
+    "endpoint": "exam_get_state",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "rule": "/exam_heartbeat",
+    "endpoint": "exam_heartbeat",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "rule": "/exam_request_resume",
+    "endpoint": "exam_request_resume",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "rule": "/exam_save_single_answer",
+    "endpoint": "exam_save_single_answer",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "rule": "/exam_start/<int:exam_id>",
+    "endpoint": "exam_start",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "rule": "/log_warning",
+    "endpoint": "log_warning",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "rule": "/login",
+    "endpoint": "login",
+    "methods": [
+      "GET",
+      "POST"
+    ]
+  },
+  {
+    "rule": "/logout",
+    "endpoint": "logout",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "rule": "/register",
+    "endpoint": "register",
+    "methods": [
+      "GET",
+      "POST"
+    ]
+  },
+  {
+    "rule": "/result/<int:exam_id>",
+    "endpoint": "result",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "rule": "/static/<path:filename>",
+    "endpoint": "static",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "rule": "/teacher",
+    "endpoint": "teacher_dashboard",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "rule": "/teacher/add_exam",
+    "endpoint": "teacher_add_exam",
+    "methods": [
+      "GET",
+      "POST"
+    ]
+  },
+  {
+    "rule": "/teacher/add_time/<int:attempt_id>/<int:extra_minutes>",
+    "endpoint": "add_exam_time",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "rule": "/teacher/analytics",
+    "endpoint": "teacher_analytics",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "rule": "/teacher/create_exam",
+    "endpoint": "teacher_create_exam",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "rule": "/teacher/create_exam",
+    "endpoint": "teacher_create_exam_post",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "rule": "/teacher/delete_exam/<int:exam_id>",
+    "endpoint": "teacher_delete_exam",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "rule": "/teacher/download_builder",
+    "endpoint": "teacher_download_builder",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "rule": "/teacher/exam/<int:exam_id>/analytics",
+    "endpoint": "exam_analytics",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "rule": "/teacher/exam/<int:exam_id>/sections",
+    "endpoint": "add_exam_section",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "rule": "/teacher/exam/<int:exam_id>/settings",
+    "endpoint": "exam_settings_page",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "rule": "/teacher/exam/<int:exam_id>/settings",
+    "endpoint": "teacher_exam_settings",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "rule": "/teacher/exam/<int:exam_id>/settings",
+    "endpoint": "teacher_exam_settings_update",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "rule": "/teacher/exam_add_time/<int:attempt_id>/<int:minutes>",
+    "endpoint": "teacher_exam_add_time",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "rule": "/teacher/exam_force_submit/<int:attempt_id>",
+    "endpoint": "teacher_exam_force_submit",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "rule": "/teacher/exam_force_submit_all",
+    "endpoint": "teacher_exam_force_submit_all",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "rule": "/teacher/exam_group/<int:group_id>/add_question",
+    "endpoint": "add_question_to_exam_group",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "rule": "/teacher/exam_group/<int:group_id>/delete",
+    "endpoint": "delete_exam_group",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "rule": "/teacher/exam_group/<int:group_id>/edit",
+    "endpoint": "edit_exam_group",
+    "methods": [
+      "GET",
+      "POST"
+    ]
+  },
+  {
+    "rule": "/teacher/exam_group_question/<int:question_id>/edit",
+    "endpoint": "edit_exam_group_question",
+    "methods": [
+      "GET",
+      "POST"
+    ]
+  },
+  {
+    "rule": "/teacher/exam_live_data",
+    "endpoint": "teacher_exam_live_data",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "rule": "/teacher/exam_pause/<int:attempt_id>",
+    "endpoint": "teacher_exam_pause",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "rule": "/teacher/exam_pause_all",
+    "endpoint": "teacher_exam_pause_all",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "rule": "/teacher/exam_question/<int:question_id>/data",
+    "endpoint": "exam_question_data",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "rule": "/teacher/exam_question/<int:question_id>/delete",
+    "endpoint": "delete_exam_question",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "rule": "/teacher/exam_question/<int:question_id>/edit",
+    "endpoint": "edit_exam_question",
+    "methods": [
+      "GET",
+      "POST"
+    ]
+  },
+  {
+    "rule": "/teacher/exam_question/<int:question_id>/remove_from_group",
+    "endpoint": "remove_question_from_exam_group",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "rule": "/teacher/exam_reset_warnings/<int:attempt_id>",
+    "endpoint": "teacher_exam_reset_warnings",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "rule": "/teacher/exam_resume/<int:attempt_id>",
+    "endpoint": "teacher_exam_resume",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "rule": "/teacher/exam_resume_all",
+    "endpoint": "teacher_exam_resume_all",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "rule": "/teacher/exam_section/<int:section_id>/delete",
+    "endpoint": "delete_exam_section",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "rule": "/teacher/exam_section/<int:section_id>/groups",
+    "endpoint": "add_exam_group",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "rule": "/teacher/exam_section/<int:section_id>/groups",
+    "endpoint": "exam_section_groups",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "rule": "/teacher/exam_section/<int:section_id>/questions",
+    "endpoint": "add_exam_question",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "rule": "/teacher/exam_section/<int:section_id>/questions",
+    "endpoint": "exam_section_questions",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "rule": "/teacher/exam_section/<int:section_id>/toggle_active",
+    "endpoint": "toggle_exam_section_active",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "rule": "/teacher/exam_section/<int:section_id>/update",
+    "endpoint": "update_exam_section",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "rule": "/teacher/exam_subtract_time/<int:attempt_id>/<int:minutes>",
+    "endpoint": "teacher_exam_subtract_time",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "rule": "/teacher/import_exam",
+    "endpoint": "import_exam",
+    "methods": [
+      "GET",
+      "POST"
+    ]
+  },
+  {
+    "rule": "/teacher/pause_exam/<int:attempt_id>",
+    "endpoint": "pause_exam",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "rule": "/teacher/promote_student/<int:student_id>",
+    "endpoint": "promote_student",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "rule": "/teacher/results/<int:exam_id>",
+    "endpoint": "teacher_results",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "rule": "/teacher/resume_exam/<int:attempt_id>",
+    "endpoint": "resume_exam",
+    "methods": [
+      "POST"
+    ]
+  },
+  {
+    "rule": "/teacher/student/<int:student_id>",
+    "endpoint": "student_profile",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "rule": "/teacher/student/<int:student_id>/exam/<int:exam_id>",
+    "endpoint": "student_exam_detail",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "rule": "/teacher/technical_support",
+    "endpoint": "teacher_technical_support",
+    "methods": [
+      "GET"
+    ]
+  },
+  {
+    "rule": "/teacher/toggle_exam/<int:exam_id>",
+    "endpoint": "teacher_toggle_exam",
+    "methods": [
+      "GET"
+    ]
+  }
+]

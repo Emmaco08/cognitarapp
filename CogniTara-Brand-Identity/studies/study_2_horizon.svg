@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <rect width="100%" height="100%" fill="#0A0E1A" rx="32"/>
+  <path d="M 148,68
+           L 148,48
+           A 72 72 0 1 0 148,152
+           L 148,132
+           A 52 52 0 1 1 126,68 Z" fill="#FFFFFF" />
+  <!-- Nested T that anchors the core -->
+  <path d="M 86,90
+           L 152,90
+           L 152,110
+           L 129,110
+           L 129,148
+           L 109,148
+           L 109,110
+           L 86,110 Z" fill="#FFFFFF" />
+</svg>

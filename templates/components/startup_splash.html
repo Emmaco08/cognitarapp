@@ -1,0 +1,184 @@
+<!-- CogniTara Official Branded Startup Animation (White Background) -->
+<div id="cognitara-startup-splash" aria-hidden="true">
+    <div class="cognitara-splash-container">
+        <div class="cognitara-splash-emblem-wrap">
+            <img src="{{ url_for('static', filename='images/cognitara-primary-light.svg') }}" 
+                 alt="CogniTara" 
+                 class="cognitara-splash-logo" 
+                 width="280" height="70">
+        </div>
+        <div class="cognitara-splash-progress-track">
+            <div class="cognitara-splash-progress-bar"></div>
+        </div>
+        <div class="cognitara-splash-tagline">Offline Examination Portal</div>
+    </div>
+</div>
+
+<style>
+#cognitara-startup-splash {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: #FFFFFF !important;
+    z-index: 9999999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 1;
+    visibility: visible;
+    transition: opacity 0.45s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.45s ease;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+#cognitara-startup-splash.splash-dismissed {
+    opacity: 0 !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+}
+
+.cognitara-splash-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    max-width: 90vw;
+}
+
+.cognitara-splash-emblem-wrap {
+    animation: cognitaraLogoReveal 0.9s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    transform-origin: center center;
+    margin-bottom: 24px;
+}
+
+.cognitara-splash-logo {
+    max-width: 280px;
+    height: auto;
+    display: block;
+    filter: drop-shadow(0 4px 16px rgba(0, 0, 0, 0.04));
+}
+
+.cognitara-splash-progress-track {
+    width: 160px;
+    height: 3px;
+    background: #F1F5F9;
+    border-radius: 999px;
+    overflow: hidden;
+    position: relative;
+    margin-bottom: 12px;
+}
+
+.cognitara-splash-progress-bar {
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, #1A56DB 0%, #06B6D4 100%);
+    border-radius: 999px;
+    transform: translateX(-100%);
+    animation: cognitaraProgressFill 1.3s cubic-bezier(0.22, 1, 0.36, 1) 0.2s forwards;
+}
+
+.cognitara-splash-tagline {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: #64748B;
+    opacity: 0;
+    animation: cognitaraTaglineFade 0.6s ease 0.5s forwards;
+}
+
+@keyframes cognitaraLogoReveal {
+    0% {
+        opacity: 0;
+        transform: scale(0.88) translateY(8px);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+@keyframes cognitaraProgressFill {
+    0% {
+        transform: translateX(-100%);
+    }
+    70% {
+        transform: translateX(-15%);
+    }
+    100% {
+        transform: translateX(0%);
+    }
+}
+
+@keyframes cognitaraTaglineFade {
+    0% {
+        opacity: 0;
+        transform: translateY(4px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    #cognitara-startup-splash {
+        display: none !important;
+    }
+}
+</style>
+
+<script>
+(function() {
+    'use strict';
+    var splashKey = 'cognitara_portal_splash_seen';
+    var splashEl = document.getElementById('cognitara-startup-splash');
+    if (!splashEl) return;
+
+    // Check if splash has already been shown during this browser session
+    try {
+        if (sessionStorage.getItem(splashKey)) {
+            splashEl.style.display = 'none';
+            splashEl.remove();
+            return;
+        }
+    } catch (e) {
+        // Fallback if sessionStorage is disabled
+    }
+
+    var minDurationMs = 1400; // Exact branded timing
+    var maxTimeoutMs = 2500;  // Failsafe
+    var startTime = Date.now();
+
+    function dismissSplash() {
+        if (!splashEl || splashEl.classList.contains('splash-dismissed')) return;
+        var elapsed = Date.now() - startTime;
+        var remaining = Math.max(0, minDurationMs - elapsed);
+
+        setTimeout(function() {
+            splashEl.classList.add('splash-dismissed');
+            try {
+                sessionStorage.setItem(splashKey, '1');
+            } catch (e) {}
+            setTimeout(function() {
+                if (splashEl && splashEl.parentNode) {
+                    splashEl.parentNode.removeChild(splashEl);
+                }
+            }, 500);
+        }, remaining);
+    }
+
+    if (document.readyState === 'complete') {
+        dismissSplash();
+    } else {
+        window.addEventListener('load', dismissSplash);
+    }
+
+    // Safety fallback
+    setTimeout(dismissSplash, maxTimeoutMs);
+})();
+</script>

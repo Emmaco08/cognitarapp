@@ -1,0 +1,93 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Flask
+instance/
+.webassets-cache
+.env
+.secret_key
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+*.db-shm
+*.db-wal
+exam.db
+
+# Uploaded images (keep structure but not files)
+static/images/*
+!static/images/.gitkeep
+
+# Logs
+*.log
+audit_logs/
+warning_logs/
+
+# Session storage
+flask_session/
+session/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Environment variables
+.env
+.env.local
+.env.production
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Local Backups, Scratch & Artifacts
+backups/
+backups*/
+brag-output/
+brag-output*/
+scratch/
+screenshots/
+phase3_acceptance/
+phase4_readiness/
+.agent/
+.agents/
+
+# Temporary media & render test files
+*.wav
+*.mp3
+*.vtt
+*.ecproj
+test_*.png
+test_*.jsx
+test_*.ps1
+test_*.json
+
+# Render specific
+.render.yaml
+render.yaml
+
+# Backup files
+*.bak
+*.backup
+*.tmp
+
+# OS generated files
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+user_prompt*.txt
