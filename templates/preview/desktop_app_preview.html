@@ -1,0 +1,1414 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <script>
+    (() => {
+      try {
+        const saved = localStorage.getItem("color-scheme");
+        if (saved === "dark" || saved === "light") {
+          const meta = document.querySelector('meta[name="color-scheme"]');
+          if (meta) meta.content = saved;
+          document.documentElement.dataset.theme = saved;
+        }
+      } catch (_) {}
+    })();
+  </script>
+  <title>CogniTara Server Studio — Super Admin Desktop Preview</title>
+  <link rel="icon" type="image/svg+xml" href="/static/brand/cognitara-favicon.svg">
+  <link rel="stylesheet" href="/static/css/cognitara-tokens.css">
+  <link rel="stylesheet" href="/static/css/desktop-preview.css">
+</head>
+<body>
+  <!-- Reusable Official CogniTara Vector Definitions (Zero Background Box, Adaptive Ink/Accent) -->
+  <svg width="0" height="0" style="position:absolute;overflow:hidden" aria-hidden="true" focusable="false">
+    <defs>
+      <g id="ct-vec-symbol">
+        <path d="M128.09 113.09 C109.82 131.37 80.18 131.37 61.91 113.09 C43.63 94.82 43.63 65.18 61.91 46.91 C80.18 28.63 109.82 28.63 128.09 46.91 L115.22 59.78 C104.05 48.61 85.95 48.61 74.78 59.78 C63.61 70.95 63.61 89.05 74.78 100.22 C85.95 111.39 104.05 111.39 115.22 100.22 Z" fill="var(--ct-logo-ink)"/>
+        <path d="M100.2 63.1 C104.75 75.45 104.75 75.45 124.9 80 C104.75 84.55 104.75 84.55 100.2 96.9 C95.65 84.55 95.65 84.55 88.5 80 C95.65 75.45 95.65 75.45 100.2 63.1 Z" fill="var(--ct-logo-accent)"/>
+      </g>
+      <g id="ct-vec-wordmark">
+        <path d="M215.692 59.388 C211.672 54.668 206.198 52 200.08 52 C187.384 52 178 62.304 178 75 C178 87.696 187.384 98 200.08 98 C206.198 98 211.672 95.332 215.692 90.612 L212.569 87.489 C209.188 91.33 204.864 93.584 200.08 93.584 C189.822 93.584 182.416 85.258 182.416 75 C182.416 64.742 189.822 56.416 200.08 56.416 C204.864 56.416 209.188 58.67 212.569 62.511 Z" fill="var(--ct-logo-ink)"/>
+        <path d="M235.04 64.88 C243.688 64.88 250.68 72.24 250.68 81.44 C250.68 90.64 243.688 98 235.04 98 C226.392 98 219.4 90.64 219.4 81.44 C219.4 72.24 226.392 64.88 235.04 64.88 Z M235.04 69.296 C228.83 69.296 223.816 74.724 223.816 81.44 C223.816 88.156 228.83 93.584 235.04 93.584 C241.25 93.584 246.264 88.156 246.264 81.44 C246.264 74.724 241.25 69.296 235.04 69.296 Z" fill="var(--ct-logo-ink)"/>
+        <path d="M269.08 64.88 C272.99 64.88 276.44 67.18 278.97 70.63 L278.97 65.57 L283.11 65.57 L283.11 98 C283.11 105.13 278.05 109.73 269.77 109.73 C264.02 109.73 259.19 107.43 256.66 103.52 L259.88 101.45 C261.72 104.44 265.17 106.28 269.54 106.28 C274.83 106.28 278.97 103.75 278.97 98 L278.97 91.79 C276.44 95.47 272.76 97.31 268.85 97.31 C260.8 97.31 254.36 90.18 254.36 81.21 C254.36 72.24 260.938 64.88 269.08 64.88 Z M269.08 69.296 C263.1 69.296 258.776 74.54 258.776 81.21 C258.776 87.88 263.1 92.94 269.08 92.94 C275.06 92.94 278.97 87.696 278.97 81.21 C278.97 74.54 275.06 69.296 269.08 69.296 Z" fill="var(--ct-logo-ink)"/>
+        <path d="M286.56 65.57 L290.976 65.57 L290.976 72.7 C293 67.87 297.37 64.88 302.66 64.88 C309.79 64.88 315.586 69.48 315.586 77.99 L315.586 98 L311.17 98 L311.17 78.68 C311.17 72.7 307.72 69.296 302.66 69.296 C297.6 69.296 293 72.01 290.976 77.07 L290.976 98 L286.56 98 Z" fill="var(--ct-logo-ink)"/>
+        <path d="M319.68 65.57 L324.096 65.57 L324.096 98 L319.68 98 Z" fill="var(--ct-logo-ink)"/>
+        <path d="M321.888 54.99 C322.808 57.52 322.808 57.52 325.338 58.44 C322.808 59.36 322.808 59.36 321.888 61.89 C320.968 59.36 320.968 59.36 318.438 58.44 C320.968 57.52 320.968 57.52 321.888 54.99 Z" fill="var(--ct-logo-accent)"/>
+        <path d="M332.56 52 L364.76 52 L364.76 54.944 L363.288 56.416 L350.868 56.416 L350.868 98 L346.452 98 L346.452 56.416 L334.032 56.416 L332.56 54.944 Z" fill="var(--ct-logo-accent)"/>
+        <path d="M382.7 64.88 C387.76 64.88 391.44 67.41 393.28 71.32 L393.28 65.57 L397.696 65.57 L397.696 98 L393.28 98 L393.28 90.87 C391.44 95.01 387.76 98 382.7 98 C374.88 98 368.44 90.64 368.44 81.44 C368.44 72.24 374.88 64.88 382.7 64.88 Z M383.16 69.296 C376.95 69.296 372.856 74.54 372.856 81.44 C372.856 88.34 376.95 93.584 383.16 93.584 C389.37 93.584 393.28 88.34 393.28 81.44 C393.28 74.54 389.37 69.296 383.16 69.296 Z" fill="var(--ct-logo-accent)"/>
+        <path d="M401.56 65.57 L405.976 65.57 L405.976 73.16 C407.54 68.1 411.22 64.88 416.51 64.88 C419.04 64.88 421.57 65.892 423.548 67.548 L422.26 70.86 C420.88 69.94 419.04 69.296 417.2 69.296 C412.14 69.296 407.77 71.55 405.976 77.07 L405.976 98 L401.56 98 Z" fill="var(--ct-logo-accent)"/>
+        <path d="M443.42 64.88 C448.48 64.88 452.16 67.41 454 71.32 L454 65.57 L458.416 65.57 L458.416 98 L454 98 L454 90.87 C452.16 95.01 448.48 98 443.42 98 C435.6 98 429.16 90.64 429.16 81.44 C429.16 72.24 435.6 64.88 443.42 64.88 Z M443.88 69.296 C437.67 69.296 433.576 74.54 433.576 81.44 C433.576 88.34 437.67 93.584 443.88 93.584 C450.09 93.584 454 88.34 454 81.44 C454 74.54 450.09 69.296 443.88 69.296 Z" fill="var(--ct-logo-accent)"/>
+      </g>
+    </defs>
+  </svg>
+
+  <!-- Live Read-Only Telemetry Payload Hydrated from exam.db -->
+  <script id="ct-telemetry-data" type="application/json">{{ telemetry_json | safe }}</script>
+
+  <div class="ct-desktop-env" id="ctDesktopEnv" data-window-mode="windowed" data-active-stage="boot">
+    <!-- ====================================================================
+         SHARED-ELEMENT MORPHING WINDOWS 11 APPLICATION SHELL
+         660x400 Pure Sculpted Splash -> 1260x772 Studio Workspace
+         ==================================================================== -->
+    <main class="ct-app-shell" id="ctAppShell" data-stage="boot" aria-label="CogniTara Server Studio Desktop Application">
+
+      <!-- SHARED CUSTOM WINDOWS 11 TITLEBAR (Hidden automatically during pure Splash stage) -->
+      <header class="ct-titlebar" id="ctTitlebar">
+        <div class="ct-titlebar-left">
+          <div class="ct-brand-lockup-mini" aria-label="CogniTara">
+            <svg width="24" height="24" viewBox="42 30 94 100" aria-hidden="true">
+              <use href="#ct-vec-symbol"></use>
+            </svg>
+            <svg width="88" height="20" viewBox="176 48 286 65" aria-hidden="true">
+              <use href="#ct-vec-wordmark"></use>
+            </svg>
+          </div>
+          <span class="ct-app-tag">Server Studio</span>
+        </div>
+
+        <button type="button" class="ct-cmdk-trigger" id="ctCmdkOpenBtn" aria-label="Open quick command palette">
+          <span style="display:inline-flex;align-items:center;gap:7px;">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+              <circle cx="11" cy="11" r="7"></circle>
+              <path d="m20 20-3.5-3.5"></path>
+            </svg>
+            <span>Jump to exam, LAN URL, backup, or portal...</span>
+          </span>
+          <kbd class="ct-kbd">Ctrl K</kbd>
+        </button>
+
+        <div class="ct-titlebar-right">
+          <div class="ct-titlebar-pills">
+            <span class="ct-status-chip is-accent" id="ctTitlebarHwidChip" title="Ed25519 Hardware-Bound Windows Vault">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                <rect x="4" y="11" width="16" height="10" rx="2"></rect>
+                <path d="M8 11V7a4 4 0 0 1 8 0v4"></path>
+              </svg>
+              <span>HWID Bound</span>
+            </span>
+            <span class="ct-status-chip is-ok ct-tabular" id="ctTitlebarLeaseChip" title="Remaining Offline Cryptographic License Lease">
+              <span class="ct-led" aria-hidden="true"></span>
+              <span id="ctLeaseTicker">364d 23h 59m</span>
+            </span>
+            <span class="ct-status-chip" id="ctTitlebarCloudChip">
+              <span>cognitara.net • Synced</span>
+            </span>
+          </div>
+
+          <div class="ct-win-controls" role="group" aria-label="Window caption controls">
+            <button type="button" class="ct-win-btn" id="ctWinMinBtn" aria-label="Minimize to Windows System Tray" title="Minimize to System Tray">
+              <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.3" aria-hidden="true">
+                <path d="M2 6h8"></path>
+              </svg>
+            </button>
+            <button type="button" class="ct-win-btn" id="ctWinMaxBtn" aria-label="Toggle maximize window" title="Maximize / Restore">
+              <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.3" aria-hidden="true">
+                <rect x="2" y="2" width="8" height="8" rx="1"></rect>
+              </svg>
+            </button>
+            <button type="button" class="ct-win-btn is-close" id="ctWinCloseBtn" aria-label="Minimize to background tray on close" title="Keep exam server alive in tray">
+              <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.3" aria-hidden="true">
+                <path d="M2.5 2.5 9.5 9.5M9.5 2.5 2.5 9.5"></path>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <!-- ==================================================================
+           STAGE 1: PURE SCULPTED FRAMELESS BOOT LOADER (660x400)
+           ================================================================== -->
+      <section class="ct-view-panel is-active" id="view-boot" aria-labelledby="ctSplashHeading">
+        <h1 id="ctSplashHeading" class="sr-only" tabindex="-1">CogniTara Server Studio Boot Loader</h1>
+        <div class="ct-splash-stage" id="ctSplashStage" data-boot-phase="idle">
+          <canvas id="ctSplashCanvas" class="ct-splash-canvas" aria-hidden="true"></canvas>
+
+          <div class="ct-splash-top-meta">
+            <span>CogniTara Desktop Kernel v2.0</span>
+            <span class="ct-tabular">{{ host_info.hostname }} • Port {{ port }} • Ed25519 Vault</span>
+          </div>
+
+          <div class="ct-splash-center">
+            <div class="ct-optical-rig">
+              <!-- Precision Calibration Reticle -->
+              <svg class="ct-reticle-svg" viewBox="0 0 200 200" fill="none" aria-hidden="true">
+                <circle class="ct-reticle-ring-outer" cx="100" cy="100" r="85"></circle>
+                <circle class="ct-reticle-ring-inner" cx="100" cy="100" r="62"></circle>
+                <path d="M100 8v10M100 182v10M8 100h10M182 100h10" stroke="var(--ct-line-strong)" stroke-width="1"></path>
+              </svg>
+
+              <!-- Anamorphic Horizontal Ignition Ray -->
+              <div class="ct-anamorphic-ray" aria-hidden="true"></div>
+
+              <!-- Master Sculpted Vector Brand Lockup -->
+              <div class="ct-master-lockup">
+                <div class="ct-splash-mark-wrap">
+                  <svg width="86" height="86" viewBox="42 30 94 100" aria-hidden="true">
+                    <path d="M128.09 113.09 C109.82 131.37 80.18 131.37 61.91 113.09 C43.63 94.82 43.63 65.18 61.91 46.91 C80.18 28.63 109.82 28.63 128.09 46.91 L115.22 59.78 C104.05 48.61 85.95 48.61 74.78 59.78 C63.61 70.95 63.61 89.05 74.78 100.22 C85.95 111.39 104.05 111.39 115.22 100.22 Z" fill="var(--ct-logo-ink)"/>
+                    <path class="ct-splash-star-path" d="M100.2 63.1 C104.75 75.45 104.75 75.45 124.9 80 C104.75 84.55 104.75 84.55 100.2 96.9 C95.65 84.55 95.65 84.55 88.5 80 C95.65 75.45 95.65 75.45 100.2 63.1 Z" fill="var(--ct-logo-accent)"/>
+                  </svg>
+                </div>
+                <div class="ct-splash-word-wrap">
+                  <svg width="248" height="56" viewBox="176 48 286 65" aria-hidden="true">
+                    <use href="#ct-vec-wordmark"></use>
+                  </svg>
+                </div>
+              </div>
+            </div>
+
+            <p class="ct-splash-subtitle">Offline LAN Examination Engine &amp; Cryptographic Server Studio</p>
+          </div>
+
+          <div class="ct-splash-plinth">
+            <div class="ct-splash-plinth-row">
+              <div class="ct-kernel-status" aria-live="polite">
+                <span class="ct-kernel-dot" aria-hidden="true"></span>
+                <span class="ct-kernel-text" id="ctBootStatusText">Verifying Ed25519 hardware vault &amp; monotonic clock anchors...</span>
+              </div>
+              <div class="ct-splash-right-actions">
+                <span class="ct-splash-pct ct-tabular" id="ctBootPct">0%</span>
+                <div class="ct-splash-enter-group" id="ctBootEnterGroup">
+                  <button type="button" class="ct-btn ct-btn-sm ct-btn-secondary" data-goto-stage="onboarding">
+                    Interactive Tour
+                  </button>
+                  <button type="button" class="ct-btn ct-btn-sm ct-btn-primary" data-goto-stage="studio">
+                    Open Studio
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div class="ct-splash-filament-track" aria-hidden="true">
+              <div class="ct-splash-filament-fill" id="ctBootBarFill"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==================================================================
+           STAGE 2: 5-CHAPTER ANIMATED INTERACTIVE PRODUCT ONBOARDING
+           ================================================================== -->
+      <section class="ct-view-panel" id="view-onboarding" aria-labelledby="ctOnboardFocusHeading">
+        <div class="ct-onboard-layout">
+          <!-- Left Chapter Rail -->
+          <aside class="ct-onboard-rail" aria-label="Onboarding chapters">
+            <div>
+              <div class="ct-onboard-rail-head">
+                <h2 id="ctOnboardFocusHeading" class="ct-onboard-rail-title" tabindex="-1">Platform Walkthrough</h2>
+                <p class="ct-onboard-rail-desc">Explore how CogniTara runs your entire school exam hall.</p>
+              </div>
+
+              <nav class="ct-chapter-list" aria-label="Onboarding steps">
+                <button type="button" class="ct-chapter-btn" data-chapter-btn="1" aria-current="step">
+                  <span class="ct-chapter-idx">1</span>
+                  <span>
+                    <span class="ct-chapter-label">Zero-Internet LAN</span>
+                    <span class="ct-chapter-sub">Waitress WSGI &amp; WAL safety</span>
+                  </span>
+                </button>
+                <button type="button" class="ct-chapter-btn" data-chapter-btn="2">
+                  <span class="ct-chapter-idx">2</span>
+                  <span>
+                    <span class="ct-chapter-label">Dual Exam Engines</span>
+                    <span class="ct-chapter-sub">Term CBT, Entrance &amp; Calc</span>
+                  </span>
+                </button>
+                <button type="button" class="ct-chapter-btn" data-chapter-btn="3">
+                  <span class="ct-chapter-idx">3</span>
+                  <span>
+                    <span class="ct-chapter-label">Formulas &amp; Anti-Cheat</span>
+                    <span class="ct-chapter-sub">KaTeX/mhchem &amp; PC fencing</span>
+                  </span>
+                </button>
+                <button type="button" class="ct-chapter-btn" data-chapter-btn="4">
+                  <span class="ct-chapter-idx">4</span>
+                  <span>
+                    <span class="ct-chapter-label">Cloud License &amp; Rewards</span>
+                    <span class="ct-chapter-sub">Paystack, DPAPI &amp; Referrals</span>
+                  </span>
+                </button>
+                <button type="button" class="ct-chapter-btn" data-chapter-btn="5">
+                  <span class="ct-chapter-idx">5</span>
+                  <span>
+                    <span class="ct-chapter-label">School &amp; Theme Setup</span>
+                    <span class="ct-chapter-sub">Calibrate {{ school_settings.school_name }}</span>
+                  </span>
+                </button>
+              </nav>
+            </div>
+
+            <button type="button" class="ct-btn ct-btn-sm ct-btn-ghost" data-goto-stage="studio" style="justify-content:center;width:100%;">
+              <span>Skip directly to Studio</span>
+            </button>
+          </aside>
+
+          <!-- Center Narrative Column -->
+          <div class="ct-onboard-story">
+            <!-- Chapter 1 Narrative -->
+            <article class="ct-chapter-pane is-active" data-chapter-pane="1">
+              <h2 class="ct-story-h2">One desktop click replaces terminal scripts and internet outages</h2>
+              <p class="ct-story-lead">
+                CogniTara turns this Windows PC into a high-concurrency local examination server over your school Wi-Fi or Ethernet switch—requiring zero internet bandwidth during exams.
+              </p>
+              <div class="ct-spec-list">
+                <div class="ct-spec-row">
+                  <span class="ct-spec-icon" aria-hidden="true">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="6" rx="1.5"></rect><rect x="3" y="14" width="18" height="6" rx="1.5"></rect><circle cx="7" cy="7" r="1"></circle><circle cx="7" cy="17" r="1"></circle></svg>
+                  </span>
+                  <div>
+                    <div class="ct-spec-title">{{ telemetry.waitress_threads }}-Thread Embedded Waitress Engine</div>
+                    <p class="ct-spec-copy">Broadcasts instantly on <span class="ct-tabular">{{ host_info.primary_lan_url }}</span> for 250+ simultaneous student laptops and tablets without terminal windows.</p>
+                  </div>
+                </div>
+                <div class="ct-spec-row">
+                  <span class="ct-spec-icon" aria-hidden="true">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M13 2 3 14h8l-1 8 10-12h-8l1-8z"></path></svg>
+                  </span>
+                  <div>
+                    <div class="ct-spec-title">Power-Cut Proof SQLite WAL Persistence</div>
+                    <p class="ct-spec-copy">Every student click commits atomically to <span class="ct-tabular">exam.db</span> in Write-Ahead Logging mode ({{ telemetry.db_journal_mode }}). Generator trips lose zero answers.</p>
+                  </div>
+                </div>
+                <div class="ct-spec-row">
+                  <span class="ct-spec-icon" aria-hidden="true">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+                  </span>
+                  <div>
+                    <div class="ct-spec-title">Live Inventory Detected on This Machine</div>
+                    <p class="ct-spec-copy">Connected read-only to your real database: <strong>{{ telemetry.counts.approved_students }}</strong> approved students, <strong>{{ telemetry.total_questions }}</strong> banked questions, and <strong>{{ telemetry.counts.exams + telemetry.counts.ce_exams }}</strong> exams.</p>
+                  </div>
+                </div>
+              </div>
+            </article>
+
+            <!-- Chapter 2 Narrative -->
+            <article class="ct-chapter-pane" data-chapter-pane="2">
+              <h2 class="ct-story-h2">Distraction-free exam halls with a docked scientific calculator</h2>
+              <p class="ct-story-lead">
+                Students never wrestle with floating popups covering question options. CogniTara runs both Regular Term CBT and Common Entrance placement exams from one unified engine.
+              </p>
+              <div class="ct-spec-list">
+                <div class="ct-spec-row">
+                  <span class="ct-spec-icon" aria-hidden="true">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="3" width="16" height="18" rx="2"></rect><path d="M8 7h8M8 11h2M14 11h2M8 15h2M14 15h2"></path></svg>
+                  </span>
+                  <div>
+                    <div class="ct-spec-title">Non-Occluding Split-Column Calculator v2</div>
+                    <p class="ct-spec-copy">Docks cleanly beside the question stem with full trig, roots, exponents, history tape, and per-exam teacher permissions (None, Basic, or Scientific).</p>
+                  </div>
+                </div>
+                <div class="ct-spec-row">
+                  <span class="ct-spec-icon" aria-hidden="true">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
+                  </span>
+                  <div>
+                    <div class="ct-spec-title">Regular Term CBT + Common Entrance Admission</div>
+                    <p class="ct-spec-copy">Supports {{ school_settings.grading_scheme }}, comprehension split-reading panes, candidate access codes (<span class="ct-tabular">/ce_login</span>), and instant Broadsheet PDFs.</p>
+                  </div>
+                </div>
+              </div>
+            </article>
+
+            <!-- Chapter 3 Narrative -->
+            <article class="ct-chapter-pane" data-chapter-pane="3">
+              <h2 class="ct-story-h2">Offline math &amp; chemistry authoring paired with session fencing</h2>
+              <p class="ct-story-lead">
+                Teachers author textbook-grade STEM equations without learning raw LaTeX syntax, while proctors get cryptographic protection against duplicate logins and tab switching.
+              </p>
+              <div class="ct-spec-list">
+                <div class="ct-spec-row">
+                  <span class="ct-spec-icon" aria-hidden="true">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 7h6l3 10 4-14h3"></path></svg>
+                  </span>
+                  <div>
+                    <div class="ct-spec-title">Offline KaTeX + mhchem Formula Studio</div>
+                    <p class="ct-spec-copy">One-click palettes for fractions, integrals, matrices, and balanced chemical equations—plus bulk <span class="ct-tabular">.xlsx</span> question bank imports.</p>
+                  </div>
+                </div>
+                <div class="ct-spec-row">
+                  <span class="ct-spec-icon" aria-hidden="true">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path><path d="m9 12 2 2 4-4"></path></svg>
+                  </span>
+                  <div>
+                    <div class="ct-spec-title">Single-PC Lease Fencing &amp; 25s Heartbeat</div>
+                    <p class="ct-spec-copy">Each attempt binds to a unique <span class="ct-tabular">session_key</span>. Logging in on a second PC immediately revokes the duplicate with HTTP 403 and alerts the proctor.</p>
+                  </div>
+                </div>
+              </div>
+            </article>
+
+            <!-- Chapter 4 Narrative -->
+            <article class="ct-chapter-pane" data-chapter-pane="4">
+              <h2 class="ct-story-h2">Hardware-bound licensing &amp; school referrals on cognitara.net</h2>
+              <p class="ct-story-lead">
+                Subscribe Monthly, Annually, or Lifetime via Paystack on <strong>cognitara.net</strong>. Offline cryptographic verification prevents expired usage or Windows clock tampering.
+              </p>
+              <div class="ct-spec-list">
+                <div class="ct-spec-row">
+                  <span class="ct-spec-icon" aria-hidden="true">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="11" width="18" height="10" rx="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                  </span>
+                  <div>
+                    <div class="ct-spec-title">5-Layer Ed25519 + DPAPI Anti-Clock-Tamper Vault</div>
+                    <p class="ct-spec-copy">Cross-checks monotonic <span class="ct-tabular">max_seen_utc</span> across DPAPI AppData, HKCU Registry, and SQLite. Rolling Windows time backward locks server startup.</p>
+                  </div>
+                </div>
+                <div class="ct-spec-row">
+                  <span class="ct-spec-icon" aria-hidden="true">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 3"></path></svg>
+                  </span>
+                  <div>
+                    <div class="ct-spec-title">15-Minute Active-Exam Grace Drain &amp; Dual Referrals</div>
+                    <p class="ct-spec-copy">If a license expires mid-paper, active students get 15 minutes to submit safely. Referring partner schools earns cash commission + bonus license days.</p>
+                  </div>
+                </div>
+              </div>
+            </article>
+
+            <!-- Chapter 5 Narrative -->
+            <article class="ct-chapter-pane" data-chapter-pane="5">
+              <h2 class="ct-story-h2">Calibrate your school profile and visual workspace</h2>
+              <p class="ct-story-lead">
+                We pre-populated your active academic session, grading scale, and LAN port directly from your local database. Choose Obsidian Mica or Daylight Ceramic anytime.
+              </p>
+              <div class="ct-spec-list">
+                <div class="ct-spec-row">
+                  <span class="ct-spec-icon" aria-hidden="true">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="5"></circle><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2"></path></svg>
+                  </span>
+                  <div>
+                    <div class="ct-spec-title">Native Dual-Theme Surface Architecture</div>
+                    <p class="ct-spec-copy">Obsidian Mica reduces glare in dim server rooms; Daylight Ceramic maximizes contrast under bright examination hall lighting.</p>
+                  </div>
+                </div>
+                <div class="ct-spec-row">
+                  <span class="ct-spec-icon" aria-hidden="true">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 6 9 17l-5-5"></path></svg>
+                  </span>
+                  <div>
+                    <div class="ct-spec-title">Ready for One-Click Server Ignition</div>
+                    <p class="ct-spec-copy">Click <strong>Launch Server Studio</strong> below to open the Super Admin desktop workspace and manage your live LAN endpoints.</p>
+                  </div>
+                </div>
+              </div>
+            </article>
+
+            <div class="ct-onboard-footer">
+              <button type="button" class="ct-btn ct-btn-secondary" id="ctOnboardPrevBtn" disabled>
+                Previous
+              </button>
+              <span class="ct-section-meta ct-tabular" id="ctOnboardStepCounter">Chapter 1 of 5</span>
+              <button type="button" class="ct-btn ct-btn-primary" id="ctOnboardNextBtn">
+                Next Chapter
+              </button>
+            </div>
+          </div>
+
+          <!-- Right Live Interactive Laboratory Stage -->
+          <div class="ct-onboard-lab">
+            <!-- Lab 1: Animated LAN Hub + Power-Cut WAL Simulator -->
+            <div class="ct-lab-scene is-active" data-lab-scene="1">
+              <div class="ct-lab-header">
+                <div>
+                  <div class="ct-lab-title">Live Offline LAN &amp; WAL Recovery Simulator</div>
+                  <div class="ct-lab-sub">Host: {{ host_info.hostname }} ({{ host_info.primary_lan_url }})</div>
+                </div>
+                <button type="button" class="ct-btn ct-btn-sm ct-btn-secondary" id="ctSimPowerBtn">
+                  Simulate Power Cut
+                </button>
+              </div>
+
+              <div class="ct-lan-stage" id="ctLanStage" data-power="normal">
+                <svg class="ct-lan-svg" viewBox="0 0 520 240" role="img" aria-label="CogniTara local area network topology connecting Super Admin desktop host to student, teacher, and proctor devices">
+                  <!-- Wires -->
+                  <path class="ct-lane-wire" d="M158 120 C235 120, 250 48, 336 48"></path>
+                  <path class="ct-lane-wire" d="M158 120 L336 120"></path>
+                  <path class="ct-lane-wire" d="M158 120 C235 120, 250 192, 336 192"></path>
+
+                  <!-- Animated Packet Pulses -->
+                  <path class="ct-lane-pulse" d="M158 120 C235 120, 250 48, 336 48"></path>
+                  <path class="ct-lane-pulse delay-1" d="M158 120 L336 120"></path>
+                  <path class="ct-lane-pulse delay-2" d="M158 120 C235 120, 250 192, 336 192"></path>
+
+                  <!-- Host Node -->
+                  <rect x="14" y="76" width="144" height="88" rx="10" fill="var(--ct-canvas)" stroke="var(--ct-accent)" stroke-width="1.5"></rect>
+                  <text x="28" y="103" fill="var(--ct-ink)" font-size="12" font-weight="700">Server Studio PC</text>
+                  <text x="28" y="122" fill="var(--ct-accent)" font-family="var(--ct-font-mono)" font-size="10.5">{{ host_info.primary_lan_ip or '127.0.0.1' }}:{{ port }}</text>
+                  <text x="28" y="143" fill="var(--ct-ink-muted)" font-size="10">SQLite {{ telemetry.db_journal_mode }} • {{ telemetry.waitress_threads }} Threads</text>
+
+                  <!-- Endpoint 1: Student Hall -->
+                  <rect x="336" y="20" width="170" height="56" rx="9" fill="var(--ct-canvas)" stroke="var(--ct-line-strong)"></rect>
+                  <text x="350" y="44" fill="var(--ct-ink)" font-size="11.5" font-weight="600">Student CBT Hall</text>
+                  <text x="350" y="61" fill="var(--ct-ink-muted)" font-family="var(--ct-font-mono)" font-size="10">/dashboard • {{ telemetry.counts.approved_students }} students</text>
+
+                  <!-- Endpoint 2: Teacher Studio -->
+                  <rect x="336" y="92" width="170" height="56" rx="9" fill="var(--ct-canvas)" stroke="var(--ct-line-strong)"></rect>
+                  <text x="350" y="116" fill="var(--ct-ink)" font-size="11.5" font-weight="600">Teacher Formula Studio</text>
+                  <text x="350" y="133" fill="var(--ct-ink-muted)" font-family="var(--ct-font-mono)" font-size="10">/teacher • {{ telemetry.total_questions }} questions</text>
+
+                  <!-- Endpoint 3: Proctor & Entrance -->
+                  <rect x="336" y="164" width="170" height="56" rx="9" fill="var(--ct-canvas)" stroke="var(--ct-line-strong)"></rect>
+                  <text x="350" y="188" fill="var(--ct-ink)" font-size="11.5" font-weight="600">Entrance &amp; Live Proctor</text>
+                  <text x="350" y="205" fill="var(--ct-ink-muted)" font-family="var(--ct-font-mono)" font-size="10">/ce_login • {{ telemetry.counts.ce_exams }} entrance exams</text>
+                </svg>
+
+                <div class="ct-wal-banner" id="ctWalStatusBanner" aria-live="polite">
+                  <div>
+                    <div style="font-size:var(--ct-text-xs);font-weight:600;color:var(--ct-ink);" id="ctWalTitle">SQLite WAL Stream Healthy ({{ telemetry.db_health }})</div>
+                    <div style="font-size:var(--ct-text-2xs);color:var(--ct-ink-secondary);" id="ctWalDesc">All {{ telemetry.counts.approved_students }} student answer ledgers synced locally in sub-2ms writes.</div>
+                  </div>
+                  <span class="ct-status-chip is-ok" id="ctWalBadge">0 Data Loss</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Lab 2: Interactive Miniature Exam Hall + Dockable Scientific Calculator -->
+            <div class="ct-lab-scene" data-lab-scene="2">
+              <div class="ct-lab-header">
+                <div>
+                  <div class="ct-lab-title">Interactive Student Hall + Docked Calculator</div>
+                  <div class="ct-lab-sub">Test split-column docking—zero overlap over answer choices</div>
+                </div>
+                <div style="display:flex;gap:6px;">
+                  <button type="button" class="ct-mini-chip-btn" id="ctExamModeToggleBtn" aria-pressed="false">
+                    Mode: Regular Term
+                  </button>
+                  <button type="button" class="ct-mini-chip-btn" id="ctCalcDockToggleBtn" aria-pressed="true">
+                    Calculator: Docked
+                  </button>
+                </div>
+              </div>
+
+              <div class="ct-mini-exam-frame" id="ctMiniExamFrame" data-calc="docked">
+                <div class="ct-mini-exam-bar">
+                  <span id="ctMiniExamLabel" style="font-weight:600;color:var(--ct-ink);">SS3 Further Mathematics • Q14 of 40</span>
+                  <span class="ct-tabular" style="font-family:var(--ct-font-mono);color:var(--ct-accent);font-weight:600;">38:14 left</span>
+                </div>
+
+                <div class="ct-mini-exam-body">
+                  <div class="ct-mini-paper">
+                    <p class="ct-mini-q-stem" id="ctMiniQuestionStem">
+                      Find the positive roots of 2x² − 8x + 6 = 0 using the docked scientific calculator:
+                    </p>
+                    <div class="ct-mini-options" role="radiogroup" aria-label="Sample exam options">
+                      <button type="button" class="ct-mini-opt" role="radio" aria-checked="true" data-mini-opt="A">
+                        <span class="ct-kbd">A</span>
+                        <span>x = 1 or x = 3</span>
+                      </button>
+                      <button type="button" class="ct-mini-opt" role="radio" aria-checked="false" data-mini-opt="B">
+                        <span class="ct-kbd">B</span>
+                        <span>x = 2 or x = 4</span>
+                      </button>
+                      <button type="button" class="ct-mini-opt" role="radio" aria-checked="false" data-mini-opt="C">
+                        <span class="ct-kbd">C</span>
+                        <span>x = −1 or x = 6</span>
+                      </button>
+                    </div>
+                    <div style="margin-top:auto;font-size:var(--ct-text-2xs);color:var(--ct-ok);display:flex;align-items:center;gap:6px;" id="ctMiniSaveNote">
+                      <span class="ct-led" aria-hidden="true"></span>
+                      <span>Saved atomically to exam.db WAL • Grading: {{ school_settings.grading_scheme }}</span>
+                    </div>
+                  </div>
+
+                  <aside class="ct-mini-calc" aria-label="Docked scientific calculator">
+                    <div class="ct-mini-calc-screen">
+                      <div class="ct-mini-calc-expr ct-tabular" id="ctCalcExpr">(8 + √(64 - 48)) / 4</div>
+                      <div class="ct-mini-calc-res ct-tabular" id="ctCalcRes">3</div>
+                    </div>
+                    <div class="ct-mini-calc-grid">
+                      <button type="button" class="ct-calc-key" data-calc-key="C">AC</button>
+                      <button type="button" class="ct-calc-key" data-calc-key="sqrt">√x</button>
+                      <button type="button" class="ct-calc-key" data-calc-key="sq">x²</button>
+                      <button type="button" class="ct-calc-key" data-calc-key="/">÷</button>
+                      <button type="button" class="ct-calc-key" data-calc-key="7">7</button>
+                      <button type="button" class="ct-calc-key" data-calc-key="8">8</button>
+                      <button type="button" class="ct-calc-key" data-calc-key="9">9</button>
+                      <button type="button" class="ct-calc-key" data-calc-key="*">×</button>
+                      <button type="button" class="ct-calc-key" data-calc-key="4">4</button>
+                      <button type="button" class="ct-calc-key" data-calc-key="5">5</button>
+                      <button type="button" class="ct-calc-key" data-calc-key="6">6</button>
+                      <button type="button" class="ct-calc-key" data-calc-key="-">−</button>
+                      <button type="button" class="ct-calc-key" data-calc-key="1">1</button>
+                      <button type="button" class="ct-calc-key" data-calc-key="2">2</button>
+                      <button type="button" class="ct-calc-key" data-calc-key="3">3</button>
+                      <button type="button" class="ct-calc-key is-eq" data-calc-key="=">=</button>
+                    </div>
+                  </aside>
+                </div>
+              </div>
+            </div>
+
+            <!-- Lab 3: Formula Studio + Duplicate Session Fence Simulator -->
+            <div class="ct-lab-scene" data-lab-scene="3">
+              <div class="ct-lab-header">
+                <div>
+                  <div class="ct-lab-title">KaTeX / mhchem Studio &amp; Session Fence</div>
+                  <div class="ct-lab-sub">Click a preset below or test duplicate workstation blocking</div>
+                </div>
+                <button type="button" class="ct-btn ct-btn-sm ct-btn-secondary" id="ctSimDuplicateBtn">
+                  Simulate Duplicate PC
+                </button>
+              </div>
+
+              <div class="ct-formula-stage">
+                <div class="ct-pill-tabs" role="tablist" aria-label="Formula presets">
+                  <button type="button" class="ct-mini-chip-btn" role="tab" aria-selected="true" aria-pressed="true" data-formula-preset="quad">Quadratic Root</button>
+                  <button type="button" class="ct-mini-chip-btn" role="tab" aria-selected="false" aria-pressed="false" data-formula-preset="chem">Redox mhchem</button>
+                  <button type="button" class="ct-mini-chip-btn" role="tab" aria-selected="false" aria-pressed="false" data-formula-preset="calc">Definite Integral</button>
+                </div>
+
+                <div class="ct-formula-preview-box" id="ctFormulaBox">
+                  <div class="ct-math-render" id="ctFormulaRender">
+                    x = <span class="ct-frac"><span class="ct-frac-num">−b ± √(b² − 4ac)</span><span class="ct-frac-den">2a</span></span>
+                  </div>
+                  <code style="font-family:var(--ct-font-mono);font-size:var(--ct-text-xs);color:var(--ct-ink-muted);" id="ctFormulaSource">x = \frac{-b \pm \sqrt{b^2 - 4ac}}{2a}</code>
+                </div>
+
+                <div class="ct-ledger-row" id="ctFenceAlertRow" aria-live="polite" style="border-top:1px solid var(--ct-line);">
+                  <div>
+                    <strong style="color:var(--ct-ink);" id="ctFenceTitle">Active Lease: STU-014 (Workstation LAB-PC-04)</strong>
+                    <div style="color:var(--ct-ink-secondary);margin-top:2px;" id="ctFenceSub">Anti-cheat profile: {{ school_settings.anti_cheating_profile }} • Heartbeat verified every 25s</div>
+                  </div>
+                  <span class="ct-status-chip is-ok" id="ctFenceBadge">Lease Fenced</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Lab 4: Cloud License Activation + Dual Referral Calculator -->
+            <div class="ct-lab-scene" data-lab-scene="4">
+              <div class="ct-lab-header">
+                <div>
+                  <div class="ct-lab-title">Ed25519 License Vault &amp; Referral Estimator</div>
+                  <div class="ct-lab-sub">Hardware ID: <span class="ct-tabular" id="ctOnboardHwid">CT-HWID-8841-EMMA-9F2A</span></div>
+                </div>
+                <button type="button" class="ct-mini-chip-btn" data-copy-text="CT-HWID-8841-EMMA-9F2A">
+                  Copy HWID
+                </button>
+              </div>
+
+              <div style="display:flex;flex-direction:column;gap:14px;flex:1;justify-content:space-between;">
+                <div>
+                  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                    <span class="ct-label">Select cognitara.net Paystack Plan Preset</span>
+                    <div style="display:inline-flex;gap:5px;">
+                      <button type="button" class="ct-mini-chip-btn" data-plan-preset="monthly" aria-pressed="false">Monthly (30d)</button>
+                      <button type="button" class="ct-mini-chip-btn" data-plan-preset="annual" aria-pressed="true">Annual (365d)</button>
+                      <button type="button" class="ct-mini-chip-btn" data-plan-preset="lifetime" aria-pressed="false">Lifetime</button>
+                    </div>
+                  </div>
+                  <div class="ct-key-segments" role="group" aria-label="Signed license key segments">
+                    <input class="ct-key-seg" type="text" value="CGNT" readonly aria-label="License prefix">
+                    <input class="ct-key-seg" type="text" value="AN26" id="ctKeySeg2" aria-label="License tier segment">
+                    <input class="ct-key-seg" type="text" value="9F2A" aria-label="License hardware segment">
+                    <input class="ct-key-seg" type="text" value="77C1" aria-label="License signature segment 1">
+                    <input class="ct-key-seg" type="text" value="ED19" aria-label="License signature segment 2">
+                  </div>
+                </div>
+
+                <div style="padding-top:12px;border-top:1px solid var(--ct-line);">
+                  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+                    <label class="ct-label" for="ctReferralRange">Partner Schools Referred via Your Code (<span class="ct-tabular" id="ctRefCountLabel">4 schools</span>)</label>
+                    <span class="ct-status-chip is-accent ct-tabular" id="ctRefBonusDays">+60 Bonus Days</span>
+                  </div>
+                  <input id="ctReferralRange" type="range" min="1" max="20" value="4" style="width:100%;accent-color:var(--ct-accent);">
+                  <div style="display:flex;justify-content:space-between;margin-top:8px;font-size:var(--ct-text-xs);">
+                    <span style="color:var(--ct-ink-secondary);">15% Paystack Cash Wallet Payout:</span>
+                    <strong class="ct-tabular" style="font-family:var(--ct-font-mono);color:var(--ct-ok);" id="ctRefNgnPayout">NGN 108,000</strong>
+                  </div>
+                </div>
+
+                <div class="ct-ledger-row" style="border-bottom:none;padding-bottom:0;">
+                  <span style="color:var(--ct-ink-secondary);">Offline <span class="ct-tabular">.cgnlic</span> air-gapped USB activation supported</span>
+                  <span class="ct-status-chip is-ok">Ed25519 Verified</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Lab 5: School Calibration + Visual Theme Swatches -->
+            <div class="ct-lab-scene" data-lab-scene="5">
+              <div class="ct-lab-header">
+                <div>
+                  <div class="ct-lab-title">Workspace Calibration &amp; Theme Mode</div>
+                  <div class="ct-lab-sub">Hydrated from exam.db • Changes apply live</div>
+                </div>
+                <span class="ct-status-chip is-ok">Port {{ port }} Ready</span>
+              </div>
+
+              <div style="display:flex;flex-direction:column;gap:14px;flex:1;justify-content:space-between;">
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                  <div class="ct-field-group">
+                    <label class="ct-label" for="ctCalSchoolInput">Institution Name</label>
+                    <input class="ct-input" id="ctCalSchoolInput" type="text" value="{{ school_settings.school_name }}">
+                  </div>
+                  <div class="ct-field-group">
+                    <label class="ct-label" for="ctCalSessionInput">Session &amp; Active Term</label>
+                    <input class="ct-input" id="ctCalSessionInput" type="text" value="{{ school_settings.academic_session }} • {{ school_settings.current_term }}">
+                  </div>
+                </div>
+
+                <div>
+                  <div class="ct-label" style="margin-bottom:8px;">Appearance Theme (Saved in Desktop Preferences)</div>
+                  <div class="ct-theme-cards" role="radiogroup" aria-label="Choose desktop color theme">
+                    <button type="button" class="ct-theme-swatch-btn" role="radio" aria-checked="false" data-theme-choice="dark">
+                      <span class="ct-swatch-preview" aria-hidden="true">
+                        <span style="background:#090C13;border-right:1px solid rgba(148,163,184,0.11);"></span>
+                        <span style="background:#0D121B;position:relative;">
+                          <span style="position:absolute;left:8px;top:10px;width:28px;height:5px;border-radius:var(--ct-radius-xs);background:#00D2FF;"></span>
+                        </span>
+                      </span>
+                      <span style="font-size:var(--ct-text-xs);font-weight:600;">Obsidian Mica</span>
+                    </button>
+
+                    <button type="button" class="ct-theme-swatch-btn" role="radio" aria-checked="false" data-theme-choice="light">
+                      <span class="ct-swatch-preview" aria-hidden="true">
+                        <span style="background:#F1F5FA;border-right:1px solid rgba(15,23,42,0.085);"></span>
+                        <span style="background:#FFFFFF;position:relative;">
+                          <span style="position:absolute;left:8px;top:10px;width:28px;height:5px;border-radius:var(--ct-radius-xs);background:#0066FF;"></span>
+                        </span>
+                      </span>
+                      <span style="font-size:var(--ct-text-xs);font-weight:600;">Daylight Ceramic</span>
+                    </button>
+
+                    <button type="button" class="ct-theme-swatch-btn" role="radio" aria-checked="true" data-theme-choice="light dark">
+                      <span class="ct-swatch-preview" aria-hidden="true">
+                        <span style="background:#090C13;"></span>
+                        <span style="background:#FFFFFF;position:relative;">
+                          <span style="position:absolute;left:8px;top:10px;width:28px;height:5px;border-radius:var(--ct-radius-xs);background:#0066FF;"></span>
+                        </span>
+                      </span>
+                      <span style="font-size:var(--ct-text-xs);font-weight:600;">System Auto</span>
+                    </button>
+                  </div>
+                </div>
+
+                <button type="button" class="ct-btn ct-btn-lg ct-btn-primary" data-goto-stage="studio" style="width:100%;">
+                  Launch CogniTara Server Studio
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==================================================================
+           STAGE 3: FLAGSHIP SUPER ADMIN SERVER STUDIO (1260x772)
+           ================================================================== -->
+      <section class="ct-view-panel" id="view-studio" aria-labelledby="ctStudioFocusHeading">
+        <div class="ct-studio-layout">
+          <!-- Left Studio Navigation Rail -->
+          <aside class="ct-nav-rail" aria-label="Server Studio sections">
+            <div>
+              <div class="ct-school-block">
+                <div class="ct-school-name" id="ctRailSchoolName">{{ school_settings.school_name }}</div>
+                <div class="ct-school-term" id="ctRailSchoolTerm">{{ school_settings.academic_session }} • {{ school_settings.current_term }}</div>
+              </div>
+
+              <nav class="ct-nav-list" aria-label="Primary studio navigation">
+                <button type="button" class="ct-nav-item" data-subview-btn="overview" aria-current="page">
+                  <span class="ct-nav-item-left">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5"></rect><rect x="14" y="3" width="7" height="7" rx="1.5"></rect><rect x="3" y="14" width="7" height="7" rx="1.5"></rect><rect x="14" y="14" width="7" height="7" rx="1.5"></rect></svg>
+                    <span>Server Overview</span>
+                  </span>
+                  <span class="ct-nav-count ct-tabular" id="ctNavEngineTag">LIVE</span>
+                </button>
+
+                <button type="button" class="ct-nav-item" data-subview-btn="hall">
+                  <span class="ct-nav-item-left">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                    <span>Live Exam Hall</span>
+                  </span>
+                  <span class="ct-nav-count ct-tabular" id="ctNavStudentsCount">{{ telemetry.counts.approved_students }}</span>
+                </button>
+
+                <button type="button" class="ct-nav-item" data-subview-btn="guide">
+                  <span class="ct-nav-item-left">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 16v-4M12 8h.01"></path></svg>
+                    <span>Platform Guide</span>
+                  </span>
+                  <span class="ct-nav-count ct-tabular">4</span>
+                </button>
+
+                <button type="button" class="ct-nav-item" data-subview-btn="license">
+                  <span class="ct-nav-item-left">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+                    <span>License &amp; Security</span>
+                  </span>
+                  <span class="ct-nav-count ct-tabular">365d</span>
+                </button>
+
+                <button type="button" class="ct-nav-item" data-subview-btn="database">
+                  <span class="ct-nav-item-left">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><ellipse cx="12" cy="5" rx="9" ry="3"></ellipse><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path></svg>
+                    <span>Database &amp; Logs</span>
+                  </span>
+                  <span class="ct-nav-count ct-tabular">{{ telemetry.db_journal_mode }}</span>
+                </button>
+              </nav>
+            </div>
+
+            <div class="ct-rail-footer">
+              <div style="display:flex;justify-content:space-between;">
+                <span>SQLite Integrity</span>
+                <strong style="color:var(--ct-ok);">{{ telemetry.db_health }}</strong>
+              </div>
+              <div style="display:flex;justify-content:space-between;">
+                <span>Host Adapter</span>
+                <span class="ct-tabular" style="font-family:var(--ct-font-mono);color:var(--ct-ink-secondary);">{{ host_info.primary_lan_ip or '127.0.0.1' }}</span>
+              </div>
+              <button type="button" class="ct-btn ct-btn-sm ct-btn-secondary" data-goto-stage="onboarding" style="width:100%;margin-top:4px;">
+                Reopen Product Tour
+              </button>
+            </div>
+          </aside>
+
+          <!-- Right Scrollable Studio Workspace -->
+          <div class="ct-studio-main">
+            <!-- SUBVIEW 1: SERVER OVERVIEW -->
+            <div class="ct-subview is-active" data-subview="overview">
+              <div class="ct-engine-band" id="ctEngineBand" data-engine-state="running">
+                <div class="ct-engine-top">
+                  <div class="ct-engine-identity">
+                    <div class="ct-reactor-orb" aria-hidden="true">
+                      <svg width="32" height="32" viewBox="42 30 94 100">
+                        <use href="#ct-vec-symbol"></use>
+                      </svg>
+                    </div>
+                    <div>
+                      <div class="ct-engine-title-row">
+                        <h1 class="ct-h1" id="ctStudioFocusHeading" tabindex="-1">Local LAN Examination Server</h1>
+                        <span class="ct-status-chip is-ok" id="ctEngineStateBadge">
+                          <span class="ct-led" aria-hidden="true"></span>
+                          <span id="ctEngineStateText">Broadcasting on Port {{ port }}</span>
+                        </span>
+                      </div>
+                      <p class="ct-engine-sub" id="ctEngineSubcopy">
+                        Waitress WSGI ({{ telemetry.waitress_threads }} worker threads) • Host <strong>{{ host_info.hostname }}</strong> • {{ telemetry.server_time_wat }}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div class="ct-engine-controls">
+                    <a class="ct-btn ct-btn-secondary" href="/admin" target="_blank" rel="noopener" style="text-decoration:none;">
+                      <span>Open Admin Portal</span>
+                      <span aria-hidden="true">↗</span>
+                    </a>
+                    <button type="button" class="ct-btn ct-btn-danger" id="ctEngineToggleBtn">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="1.5"></rect></svg>
+                      <span id="ctEngineToggleLabel">Graceful Stop Server</span>
+                    </button>
+                  </div>
+                </div>
+
+                <!-- 4 Tabular Metrics + 60fps Canvas Heartbeat Waveform -->
+                <div class="ct-telemetry-strip">
+                  <div class="ct-metric-cell">
+                    <span class="ct-metric-label">Approved Students</span>
+                    <span class="ct-metric-val" id="ctMetricStudents">{{ telemetry.counts.approved_students }}</span>
+                    <span class="ct-metric-note">{{ telemetry.classes_count }} active classes</span>
+                  </div>
+                  <div class="ct-metric-cell">
+                    <span class="ct-metric-label">Published Exams</span>
+                    <span class="ct-metric-val" id="ctMetricExams">{{ telemetry.counts.exams + telemetry.counts.ce_exams }}</span>
+                    <span class="ct-metric-note">{{ telemetry.counts.exams }} Term • {{ telemetry.counts.ce_exams }} Entrance</span>
+                  </div>
+                  <div class="ct-metric-cell">
+                    <span class="ct-metric-label">Question Bank</span>
+                    <span class="ct-metric-val" id="ctMetricQuestions">{{ telemetry.total_questions }}</span>
+                    <span class="ct-metric-note">{{ telemetry.counts.teachers }} faculty authors</span>
+                  </div>
+                  <div class="ct-metric-cell">
+                    <span class="ct-metric-label">SQLite WAL Latency</span>
+                    <span class="ct-metric-val" id="ctMetricLatency">1.4ms</span>
+                    <span class="ct-metric-note">{{ school_settings.grading_scheme }}</span>
+                  </div>
+                  <div class="ct-waveform-box">
+                    <div class="ct-waveform-head">
+                      <span>LAN Request &amp; Heartbeat Stream</span>
+                      <span class="ct-tabular" id="ctRpsReadout">18 req/s • 0 drops</span>
+                    </div>
+                    <canvas id="ctWaveformCanvas" class="ct-waveform-canvas" aria-hidden="true"></canvas>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Operational Two-Column Split (Zero Nested Cards) -->
+              <div class="ct-ops-grid">
+                <div class="ct-ops-col-left">
+                  <!-- Section A: LAN Endpoints -->
+                  <div>
+                    <div class="ct-section-head">
+                      <h2 class="ct-h2">Student &amp; Staff LAN Endpoints</h2>
+                      <span class="ct-section-meta">Share on exam hall Wi-Fi / Ethernet</span>
+                    </div>
+                    <div class="ct-endpoint-list">
+                      <div class="ct-endpoint-row">
+                        <div>
+                          <div class="ct-endpoint-name">Primary School Wi-Fi / LAN Address (Recommended)</div>
+                          <div class="ct-endpoint-url ct-tabular" id="ctPrimaryLanUrl">{{ host_info.primary_lan_url }}</div>
+                        </div>
+                        <button type="button" class="ct-btn ct-btn-sm ct-btn-secondary" data-copy-text="{{ host_info.primary_lan_url }}">Copy URL</button>
+                      </div>
+                      <div class="ct-endpoint-row">
+                        <div>
+                          <div class="ct-endpoint-name">Windows NetBIOS Hostname URL</div>
+                          <div class="ct-endpoint-url ct-tabular">{{ host_info.hostname_url }}</div>
+                        </div>
+                        <button type="button" class="ct-btn ct-btn-sm ct-btn-ghost" data-copy-text="{{ host_info.hostname_url }}">Copy</button>
+                      </div>
+                      <div class="ct-endpoint-row">
+                        <div>
+                          <div class="ct-endpoint-name">Local Super Admin Loopback</div>
+                          <div class="ct-endpoint-url ct-tabular">{{ host_info.loopback_url }}</div>
+                        </div>
+                        <button type="button" class="ct-btn ct-btn-sm ct-btn-ghost" data-copy-text="{{ host_info.loopback_url }}">Copy</button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Section B: Direct Portal Launchers -->
+                  <div>
+                    <div class="ct-section-head">
+                      <h2 class="ct-h2">Open Live CogniTara Portals</h2>
+                      <span class="ct-section-meta">201 verified routes active</span>
+                    </div>
+                    <div class="ct-portal-links" style="margin-top:12px;">
+                      <a class="ct-portal-link" href="/admin" target="_blank" rel="noopener">
+                        <span class="ct-portal-link-title"><span>School Admin</span><span aria-hidden="true">↗</span></span>
+                        <span class="ct-portal-link-route">/admin</span>
+                      </a>
+                      <a class="ct-portal-link" href="/teacher" target="_blank" rel="noopener">
+                        <span class="ct-portal-link-title"><span>Teacher Studio</span><span aria-hidden="true">↗</span></span>
+                        <span class="ct-portal-link-route">/teacher</span>
+                      </a>
+                      <a class="ct-portal-link" href="/dashboard" target="_blank" rel="noopener">
+                        <span class="ct-portal-link-title"><span>Student Hall</span><span aria-hidden="true">↗</span></span>
+                        <span class="ct-portal-link-route">/dashboard</span>
+                      </a>
+                      <a class="ct-portal-link" href="/ce_login" target="_blank" rel="noopener">
+                        <span class="ct-portal-link-title"><span>Entrance CBT</span><span aria-hidden="true">↗</span></span>
+                        <span class="ct-portal-link-route">/ce_login</span>
+                      </a>
+                    </div>
+                  </div>
+
+                  <!-- Section C: Real Configured Exams from exam.db -->
+                  <div>
+                    <div class="ct-section-head">
+                      <h2 class="ct-h2">Configured Examination Inventory</h2>
+                      <span class="ct-section-meta">Live rows from exam.db</span>
+                    </div>
+                    <div class="ct-table-wrap">
+                      <table class="ct-table">
+                        <thead>
+                          <tr>
+                            <th>Exam Title</th>
+                            <th>Class</th>
+                            <th>Duration</th>
+                            <th>Calculator</th>
+                            <th>State</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {% for ex in telemetry.recent_exams %}
+                          <tr>
+                            <td style="font-weight:600;">{{ ex.name }}</td>
+                            <td>{{ ex.class }}</td>
+                            <td class="ct-tabular" style="font-family:var(--ct-font-mono);">{{ ex.duration }}m</td>
+                            <td style="text-transform:capitalize;color:var(--ct-ink-secondary);">{{ ex.calculator_type }}</td>
+                            <td>
+                              {% if ex.active %}
+                              <span class="ct-status-chip is-ok">Active</span>
+                              {% else %}
+                              <span class="ct-status-chip">Standby</span>
+                              {% endif %}
+                            </td>
+                          </tr>
+                          {% endfor %}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Right Column: Tablet QR Pass + Security & Hot Backup Ledger -->
+                <div class="ct-ops-col-right">
+                  <div>
+                    <div class="ct-section-head">
+                      <h2 class="ct-h2">Instant Tablet &amp; Proctor QR Pairing</h2>
+                      <span class="ct-section-meta">Zero IP typing</span>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:16px;padding:14px 0;border-bottom:1px solid var(--ct-line);">
+                      <div class="ct-qr-frame" id="ctQrContainer" aria-label="QR code encoding {{ host_info.primary_lan_url }}"></div>
+                      <div style="display:flex;flex-direction:column;gap:6px;">
+                        <div style="font-size:var(--ct-text-sm);font-weight:600;color:var(--ct-ink);">Scan on Hall Tablets</div>
+                        <p style="font-size:var(--ct-text-xs);color:var(--ct-ink-secondary);line-height:1.5;">
+                          Opens <span class="ct-tabular" style="font-family:var(--ct-font-mono);">{{ host_info.primary_lan_url }}</span> directly in Chrome or Edge kiosk mode across the LAN.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <div class="ct-section-head">
+                      <h2 class="ct-h2">Cryptographic Vault &amp; WAL Health</h2>
+                      <button type="button" class="ct-btn ct-btn-sm ct-btn-secondary" id="ctInstantBackupBtn">
+                        Create Instant Backup
+                      </button>
+                    </div>
+                    <div>
+                      <div class="ct-ledger-row">
+                        <span style="color:var(--ct-ink-secondary);">Ed25519 License Tier</span>
+                        <strong style="color:var(--ct-ink);">Annual Institutional (Paystack)</strong>
+                      </div>
+                      <div class="ct-ledger-row">
+                        <span style="color:var(--ct-ink-secondary);">Monotonic Clock Anchors</span>
+                        <span class="ct-status-chip is-ok">3 / 3 Synced (DPAPI + HKCU + DB)</span>
+                      </div>
+                      <div class="ct-ledger-row">
+                        <span style="color:var(--ct-ink-secondary);">Anti-Cheating Profile</span>
+                        <strong style="text-transform:capitalize;">{{ school_settings.anti_cheating_profile }} + Session Fence</strong>
+                      </div>
+                      <div class="ct-ledger-row">
+                        <span style="color:var(--ct-ink-secondary);">Last Atomic WAL Backup</span>
+                        <span class="ct-tabular" style="font-family:var(--ct-font-mono);" id="ctLastBackupStamp">Today • 08:45 WAT (exam.db.bak)</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- SUBVIEW 2: LIVE EXAM HALL -->
+            <div class="ct-subview" data-subview="hall">
+              <div class="ct-subview-pad">
+                <div class="ct-section-head">
+                  <div>
+                    <h2 class="ct-h1">Live Exam Hall Proctor Matrix</h2>
+                    <p class="ct-section-meta" style="margin-top:2px;">Real-time workstation heartbeats, single-PC session leases, and emergency time grants</p>
+                  </div>
+                  <a class="ct-btn ct-btn-sm ct-btn-secondary" href="/admin/exam_technical_support" target="_blank" rel="noopener" style="text-decoration:none;">
+                    Open Full Technical Support ↗
+                  </a>
+                </div>
+
+                <div class="ct-table-wrap">
+                  <table class="ct-table">
+                    <thead>
+                      <tr>
+                        <th>Candidate</th>
+                        <th>Workstation IP</th>
+                        <th>Active Paper</th>
+                        <th>Progress</th>
+                        <th>Session Lease</th>
+                        <th>Proctor Action</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td><strong>Adeyemi Oluwaseun</strong><div style="color:var(--ct-ink-muted);font-size:var(--ct-text-xs);">SS3 Science</div></td>
+                        <td class="ct-tabular" style="font-family:var(--ct-font-mono);">10.106.68.114</td>
+                        <td>Further Mathematics</td>
+                        <td class="ct-tabular">31 / 40 saved</td>
+                        <td><span class="ct-status-chip is-ok">Fenced • 4s ago</span></td>
+                        <td><button type="button" class="ct-btn ct-btn-sm ct-btn-secondary" data-proctor-grant="Adeyemi Oluwaseun">+5m Grant</button></td>
+                      </tr>
+                      <tr>
+                        <td><strong>Chukwuemeka Chioma</strong><div style="color:var(--ct-ink-muted);font-size:var(--ct-text-xs);">SS3 Science</div></td>
+                        <td class="ct-tabular" style="font-family:var(--ct-font-mono);">10.106.68.119</td>
+                        <td>Chemistry Paper 1</td>
+                        <td class="ct-tabular">27 / 40 saved</td>
+                        <td><span class="ct-status-chip is-ok">Fenced • 2s ago</span></td>
+                        <td><button type="button" class="ct-btn ct-btn-sm ct-btn-secondary" data-proctor-grant="Chukwuemeka Chioma">+5m Grant</button></td>
+                      </tr>
+                      <tr>
+                        <td><strong>Ibrahim Zainab</strong><div style="color:var(--ct-ink-muted);font-size:var(--ct-text-xs);">JSS1 Placement</div></td>
+                        <td class="ct-tabular" style="font-family:var(--ct-font-mono);">10.106.68.142</td>
+                        <td>Common Entrance</td>
+                        <td class="ct-tabular">44 / 50 saved</td>
+                        <td><span class="ct-status-chip is-warn">1 Focus Warning</span></td>
+                        <td><button type="button" class="ct-btn ct-btn-sm ct-btn-secondary" data-proctor-grant="Ibrahim Zainab">+5m Grant</button></td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            <!-- SUBVIEW 3: PLATFORM GUIDE -->
+            <div class="ct-subview" data-subview="guide">
+              <div class="ct-subview-pad">
+                <div class="ct-section-head">
+                  <div>
+                    <h2 class="ct-h1">CogniTara Ecosystem Architecture Guide</h2>
+                    <p class="ct-section-meta" style="margin-top:2px;">Complete breakdown of every module running inside your school and on cognitara.net</p>
+                  </div>
+                  <button type="button" class="ct-btn ct-btn-sm ct-btn-primary" data-goto-stage="onboarding">
+                    Launch Interactive Labs
+                  </button>
+                </div>
+
+                <div class="ct-spec-list">
+                  {% for cap in telemetry.portal_capabilities %}
+                  <div class="ct-spec-row" style="padding:16px 0;justify-content:space-between;align-items:center;">
+                    <div style="max-width:640px;">
+                      <div class="ct-spec-title" style="font-size:var(--ct-text-base);">{{ cap.title }}</div>
+                      <p class="ct-spec-copy" style="margin-top:4px;font-size:var(--ct-text-xs);">{{ cap.summary }}</p>
+                      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;">
+                        {% for m in cap.metrics %}
+                        <span class="ct-status-chip">{{ m }}</span>
+                        {% endfor %}
+                      </div>
+                    </div>
+                    <a class="ct-btn ct-btn-sm ct-btn-secondary" href="{{ cap.route }}" target="_blank" rel="noopener" style="text-decoration:none;">
+                      Open {{ cap.route }} ↗
+                    </a>
+                  </div>
+                  {% endfor %}
+                </div>
+              </div>
+            </div>
+
+            <!-- SUBVIEW 4: LICENSE & SECURITY VAULT -->
+            <div class="ct-subview" data-subview="license">
+              <div class="ct-subview-pad">
+                <div class="ct-section-head">
+                  <div>
+                    <h2 class="ct-h1">Ed25519 Hardware Vault, Paystack Renewals &amp; Referrals</h2>
+                    <p class="ct-section-meta" style="margin-top:2px;">Connected to Neon Serverless Postgres licensing authority on cognitara.net</p>
+                  </div>
+                  <div style="display:flex;gap:8px;">
+                    <button type="button" class="ct-btn ct-btn-sm ct-btn-secondary" data-goto-stage="expired">Test Expiry / Clock Lock</button>
+                    <button type="button" class="ct-btn ct-btn-sm ct-btn-primary" id="ctOpenPaystackModalBtn">Renew via Paystack</button>
+                  </div>
+                </div>
+
+                <div class="ct-table-wrap">
+                  <table class="ct-table">
+                    <thead>
+                      <tr>
+                        <th>Security Layer</th>
+                        <th>Storage Anchor</th>
+                        <th>Observed State</th>
+                        <th>Verification</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td><strong>Layer 1 • Ed25519 Signature</strong></td>
+                        <td style="font-family:var(--ct-font-mono);">Offline Public Key Pin</td>
+                        <td>Plan: Annual Institutional (365d)</td>
+                        <td><span class="ct-status-chip is-ok">Authentic</span></td>
+                      </tr>
+                      <tr>
+                        <td><strong>Layer 2 • Windows Hardware Fingerprint</strong></td>
+                        <td style="font-family:var(--ct-font-mono);">MachineGuid + SMBIOS UUID</td>
+                        <td class="ct-tabular">CT-HWID-8841-EMMA-9F2A</td>
+                        <td><span class="ct-status-chip is-ok">Matched</span></td>
+                      </tr>
+                      <tr>
+                        <td><strong>Layer 3 • Monotonic Anti-Rollback</strong></td>
+                        <td style="font-family:var(--ct-font-mono);">DPAPI + HKCU + SQLite</td>
+                        <td class="ct-tabular">{{ telemetry.server_time_wat }}</td>
+                        <td><span class="ct-status-chip is-ok">Zero Drift</span></td>
+                      </tr>
+                      <tr>
+                        <td><strong>Layer 4 • Partner School Referral Wallet</strong></td>
+                        <td style="font-family:var(--ct-font-mono);">cognitara.net/r/CGNT-8841</td>
+                        <td class="ct-tabular">4 Active Referrals • +60 Bonus Days</td>
+                        <td><span class="ct-status-chip is-accent">NGN 108,000 Ready</span></td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            <!-- SUBVIEW 5: DATABASE & LOGS -->
+            <div class="ct-subview" data-subview="database">
+              <div class="ct-subview-pad">
+                <div class="ct-section-head">
+                  <div>
+                    <h2 class="ct-h1">SQLite WAL Engine &amp; Live Waitress Console</h2>
+                    <p class="ct-section-meta" style="margin-top:2px;">Replaces the legacy black terminal window with structured, filterable diagnostics</p>
+                  </div>
+                  <div style="display:inline-flex;gap:6px;">
+                    <button type="button" class="ct-mini-chip-btn" data-log-filter="all" aria-pressed="true">All Events</button>
+                    <button type="button" class="ct-mini-chip-btn" data-log-filter="sec" aria-pressed="false">Security</button>
+                    <button type="button" class="ct-mini-chip-btn" data-log-filter="info" aria-pressed="false">Server</button>
+                  </div>
+                </div>
+
+                <div class="ct-console-box">
+                  <div class="ct-console-toolbar">
+                    <span>Waitress WSGI Daemon • Port {{ port }} • Journal: {{ telemetry.db_journal_mode }}</span>
+                    <span style="color:var(--ct-ok);">PRAGMA quick_check = {{ telemetry.db_health }}</span>
+                  </div>
+                  <div class="ct-console-lines" id="ctConsoleLines">
+                    <div class="ct-log-row" data-log-type="sec">
+                      <span class="ct-log-time ct-tabular">08:52:01</span>
+                      <span class="ct-log-lvl-sec">VAULT</span>
+                      <span>Ed25519 license verified for host {{ host_info.hostname }} (3/3 monotonic clock anchors valid).</span>
+                    </div>
+                    <div class="ct-log-row" data-log-type="info">
+                      <span class="ct-log-time ct-tabular">08:52:02</span>
+                      <span class="ct-log-lvl-info">WAITRESS</span>
+                      <span>Serving CogniTara WSGI application on {{ host_info.primary_lan_url }} ({{ telemetry.waitress_threads }} threads).</span>
+                    </div>
+                    <div class="ct-log-row" data-log-type="info">
+                      <span class="ct-log-time ct-tabular">08:52:04</span>
+                      <span class="ct-log-lvl-info">SQLITE</span>
+                      <span>Connected exam.db in {{ telemetry.db_journal_mode }} mode ({{ telemetry.counts.approved_students }} students, {{ telemetry.total_questions }} banked questions).</span>
+                    </div>
+                    <div class="ct-log-row" data-log-type="sec">
+                      <span class="ct-log-time ct-tabular">08:53:19</span>
+                      <span class="ct-log-lvl-sec">PROCTOR</span>
+                      <span>Session lease fenced for candidate workstations; duplicate login guard armed.</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==================================================================
+           STAGE 4: EXPIRED LEASE / WINDOWS CLOCK TAMPER LOCKOUT
+           ================================================================== -->
+      <section class="ct-view-panel" id="view-expired" aria-labelledby="ctExpiredHeading">
+        <div class="ct-lockout-stage">
+          <div class="ct-lockout-frame">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+              <span class="ct-status-chip is-warn" id="ctLockModeBadge">Cryptographic Lease Gate Triggered</span>
+              <div style="display:inline-flex;gap:6px;">
+                <button type="button" class="ct-mini-chip-btn" data-lock-variant="expired" aria-pressed="true">Simulate: Lease Expired</button>
+                <button type="button" class="ct-mini-chip-btn" data-lock-variant="clock" aria-pressed="false">Simulate: Clock Rollback (−4,820s)</button>
+              </div>
+            </div>
+
+            <div>
+              <h1 class="ct-story-h2" id="ctExpiredHeading" tabindex="-1">Subscription lease expired — new exam server startup is locked</h1>
+              <p class="ct-story-lead" id="ctExpiredDesc" style="margin-top:8px;">
+                Your institutional license lease reached <span class="ct-tabular">00d 00h 00m</span>. Renew online via Paystack on <strong>cognitara.net</strong> or import a signed <span class="ct-tabular">.cgnlic</span> offline renewal file to unlock Waitress LAN broadcasting.
+              </p>
+            </div>
+
+            <div class="ct-lockout-banner">
+              <strong>15-Minute Active-Exam Student Safety Drain:</strong> If a lease expires while candidates are writing an exam, CogniTara never kills active student scripts abruptly—running sessions receive a 15-minute grace window to submit and export broadsheets before locking new startups.
+            </div>
+
+            <div class="ct-spec-list">
+              <div class="ct-ledger-row">
+                <span style="color:var(--ct-ink-secondary);">Bound Hardware Fingerprint</span>
+                <span class="ct-tabular" style="font-family:var(--ct-font-mono);">CT-HWID-8841-EMMA-9F2A</span>
+              </div>
+              <div class="ct-ledger-row">
+                <span style="color:var(--ct-ink-secondary);">Waitress LAN Engine Status</span>
+                <span class="ct-status-chip is-danger">Locked Until Signed Renewal</span>
+              </div>
+            </div>
+
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+              <div style="display:flex;gap:10px;">
+                <button type="button" class="ct-btn ct-btn-primary" id="ctExpiredPaystackBtn">Renew on cognitara.net (Paystack)</button>
+                <button type="button" class="ct-btn ct-btn-secondary" data-goto-stage="studio">Simulate Signed .cgnlic Restore</button>
+              </div>
+              <button type="button" class="ct-btn ct-btn-ghost" data-copy-text="CT-HWID-8841-EMMA-9F2A">Copy HWID</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==================================================================
+           STAGE 5: HQ ACCOUNT BANNED / REVOKED TOMBSTONE
+           ================================================================== -->
+      <section class="ct-view-panel" id="view-revoked" aria-labelledby="ctRevokedHeading">
+        <div class="ct-lockout-stage">
+          <div class="ct-lockout-frame">
+            <div style="display:flex;align-items:center;justify-content:space-between;">
+              <span class="ct-status-chip is-danger">Signed HQ Revocation Tombstone</span>
+              <span class="ct-tabular" style="font-family:var(--ct-font-mono);font-size:var(--ct-text-xs);color:var(--ct-ink-muted);">RVK-TOMB-2026-8841</span>
+            </div>
+
+            <div>
+              <h1 class="ct-story-h2" id="ctRevokedHeading" tabindex="-1">Institutional license suspended by CogniTara HQ</h1>
+              <p class="ct-story-lead" style="margin-top:8px;">
+                A cryptographically signed revocation certificate from <strong>cognitara.net</strong> has immobilized the local Waitress server on this machine due to a chargeback or multi-campus cloning violation.
+              </p>
+            </div>
+
+            <div class="ct-spec-list">
+              <div class="ct-ledger-row">
+                <span style="color:var(--ct-ink-secondary);">Revocation Reference</span>
+                <span class="ct-tabular" style="font-family:var(--ct-font-mono);">RVK-TOMB-2026-8841 (Ed25519 Signed)</span>
+              </div>
+              <div class="ct-ledger-row">
+                <span style="color:var(--ct-ink-secondary);">Local Student Records (exam.db)</span>
+                <span class="ct-status-chip is-ok">Preserved Intact • Read-Only Archive</span>
+              </div>
+              <div class="ct-ledger-row">
+                <span style="color:var(--ct-ink-secondary);">Compliance Desk</span>
+                <span style="font-family:var(--ct-font-mono);">compliance@cognitara.net</span>
+              </div>
+            </div>
+
+            <div style="display:flex;gap:10px;">
+              <button type="button" class="ct-btn ct-btn-secondary" data-copy-text="RVK-TOMB-2026-8841">Copy Audit Reference</button>
+              <button type="button" class="ct-btn ct-btn-ghost" data-goto-stage="studio">Return to Active Studio Preview</button>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Floating Restore Chip when Window is Maximized Edge-to-Edge -->
+    <div class="ct-maximized-pill">
+      <span>Full-Screen Native Mode</span>
+      <button type="button" class="ct-mini-chip-btn" id="ctExitMaxBtn">Restore Window</button>
+    </div>
+
+    <!-- ====================================================================
+         WINDOWS 11 MICA TASKBAR & INTERACTIVE STATE CONTROLLER
+         ==================================================================== -->
+    <footer class="ct-win-taskbar" aria-label="Desktop preview state and theme taskbar">
+      <div class="ct-taskbar-left">
+        <button type="button" class="ct-taskbar-app-btn" id="ctTaskbarAppBtn" title="Restore or focus CogniTara Server Studio">
+          <svg width="18" height="18" viewBox="42 30 94 100" aria-hidden="true">
+            <use href="#ct-vec-symbol"></use>
+          </svg>
+          <span>CogniTara Studio</span>
+        </button>
+
+        <div class="ct-boot-tools">
+          <button type="button" class="ct-mini-chip-btn" id="ctReplayBootBtn">Replay Boot</button>
+          <button type="button" class="ct-mini-chip-btn" id="ctSlowBootBtn" aria-pressed="false">0.5× Motion</button>
+        </div>
+      </div>
+
+      <div class="ct-taskbar-center">
+        <div class="ct-stage-rail" role="tablist" aria-label="Preview desktop application stages">
+          <button type="button" class="ct-stage-btn" role="tab" aria-selected="true" data-stage-tab="boot">
+            <span class="ct-stage-num">01</span><span>Boot Splash</span>
+          </button>
+          <button type="button" class="ct-stage-btn" role="tab" aria-selected="false" data-stage-tab="onboarding">
+            <span class="ct-stage-num">02</span><span>Onboarding Tour</span>
+          </button>
+          <button type="button" class="ct-stage-btn" role="tab" aria-selected="false" data-stage-tab="studio">
+            <span class="ct-stage-num">03</span><span>Server Studio</span>
+          </button>
+          <button type="button" class="ct-stage-btn" role="tab" aria-selected="false" data-stage-tab="expired">
+            <span class="ct-stage-num">04</span><span>Expired / Clock</span>
+          </button>
+          <button type="button" class="ct-stage-btn" role="tab" aria-selected="false" data-stage-tab="revoked">
+            <span class="ct-stage-num">05</span><span>HQ Revoked</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="ct-taskbar-right">
+        <div class="ct-theme-seg" role="radiogroup" aria-label="Color theme">
+          <button type="button" class="ct-theme-opt" role="radio" aria-checked="false" data-theme-choice="dark">Dark</button>
+          <button type="button" class="ct-theme-opt" role="radio" aria-checked="false" data-theme-choice="light">Light</button>
+          <button type="button" class="ct-theme-opt" role="radio" aria-checked="true" data-theme-choice="light dark">Auto</button>
+        </div>
+
+        <button type="button" class="ct-tray-trigger" id="ctTrayToggleBtn" aria-expanded="false" aria-controls="ctTrayFlyout">
+          <span class="ct-led" style="color:var(--ct-ok);" aria-hidden="true"></span>
+          <span class="ct-tabular">Tray • :{{ port }}</span>
+        </button>
+      </div>
+    </footer>
+
+    <!-- Windows System Tray Quick Flyout -->
+    <aside class="ct-tray-flyout" id="ctTrayFlyout" aria-label="Windows System Tray background service">
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <strong style="font-size:var(--ct-text-xs);">CogniTara Background Tray</strong>
+        <span class="ct-status-chip is-ok" id="ctTrayStateChip">Running</span>
+      </div>
+      <p style="font-size:var(--ct-text-2xs);color:var(--ct-ink-secondary);line-height:1.45;">
+        Closing the window keeps Waitress alive in the Windows System Tray so ongoing exams are never interrupted.
+      </p>
+      <div class="ct-ledger-row">
+        <span style="color:var(--ct-ink-muted);">LAN URL</span>
+        <span class="ct-tabular" style="font-family:var(--ct-font-mono);">{{ host_info.primary_lan_url }}</span>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button type="button" class="ct-btn ct-btn-sm ct-btn-primary" id="ctTrayRestoreBtn" style="flex:1;">Restore Window</button>
+        <button type="button" class="ct-btn ct-btn-sm ct-btn-secondary" data-copy-text="{{ host_info.primary_lan_url }}">Copy IP</button>
+      </div>
+    </aside>
+
+    <!-- Native Light-Dismiss Command Palette (<dialog closedby="any">) -->
+    <dialog class="ct-dialog" id="ctCmdDialog" closedby="any" aria-labelledby="ctCmdDialogTitle">
+      <h2 id="ctCmdDialogTitle" class="sr-only">Quick Command Palette</h2>
+      <div class="ct-cmdk-input-wrap">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+          <circle cx="11" cy="11" r="7"></circle>
+          <path d="m20 20-3.5-3.5"></path>
+        </svg>
+        <input type="text" class="ct-cmdk-input" id="ctCmdkInput" placeholder="Type a command, view, or portal..." aria-label="Filter studio commands">
+        <button type="button" class="ct-mini-chip-btn" data-close-dialog="ctCmdDialog">Esc</button>
+      </div>
+      <div class="ct-cmdk-list" id="ctCmdkList">
+        <button type="button" class="ct-cmdk-item" data-cmd-action="goto:studio">
+          <span>Open Server Studio Overview</span><span class="ct-kbd">View</span>
+        </button>
+        <button type="button" class="ct-cmdk-item" data-cmd-action="goto:onboarding">
+          <span>Start 5-Chapter Interactive Product Tour</span><span class="ct-kbd">Tour</span>
+        </button>
+        <button type="button" class="ct-cmdk-item" data-cmd-action="copy:{{ host_info.primary_lan_url }}">
+          <span>Copy Primary LAN Exam URL ({{ host_info.primary_lan_url }})</span><span class="ct-kbd">Copy</span>
+        </button>
+        <button type="button" class="ct-cmdk-item" data-cmd-action="backup">
+          <span>Trigger Atomic SQLite WAL Hot Backup</span><span class="ct-kbd">SQLite</span>
+        </button>
+        <button type="button" class="ct-cmdk-item" data-cmd-action="theme:toggle">
+          <span>Switch Between Obsidian Mica (Dark) &amp; Daylight Ceramic (Light)</span><span class="ct-kbd">Theme</span>
+        </button>
+        <button type="button" class="ct-cmdk-item" data-cmd-action="portal:/admin">
+          <span>Launch Live School Admin Dashboard (/admin)</span><span class="ct-kbd">Portal ↗</span>
+        </button>
+      </div>
+    </dialog>
+
+    <!-- Native Light-Dismiss Paystack Checkout Preview Modal (<dialog closedby="any">) -->
+    <dialog class="ct-dialog" id="ctPaystackDialog" closedby="any" aria-labelledby="ctPaystackDialogTitle">
+      <div style="padding:20px 22px;display:flex;flex-direction:column;gap:16px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;">
+          <div>
+            <h2 class="ct-h2" id="ctPaystackDialogTitle">cognitara.net • Paystack License Checkout</h2>
+            <p style="font-size:var(--ct-text-xs);color:var(--ct-ink-secondary);margin-top:2px;">Instant Ed25519 license activation via Card, Bank Transfer, or USSD</p>
+          </div>
+          <button type="button" class="ct-mini-chip-btn" data-close-dialog="ctPaystackDialog">Close</button>
+        </div>
+
+        <div class="ct-spec-list">
+          <div class="ct-ledger-row">
+            <span><strong>Monthly Plan</strong> (30-Day Lease)</span>
+            <span class="ct-tabular" style="font-family:var(--ct-font-mono);font-weight:600;">NGN 25,000 / mo</span>
+          </div>
+          <div class="ct-ledger-row">
+            <span><strong>Annual Institutional</strong> (365-Day Lease • Most Popular)</span>
+            <span class="ct-tabular" style="font-family:var(--ct-font-mono);font-weight:600;color:var(--ct-accent);">NGN 180,000 / yr</span>
+          </div>
+          <div class="ct-ledger-row">
+            <span><strong>Lifetime Campus License</strong> (Perpetual + Updates)</span>
+            <span class="ct-tabular" style="font-family:var(--ct-font-mono);font-weight:600;">NGN 650,000 once</span>
+          </div>
+        </div>
+
+        <div style="display:flex;justify-content:flex-end;gap:10px;">
+          <button type="button" class="ct-btn ct-btn-secondary" data-close-dialog="ctPaystackDialog">Cancel</button>
+          <button type="button" class="ct-btn ct-btn-primary" id="ctSimPaystackSuccessBtn">Simulate Verified Webhook Renewal</button>
+        </div>
+      </div>
+    </dialog>
+
+    <!-- Accessible Polite Toast -->
+    <div class="ct-toast" id="ctToast" role="status" aria-live="polite"></div>
+  </div>
+
+  <script src="/static/js/desktop-preview.js" defer></script>
+</body>
+</html>

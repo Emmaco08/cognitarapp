@@ -1,0 +1,256 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-18T08:12:00Z",
+  "title": "Design System: CogniTara v2",
+  "extensions": {
+    "colorMeta": {
+      "dark-backdrop": {
+        "role": "neutral",
+        "displayName": "Obsidian Backdrop",
+        "canonical": "#05070B",
+        "tonalRamp": ["#030508", "#05070B", "#080C13", "#0B0F17", "#131A29", "#1E293B", "#475569", "#94A3B8"]
+      },
+      "dark-window": {
+        "role": "neutral",
+        "displayName": "Obsidian Shell",
+        "canonical": "#0B0F17",
+        "tonalRamp": ["#05070B", "#080C13", "#0B0F17", "#0E131F", "#131A29", "#192235", "#334155", "#9FB0C7"]
+      },
+      "dark-canvas": {
+        "role": "neutral",
+        "displayName": "Obsidian Workspace Canvas",
+        "canonical": "#0E131F",
+        "tonalRamp": ["#060913", "#090D15", "#0E131F", "#131A29", "#192235", "#24304A", "#64748B", "#CBD5E1"]
+      },
+      "dark-surface": {
+        "role": "neutral",
+        "displayName": "Obsidian Surface Well",
+        "canonical": "#131A29",
+        "tonalRamp": ["#0B0F17", "#0E131F", "#131A29", "#192235", "#222E46", "#334155", "#7C8EA6", "#E2E8F0"]
+      },
+      "dark-accent": {
+        "role": "primary",
+        "displayName": "Electric Tara Cyan",
+        "canonical": "#00D2FF",
+        "tonalRamp": ["#022430", "#034459", "#006B8A", "#0096BF", "#00D2FF", "#47E1FF", "#99F0FF", "#E6FCFF"]
+      },
+      "dark-accent-strong": {
+        "role": "primary",
+        "displayName": "Deep Cobalt Signal",
+        "canonical": "#0066FF",
+        "tonalRamp": ["#03183D", "#052C70", "#0047B3", "#0066FF", "#3385FF", "#66A3FF", "#B3D1FF", "#EDF4FF"]
+      },
+      "light-backdrop": {
+        "role": "neutral",
+        "displayName": "Ceramic Studio Backdrop",
+        "canonical": "#E6ECF4",
+        "tonalRamp": ["#1E293B", "#475569", "#64748B", "#94A3B8", "#CBD5E1", "#E6ECF4", "#F4F7FB", "#FFFFFF"]
+      },
+      "light-window": {
+        "role": "neutral",
+        "displayName": "Daylight Ceramic Canvas",
+        "canonical": "#FFFFFF",
+        "tonalRamp": ["#0A0E1A", "#334155", "#52637A", "#94A3B8", "#CBD5E1", "#EEF2F7", "#F8FAFC", "#FFFFFF"]
+      },
+      "light-surface": {
+        "role": "neutral",
+        "displayName": "Daylight Paper Well",
+        "canonical": "#F8FAFC",
+        "tonalRamp": ["#0A0E1A", "#334155", "#52637A", "#94A3B8", "#E2E8F0", "#EEF2F7", "#F8FAFC", "#FFFFFF"]
+      },
+      "light-accent": {
+        "role": "primary",
+        "displayName": "Academic Cobalt",
+        "canonical": "#0066FF",
+        "tonalRamp": ["#03183D", "#003B99", "#0052CC", "#0066FF", "#2B80FF", "#6BA6FF", "#B8D5FF", "#EFF6FF"]
+      },
+      "light-star-cyan": {
+        "role": "secondary",
+        "displayName": "Daylight Tara Cyan",
+        "canonical": "#00B4E5",
+        "tonalRamp": ["#032836", "#00556E", "#0082A8", "#00B4E5", "#33C9F0", "#7ADCFA", "#C2F0FD", "#F0FBFF"]
+      },
+      "status-ok-dark": {
+        "role": "semantic",
+        "displayName": "Verified Operational Green",
+        "canonical": "#10B981",
+        "tonalRamp": ["#052E20", "#065F46", "#059669", "#10B981", "#34D399", "#6EE7B7", "#A7F3D0", "#ECFDF5"]
+      },
+      "status-warn-dark": {
+        "role": "semantic",
+        "displayName": "Drain & Caution Amber",
+        "canonical": "#F59E0B",
+        "tonalRamp": ["#3B2002", "#78350F", "#B45309", "#D97706", "#F59E0B", "#FBBF24", "#FDE68A", "#FFFBEB"]
+      },
+      "status-danger-dark": {
+        "role": "semantic",
+        "displayName": "Tamper & Revocation Crimson",
+        "canonical": "#EF4444",
+        "tonalRamp": ["#3D0909", "#7F1D1D", "#B91C1C", "#DC2626", "#EF4444", "#F87171", "#FECACA", "#FEF2F2"]
+      }
+    },
+    "typographyMeta": {
+      "brand": { "displayName": "CogniTara Wordmark", "purpose": "Strictly reserved for the exact CogniTara brand name lockup." },
+      "display": { "displayName": "Splash & Lockout Display", "purpose": "Boot screen focal headings and critical compliance banners." },
+      "title-lg": { "displayName": "Workspace Title", "purpose": "Top-level view headings inside Server Studio and dashboards." },
+      "headline": { "displayName": "Split Stage Headline", "purpose": "Section headers across onboarding narratives and data tables." },
+      "title": { "displayName": "Panel Title", "purpose": "Well headings, vault sections, and modal headers." },
+      "body-lg": { "displayName": "Exam Passage Copy", "purpose": "Comfortable 65ch-75ch reading measure for exam questions and tours." },
+      "body": { "displayName": "Interface Body", "purpose": "Primary UI text, table cells, and descriptive settings copy." },
+      "label": { "displayName": "Interactive Label", "purpose": "Buttons, navigation items, segmented controls, and form labels." },
+      "caption": { "displayName": "Metadata Caption", "purpose": "Secondary telemetry hints and status chips (>= 12px)." },
+      "mono": { "displayName": "Tabular Technical Mono", "purpose": "Countdowns, HWIDs, license keys, LAN URLs, and server logs." }
+    },
+    "shadows": [
+      {
+        "name": "window-dark",
+        "value": "0 28px 70px -16px rgba(2, 6, 17, 0.72), 0 0 0 1px rgba(148, 163, 184, 0.14)",
+        "purpose": "Physical desktop window frame depth over Obsidian Backdrop."
+      },
+      {
+        "name": "window-light",
+        "value": "0 24px 60px -16px rgba(15, 23, 42, 0.16), 0 0 0 1px rgba(15, 23, 42, 0.08)",
+        "purpose": "Physical desktop window frame depth over Ceramic Studio Backdrop."
+      },
+      {
+        "name": "overlay-popover",
+        "value": "0 16px 36px -10px rgba(2, 6, 17, 0.55)",
+        "purpose": "System tray popover, Cmd+K command palette, and transient floating drawers."
+      }
+    ],
+    "motion": [
+      {
+        "name": "ease-out",
+        "value": "cubic-bezier(0.16, 1, 0.3, 1)",
+        "purpose": "Primary exponential deceleration curve for window morphs, drawers, and SVG choreography."
+      },
+      {
+        "name": "ease-quart",
+        "value": "cubic-bezier(0.25, 1, 0.5, 1)",
+        "purpose": "Crisp micro-interactions on hover states, tab crossfades, and segmented toggles."
+      },
+      {
+        "name": "ease-in-out",
+        "value": "cubic-bezier(0.65, 0, 0.35, 1)",
+        "purpose": "Symmetric state transitions and SVG stroke calibration arcs."
+      }
+    ],
+    "breakpoints": [
+      { "name": "mobile", "value": "640px" },
+      { "name": "tablet", "value": "900px" },
+      { "name": "compact-desktop", "value": "1024px" },
+      { "name": "desktop-window", "value": "1280px" },
+      { "name": "studio-wide", "value": "1440px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Action Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Primary server start, activation, or exam submit trigger in Cobalt Blue.",
+      "html": "<button type=\"button\" class=\"ds-btn-primary\"><svg width=\"14\" height=\"14\" viewBox=\"0 0 16 16\" fill=\"currentColor\" aria-hidden=\"true\"><path d=\"M4 2.5L13.5 8L4 13.5V2.5Z\"/></svg><span>Start Exam Server</span></button>",
+      "css": ".ds-btn-primary { display: inline-flex; align-items: center; gap: 8px; height: 38px; padding: 10px 16px; border: 1px solid rgba(255,255,255,0.12); border-radius: 6px; background: #0066FF; color: #FFFFFF; font-family: Onest, system-ui, sans-serif; font-size: 0.8125rem; font-weight: 600; cursor: pointer; transition: background 140ms cubic-bezier(0.16, 1, 0.3, 1), transform 140ms cubic-bezier(0.16, 1, 0.3, 1); } .ds-btn-primary:hover { background: #0052CC; transform: translateY(-1px); } .ds-btn-primary:focus-visible { outline: 2px solid #00D2FF; outline-offset: 2px; }"
+    },
+    {
+      "name": "Secondary Hairline Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Quiet structural action for copy, replay, backup, or secondary controls.",
+      "html": "<button type=\"button\" class=\"ds-btn-secondary\">Create Hot Backup</button>",
+      "css": ".ds-btn-secondary { display: inline-flex; align-items: center; gap: 8px; height: 38px; padding: 10px 16px; border: 1px solid rgba(148, 163, 184, 0.22); border-radius: 6px; background: #131A29; color: #F8FAFC; font-family: Onest, system-ui, sans-serif; font-size: 0.8125rem; font-weight: 500; cursor: pointer; transition: background 140ms cubic-bezier(0.16, 1, 0.3, 1), border-color 140ms cubic-bezier(0.16, 1, 0.3, 1); } .ds-btn-secondary:hover { background: #192235; border-color: rgba(0, 210, 255, 0.45); } .ds-btn-secondary:focus-visible { outline: 2px solid #00D2FF; outline-offset: 2px; }"
+    },
+    {
+      "name": "Segmented License Key Input",
+      "kind": "input",
+      "refersTo": "input-field",
+      "description": "Recessed tabular monospace field for CGNT license keys and LAN configuration.",
+      "html": "<input type=\"text\" class=\"ds-input\" value=\"CGNT-84K2-91MP-Q7RX\" aria-label=\"License Key\" />",
+      "css": ".ds-input { width: 100%; height: 40px; padding: 10px 12px; border: 1px solid rgba(148, 163, 184, 0.22); border-radius: 6px; background: #090D15; color: #F8FAFC; font-family: \"JetBrains Mono\", ui-monospace, monospace; font-size: 0.875rem; font-variant-numeric: tabular-nums; transition: border-color 140ms cubic-bezier(0.16, 1, 0.3, 1); } .ds-input:focus { outline: none; border-color: #00D2FF; box-shadow: 0 0 0 2px rgba(0, 210, 255, 0.16); }"
+    },
+    {
+      "name": "Sidebar Navigation Item",
+      "kind": "nav",
+      "refersTo": "nav-item-active",
+      "description": "Left-rail workspace link with clean active accent tint and crisp inline icon.",
+      "html": "<a href=\"#\" class=\"ds-nav-item is-active\"><svg width=\"15\" height=\"15\" viewBox=\"0 0 16 16\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.6\" aria-hidden=\"true\"><rect x=\"2\" y=\"2\" width=\"5\" height=\"5\" rx=\"1\"/><rect x=\"9\" y=\"2\" width=\"5\" height=\"5\" rx=\"1\"/><rect x=\"2\" y=\"9\" width=\"5\" height=\"5\" rx=\"1\"/><rect x=\"9\" y=\"9\" width=\"5\" height=\"5\" rx=\"1\"/></svg><span>Command Center</span></a>",
+      "css": ".ds-nav-item { display: flex; align-items: center; gap: 10px; height: 36px; padding: 8px 12px; border-radius: 6px; text-decoration: none; color: #9FB0C7; font-family: Onest, system-ui, sans-serif; font-size: 0.8125rem; font-weight: 500; transition: background 140ms cubic-bezier(0.16, 1, 0.3, 1), color 140ms cubic-bezier(0.16, 1, 0.3, 1); } .ds-nav-item:hover { background: #192235; color: #F8FAFC; } .ds-nav-item.is-active { background: rgba(0, 210, 255, 0.10); color: #00D2FF; font-weight: 600; }"
+    },
+    {
+      "name": "Hardware & Lease Status Chip",
+      "kind": "chip",
+      "refersTo": "status-chip",
+      "description": "Pill badge displaying verified hardware lock, lease countdown, or WAL state.",
+      "html": "<span class=\"ds-chip\"><svg width=\"12\" height=\"12\" viewBox=\"0 0 16 16\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" aria-hidden=\"true\"><path d=\"M3.5 8.5L6.5 11.5L12.5 4.5\"/></svg><span>3/3 Clock Anchors Intact</span></span>",
+      "css": ".ds-chip { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 9999px; border: 1px solid rgba(16, 185, 129, 0.28); background: rgba(16, 185, 129, 0.12); color: #34D399; font-family: Onest, system-ui, sans-serif; font-size: 0.75rem; font-weight: 500; font-variant-numeric: tabular-nums; }"
+    },
+    {
+      "name": "Flat Hairline Surface Well",
+      "kind": "card",
+      "refersTo": "well-panel",
+      "description": "Flat non-nested surface well divided internally by 1px structural hairlines.",
+      "html": "<div class=\"ds-well\"><div class=\"ds-well-row\"><span>SQLite Journal Mode</span><strong>WAL • Integrity OK</strong></div><div class=\"ds-well-row\"><span>Waitress Pool</span><strong>24 Threads • Port 5000</strong></div></div>",
+      "css": ".ds-well { border: 1px solid rgba(148, 163, 184, 0.14); border-radius: 10px; background: #131A29; color: #F8FAFC; font-family: Onest, system-ui, sans-serif; font-size: 0.875rem; } .ds-well-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; } .ds-well-row + .ds-well-row { border-top: 1px solid rgba(148, 163, 184, 0.12); } .ds-well-row span { color: #9FB0C7; font-size: 0.8125rem; } .ds-well-row strong { font-family: \"JetBrains Mono\", ui-monospace, monospace; font-size: 0.8125rem; font-weight: 500; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Precision Examination Console",
+    "overview": "CogniTara v2 is engineered like a precision instrument built for high-stakes academic evaluation rather than a generic cloud dashboard. Every surface commits cleanly to one of two calibrated worlds: Obsidian Studio for dark-room server orchestration, hardware security vaults, and cognitara.net infrastructure, and Daylight Ceramic for glare-free classroom assessment, exam authoring, and daylight server monitoring. Both modes share the same disciplined Cobalt and Electric Cyan optical lineage rooted in the Luminary C and Tara Guiding Star emblem.\n\nVisual restraint is functional, not minimal for its own sake. Structural hierarchy relies on 1px hairlines, deliberate tonal wells, clear typographic scale, and smooth exponential deceleration motion (cubic-bezier(0.16, 1, 0.3, 1)), eliminating decorative card stacking, unbranded rainbow gradients, and kinetic gimmicks so administrators and students read state effortlessly under pressure.",
+    "keyCharacteristics": [
+      "Dual-Theme Parity: Seamless live switching between Obsidian Studio ([data-theme=\"dark\"]) and Daylight Ceramic ([data-theme=\"light\"]) with hue-tinted neutrals that hold WCAG AA contrast in both modes.",
+      "Flat-By-Default Architectural Panes: Split stages, structural 1px rules, and crisp tonal wells replace nested cards inside cards.",
+      "Self-Hosted Offline Typography: Onest for clean interface legibility, JetBrains Mono with tabular numerals for timers, LAN URLs, and cryptographic hashes, and CogniTaraType strictly scoped to the CogniTara brand lockup.",
+      "Physical Deceleration Motion: Choreographed optical reveals and state transitions settle smoothly with exponential ease-out (cubic-bezier(0.16, 1, 0.3, 1)), never rubbery bounce or overshoot curves."
+    ],
+    "rules": [
+      {
+        "name": "The Accent Discipline Rule",
+        "body": "Cobalt Blue and Electric Cyan occupy at most ten percent of any viewport; structural surfaces remain calm slate or ceramic white so active telemetry and primary actions stand out immediately.",
+        "section": "colors"
+      },
+      {
+        "name": "The Hue-Tinted Ink Rule",
+        "body": "Secondary and muted text on dark surfaces always carries cool slate undertone (dark-ink-secondary and dark-ink-muted) rather than flat pure gray so contrast never washes out.",
+        "section": "colors"
+      },
+      {
+        "name": "The Semantic-Only Status Rule",
+        "body": "Emerald (status-ok-*), amber (status-warn-*), and crimson (status-danger-*) appear exclusively on live engine health badges, clock-tamper alerts, warning counters, and revocation lockouts—never as decorative section accents.",
+        "section": "colors"
+      },
+      {
+        "name": "The Wordmark Isolation Rule",
+        "body": "CogniTaraType renders only the brand name CogniTara; interface headings and subtitles always use Onest so non-wordmark glyphs remain undistorted.",
+        "section": "typography"
+      },
+      {
+        "name": "The Heading-Free-of-Eyebrows Rule",
+        "body": "Headings stand on their own weight and size without tracked-out uppercase eyebrow labels or decorative section numbers stacked above them.",
+        "section": "typography"
+      },
+      {
+        "name": "The Flat-By-Default Rule",
+        "body": "Static panels, exam cards, and telemetry rows carry zero drop shadows at rest and never nest rounded cards inside other bordered cards.",
+        "section": "elevation"
+      },
+      {
+        "name": "The Exponential Deceleration Rule",
+        "body": "All UI transitions and boot choreography use cubic-bezier(0.16, 1, 0.3, 1) or cubic-bezier(0.25, 1, 0.5, 1) from already-visible defaults; bounce and spring overshoot curves are prohibited.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Do self-host Onest, JetBrains Mono, and CogniTaraType locally under /static/fonts/ with zero remote font or CDN requests.",
+      "Do support live [data-theme=\"dark\"] and [data-theme=\"light\"] switching via document.startViewTransition (with smooth fallback) across the Desktop Server Studio.",
+      "Do flatten layouts using 1px hairline dividers and stepped surface tones (canvas vs surface vs well) rather than nested cards.",
+      "Do use exponential deceleration (cubic-bezier(0.16, 1, 0.3, 1)) and keep content visible at rest (opacity: 1) when animations are reduced or skipped.",
+      "Do maintain >= 4.5:1 contrast on body text, >= 14px exam/body copy, and >= 12px interactive UI labels."
+    ],
+    "donts": [
+      "Don't nest cards inside cards, wrap every feature item in equal-size icon-plus-heading boxes, or draw decorative border-left or border-right stripes above 1px.",
+      "Don't place tracked-out uppercase eyebrow/kicker labels above headings, append -> to button text, or use 01 / 02 / 03 decorative section numbers.",
+      "Don't use CSS linear-gradient grid-line backgrounds, colored radial spotlight clouds, zero-offset neon glow shadows, bounce/spring overshoot curves, or emoji icons.",
+      "Don't use Tailwind CSS, unbranded violet/purple gradients, or apply CogniTaraType to general body copy or headings containing non-wordmark glyphs."
+    ]
+  }
+}

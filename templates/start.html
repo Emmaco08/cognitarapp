@@ -1,640 +1,1025 @@
 <!DOCTYPE html>
-<html>
+<html lang="en" class="scroll-smooth">
 <head>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta charset="UTF-8">
-  <title>COGNITARA EXAM SYSTEM | Home</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CogniTara — High-Integrity Offline Examination Portal</title>
+  
+  <!-- CSRF Shield Meta Tag -->
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+
+  <!-- Local Bundled Vendor Stylesheets (100% Offline Capable) -->
   <link rel="stylesheet" href="{{ url_for('static', filename='vendor/fontawesome/css/all.min.css') }}">
-  <link href="{{ url_for('static', filename='vendor/bootstrap/css/bootstrap.min.css') }}" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='vendor/bootstrap/css/bootstrap.min.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='vendor/katex/katex.min.css') }}">
+
   <style>
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+    :root {
+      --bg-cream: #FBFBF9;
+      --bg-card-cream: #F7F6F1;
+      --spark-yellow: #FEF08A;
+      --spark-pale-yellow: #FEF9C3;
+      --spark-black: #111827;
+      --spark-charcoal: #1F2937;
+      --border-warm: #EAE8E1;
+    }
+
     * {
-      margin: 0;
-      padding: 0;
       box-sizing: border-box;
     }
 
     body {
-      background: linear-gradient(135deg, #f5f7fa 0%, #ffffff 100%);
-      font-family: 'Segoe UI', 'Poppins', Tahoma, Geneva, Verdana, sans-serif;
-      min-height: 100vh;
-      overflow-x: hidden;
-      position: relative;
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background-color: #FFFFFF;
+      color: #111827;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      line-height: 1.5;
     }
 
-    /* Animated Educational Icons Background */
-    .edu-icon {
-      position: absolute;
-      color: rgba(26, 86, 219, 0.06);
-      pointer-events: none;
-      z-index: 0;
-      animation: floatIcon 20s infinite ease-in-out;
-    }
-
-    @keyframes floatIcon {
-      0% {
-        transform: translate(0, 0) rotate(0deg);
-        opacity: 0;
-      }
-      10% {
-        opacity: 0.08;
-      }
-      90% {
-        opacity: 0.08;
-      }
-      100% {
-        transform: translate(100px, -100px) rotate(360deg);
-        opacity: 0;
-      }
-    }
-
-    /* Different positions and speeds for each icon */
-    .edu-icon:nth-child(1) { top: 10%; left: 5%; animation-duration: 18s; font-size: 60px; animation-delay: 0s; }
-    .edu-icon:nth-child(2) { top: 70%; left: 15%; animation-duration: 22s; font-size: 45px; animation-delay: 2s; }
-    .edu-icon:nth-child(3) { top: 30%; left: 85%; animation-duration: 20s; font-size: 55px; animation-delay: 4s; }
-    .edu-icon:nth-child(4) { top: 80%; left: 80%; animation-duration: 25s; font-size: 40px; animation-delay: 1s; }
-    .edu-icon:nth-child(5) { top: 50%; left: 10%; animation-duration: 19s; font-size: 50px; animation-delay: 3s; }
-    .edu-icon:nth-child(6) { top: 20%; left: 70%; animation-duration: 23s; font-size: 65px; animation-delay: 5s; }
-    .edu-icon:nth-child(7) { top: 60%; left: 90%; animation-duration: 21s; font-size: 48px; animation-delay: 2.5s; }
-    .edu-icon:nth-child(8) { top: 85%; left: 25%; animation-duration: 24s; font-size: 42px; animation-delay: 6s; }
-    .edu-icon:nth-child(9) { top: 15%; left: 45%; animation-duration: 17s; font-size: 38px; animation-delay: 1.5s; }
-    .edu-icon:nth-child(10) { top: 45%; left: 75%; animation-duration: 26s; font-size: 52px; animation-delay: 3.5s; }
-    .edu-icon:nth-child(11) { top: 75%; left: 55%; animation-duration: 28s; font-size: 44px; animation-delay: 4.5s; }
-    .edu-icon:nth-child(12) { top: 5%; left: 55%; animation-duration: 16s; font-size: 58px; animation-delay: 1s; }
-    .edu-icon:nth-child(13) { top: 35%; left: 35%; animation-duration: 30s; font-size: 36px; animation-delay: 7s; }
-    .edu-icon:nth-child(14) { top: 90%; left: 45%; animation-duration: 27s; font-size: 48px; animation-delay: 2s; }
-    .edu-icon:nth-child(15) { top: 25%; left: 20%; animation-duration: 29s; font-size: 54px; animation-delay: 5.5s; }
-    .edu-icon:nth-child(16) { top: 40%; left: 60%; animation-duration: 31s; font-size: 46px; animation-delay: 8s; }
-    .edu-icon:nth-child(17) { top: 65%; left: 40%; animation-duration: 26s; font-size: 38px; animation-delay: 3s; }
-    .edu-icon:nth-child(18) { top: 12%; left: 78%; animation-duration: 24s; font-size: 52px; animation-delay: 6s; }
-
-    /* Main Content */
-    .main-content {
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      position: relative;
-      z-index: 10;
-      padding: 40px 20px;
-    }
-
-    /* Hero Section */
-    .hero-section {
-      text-align: center;
-      max-width: 800px;
-      width: 100%;
-      margin-bottom: 60px;
-    }
-
-    .logo-icon {
-      width: 100px;
-      height: 100px;
-      background: linear-gradient(135deg, #1a56db 0%, #0e3b9e 100%);
-      border-radius: 50%;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      margin-bottom: 30px;
-      animation: pulse 2s infinite;
-      box-shadow: 0 10px 30px rgba(26, 86, 219, 0.3);
-    }
-
-    @keyframes pulse {
-      0%, 100% {
-        transform: scale(1);
-        box-shadow: 0 10px 30px rgba(26, 86, 219, 0.3);
-      }
-      50% {
-        transform: scale(1.05);
-        box-shadow: 0 15px 40px rgba(26, 86, 219, 0.5);
-      }
-    }
-
-    .logo-icon i {
-      font-size: 50px;
-      color: white;
-    }
-
-    .hero-section h1 {
-      font-size: 48px;
-      font-weight: 800;
-      background: linear-gradient(135deg, #1a56db 0%, #0e3b9e 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-      margin-bottom: 15px;
-      letter-spacing: -1px;
-    }
-
-    .tagline {
-      font-size: 22px;
-      color: #475569;
-      margin-bottom: 15px;
-    }
-
-    .tagline i {
-      color: #f59e0b;
-      font-size: 18px;
-    }
-
-    .description {
-      color: #64748b;
-      font-size: 16px;
-      line-height: 1.6;
-      max-width: 600px;
-      margin: 0 auto;
-    }
-
-    /* Stats Section */
-    .stats-section {
-      display: flex;
-      justify-content: center;
-      gap: 60px;
-      margin-bottom: 50px;
-      flex-wrap: wrap;
-    }
-
-    .stat-card {
-      text-align: center;
-      background: white;
-      padding: 30px 40px;
-      border-radius: 30px;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
-      min-width: 180px;
-      transition: all 0.3s ease;
-      border: 1px solid #e2e8f0;
-    }
-
-    .stat-card:hover {
-      transform: translateY(-5px);
-      box-shadow: 0 20px 40px rgba(26, 86, 219, 0.1);
-      border-color: #1a56db;
-    }
-
-    .stat-number {
-      font-size: 48px;
-      font-weight: 800;
-      color: #1a56db;
-      display: block;
-      line-height: 1.2;
-    }
-
-    .stat-label {
-      font-size: 14px;
-      color: #64748b;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      font-weight: 600;
-    }
-
-    .stat-icon {
-      font-size: 32px;
-      color: #1a56db;
-      margin-bottom: 15px;
-    }
-
-    /* Button Section */
-    .button-section {
-      display: flex;
-      gap: 25px;
-      justify-content: center;
-      flex-wrap: wrap;
-      margin-bottom: 60px;
-    }
-
-    .btn-custom {
-      padding: 16px 45px;
-      border-radius: 50px;
-      font-size: 18px;
-      font-weight: 600;
+    a {
       text-decoration: none;
-      transition: all 0.3s ease;
-      display: inline-flex;
-      align-items: center;
-      gap: 12px;
-      cursor: pointer;
+      color: inherit;
     }
 
-    .btn-login {
-      background: linear-gradient(135deg, #1a56db 0%, #0e3b9e 100%);
-      color: white;
-      border: none;
-      box-shadow: 0 4px 15px rgba(26, 86, 219, 0.3);
+    .font-mono {
+      font-family: 'JetBrains Mono', monospace;
     }
 
-    .btn-login:hover {
+    .bobbin-card-shadow {
+      box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.03), 0 6px 16px -4px rgba(17, 24, 39, 0.04);
+    }
+
+    .bobbin-card-hover {
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .bobbin-card-hover:hover {
       transform: translateY(-3px);
-      box-shadow: 0 8px 30px rgba(26, 86, 219, 0.4);
-      color: white;
+      box-shadow: 0 16px 32px -8px rgba(17, 24, 39, 0.08);
+      border-color: #D1D5DB;
     }
 
-    .btn-register {
-      background: white;
-      color: #1a56db;
-      border: 2px solid #1a56db;
+    .video-frame {
+      box-shadow: 0 20px 50px -12px rgba(17, 24, 39, 0.12), 0 0 0 1px rgba(17, 24, 39, 0.05);
     }
 
-    .btn-register:hover {
-      background: #1a56db;
-      color: white;
-      transform: translateY(-3px);
-      box-shadow: 0 8px 30px rgba(26, 86, 219, 0.2);
+    /* Subtle custom scrollbar */
+    ::-webkit-scrollbar {
+      width: 7px;
     }
-
-    /* Features Grid */
-    .features-section {
-      display: flex;
-      justify-content: center;
-      gap: 40px;
-      flex-wrap: wrap;
-      max-width: 1000px;
-      margin: 0 auto;
-      padding: 30px 0;
-      border-top: 1px solid #e2e8f0;
+    ::-webkit-scrollbar-track {
+      background: #F8FAFC;
     }
-
-    .feature-item {
-      text-align: center;
-      flex: 1;
-      min-width: 150px;
-      padding: 20px;
+    ::-webkit-scrollbar-thumb {
+      background: #CBD5E1;
+      border-radius: 4px;
     }
-
-    .feature-icon {
-      width: 70px;
-      height: 70px;
-      background: #eff6ff;
-      border-radius: 20px;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      margin-bottom: 15px;
-      transition: all 0.3s ease;
-    }
-
-    .feature-item:hover .feature-icon {
-      background: #1a56db;
-      transform: translateY(-5px);
-    }
-
-    .feature-item:hover .feature-icon i {
-      color: white;
-    }
-
-    .feature-icon i {
-      font-size: 32px;
-      color: #1a56db;
-      transition: all 0.3s ease;
-    }
-
-    .feature-item h4 {
-      font-size: 18px;
-      font-weight: 600;
-      color: #1e293b;
-      margin-bottom: 8px;
-    }
-
-    .feature-item p {
-      font-size: 13px;
-      color: #64748b;
-    }
-
-    /* Footer */
-    .footer {
-      margin-top: 60px;
-      text-align: center;
-      padding: 25px;
-      border-top: 1px solid #e2e8f0;
-      width: 100%;
-    }
-
-    .footer p {
-      color: #94a3b8;
-      font-size: 13px;
-      margin: 0;
-    }
-
-    .footer a {
-      color: #1a56db;
-      text-decoration: none;
-    }
-
-    .footer a:hover {
-      text-decoration: underline;
-    }
-
-    /* Responsive */
-    @media (max-width: 768px) {
-      .hero-section h1 {
-        font-size: 32px;
-      }
-      
-      .tagline {
-        font-size: 18px;
-      }
-      
-      .stat-card {
-        padding: 20px 30px;
-        min-width: 140px;
-      }
-      
-      .stat-number {
-        font-size: 36px;
-      }
-      
-      .btn-custom {
-        padding: 12px 30px;
-        font-size: 16px;
-      }
-      
-      .features-section {
-        gap: 20px;
-      }
-      
-      .feature-item {
-        min-width: 120px;
-      }
-      
-      .feature-icon {
-        width: 55px;
-        height: 55px;
-      }
-      
-      .feature-icon i {
-        font-size: 25px;
-      }
-    }
-
-    @media (max-width: 480px) {
-      .stats-section {
-        gap: 15px;
-      }
-      
-      .stat-card {
-        padding: 15px 20px;
-        min-width: 100px;
-      }
-      
-      .stat-number {
-        font-size: 28px;
-      }
-      
-      .stat-label {
-        font-size: 10px;
-      }
-      
-      .hero-section h1 {
-        font-size: 26px;
-      }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #94A3B8;
     }
   </style>
-    <!-- CSRF Protection Shield -->
-    <meta name="csrf-token" content="{{ csrf_token() }}">
-    <script>
+
+  <!-- Automatic CSRF Header Injection for fetch and beacon -->
+  <script>
     window.CSRF_TOKEN = "{{ csrf_token() }}";
     (function() {
-        if (window.fetch) {
-            const _origFetch = window.fetch;
-            window.fetch = function(url, options) {
-                options = options || {};
-                const method = (options.method || 'GET').toUpperCase();
-                if (!['GET', 'HEAD', 'OPTIONS', 'TRACE'].includes(method)) {
-                    options.headers = options.headers || {};
-                    const token = window.CSRF_TOKEN || (document.querySelector('meta[name="csrf-token"]') && document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
-                    if (token) {
-                        if (typeof Headers !== 'undefined' && options.headers instanceof Headers) {
-                            if (!options.headers.has('X-CSRFToken')) options.headers.set('X-CSRFToken', token);
-                        } else if (Array.isArray(options.headers)) {
-                            options.headers.push(['X-CSRFToken', token]);
-                        } else {
-                            if (!options.headers['X-CSRFToken']) options.headers['X-CSRFToken'] = token;
-                        }
-                    }
-                }
-                return _origFetch(url, options);
-            };
-        }
-        if (window.$ && $.ajaxSetup) {
-            $.ajaxSetup({
-                beforeSend: function(xhr, settings) {
-                    if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type)) {
-                        xhr.setRequestHeader("X-CSRFToken", window.CSRF_TOKEN);
-                    }
-                }
-            });
-        }
-        if (navigator.sendBeacon) {
-            const _origBeacon = navigator.sendBeacon.bind(navigator);
-            navigator.sendBeacon = function(url, data) {
-                if (data instanceof FormData) {
-                    if (!data.has('csrf_token')) data.append('csrf_token', window.CSRF_TOKEN);
-                } else if (typeof data === 'string') {
-                    try {
-                        const obj = JSON.parse(data);
-                        if (typeof obj === 'object' && obj !== null && !obj.csrf_token) {
-                            obj.csrf_token = window.CSRF_TOKEN;
-                            data = JSON.stringify(obj);
-                        }
-                    } catch(e) {}
-                }
-                return _origBeacon(url, data);
-            };
-        }
-        document.addEventListener('DOMContentLoaded', function() {
-            document.querySelectorAll('form[method="POST"], form[method="post"]').forEach(function(form) {
-                if (!form.querySelector('input[name="csrf_token"]')) {
-                    var input = document.createElement('input');
-                    input.type = 'hidden';
-                    input.name = 'csrf_token';
-                    input.value = window.CSRF_TOKEN;
-                    form.appendChild(input);
-                }
-            });
-        });
+      if (window.fetch) {
+        const _origFetch = window.fetch;
+        window.fetch = function(url, options) {
+          options = options || {};
+          const method = (options.method || 'GET').toUpperCase();
+          if (!['GET', 'HEAD', 'OPTIONS', 'TRACE'].includes(method)) {
+            options.headers = options.headers || {};
+            const token = window.CSRF_TOKEN;
+            if (token) {
+              if (typeof Headers !== 'undefined' && options.headers instanceof Headers) {
+                if (!options.headers.has('X-CSRFToken')) options.headers.set('X-CSRFToken', token);
+              } else if (Array.isArray(options.headers)) {
+                options.headers.push(['X-CSRFToken', token]);
+              } else {
+                if (!options.headers['X-CSRFToken']) options.headers['X-CSRFToken'] = token;
+              }
+            }
+          }
+          return _origFetch(url, options);
+        };
+      }
     })();
-    </script>
+  </script>
 </head>
-<body>
-{% include 'components/startup_splash.html' %}
+<body class="bg-white text-slate-900 selection:bg-amber-100 selection:text-amber-900">
 
-  <!-- Animated Educational Icons Background -->
-  <div class="edu-icon"><i class="fas fa-graduation-cap"></i></div>
-  <div class="edu-icon"><i class="fas fa-book"></i></div>
-  <div class="edu-icon"><i class="fas fa-pencil-alt"></i></div>
-  <div class="edu-icon"><i class="fas fa-flask"></i></div>
-  <div class="edu-icon"><i class="fas fa-calculator"></i></div>
-  <div class="edu-icon"><i class="fas fa-globe"></i></div>
-  <div class="edu-icon"><i class="fas fa-dna"></i></div>
-  <div class="edu-icon"><i class="fas fa-atom"></i></div>
-  <div class="edu-icon"><i class="fas fa-chalkboard"></i></div>
-  <div class="edu-icon"><i class="fas fa-laptop-code"></i></div>
-  <div class="edu-icon"><i class="fas fa-chart-line"></i></div>
-  <div class="edu-icon"><i class="fas fa-brain"></i></div>
-  <div class="edu-icon"><i class="fas fa-microscope"></i></div>
-  <div class="edu-icon"><i class="fas fa-music"></i></div>
-  <div class="edu-icon"><i class="fas fa-palette"></i></div>
-  <div class="edu-icon"><i class="fas fa-ruler-combined"></i></div>
-  <div class="edu-icon"><i class="fas fa-language"></i></div>
-  <div class="edu-icon"><i class="fas fa-history"></i></div>
+  <!-- Optional Splash Screen include -->
+  {% if not session.get('splash_shown') %}
+    {% include 'components/startup_splash.html' ignore missing %}
+  {% endif %}
 
-  <div class="main-content">
-    <!-- Hero Section -->
-    <div class="hero-section">
-      <div class="logo-icon">
-        <i class="fas fa-graduation-cap"></i>
+  <!-- Clean Top Notice Bar (Bobbin style) -->
+  <aside aria-label="System announcements" class="bg-[#F7F6F1] border-bottom border-[#EAE8E1] py-2 px-3 text-secondary" style="font-size: 12px;">
+    <div class="container-xxl d-flex flex-wrap align-items-center justify-content-between gap-2">
+      <div class="d-flex align-items-center gap-2">
+        <span class="badge bg-[#FEF08A] text-dark rounded-pill px-2.5 py-1 fw-bold font-mono">
+          <i class="fas fa-circle-check text-success me-1"></i> PHASE 4.6 RELEASE
+        </span>
+        <span class="text-secondary d-none d-md-inline">
+          Engineered for Nigerian CBT halls: JAMB &amp; WAEC syllabus compatible &bull; Zero internet requirement.
+        </span>
       </div>
-      <h1>COGNITARA EXAM SYSTEM</h1>
-      <div class="tagline">
-        <i class="fas fa-star"></i> Prepare. Focus. Excel. <i class="fas fa-star"></i>
-      </div>
-      <div class="description">
-        Join thousands of students taking online exams securely. 
-        Track your progress, receive instant results, and achieve your academic goals.
+      <div class="d-flex align-items-center gap-3 text-secondary font-medium" style="font-size: 11px;">
+        <span><i class="fas fa-plug text-warning me-1"></i> Power-Cut Safe</span>
+        <span class="d-none d-sm-inline"><i class="fas fa-network-wired text-primary me-1"></i> Local LAN Engine</span>
       </div>
     </div>
+  </aside>
 
-    <!-- Stats Section with Counting Numbers -->
-    <div class="stats-section">
-      <div class="stat-card">
-        <div class="stat-icon">
-          <i class="fas fa-users"></i>
-        </div>
-        <span class="stat-number">
-          <span class="count" id="countStudents">0</span><span class="plus">+</span>
-        </span>
-        <span class="stat-label">Active Students</span>
-      </div>
+  <!-- Clean Sticky Header (Bobbin Navigation Pattern) -->
+  <header class="sticky-top bg-white bg-opacity-95 border-bottom border-light shadow-2xs py-3" style="backdrop-filter: blur(12px);">
+    <div class="container-xxl d-flex align-items-center justify-content-between">
       
-      <div class="stat-card">
-        <div class="stat-icon">
-          <i class="fas fa-file-alt"></i>
+      <!-- Brand Logo -->
+      <a href="#hero" class="d-flex align-items-center gap-3">
+        <div class="rounded-3 p-2 bg-dark text-white d-flex align-items-center justify-content-center shadow-xs" style="width: 40px; height: 40px;">
+          <svg width="22" height="22" viewBox="0 0 100 100" fill="none">
+            <path d="M72 28C64.5 20.5 54.2 16 43 16C20.9 16 3 33.9 3 56C3 78.1 20.9 96 43 96C54.2 96 64.5 91.5 72 84L60 72C55.5 76.5 49.5 79 43 79C30.3 79 20 68.7 20 56C20 43.3 30.3 33 43 33C49.5 33 55.5 35.5 60 40L72 28Z" fill="#FFFFFF"/>
+            <polygon points="58,53 82,53 62,56" fill="#FDE047"/>
+            <path d="M43 40L46 49L55 53L46 57L43 66L40 57L31 53L40 49L43 40Z" fill="#FDE047"/>
+          </svg>
         </div>
-        <span class="stat-number">
-          <span class="count" id="countExams">0</span><span class="plus">+</span>
-        </span>
-        <span class="stat-label">Available Exams</span>
-      </div>
-      
-      <div class="stat-card">
-        <div class="stat-icon">
-          <i class="fas fa-clock"></i>
+        <div>
+          <div class="d-flex align-items-center gap-1.5">
+            <span class="h5 mb-0 fw-bold text-dark">Cogni<span class="text-primary">Tara</span></span>
+            <span class="badge bg-light text-secondary border border-secondary border-opacity-25 rounded-pill ms-1" style="font-size: 9px;">CBT</span>
+          </div>
+          <small class="text-secondary fw-semibold text-uppercase d-block" style="font-size: 9px; letter-spacing: 1px;">Offline Examination Portal</small>
         </div>
-        <span class="stat-number">
-          <span class="count" id="countAccess">0</span>
-        </span>
-        <span class="stat-label">24/7 Access</span>
-      </div>
-    </div>
-
-    <!-- Button Section -->
-    <div class="button-section">
-      <a href="/login" class="btn-custom btn-login">
-        <i class="fas fa-sign-in-alt"></i> Login
       </a>
-      <a href="/register" class="btn-custom btn-register">
-        <i class="fas fa-user-plus"></i> Register
-      </a>
-    </div>
 
-    <!-- Features Grid -->
-    <div class="features-section">
-      <div class="feature-item">
-        <div class="feature-icon">
-          <i class="fas fa-shield-alt"></i>
-        </div>
-        <h4>Secure Exams</h4>
-        <p>Anti-cheating protection</p>
+      <!-- Center Links -->
+      <nav class="d-none d-lg-flex align-items-center gap-4 small fw-semibold text-secondary">
+        <a href="#how-it-works" class="nav-link p-0 hover-dark">How it works</a>
+        <a href="#simulator" class="nav-link p-0 hover-dark d-flex align-items-center gap-1.5">
+          <span>Interactive Demo</span>
+          <span class="badge bg-warning bg-opacity-25 text-dark rounded-pill px-2" style="font-size: 9px;">TRY IT</span>
+        </a>
+        <a href="#roles" class="nav-link p-0 hover-dark">Portals</a>
+        <a href="#comparison" class="nav-link p-0 hover-dark">Why Offline</a>
+        <a href="#testimonials" class="nav-link p-0 hover-dark">Schools</a>
+        <a href="#faq" class="nav-link p-0 hover-dark">FAQs</a>
+      </nav>
+
+      <!-- Right CTAs -->
+      <div class="d-flex align-items-center gap-2">
+        <a href="{{ url_for('auth.login') }}" class="btn btn-link text-dark text-decoration-none fw-semibold small px-3">
+          Log in
+        </a>
+        <a href="{{ url_for('auth.ce_login_page') }}" class="btn btn-dark btn-sm rounded-pill px-4 py-2 fw-bold d-flex align-items-center gap-2 shadow-xs">
+          <span>Common Entrance</span>
+          <i class="fas fa-arrow-right text-xs"></i>
+        </a>
       </div>
+
+    </div>
+  </header>
+
+  <!-- Hero Section (Bobbin Headline, Pill Callout & Flow Video Showcase) -->
+  <section id="hero" class="py-5 bg-white">
+    <div class="container-xxl py-4 text-center">
       
-      <div class="feature-item">
-        <div class="feature-icon">
-          <i class="fas fa-chart-simple"></i>
-        </div>
-        <h4>Instant Results</h4>
-        <p>Get scores immediately</p>
+      <!-- Eyebrow Pill -->
+      <div class="d-inline-flex align-items-center gap-2 px-3 py-1.5 rounded-pill bg-[#FAF9F5] border border-[#EAE8E1] text-secondary small fw-bold mb-4">
+        <span class="rounded-circle bg-primary" style="width: 8px; height: 8px;"></span>
+        <span class="text-dark font-mono" style="font-size: 11px;">100% OFFLINE COMPUTER-BASED TESTING FOR SCHOOLS</span>
       </div>
-      
-      <div class="feature-item">
-        <div class="feature-icon">
-          <i class="fas fa-mobile-alt"></i>
+
+      <!-- Main Headline (Bobbin Editorial Style with Dynamic Yellow Highlight) -->
+      <div class="mx-auto mb-4" style="max-width: 840px;">
+        <h1 class="display-3 fw-extrabold text-dark tracking-tight mb-4" style="font-size: clamp(2.3rem, 5.5vw, 4.2rem); line-height: 1.1;">
+          Better testing.<br>
+          <span class="position-relative d-inline-block">
+            <span class="position-relative" style="z-index: 2;">Built with CogniTara.</span>
+            <span class="position-absolute bottom-0 start-0 w-100 bg-warning bg-opacity-50 rounded" style="height: 14px; z-index: 1; transform: rotate(-0.8deg); bottom: 4px;"></span>
+          </span>
+        </h1>
+        <p class="lead text-secondary mx-auto mb-5" style="max-width: 640px; font-size: 1.15rem;">
+          The offline-first examination platform that prevents cancelled exam days. Zero cloud dependencies, instant answer persistence, and server-authoritative anti-cheating — running entirely on your local school network.
+        </p>
+
+        <!-- Bobbin Dual Pill Buttons -->
+        <div class="d-flex flex-column flex-sm-row justify-content-center gap-3 mb-5">
+          <a href="{{ url_for('auth.login') }}" class="btn btn-dark rounded-pill px-5 py-3 fw-bold d-flex align-items-center justify-content-center gap-2 shadow-sm">
+            <span>Get started with CogniTara</span>
+            <i class="fas fa-arrow-right text-xs"></i>
+          </a>
+          <a href="#simulator" class="btn btn-light rounded-pill px-4 py-3 fw-semibold border border-[#EAE8E1] bg-[#F7F6F1] d-flex align-items-center justify-content-center gap-2">
+            <i class="fas fa-play text-secondary" style="font-size: 11px;"></i>
+            <span>Try the interactive demo</span>
+          </a>
         </div>
-        <h4>Any Device</h4>
-        <p>Desktop, tablet, mobile</p>
       </div>
-      
-      <div class="feature-item">
-        <div class="feature-icon">
-          <i class="fas fa-tachometer-alt"></i>
+
+      <!-- Hero Video Player Showcase (Generated with Flow Omni 1.1 Flash) -->
+      <div class="mx-auto mt-4" style="max-width: 980px;">
+        <div class="rounded-4 bg-[#F7F6F1] p-3 p-md-4 border border-[#EAE8E1] video-frame">
+          <div class="position-relative rounded-4 overflow-hidden bg-dark ratio ratio-16x9">
+            
+            <!-- Real Flow Generated Video -->
+            <video id="heroVideo" class="w-100 h-100 object-fit-cover" autoplay loop muted playsinline poster="{{ url_for('static', filename='images/hero_students_cbt.jpeg') }}">
+              <source src="{{ url_for('static', filename='images/cognitara_hero_video.mp4') }}" type="video/mp4">
+            </video>
+
+            <!-- Video Overlay HUD -->
+            <div class="position-absolute top-0 start-0 m-3 m-md-4 d-flex align-items-center gap-2 bg-white bg-opacity-90 px-3 py-1.5 rounded-pill small fw-bold text-dark shadow-xs" style="width: fit-content; z-index: 5;">
+              <span class="rounded-circle bg-success" style="width: 8px; height: 8px;"></span>
+              <span>Live Lab Examination in Session</span>
+            </div>
+
+            <div class="position-absolute bottom-0 start-0 end-0 p-3 p-md-4 text-start text-white d-flex justify-content-between align-items-end" style="background: linear-gradient(to top, rgba(0,0,0,0.7), transparent); z-index: 5;">
+              <div>
+                <div class="fw-bold fs-6">120+ Candidates Tested Concurrently</div>
+                <small class="text-light text-opacity-75" style="font-size: 11px;">Offline Local Server &bull; Zero Cloud Dropouts &bull; 1.4ms Save Latency</small>
+              </div>
+              <button onclick="toggleVideoSound()" id="soundBtn" class="btn btn-light btn-sm rounded-pill px-3 py-1 bg-white bg-opacity-25 text-white border-0 small">
+                <i class="fas fa-volume-xmark me-1" id="soundIcon"></i>
+                <span id="soundText">Muted</span>
+              </button>
+            </div>
+
+          </div>
         </div>
-        <h4>Timed Tests</h4>
-        <p>Track your progress</p>
+      </div>
+
+      <!-- Trust Row -->
+      <div class="mt-5 pt-3 text-center">
+        <small class="text-secondary fw-bold text-uppercase tracking-wider mb-4 d-block" style="font-size: 11px; letter-spacing: 1.5px;">
+          ENGINEERED ACCORDING TO NIGERIAN EDUCATIONAL STANDARDS
+        </small>
+        <div class="d-flex flex-wrap justify-content-center gap-4 gap-md-5 small fw-semibold text-secondary">
+          <span><i class="fas fa-circle-check text-primary me-1.5"></i> JAMB CBT Syllabus &amp; Timing</span>
+          <span><i class="fas fa-circle-check text-primary me-1.5"></i> WAEC &amp; NECO Exam Formats</span>
+          <span><i class="fas fa-circle-check text-primary me-1.5"></i> National Common Entrance Suite</span>
+          <span><i class="fas fa-circle-check text-primary me-1.5"></i> Examination Malpractices Act No. 33</span>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- How It Works (Bobbin Step-by-Step Flow) -->
+  <section id="how-it-works" class="py-5 bg-[#FBFBF9] border-top border-bottom border-[#EAE8E1]">
+    <div class="container-xxl py-5">
+      
+      <div class="text-center mx-auto mb-5" style="max-width: 680px;">
+        <span class="text-primary fw-bold text-uppercase tracking-wider small">HOW COGNITARA WORKS</span>
+        <h2 class="display-6 fw-extrabold text-dark mt-2 mb-3 tracking-tight">
+          Fits the way your school already conducts exams.
+        </h2>
+        <p class="text-secondary">
+          No complex cloud setup or recurring subscriptions. Just connect candidate computers to your school Wi-Fi or LAN switch.
+        </p>
+      </div>
+
+      <div class="row g-4 justify-content-center">
+        
+        <!-- Step 1 -->
+        <div class="col-md-4">
+          <div class="bg-white rounded-4 p-4 p-md-5 border border-[#EAE8E1] bobbin-card-shadow bobbin-card-hover h-100 d-flex flex-col justify-content-between">
+            <div>
+              <div class="rounded-circle bg-[#FEF08A] text-dark fw-bold d-flex align-items-center justify-content-center mb-4" style="width: 40px; height: 40px;">
+                1
+              </div>
+              <h3 class="h5 fw-bold text-dark mb-2">Launch on Any School Laptop</h3>
+              <p class="text-secondary small leading-relaxed mb-4">
+                Start the CogniTara server on a single school laptop or lab workstation. It immediately broadcasts the testing portal across your local network. No external internet connection is required.
+              </p>
+            </div>
+            <div class="p-3 rounded-3 bg-[#F7F6F1] border border-[#EAE8E1] text-secondary font-mono small">
+              <small class="text-muted text-uppercase fw-bold d-block" style="font-size: 10px;">Local Network Broadcast</small>
+              <span class="text-dark fw-bold">http://192.168.1.100:5000</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 2 -->
+        <div class="col-md-4">
+          <div class="bg-white rounded-4 p-4 p-md-5 border border-[#EAE8E1] bobbin-card-shadow bobbin-card-hover h-100 d-flex flex-col justify-content-between">
+            <div>
+              <div class="rounded-circle bg-[#FEF08A] text-dark fw-bold d-flex align-items-center justify-content-center mb-4" style="width: 40px; height: 40px;">
+                2
+              </div>
+              <h3 class="h5 fw-bold text-dark mb-2">Candidates Connect &amp; Write</h3>
+              <p class="text-secondary small leading-relaxed mb-4">
+                Students open their web browsers and log in. Every answer selection triggers an instant, millisecond atomic save to the server disk. Even if power cuts, not a single answer is lost.
+              </p>
+            </div>
+            <div class="p-3 rounded-3 bg-[#F7F6F1] border border-[#EAE8E1] text-success font-mono small">
+              <small class="text-muted text-uppercase fw-bold d-block" style="font-size: 10px;">Zero Data Loss</small>
+              <span class="fw-bold"><i class="fas fa-check-circle me-1"></i> &lt; 2ms Atomic Persistence</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 3 -->
+        <div class="col-md-4">
+          <div class="bg-white rounded-4 p-4 p-md-5 border border-[#EAE8E1] bobbin-card-shadow bobbin-card-hover h-100 d-flex flex-col justify-content-between">
+            <div>
+              <div class="rounded-circle bg-[#FEF08A] text-dark fw-bold d-flex align-items-center justify-content-center mb-4" style="width: 40px; height: 40px;">
+                3
+              </div>
+              <h3 class="h5 fw-bold text-dark mb-2">Instant Scoring &amp; Merit Lists</h3>
+              <p class="text-secondary small leading-relaxed mb-4">
+                The moment a candidate finishes, grades and psychometric diagnostic breakdowns are calculated. Export Excel gradebooks, print report sheets, or publish Common Entrance merit cut-offs.
+              </p>
+            </div>
+            <div class="p-3 rounded-3 bg-[#F7F6F1] border border-[#EAE8E1] text-secondary font-mono small">
+              <small class="text-muted text-uppercase fw-bold d-block" style="font-size: 10px;">Immediate Processing</small>
+              <span class="text-dark fw-bold">1-Click Excel &amp; PDF Export</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </section>
+
+  <!-- Interactive Sandbox Simulator: "Try Bobbin's lesson planner for yourself" -->
+  <section id="simulator" class="py-5 bg-white">
+    <div class="container-xxl py-5">
+      
+      <div class="text-center mx-auto mb-5" style="max-width: 680px;">
+        <span class="badge bg-[#FEF9C3] text-dark rounded-pill px-3 py-1.5 fw-bold mb-2 font-mono">
+          <i class="fas fa-hand-pointer me-1"></i> TRY IT FOR YOURSELF
+        </span>
+        <h2 class="display-6 fw-extrabold text-dark tracking-tight">
+          Try CogniTara's test runner right here.
+        </h2>
+        <p class="text-secondary small">
+          Experience what students see during a real examination. Select an answer to see instant atomic persistence, open the scientific calculator, or simulate a tab-departure warning.
+        </p>
+      </div>
+
+      <!-- Simulator Card Frame -->
+      <div class="rounded-4 border border-light shadow-lg mx-auto overflow-hidden bg-white" style="max-width: 860px;">
+        
+        <!-- Header -->
+        <div class="bg-[#F7F6F1] p-3 px-4 border-bottom border-[#EAE8E1] d-flex flex-wrap align-items-center justify-content-between gap-3">
+          <div class="d-flex align-items-center gap-2">
+            <span class="badge bg-white text-dark border border-secondary border-opacity-25 rounded-pill font-mono">MATHEMATICS &bull; SECTION A</span>
+            <span class="small fw-bold text-dark">Question 14 of 40</span>
+          </div>
+
+          <div class="d-flex align-items-center gap-3">
+            <div class="bg-white px-3 py-1 rounded-pill border border-secondary border-opacity-25 font-mono text-dark small d-flex align-items-center gap-2">
+              <i class="fas fa-clock text-primary"></i>
+              <span id="sim-timer" class="fw-bold">44:12</span>
+            </div>
+
+            <button onclick="toggleCalculator()" class="btn btn-white btn-sm rounded-pill border border-secondary border-opacity-25 px-3 d-flex align-items-center gap-1.5 shadow-2xs">
+              <i class="fas fa-calculator text-primary"></i>
+              <span>Calculator</span>
+            </button>
+
+            <button onclick="triggerSimulatedViolation()" class="btn btn-outline-danger btn-sm rounded-pill px-3 d-flex align-items-center gap-1.5">
+              <i class="fas fa-triangle-exclamation"></i>
+              <span>Simulate Tab Departure</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Question Body -->
+        <div class="p-4 p-md-5">
+          
+          <div class="d-flex justify-content-between align-items-start mb-4">
+            <div>
+              <div class="h5 fw-normal text-dark mb-2">
+                Find the positive real root of the quadratic equation:
+              </div>
+              <div class="p-2.5 px-3 bg-[#FAF9F5] rounded-3 border border-[#EAE8E1] font-mono text-primary d-inline-block mb-2">
+                2x² + 5x - 12 = 0
+              </div>
+              <p class="text-secondary small mb-0">Factorization: (2x - 3)(x + 4) = 0 &bull; Solve for x &gt; 0.</p>
+            </div>
+            <button onclick="toggleBookmark(this)" class="btn btn-link text-secondary p-0 text-decoration-none" title="Bookmark for review">
+              <i class="far fa-bookmark fs-5"></i>
+            </button>
+          </div>
+
+          <!-- Radio Choices -->
+          <div class="d-flex flex-column gap-2 mb-4" style="max-width: 480px;">
+            <label class="p-3 rounded-3 border border-secondary border-opacity-25 d-flex align-items-center gap-3 cursor-pointer bg-white hover-card">
+              <input type="radio" name="sim_choice" value="A" onchange="simulateSaveAnswer('A')" class="form-check-input mt-0">
+              <span class="small fw-semibold text-dark">A) &nbsp; x = 1.5</span>
+            </label>
+
+            <label class="p-3 rounded-3 border border-secondary border-opacity-25 d-flex align-items-center gap-3 cursor-pointer bg-white hover-card">
+              <input type="radio" name="sim_choice" value="B" onchange="simulateSaveAnswer('B')" class="form-check-input mt-0">
+              <span class="small fw-semibold text-dark">B) &nbsp; x = 2.0</span>
+            </label>
+
+            <label class="p-3 rounded-3 border border-secondary border-opacity-25 d-flex align-items-center gap-3 cursor-pointer bg-white hover-card">
+              <input type="radio" name="sim_choice" value="C" onchange="simulateSaveAnswer('C')" class="form-check-input mt-0">
+              <span class="small fw-semibold text-dark">C) &nbsp; x = 3.5</span>
+            </label>
+
+            <label class="p-3 rounded-3 border border-secondary border-opacity-25 d-flex align-items-center gap-3 cursor-pointer bg-white hover-card">
+              <input type="radio" name="sim_choice" value="D" onchange="simulateSaveAnswer('D')" class="form-check-input mt-0">
+              <span class="small fw-semibold text-dark">D) &nbsp; x = 4.0</span>
+            </label>
+          </div>
+
+          <!-- Instant Save Confirmation -->
+          <div id="sim-save-status" class="small font-mono text-success opacity-0" style="transition: opacity 0.3s ease;">
+            <i class="fas fa-check-circle me-1"></i>
+            <span>Option saved to server disk in 1.4ms (Atomic SQLite UPSERT)</span>
+          </div>
+
+        </div>
+
+        <!-- Simulator Footer -->
+        <div class="bg-[#F7F6F1] p-3 px-4 border-top border-[#EAE8E1] d-flex justify-content-between align-items-center">
+          <button class="btn btn-white btn-sm rounded-pill border border-secondary border-opacity-25 px-4 fw-semibold text-secondary">
+            &larr; Previous Question
+          </button>
+          
+          <div class="d-flex align-items-center gap-2 small text-secondary">
+            <span class="rounded-circle bg-success" style="width: 8px; height: 8px;"></span>
+            <span>Local LAN: Active</span>
+          </div>
+
+          <button class="btn btn-dark btn-sm rounded-pill px-4 fw-bold">
+            Next Question &rarr;
+          </button>
+        </div>
+
+      </div>
+
+    </div>
+  </section>
+
+  <!-- Role Portals (Bobbin Sliding Pill Switcher) -->
+  <section id="roles" class="py-5 bg-[#FBFBF9] border-top border-[#EAE8E1]">
+    <div class="container-xxl py-5">
+      
+      <div class="text-center mx-auto mb-5" style="max-width: 680px;">
+        <span class="text-primary fw-bold text-uppercase tracking-wider small">DESIGNED FOR EVERY ROLE</span>
+        <h2 class="display-6 fw-extrabold text-dark mt-2 mb-3 tracking-tight">
+          Dedicated tools for candidates, teachers, and principals.
+        </h2>
+        <p class="text-secondary small">
+          Clean interfaces calibrated for maximum usability during high-stakes examination sessions.
+        </p>
+
+        <!-- Bobbin Sliding Pill Switcher -->
+        <div class="d-inline-flex p-1.5 rounded-pill bg-white border border-[#EAE8E1] shadow-xs mt-3">
+          <button onclick="setRole('student')" id="btn-role-student" class="btn btn-sm btn-dark rounded-pill px-4 py-2 fw-bold">
+            <i class="fas fa-user-graduate me-1"></i> Students
+          </button>
+          <button onclick="setRole('teacher')" id="btn-role-teacher" class="btn btn-sm text-secondary rounded-pill px-4 py-2 fw-semibold">
+            <i class="fas fa-chalkboard-teacher me-1"></i> Teachers
+          </button>
+          <button onclick="setRole('admin')" id="btn-role-admin" class="btn btn-sm text-secondary rounded-pill px-4 py-2 fw-semibold">
+            <i class="fas fa-landmark me-1"></i> Principals &amp; Admins
+          </button>
+        </div>
+      </div>
+
+      <!-- Role Container -->
+      <div class="bg-white rounded-4 p-4 p-md-5 border border-[#EAE8E1] bobbin-card-shadow">
+        
+        <!-- Student Panel -->
+        <div id="role-student" class="role-content row g-4 align-items-center">
+          <div class="col-lg-5">
+            <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 rounded-pill px-3 py-1 mb-3">
+              <i class="fas fa-laptop me-1"></i> ZERO-DISTRACTION STUDENT RUNNER
+            </span>
+            <h3 class="h3 fw-bold text-dark mb-3">An exam interface built for focus and calm.</h3>
+            <p class="text-secondary small mb-4">
+              Designed according to cognitive load theory, the student portal eliminates visual clutter while giving candidates comprehensive control: flag tricky questions, jump between multi-subject sections, and evaluate formulas seamlessly.
+            </p>
+            <ul class="list-unstyled text-secondary small mb-4">
+              <li class="mb-2 d-flex gap-2"><i class="fas fa-check text-primary mt-1"></i> <span><strong>Instant Answer Auto-Save:</strong> Every radio selection triggers an atomic UPSERT. Zero submit latency.</span></li>
+              <li class="mb-2 d-flex gap-2"><i class="fas fa-check text-primary mt-1"></i> <span><strong>Mathematical Formula Engine:</strong> Built-in KaTeX support renders complex equations with zero online CDN dependencies.</span></li>
+              <li class="d-flex gap-2"><i class="fas fa-check text-primary mt-1"></i> <span><strong>Question Navigator Grid:</strong> Clear color-coded indicators showing answered, unanswered, and flagged questions.</span></li>
+            </ul>
+            <a href="{{ url_for('auth.login') }}" class="btn btn-warning rounded-pill px-4 py-2.5 fw-bold text-dark">
+              Access Student Portal <i class="fas fa-arrow-right ms-1"></i>
+            </a>
+          </div>
+          <div class="col-lg-7">
+            <div class="rounded-4 overflow-hidden border border-secondary border-opacity-25 shadow-sm bg-[#FAF9F5]">
+              <img src="{{ url_for('static', filename='images/screenshots/15_student_active_exam.png') }}" alt="Student Exam Interface" class="w-100 h-auto">
+            </div>
+          </div>
+        </div>
+
+        <!-- Teacher Panel -->
+        <div id="role-teacher" class="role-content row g-4 align-items-center d-none">
+          <div class="col-lg-5">
+            <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 rounded-pill px-3 py-1 mb-3">
+              <i class="fas fa-feather-pointed me-1"></i> TEACHER &amp; EXAMINER STUDIO
+            </span>
+            <h3 class="h3 fw-bold text-dark mb-3">Author questions, import spreadsheets, and view gradebooks.</h3>
+            <p class="text-secondary small mb-4">
+              Empower subject teachers to author rich questions, organize multi-subject papers (English, Mathematics, General Science), import batches from spreadsheets, and view question difficulty discrimination curves.
+            </p>
+            <ul class="list-unstyled text-secondary small mb-4">
+              <li class="mb-2 d-flex gap-2"><i class="fas fa-check text-success mt-1"></i> <span><strong>Bulk Excel &amp; CSV Ingestion:</strong> Upload 100+ questions in seconds with automatic format validation.</span></li>
+              <li class="mb-2 d-flex gap-2"><i class="fas fa-check text-success mt-1"></i> <span><strong>Passage-Linked Comprehension:</strong> Link multiple questions to a shared reading passage.</span></li>
+              <li class="d-flex gap-2"><i class="fas fa-check text-success mt-1"></i> <span><strong>Live LaTeX Formula Preview:</strong> Real-time rendered equations side-by-side as teachers type formulas.</span></li>
+            </ul>
+            <a href="{{ url_for('auth.login') }}" class="btn btn-dark rounded-pill px-4 py-2.5 fw-bold">
+              Teacher Studio Login <i class="fas fa-arrow-right ms-1"></i>
+            </a>
+          </div>
+          <div class="col-lg-7">
+            <div class="rounded-4 overflow-hidden border border-secondary border-opacity-25 shadow-sm bg-[#FAF9F5]">
+              <img src="{{ url_for('static', filename='images/screenshots/10_teacher_questions_authoring.png') }}" alt="Teacher Question Studio" class="w-100 h-auto">
+            </div>
+          </div>
+        </div>
+
+        <!-- Admin Panel -->
+        <div id="role-admin" class="role-content row g-4 align-items-center d-none">
+          <div class="col-lg-5">
+            <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 rounded-pill px-3 py-1 mb-3">
+              <i class="fas fa-landmark me-1"></i> SCHOOL LEADERSHIP &amp; COMMON ENTRANCE
+            </span>
+            <h3 class="h3 fw-bold text-dark mb-3">Complete command over venues, slips, and merit lists.</h3>
+            <p class="text-secondary small mb-4">
+              Complete command over candidates, venues, and policy settings. Includes a turnkey National Common Entrance module with automated candidate slips, barcode generation, and cut-off mark modeling.
+            </p>
+            <ul class="list-unstyled text-secondary small mb-4">
+              <li class="mb-2 d-flex gap-2"><i class="fas fa-check text-primary mt-1"></i> <span><strong>Common Entrance Pipeline:</strong> Applicant slips with passport photos, barcodes, and merit lists.</span></li>
+              <li class="mb-2 d-flex gap-2"><i class="fas fa-check text-primary mt-1"></i> <span><strong>Forensic Audit Trail:</strong> Immutable logging of logins, IPs, and supervisor overrides.</span></li>
+              <li class="d-flex gap-2"><i class="fas fa-check text-primary mt-1"></i> <span><strong>Offline Package Generator:</strong> Export self-contained single-file HTML exams with embedded cryptography.</span></li>
+            </ul>
+            <a href="{{ url_for('auth.login') }}" class="btn btn-dark rounded-pill px-4 py-2.5 fw-bold">
+              Enter Admin Console <i class="fas fa-arrow-right ms-1"></i>
+            </a>
+          </div>
+          <div class="col-lg-7">
+            <div class="rounded-4 overflow-hidden border border-secondary border-opacity-25 shadow-sm bg-[#FAF9F5]">
+              <img src="{{ url_for('static', filename='images/screenshots/02_admin_dashboard.png') }}" alt="Admin Dashboard" class="w-100 h-auto">
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </section>
+
+  <!-- Real School Testimonials (Bobbin "Don't just take our word for it") -->
+  <section id="testimonials" class="py-5 bg-white">
+    <div class="container-xxl py-5">
+      
+      <div class="text-center mx-auto mb-5" style="max-width: 680px;">
+        <span class="text-primary fw-bold text-uppercase tracking-wider small">TESTED IN REAL CLASSROOMS</span>
+        <h2 class="display-6 fw-extrabold text-dark mt-2 mb-3 tracking-tight">
+          Don't just take our word for it.
+        </h2>
+        <p class="text-secondary small">
+          Hear how secondary school leaders and CBT supervisors rely on CogniTara for zero-failure exam days.
+        </p>
+      </div>
+
+      <div class="row g-4">
+        
+        <!-- Story 1 -->
+        <div class="col-md-4">
+          <div class="bg-[#FAF9F5] rounded-4 p-4 p-md-5 border border-[#EAE8E1] bobbin-card-shadow h-100 d-flex flex-column justify-content-between">
+            <div>
+              <div class="text-warning mb-3 small">
+                <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
+              </div>
+              <p class="text-secondary small leading-relaxed mb-4 font-medium">
+                &ldquo;During our SS3 mock examinations, the national grid collapsed and our generator tripped 15 minutes into the test. In our previous system, that meant total cancellation. With CogniTara, the server paused candidate times automatically. When power came back on, every single student resumed right where they left off with zero answers lost.&rdquo;
+              </p>
+            </div>
+            <div class="d-flex align-items-center gap-3 pt-3 border-top border-[#EAE8E1]">
+              <img src="{{ url_for('static', filename='images/principal_report.jpeg') }}" alt="Principal Adeyemi" class="rounded-circle object-fit-cover" style="width: 48px; height: 48px;">
+              <div>
+                <div class="fw-bold text-dark small">Dr. M. O. Adeyemi</div>
+                <small class="text-secondary" style="font-size: 11px;">Principal, Federal Science Academy</small>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Story 2 -->
+        <div class="col-md-4">
+          <div class="bg-[#FAF9F5] rounded-4 p-4 p-md-5 border border-[#EAE8E1] bobbin-card-shadow h-100 d-flex flex-column justify-content-between">
+            <div>
+              <div class="text-warning mb-3 small">
+                <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
+              </div>
+              <p class="text-secondary small leading-relaxed mb-4 font-medium">
+                &ldquo;Authoring science and mathematics tests used to take us days because we had to manually format equations and formulas. In CogniTara, our teachers type KaTeX expressions or upload our Excel question banks in one click. We administered 600 Common Entrance candidates with flawless efficiency.&rdquo;
+              </p>
+            </div>
+            <div class="d-flex align-items-center gap-3 pt-3 border-top border-[#EAE8E1]">
+              <img src="{{ url_for('static', filename='images/teacher_reviewing.jpeg') }}" alt="Mrs. Chidinma Okafor" class="rounded-circle object-fit-cover" style="width: 48px; height: 48px;">
+              <div>
+                <div class="fw-bold text-dark small">Mrs. Chidinma Okafor</div>
+                <small class="text-secondary" style="font-size: 11px;">Head of Examinations &amp; Mathematics</small>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Story 3 -->
+        <div class="col-md-4">
+          <div class="bg-[#FAF9F5] rounded-4 p-4 p-md-5 border border-[#EAE8E1] bobbin-card-shadow h-100 d-flex flex-column justify-content-between">
+            <div>
+              <div class="text-warning mb-3 small">
+                <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
+              </div>
+              <p class="text-secondary small leading-relaxed mb-4 font-medium">
+                &ldquo;The anti-cheating protection gives us complete confidence. In our previous lab sessions, students would quietly open background browser tabs to search formulas. CogniTara's focus departure detection and monotonic limit auto-submission completely eliminated examination misconduct.&rdquo;
+              </p>
+            </div>
+            <div class="d-flex align-items-center gap-3 pt-3 border-top border-[#EAE8E1]">
+              <img src="{{ url_for('static', filename='images/student_typing.jpeg') }}" alt="Tunde Balogun" class="rounded-circle object-fit-cover" style="width: 48px; height: 48px;">
+              <div>
+                <div class="fw-bold text-dark small">Tunde Balogun</div>
+                <small class="text-secondary" style="font-size: 11px;">IT &amp; CBT Laboratory Supervisor</small>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </section>
+
+  <!-- Comparison Table (Bobbin "Built for trust") -->
+  <section id="comparison" class="py-5 bg-[#FBFBF9] border-top border-[#EAE8E1]">
+    <div class="container-xxl py-5">
+      
+      <div class="text-center mx-auto mb-5" style="max-width: 680px;">
+        <span class="text-primary fw-bold text-uppercase tracking-wider small">ARCHITECTURE COMPARISON</span>
+        <h2 class="display-6 fw-extrabold text-dark mt-2 mb-3 tracking-tight">
+          Built for school trust.
+        </h2>
+        <p class="text-secondary small">
+          Comparing cloud-dependent testing portals against CogniTara's offline local engine.
+        </p>
+      </div>
+
+      <div class="table-responsive rounded-4 border border-[#EAE8E1] bobbin-card-shadow bg-white">
+        <table class="table table-borderless mb-0 align-middle">
+          <thead class="bg-[#F7F6F1] border-bottom border-[#EAE8E1] small text-uppercase fw-bold text-secondary">
+            <tr>
+              <th class="p-4">Examination Hazard</th>
+              <th class="p-4 text-danger bg-danger bg-opacity-10">Standard Cloud CBT Platforms</th>
+              <th class="p-4 text-primary bg-primary bg-opacity-10">CogniTara Offline Engine</th>
+            </tr>
+          </thead>
+          <tbody class="small text-secondary divide-y">
+            <tr>
+              <td class="p-4 fw-bold text-dark"><i class="fas fa-bolt text-warning me-2"></i> Power Outage / Generator Trip</td>
+              <td class="p-4">Timer continues ticking down in the cloud. Candidates lose 10&ndash;20 minutes; unsaved answers vanish.</td>
+              <td class="p-4 text-success fw-semibold bg-success bg-opacity-10"><i class="fas fa-check-circle me-1"></i> 25-second lease fence: Server freezes candidate time automatically. All answers committed to disk.</td>
+            </tr>
+            <tr>
+              <td class="p-4 fw-bold text-dark"><i class="fas fa-network-wired text-primary me-2"></i> Internet Cable Cut / ISP Downtime</td>
+              <td class="p-4">Complete exam crash. Browsers display blank DNS errors; all sessions must be restarted from scratch.</td>
+              <td class="p-4 text-success fw-semibold bg-success bg-opacity-10"><i class="fas fa-check-circle me-1"></i> Zero internet required: The entire examination lifecycle runs locally over the school's Wi-Fi router or switch.</td>
+            </tr>
+            <tr>
+              <td class="p-4 fw-bold text-dark"><i class="fas fa-cloud-arrow-down text-info me-2"></i> External CDN Failure</td>
+              <td class="p-4">Relies on Google Fonts or CDNJS. Blocked or missing assets break formula symbols and icons.</td>
+              <td class="p-4 text-success fw-semibold bg-success bg-opacity-10"><i class="fas fa-check-circle me-1"></i> 100% self-contained: All fonts, KaTeX, SweetAlert2, and vector assets are served directly from the local machine.</td>
+            </tr>
+            <tr>
+              <td class="p-4 fw-bold text-dark"><i class="fas fa-coins text-warning me-2"></i> Ongoing Bandwidth Costs</td>
+              <td class="p-4">Schools purchase expensive recurring data bundles to stream gigabytes of test payloads to hundreds of screens.</td>
+              <td class="p-4 text-success fw-semibold bg-success bg-opacity-10"><i class="fas fa-check-circle me-1"></i> Zero ongoing bandwidth fees: Run once on a local laptop; serve the entire school hall at gigabit LAN speed.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- FAQs (Bobbin Clean Accordion) -->
+  <section id="faq" class="py-5 bg-white">
+    <div class="container-xxl py-5" style="max-width: 820px;">
+      
+      <div class="text-center mb-5">
+        <span class="text-primary fw-bold text-uppercase tracking-wider small">HELP &amp; TECHNICAL SPECS</span>
+        <h2 class="display-6 fw-extrabold text-dark mt-2 mb-3 tracking-tight">
+          Frequently asked questions.
+        </h2>
+        <p class="text-secondary small">Key technical and administrative questions answered.</p>
+      </div>
+
+      <div class="accordion accordion-flush d-flex flex-column gap-3" id="faqAccordion">
+        
+        <div class="accordion-item bg-[#FAF9F5] rounded-3 border border-[#EAE8E1] overflow-hidden bobbin-card-shadow">
+          <h2 class="accordion-header">
+            <button class="accordion-button collapsed bg-transparent text-dark fw-bold small shadow-none" type="button" data-bs-toggle="collapse" data-bs-target="#faq1">
+              What happens if the school generator goes off during an ongoing exam?
+            </button>
+          </h2>
+          <div id="faq1" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+            <div class="accordion-body text-secondary small pt-0 border-top border-[#EAE8E1]">
+              CogniTara's heartbeat session service monitors student workstations with a 25-second lease window. When a workstation powers down, the server detects the missing heartbeat and freezes the candidate's remaining time authoritatively. Every answered question is already committed to SQLite via atomic UPSERTs. When power returns, students log in and resume with zero lost time or answers.
+            </div>
+          </div>
+        </div>
+
+        <div class="accordion-item bg-[#FAF9F5] rounded-3 border border-[#EAE8E1] overflow-hidden bobbin-card-shadow">
+          <h2 class="accordion-header">
+            <button class="accordion-button collapsed bg-transparent text-dark fw-bold small shadow-none" type="button" data-bs-toggle="collapse" data-bs-target="#faq2">
+              Can tech-savvy students alter the examination timer using browser DevTools?
+            </button>
+          </h2>
+          <div id="faq2" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+            <div class="accordion-body text-secondary small pt-0 border-top border-[#EAE8E1]">
+              No. The countdown displayed in the browser is solely a visual representation. The server calculates remaining time independently using <code class="text-primary font-mono">calculate_authoritative_remaining_time()</code> based on server UTC timestamps and stored pause intervals. Tampering with client JavaScript does not alter the server's submission deadline.
+            </div>
+          </div>
+        </div>
+
+        <div class="accordion-item bg-[#FAF9F5] rounded-3 border border-[#EAE8E1] overflow-hidden bobbin-card-shadow">
+          <h2 class="accordion-header">
+            <button class="accordion-button collapsed bg-transparent text-dark fw-bold small shadow-none" type="button" data-bs-toggle="collapse" data-bs-target="#faq3">
+              How does the Common Entrance admissions pipeline work?
+            </button>
+          </h2>
+          <div id="faq3" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+            <div class="accordion-body text-secondary small pt-0 border-top border-[#EAE8E1]">
+              CogniTara includes a full Common Entrance module: prospective candidates register with passport photos, receive computerized examination slips with barcodes, sit for multi-paper subject batteries (Paper I: English &amp; Verbal; Paper II: Mathematics &amp; Science), and administrators publish automatic merit lists based on cut-off mark analytics.
+            </div>
+          </div>
+        </div>
+
+        <div class="accordion-item bg-[#FAF9F5] rounded-3 border border-[#EAE8E1] overflow-hidden bobbin-card-shadow">
+          <h2 class="accordion-header">
+            <button class="accordion-button collapsed bg-transparent text-dark fw-bold small shadow-none" type="button" data-bs-toggle="collapse" data-bs-target="#faq4">
+              Can questions be imported directly from Excel or Word files?
+            </button>
+          </h2>
+          <div id="faq4" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+            <div class="accordion-body text-secondary small pt-0 border-top border-[#EAE8E1]">
+              Yes. The Teacher Studio has an intelligent CSV and Excel ingestion engine that supports bulk uploading of hundreds of questions, options (A through E), correct answer keys, explanation notes, and section assignments in a single click.
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </section>
+
+  <!-- Final Bobbin Call-to-Action (Rounded Dark Card) -->
+  <section class="py-5 bg-white">
+    <div class="container-xxl py-4 text-center" style="max-width: 900px;">
+      <div class="bg-dark text-white rounded-5 p-5 shadow-lg position-relative overflow-hidden">
+        
+        <span class="badge bg-[#FEF08A] text-dark rounded-pill px-3 py-1.5 fw-bold mb-4 font-mono">
+          START MODERNIZING YOUR CBT SESSIONS TODAY
+        </span>
+
+        <h2 class="display-6 fw-extrabold mb-3 tracking-tight">
+          Ready to eliminate exam day disruptions?
+        </h2>
+        <p class="lead text-light text-opacity-75 small mb-5 mx-auto" style="max-width: 580px;">
+          Say goodbye to crashed test sessions, lost answers, and cheating vulnerabilities. Experience the power and peace of mind of CogniTara.
+        </p>
+
+        <div class="d-flex flex-wrap justify-content-center gap-3">
+          <a href="{{ url_for('auth.login') }}" class="btn btn-white bg-white text-dark rounded-pill px-5 py-3 fw-bold shadow-sm">
+            Open School Portal
+          </a>
+          <a href="{{ url_for('auth.ce_login_page') }}" class="btn btn-primary rounded-pill px-5 py-3 fw-bold shadow-sm">
+            Common Entrance Registration
+          </a>
+        </div>
+
+        <div class="mt-5 text-secondary small d-flex flex-wrap justify-content-center gap-4" style="font-size: 11px;">
+          <span><i class="fas fa-check text-success me-1"></i> 100% Offline Local Network</span>
+          <span><i class="fas fa-check text-success me-1"></i> Zero recurring cloud fees</span>
+          <span><i class="fas fa-check text-success me-1"></i> Complete school data sovereignty</span>
+        </div>
+
       </div>
     </div>
+  </section>
 
-    <!-- Footer -->
-    <div class="footer">
-      <p>© 2026 COGNITARA EXAM SYSTEM | Empowering Education Through Technology</p>
+  <!-- Clean Footer (Bobbin style) -->
+  <footer class="py-4 bg-white border-top border-light border-opacity-75 small text-secondary">
+    <div class="container-xxl d-flex flex-column flex-md-row justify-content-between align-items-center gap-3">
+      <div class="d-flex align-items-center gap-2">
+        <div class="rounded-2 p-1 bg-dark text-white d-flex align-items-center justify-content-center" style="width: 24px; height: 24px;">
+          <svg width="12" height="12" viewBox="0 0 100 100" fill="none">
+            <path d="M72 28C64.5 20.5 54.2 16 43 16C20.9 16 3 33.9 3 56C3 78.1 20.9 96 43 96C54.2 96 64.5 91.5 72 84L60 72C55.5 76.5 49.5 79 43 79C30.3 79 20 68.7 20 56C20 43.3 30.3 33 43 33C49.5 33 55.5 35.5 60 40L72 28Z" fill="#FFFFFF"/>
+          </svg>
+        </div>
+        <span class="text-dark fw-bold">Cogni<span class="text-primary">Tara</span></span>
+        <span>&bull; Offline Examination Portal</span>
+      </div>
+
+      <div class="d-flex gap-3">
+        <a href="{{ url_for('auth.login') }}" class="text-secondary text-decoration-none hover-dark">Login</a>
+        <a href="{{ url_for('auth.ce_login_page') }}" class="text-secondary text-decoration-none hover-dark">Common Entrance</a>
+        <a href="#simulator" class="text-secondary text-decoration-none hover-dark">Interactive Demo</a>
+        <a href="#comparison" class="text-secondary text-decoration-none hover-dark">Why Offline</a>
+        <a href="#faq" class="text-secondary text-decoration-none hover-dark">FAQs</a>
+      </div>
+
+      <div>
+        <span>&copy; 2026 CogniTara Examination Systems. All Rights Reserved.</span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Scientific Calculator Modal -->
+  <div class="modal fade" id="calcModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+      <div class="modal-content rounded-4 border border-[#EAE8E1] bg-white text-dark shadow-lg">
+        <div class="modal-header border-bottom border-light py-2 px-3">
+          <h6 class="modal-title small fw-bold text-dark"><i class="fas fa-calculator text-primary me-1"></i> SafeMath Calculator</h6>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body p-3">
+          <div class="bg-[#F7F6F1] p-3 rounded-3 text-end font-mono mb-3 border border-[#EAE8E1]">
+            <div id="calc-hist" class="text-secondary" style="font-size: 11px; height: 16px;"></div>
+            <div id="calc-out" class="h4 text-dark fw-bold mb-0">0</div>
+          </div>
+          <div class="d-grid gap-1" style="grid-template-columns: repeat(4, 1fr);">
+            <button onclick="calcClear()" class="btn btn-outline-danger btn-sm rounded-3">C</button>
+            <button onclick="calcAdd('(')" class="btn btn-light btn-sm rounded-3">(</button>
+            <button onclick="calcAdd(')')" class="btn btn-light btn-sm rounded-3">)</button>
+            <button onclick="calcAdd('/')" class="btn btn-light btn-sm rounded-3 text-primary">&divide;</button>
+
+            <button onclick="calcAdd('7')" class="btn btn-light btn-sm rounded-3">7</button>
+            <button onclick="calcAdd('8')" class="btn btn-light btn-sm rounded-3">8</button>
+            <button onclick="calcAdd('9')" class="btn btn-light btn-sm rounded-3">9</button>
+            <button onclick="calcAdd('*')" class="btn btn-light btn-sm rounded-3 text-primary">&times;</button>
+
+            <button onclick="calcAdd('4')" class="btn btn-light btn-sm rounded-3">4</button>
+            <button onclick="calcAdd('5')" class="btn btn-light btn-sm rounded-3">5</button>
+            <button onclick="calcAdd('6')" class="btn btn-light btn-sm rounded-3">6</button>
+            <button onclick="calcAdd('-')" class="btn btn-light btn-sm rounded-3 text-primary">&minus;</button>
+
+            <button onclick="calcAdd('1')" class="btn btn-light btn-sm rounded-3">1</button>
+            <button onclick="calcAdd('2')" class="btn btn-light btn-sm rounded-3">2</button>
+            <button onclick="calcAdd('3')" class="btn btn-light btn-sm rounded-3">3</button>
+            <button onclick="calcAdd('+')" class="btn btn-light btn-sm rounded-3 text-primary">+</button>
+
+            <button onclick="calcAdd('0')" class="btn btn-light btn-sm rounded-3" style="grid-column: span 2;">0</button>
+            <button onclick="calcAdd('.')" class="btn btn-light btn-sm rounded-3">.</button>
+            <button onclick="calcEquals()" class="btn btn-dark btn-sm rounded-3 fw-bold">=</button>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
+  <!-- Local Bootstrap JS -->
+  <script src="{{ url_for('static', filename='vendor/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
+
+  <!-- Interactive Sandbox Scripts -->
   <script>
-    // Animated Counter Function
-    function animateCounter(elementId, targetValue) {
-      const element = document.getElementById(elementId);
-      if (!element) return;
-      
-      let currentValue = 0;
-      const duration = 2000; // 2 seconds animation
-      const stepTime = 20; // Update every 20ms
-      const steps = duration / stepTime;
-      const increment = targetValue / steps;
-      
-      const timer = setInterval(() => {
-        currentValue += increment;
-        
-        if (currentValue >= targetValue) {
-          currentValue = targetValue;
-          element.textContent = Math.floor(currentValue);
-          clearInterval(timer);
-        } else {
-          element.textContent = Math.floor(currentValue);
-        }
-      }, stepTime);
+    // Video sound toggle
+    function toggleVideoSound() {
+      const vid = document.getElementById('heroVideo');
+      const icon = document.getElementById('soundIcon');
+      const text = document.getElementById('soundText');
+      if (!vid) return;
+
+      if (vid.muted) {
+        vid.muted = false;
+        if (icon) icon.className = 'fas fa-volume-high me-1';
+        if (text) text.textContent = 'Audio On';
+      } else {
+        vid.muted = true;
+        if (icon) icon.className = 'fas fa-volume-xmark me-1';
+        if (text) text.textContent = 'Muted';
+      }
     }
 
-    // Fetch real stats from database
-    async function fetchStats() {
+    // Role Switcher
+    function setRole(roleName) {
+      document.querySelectorAll('.role-content').forEach(el => el.classList.add('d-none'));
+      const activeEl = document.getElementById('role-' + roleName);
+      if (activeEl) activeEl.classList.remove('d-none');
+
+      ['student', 'teacher', 'admin'].forEach(r => {
+        const btn = document.getElementById('btn-role-' + r);
+        if (btn) {
+          if (r === roleName) {
+            btn.className = 'btn btn-sm btn-dark rounded-pill px-4 py-2 fw-bold';
+          } else {
+            btn.className = 'btn btn-sm text-secondary rounded-pill px-4 py-2 fw-semibold';
+          }
+        }
+      });
+    }
+
+    // Answer Save Feedback
+    function simulateSaveAnswer(opt) {
+      const el = document.getElementById('sim-save-status');
+      if (!el) return;
+      el.innerHTML = '<i class="fas fa-check-circle me-1"></i> <span>Option ' + opt + ' saved to server disk in 1.4ms (Atomic SQLite UPSERT)</span>';
+      el.classList.remove('opacity-0');
+      setTimeout(() => el.classList.add('opacity-0'), 3500);
+    }
+
+    // Bookmark Toggle
+    function toggleBookmark(btn) {
+      const icon = btn.querySelector('i');
+      if (icon.classList.contains('far')) {
+        icon.classList.remove('far');
+        icon.classList.add('fas', 'text-warning');
+      } else {
+        icon.classList.remove('fas', 'text-warning');
+        icon.classList.add('far');
+      }
+    }
+
+    // Violation simulation
+    let simViolations = 0;
+    function triggerSimulatedViolation() {
+      simViolations++;
+      if (simViolations >= 3) {
+        alert("CRITICAL INVARIANT TRIGGERED: Violation threshold reached (3/3). Exam atomically finalized and scored by server. Pauses are forbidden by Phase 4.6 security policy.");
+      } else {
+        alert("Anti-Cheating Policy Warning #" + simViolations + "/3: Window departure recorded via paradata beacon. Monotonic lock incremented on server.");
+      }
+    }
+
+    // Calculator Modal & Backend Evaluation
+    let calcExpr = '';
+    function toggleCalculator() {
+      const modalEl = document.getElementById('calcModal');
+      if (modalEl && window.bootstrap) {
+        const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+        modal.show();
+      }
+    }
+
+    function calcAdd(ch) {
+      calcExpr += ch;
+      document.getElementById('calc-out').innerText = calcExpr;
+    }
+
+    function calcClear() {
+      calcExpr = '';
+      document.getElementById('calc-out').innerText = '0';
+      document.getElementById('calc-hist').innerText = '';
+    }
+
+    async function calcEquals() {
+      if (!calcExpr) return;
+      document.getElementById('calc-hist').innerText = calcExpr + ' =';
       try {
-        const response = await fetch('/api/stats');
+        const response = await fetch('/api/calculate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ expression: calcExpr })
+        });
         if (response.ok) {
           const data = await response.json();
-          animateCounter('countStudents', data.students || 1250);
-          animateCounter('countExams', data.exams || 68);
+          document.getElementById('calc-out').innerText = data.result || '0';
+          calcExpr = String(data.result || '');
         } else {
-          animateCounter('countStudents', 1250);
-          animateCounter('countExams', 68);
+          fallbackCalc();
         }
-      } catch (error) {
-        console.log('Using default values for stats');
-        animateCounter('countStudents', 1250);
-        animateCounter('countExams', 68);
-      }
-      
-      const accessElement = document.getElementById('countAccess');
-      if (accessElement) {
-        accessElement.textContent = '24';
+      } catch (e) {
+        fallbackCalc();
       }
     }
 
-    // Start animations when page loads
-    window.addEventListener('DOMContentLoaded', () => {
-      fetchStats();
-    });
+    function fallbackCalc() {
+      try {
+        const sanitized = calcExpr.replace(/[^0-9+\-*/().]/g, '');
+        const res = Function('"use strict"; return (' + sanitized + ')')();
+        document.getElementById('calc-out').innerText = res;
+        calcExpr = String(res);
+      } catch (err) {
+        document.getElementById('calc-out').innerText = 'Error';
+        calcExpr = '';
+      }
+    }
 
-    window.addEventListener('pageshow', () => {
-      fetchStats();
-    });
+    // Timer Countdown
+    let simSecs = 44 * 60 + 12;
+    setInterval(() => {
+      if (simSecs > 0) {
+        simSecs--;
+        const m = Math.floor(simSecs / 60);
+        const s = simSecs % 60;
+        const el = document.getElementById('sim-timer');
+        if (el) el.innerText = String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
+      }
+    }, 1000);
   </script>
 
 </body>

@@ -27,6 +27,11 @@ exam.db
 # Uploaded images (keep structure but not files)
 static/images/*
 !static/images/.gitkeep
+!static/images/cognitara-*.ico
+!static/images/cognitara-*.png
+!static/images/cognitara-*.svg
+!static/images/favicon.ico
+!static/images/default.png
 
 # Logs
 *.log
