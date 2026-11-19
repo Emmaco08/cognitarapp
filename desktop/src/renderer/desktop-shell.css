@@ -1,0 +1,82 @@
+/* ==========================================================================
+   CogniTara Studio — Native Electron Frameless Window Overrides
+   Layered directly over the approved studio.css without altering colors,
+   typography, or component geometry.
+   ========================================================================== */
+
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: transparent;
+}
+
+.desk {
+  position: fixed;
+  inset: 0;
+  display: block;
+}
+
+.win {
+  width: 100vw !important;
+  height: 100vh !important;
+  border-radius: 0 !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  transition: opacity 260ms var(--ease) !important;
+}
+
+.win[data-mode="boot"] {
+  width: 100vw !important;
+  height: 100vh !important;
+  border-radius: 0 !important;
+}
+
+/* Native Windows frameless window drag regions */
+.titlebar {
+  -webkit-app-region: drag;
+  user-select: none;
+}
+
+.titlebar button,
+.titlebar input,
+.titlebar a,
+.titlebar .tb-school,
+.titlebar .search,
+.titlebar .tb-actions,
+.titlebar .titlebar__ctrls {
+  -webkit-app-region: no-drag;
+}
+
+.boot {
+  -webkit-app-region: drag;
+  user-select: none;
+}
+
+/* Preview-only dock and simulated tray popover are absent in the real desktop build */
+.dock,
+.tray {
+  display: none !important;
+}
+
+/* Status styling for protection checks when failing or warning */
+.checks li.is-bad svg {
+  background: var(--bad-soft);
+  color: var(--bad);
+}
+
+.checks li.is-warn svg {
+  background: var(--warn-soft);
+  color: var(--warn);
+}
+
+.connect__alt {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.connect__addr {
+  white-space: nowrap;
+  font-size: clamp(12.5px, 1.05vw, 14px);
+}

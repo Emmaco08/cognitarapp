@@ -1,12 +1,20 @@
 """
 Cognitara Examination Portal - Production WSGI Entrypoint
-Serves the Flask application via Waitress multi-threaded WSGI server on Windows.
+Serves the Flask application via Waitress multi-threaded WSGI server on Windows
+(both standalone and when frozen into `cognitara-engine.exe` for CogniTara Studio).
 """
 
 import os
 import sys
 
-PROJECT_ROOT = os.path.abspath(os.path.dirname(__file__))
+if getattr(sys, "frozen", False):
+    PROJECT_ROOT = os.path.dirname(os.path.abspath(sys.executable))
+    BUNDLE_DIR = getattr(sys, "_MEIPASS", PROJECT_ROOT)
+    if BUNDLE_DIR not in sys.path:
+        sys.path.insert(0, BUNDLE_DIR)
+else:
+    PROJECT_ROOT = os.path.abspath(os.path.dirname(__file__))
+
 if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
@@ -19,6 +27,7 @@ elif not os.path.isabs(raw_db_env):
     os.environ["COGNITARA_DB_NAME"] = os.path.abspath(os.path.join(PROJECT_ROOT, raw_db_env))
 
 from app import app
+from cognitara.security.license_guard import get_license_guard, should_enforce_license
 from waitress import serve
 
 if __name__ == "__main__":
@@ -29,6 +38,14 @@ if __name__ == "__main__":
     channel_timeout = int(os.environ.get("COGNITARA_CHANNEL_TIMEOUT", 30))
     cleanup_interval = int(os.environ.get("COGNITARA_CLEANUP_INTERVAL", 15))
 
+    guard = get_license_guard()
+    if should_enforce_license(app):
+        lic_status = guard.evaluate(advance_monotonic=False)
+        guard.start_watchdog()
+        lock_state = lic_status.get("lock_state", "UNACTIVATED")
+    else:
+        lock_state = "BYPASS_DEV"
+
     print("=" * 65)
     print("COGNITARA EXAMINATION PORTAL — PRODUCTION WSGI SERVER (WAITRESS)")
     print(f"Binding Address: http://{host}:{port}")
@@ -36,7 +53,8 @@ if __name__ == "__main__":
     print(f"Conn Limit:      {conn_limit}")
     print(f"Channel Timeout: {channel_timeout}s")
     print(f"Active Database: {os.environ.get('COGNITARA_DB_NAME')}")
-    print("=" * 65)
+    print(f"Licence State:   {lock_state}")
+    print("=" * 65, flush=True)
 
     serve(
         app,
@@ -46,5 +64,5 @@ if __name__ == "__main__":
         connection_limit=conn_limit,
         channel_timeout=channel_timeout,
         cleanup_interval=cleanup_interval,
-        backlog=1024
+        backlog=1024,
     )

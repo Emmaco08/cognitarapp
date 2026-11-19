@@ -18,11 +18,19 @@ class SafeMathEvaluator:
             raise ValueError("Numeric overflow")
         return res
 
+    @staticmethod
+    def _safe_cbrt(x):
+        res = math.cbrt(x) if hasattr(math, 'cbrt') else (x ** (1 / 3) if x >= 0 else -((-x) ** (1 / 3)))
+        nearest = round(res)
+        if abs(res - nearest) < 1e-12:
+            return float(nearest) if isinstance(x, float) else nearest
+        return res
+
     FUNCS = {
         'abs': abs,
         'round': round,
         'sqrt': math.sqrt,
-        'cbrt': lambda x: math.cbrt(x) if hasattr(math, 'cbrt') else (x**(1/3) if x>=0 else -((-x)**(1/3))),
+        'cbrt': lambda x: SafeMathEvaluator._safe_cbrt(x),
         'exp': math.exp,
         'sin': lambda x: math.sin(math.radians(x)),
         'cos': lambda x: math.cos(math.radians(x)),
@@ -46,7 +54,7 @@ class SafeMathEvaluator:
         'abs': abs,
         'round': round,
         'sqrt': math.sqrt,
-        'cbrt': lambda x: math.cbrt(x) if hasattr(math, 'cbrt') else (x**(1/3) if x>=0 else -((-x)**(1/3))),
+        'cbrt': lambda x: SafeMathEvaluator._safe_cbrt(x),
         'exp': math.exp,
         'sin': math.sin,
         'cos': math.cos,

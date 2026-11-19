@@ -6,6 +6,8 @@ UPLOAD_FOLDER = "static/images"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 conn = sqlite3.connect(DB_NAME)
+conn.execute("PRAGMA journal_mode = WAL")
+conn.execute("PRAGMA foreign_keys = ON")
 c = conn.cursor()
 
 # Admin table
@@ -90,10 +92,6 @@ CREATE TABLE IF NOT EXISTS audit_logs (
 )
 """)
 
-try:
-    c.execute("ALTER TABLE scores ADD COLUMN status TEXT DEFAULT 'in_progress'")
-except:
-    pass
 # Scores table
 c.execute("""
 CREATE TABLE IF NOT EXISTS scores (
@@ -108,14 +106,38 @@ CREATE TABLE IF NOT EXISTS scores (
 )
 """)
 
-try:
-    c.execute("ALTER TABLE scores ADD COLUMN start_time DATETIME")
-except:
-    pass
-try:
-    c.execute("ALTER TABLE students ADD COLUMN status TEXT DEFAULT 'pending'")
-except:
-    pass
+for _col_sql in (
+    "ALTER TABLE scores ADD COLUMN status TEXT DEFAULT 'in_progress'",
+    "ALTER TABLE scores ADD COLUMN start_time DATETIME",
+    "ALTER TABLE scores ADD COLUMN end_time DATETIME",
+    "ALTER TABLE scores ADD COLUMN current_progress TEXT",
+    "ALTER TABLE scores ADD COLUMN warnings_count INTEGER DEFAULT 0",
+    "ALTER TABLE scores ADD COLUMN remaining_time INTEGER DEFAULT 0",
+    "ALTER TABLE scores ADD COLUMN is_paused INTEGER DEFAULT 0",
+    "ALTER TABLE scores ADD COLUMN paused_at DATETIME",
+    "ALTER TABLE scores ADD COLUMN paused_by TEXT",
+    "ALTER TABLE scores ADD COLUMN auto_submitted INTEGER DEFAULT 0",
+    "ALTER TABLE scores ADD COLUMN resume_requested INTEGER DEFAULT 0",
+    "ALTER TABLE scores ADD COLUMN resume_requested_at DATETIME",
+    "ALTER TABLE scores ADD COLUMN force_submit INTEGER DEFAULT 0",
+    "ALTER TABLE scores ADD COLUMN updated_at DATETIME DEFAULT CURRENT_TIMESTAMP",
+    "ALTER TABLE scores ADD COLUMN percentage REAL DEFAULT 0",
+    "ALTER TABLE exams ADD COLUMN calculator_type TEXT DEFAULT 'none'",
+    "ALTER TABLE exams ADD COLUMN max_warnings INTEGER DEFAULT 5",
+    "ALTER TABLE exams ADD COLUMN deactivated INTEGER DEFAULT 0",
+    "ALTER TABLE exams ADD COLUMN subject_tag TEXT DEFAULT 'General'",
+    "ALTER TABLE exams ADD COLUMN specialisation_tag TEXT DEFAULT 'General'",
+    "ALTER TABLE exams ADD COLUMN created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP",
+    "ALTER TABLE students ADD COLUMN specialisation TEXT DEFAULT 'General'",
+    "ALTER TABLE teachers ADD COLUMN teaching_classes TEXT DEFAULT ''",
+    "ALTER TABLE teachers ADD COLUMN specialisations TEXT DEFAULT ''",
+    "ALTER TABLE teachers ADD COLUMN class_teacher_of TEXT DEFAULT ''",
+    "ALTER TABLE students ADD COLUMN status TEXT DEFAULT 'pending'",
+):
+    try:
+        c.execute(_col_sql)
+    except Exception:
+        pass
 try:
     c.execute("ALTER TABLE students ADD COLUMN registered_at DATETIME DEFAULT CURRENT_TIMESTAMP")
 except:
@@ -524,5 +546,16 @@ try:
 except:
     pass
 conn.commit()
+try:
+    from cognitara.database.initialization import (
+        ensure_deadline_columns,
+        init_analytics_tables,
+        init_exam_management_tables,
+    )
+    ensure_deadline_columns(conn)
+    init_analytics_tables(conn)
+    init_exam_management_tables(conn)
+except Exception as exc:
+    print(f"Note: extended schema init skipped: {exc}")
 conn.close()
 print("Database initialized!")

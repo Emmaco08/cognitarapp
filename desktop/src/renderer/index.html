@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; script-src 'self'; font-src 'self'; connect-src 'none';">
+  <title>CogniTara Studio</title>
+  <link rel="icon" href="./favicon.ico">
+  <link rel="stylesheet" href="./studio.css">
+  <link rel="stylesheet" href="./desktop-shell.css">
+</head>
+<body>
+<!-- ================= ICON SPRITE (single-weight 1.6 stroke) ================= -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <path id="ct-c" d="M 150.91,150.91 C 122.79,179.03 77.21,179.03 49.09,150.91 C 20.97,122.79 20.97,77.21 49.09,49.09 C 77.21,20.97 122.79,20.97 150.91,49.09 L 131.11,68.89 C 113.93,51.70 86.07,51.70 68.89,68.89 C 51.70,86.07 51.70,113.93 68.89,131.11 C 86.07,148.30 113.93,148.30 131.11,131.11 Z"/>
+    <path id="ct-star" d="M 108.00,74.00 C 115.00,93.00 115.00,93.00 146.00,100.00 C 115.00,107.00 115.00,107.00 108.00,126.00 C 101.00,107.00 101.00,107.00 90.00,100.00 C 101.00,93.00 101.00,93.00 108.00,74.00 Z"/>
+    <clipPath id="ct-c-clip"><use href="#ct-c"/></clipPath>
+  </defs>
+  <symbol id="ct-word" viewBox="40.0 36.0 357.6 76.8"><path class="wm-a" d="M89.525 47.315 C84.456 41.364 77.554 38 69.84 38 C53.832 38 42 50.992 42 67 C42 83.008 53.832 96 69.84 96 C77.554 96 84.456 92.636 89.525 86.685 L85.587 82.747 C81.324 87.59 75.872 90.432 69.84 90.432 C56.906 90.432 47.568 79.934 47.568 67 C47.568 54.066 56.906 43.568 69.84 43.568 C75.872 43.568 81.324 46.41 85.587 51.253 Z"/><path class="wm-a" d="M113.92 54.24 C124.824 54.24 133.64 63.52 133.64 75.12 C133.64 86.72 124.824 96 113.92 96 C103.016 96 94.2 86.72 94.2 75.12 C94.2 63.52 103.016 54.24 113.92 54.24 Z M113.92 59.808 C106.09 59.808 99.768 66.652 99.768 75.12 C99.768 83.588 106.09 90.432 113.92 90.432 C121.75 90.432 128.072 83.588 128.072 75.12 C128.072 66.652 121.75 59.808 113.92 59.808 Z"/><path class="wm-a" d="M156.84 54.24 C161.77 54.24 166.12 57.14 169.31 61.49 L169.31 55.11 L174.53 55.11 L174.53 96 C174.53 104.99 168.15 110.79 157.71 110.79 C150.46 110.79 144.37 107.89 141.18 102.96 L145.24 100.35 C147.56 104.12 151.91 106.44 157.42 106.44 C164.09 106.44 169.31 103.25 169.31 96 L169.31 88.17 C166.12 92.81 161.48 95.13 156.55 95.13 C146.4 95.13 138.28 86.14 138.28 74.83 C138.28 63.52 146.574 54.24 156.84 54.24 Z M156.84 59.808 C149.3 59.808 143.848 66.42 143.848 74.83 C143.848 83.24 149.3 89.62 156.84 89.62 C164.38 89.62 169.31 83.008 169.31 74.83 C169.31 66.42 164.38 59.808 156.84 59.808 Z"/><path class="wm-a" d="M178.88 55.11 L184.448 55.11 L184.448 64.1 C187 58.01 192.51 54.24 199.18 54.24 C208.17 54.24 215.478 60.04 215.478 70.77 L215.478 96 L209.91 96 L209.91 71.64 C209.91 64.1 205.56 59.808 199.18 59.808 C192.8 59.808 187 63.23 184.448 69.61 L184.448 96 L178.88 96 Z"/><path class="wm-a" d="M220.64 55.11 L226.208 55.11 L226.208 96 L220.64 96 Z"/><path class="wm-b" d="M223.424 41.77 C224.584 44.96 224.584 44.96 227.774 46.12 C224.584 47.28 224.584 47.28 223.424 50.47 C222.264 47.28 222.264 47.28 219.074 46.12 C222.264 44.96 222.264 44.96 223.424 41.77 Z"/><path class="wm-b" d="M236.88 38 L277.48 38 L277.48 41.712 L275.624 43.568 L259.964 43.568 L259.964 96 L254.396 96 L254.396 43.568 L238.736 43.568 L236.88 41.712 Z"/><path class="wm-b" d="M300.1 54.24 C306.48 54.24 311.12 57.43 313.44 62.36 L313.44 55.11 L319.008 55.11 L319.008 96 L313.44 96 L313.44 87.01 C311.12 92.23 306.48 96 300.1 96 C290.24 96 282.12 86.72 282.12 75.12 C282.12 63.52 290.24 54.24 300.1 54.24 Z M300.68 59.808 C292.85 59.808 287.688 66.42 287.688 75.12 C287.688 83.82 292.85 90.432 300.68 90.432 C308.51 90.432 313.44 83.82 313.44 75.12 C313.44 66.42 308.51 59.808 300.68 59.808 Z"/><path class="wm-b" d="M323.88 55.11 L329.448 55.11 L329.448 64.68 C331.42 58.3 336.06 54.24 342.73 54.24 C345.92 54.24 349.11 55.516 351.604 57.604 L349.98 61.78 C348.24 60.62 345.92 59.808 343.6 59.808 C337.22 59.808 331.71 62.65 329.448 69.61 L329.448 96 L323.88 96 Z"/><path class="wm-b" d="M376.66 54.24 C383.04 54.24 387.68 57.43 390 62.36 L390 55.11 L395.568 55.11 L395.568 96 L390 96 L390 87.01 C387.68 92.23 383.04 96 376.66 96 C366.8 96 358.68 86.72 358.68 75.12 C358.68 63.52 366.8 54.24 376.66 54.24 Z M377.24 59.808 C369.41 59.808 364.248 66.42 364.248 75.12 C364.248 83.82 369.41 90.432 377.24 90.432 C385.07 90.432 390 83.82 390 75.12 C390 66.42 385.07 59.808 377.24 59.808 Z"/></symbol>
+  <symbol id="i-home" viewBox="0 0 24 24"><path d="M3.5 10.5 12 4l8.5 6.5V20a1 1 0 0 1-1 1h-5v-6h-5v6h-5a1 1 0 0 1-1-1z"/></symbol>
+  <symbol id="i-live" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8M12 17v4M7 12l2.5-3 2.5 2 3-4 2 2.5"/></symbol>
+  <symbol id="i-key" viewBox="0 0 24 24"><circle cx="8" cy="15" r="4"/><path d="m11 12 8.5-8.5M16 7l2.5 2.5M14 9l2 2"/></symbol>
+  <symbol id="i-backup" viewBox="0 0 24 24"><ellipse cx="12" cy="6" rx="7.5" ry="3"/><path d="M4.5 6v6c0 1.7 3.4 3 7.5 3s7.5-1.3 7.5-3V6M4.5 12v6c0 1.7 3.4 3 7.5 3s7.5-1.3 7.5-3v-6"/></symbol>
+  <symbol id="i-activity" viewBox="0 0 24 24"><path d="M3 12h4l3-7 4 14 3-7h4"/></symbol>
+  <symbol id="i-settings" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></symbol>
+  <symbol id="i-external" viewBox="0 0 24 24"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></symbol>
+  <symbol id="i-copy" viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7.5"/></symbol>
+  <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3 4.5 6v5.5c0 4.7 3.2 8.4 7.5 9.5 4.3-1.1 7.5-4.8 7.5-9.5V6z"/><path d="m9 12 2 2 4-4"/></symbol>
+  <symbol id="i-cpu" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="1.5"/><path d="M9.5 9.5h5v5h-5zM9 2.5V6M15 2.5V6M9 18v3.5M15 18v3.5M2.5 9H6M2.5 15H6M18 9h3.5M18 15h3.5"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></symbol>
+  <symbol id="i-wifi" viewBox="0 0 24 24"><path d="M2.5 9a14 14 0 0 1 19 0M5.5 12.5a9.5 9.5 0 0 1 13 0M8.8 16a5 5 0 0 1 6.4 0"/><circle cx="12" cy="19.3" r=".9"/></symbol>
+  <symbol id="i-users" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.6-3.4 3.2-5.5 6.5-5.5s5.9 2.1 6.5 5.5M16 4.8a3.5 3.5 0 0 1 0 6.4M18 14.8c1.9.8 3.1 2.6 3.5 5.2"/></symbol>
+  <symbol id="i-doc" viewBox="0 0 24 24"><path d="M6 3h8l5 5v12a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/><path d="M14 3v5h5M8.5 13h7M8.5 17h5"/></symbol>
+  <symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 15V4M7.5 8.5 12 4l4.5 4.5M4 15v4a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-4"/></symbol>
+  <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M5.3 18.7l1.4-1.4M17.3 6.7l1.4-1.4"/></symbol>
+  <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></symbol>
+  <symbol id="i-pause" viewBox="0 0 24 24"><path d="M9 5v14M15 5v14"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-alert" viewBox="0 0 24 24"><path d="M12 3.5 2.5 20h19z"/><path d="M12 10v4.5M12 17.3v.2"/></symbol>
+  <symbol id="i-lock" viewBox="0 0 24 24"><rect x="4.5" y="10.5" width="15" height="10" rx="2"/><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"/></symbol>
+  <symbol id="i-restore" viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 2.4-5.7L4 8.5"/><path d="M4 4v4.5h4.5"/></symbol>
+  <symbol id="i-power" viewBox="0 0 24 24"><path d="M12 3v8"/><path d="M6.4 7a8 8 0 1 0 11.2 0"/></symbol>
+  <symbol id="i-help" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M9.6 9.4a2.5 2.5 0 0 1 4.8.9c0 1.7-2.4 2.2-2.4 3.7M12 16.8v.2"/></symbol>
+</svg>
+
+<div class="desk" id="desk">
+  <!-- ===================== THE WINDOW ===================== -->
+  <div class="win" id="win" data-mode="boot" role="application" aria-label="CogniTara Studio window">
+
+    <!-- ---------- BOOT ---------- -->
+    <section class="boot" id="boot" aria-live="polite">
+      <div class="boot__mark" aria-hidden="true">
+        <svg class="boot__symbol" viewBox="0 0 200 200">
+          <g clip-path="url(#ct-c-clip)">
+            <path class="boot__arc" d="M 141.01 58.99 A 58 58 0 1 0 141.01 141.01" pathLength="100"/>
+          </g>
+          <use class="boot__star" href="#ct-star"/>
+        </svg>
+        <span class="boot__beam"></span>
+        <svg class="wordmark boot__word" aria-label="CogniTara"><use href="#ct-word" width="100%" height="100%"/></svg>
+      </div>
+      <div class="boot__foot">
+        <div class="boot__status"><span id="bootText">Starting CogniTara</span><span class="boot__pct" id="bootPct">0%</span></div>
+        <div class="boot__track"><i id="bootBar"></i></div>
+      </div>
+    </section>
+
+    <!-- ---------- TITLE BAR (shared by app/onboarding/lock) ---------- -->
+    <header class="titlebar" id="titlebar">
+      <div class="tb-brand tb-in" style="--n:0">
+        <span class="appicon" aria-hidden="true">
+          <svg viewBox="0 0 200 200"><use class="appicon__c" href="#ct-c"/><use class="appicon__star" href="#ct-star"/></svg>
+        </span>
+        <span class="tb-brand__text">
+          <svg class="wordmark wordmark--sm" aria-label="CogniTara"><use href="#ct-word" width="100%" height="100%"/></svg>
+          <span class="tb-brand__sub">Studio</span>
+        </span>
+      </div>
+      <button class="tb-school tb-in" style="--n:1" id="tbSchoolBtn" title="School profile">
+        <span class="crest" id="tbCrest">CT</span>
+        <span class="tb-school__txt"><strong id="tbSchool">CogniTara School</strong><em id="tbTerm">First Term, 2026/2027</em></span>
+        <svg class="tb-school__chev" viewBox="0 0 24 24"><path d="m8 10 4 4 4-4"/></svg>
+      </button>
+      <div class="titlebar__drag"></div>
+      <button class="search tb-in" style="--n:2" id="searchBtn" aria-label="Search or run a command (Ctrl+K)">
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/></svg>
+        <span>Search or run a command</span>
+        <kbd>Ctrl</kbd><kbd>K</kbd>
+      </button>
+      <div class="titlebar__drag"></div>
+      <div class="tb-status tb-in" style="--n:3" id="tbState" data-state="stopped" role="status">
+        <span class="tb-status__dot"><i></i></span>
+        <span class="tb-status__txt"><strong id="tbStateText">Server stopped</strong><em id="tbStateSub">Ready when you are</em></span>
+        <canvas class="tb-status__spark" id="tbSpark" width="56" height="20" aria-hidden="true"></canvas>
+      </div>
+      <div class="tb-actions tb-in" style="--n:4">
+        <button class="tb-icon" id="themeBtn" aria-label="Switch theme" title="Switch theme">
+          <svg class="themeicon" viewBox="0 0 24 24">
+            <mask id="moonMask"><rect x="0" y="0" width="24" height="24" fill="#fff"/><circle class="themeicon__bite" cx="24" cy="4" r="7" fill="#000"/></mask>
+            <circle class="themeicon__core" cx="12" cy="12" r="5" mask="url(#moonMask)" fill="currentColor" stroke="none"/>
+            <g class="themeicon__rays"><path d="M12 1.8v2.2M12 20v2.2M1.8 12H4M20 12h2.2M4.8 4.8l1.5 1.5M17.7 17.7l1.5 1.5M4.8 19.2l1.5-1.5M17.7 6.3l1.5-1.5"/></g>
+          </svg>
+        </button>
+        <button class="tb-icon" id="bellBtn" aria-label="Notifications" title="Notifications">
+          <svg viewBox="0 0 24 24"><path d="M6 9a6 6 0 1 1 12 0c0 5 2 6.5 2 6.5H4S6 14 6 9"/><path d="M10 19a2 2 0 0 0 4 0"/></svg>
+          <b class="tb-badge" id="bellBadge" hidden>0</b>
+        </button>
+        <button class="tb-avatar" id="avatarBtn" title="Super admin"><span id="tbAvatar">SA</span></button>
+      </div>
+      <span class="tb-sep" aria-hidden="true"></span>
+      <div class="titlebar__ctrls">
+        <button class="tb-btn" id="minBtn" aria-label="Minimise to tray" title="Minimise to tray"><svg viewBox="0 0 24 24"><path d="M6 12h12"/></svg></button>
+        <button class="tb-btn" id="maxBtn" aria-label="Maximise" title="Maximise"><svg viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2"/></svg></button>
+        <button class="tb-btn tb-btn--close" id="closeBtn" aria-label="Close to tray" title="Close (keeps running in tray)"><svg viewBox="0 0 24 24"><path d="m7 7 10 10M17 7 7 17"/></svg></button>
+      </div>
+      <span class="tb-progress" aria-hidden="true"><i id="tbProgress"></i></span>
+    </header>
+
+    <!-- ---------- ONBOARDING ---------- -->
+    <section class="onb" id="onb" aria-label="First-time setup" data-step="0">
+      <aside class="onb__side">
+        <div class="onb__intro">
+          <h2>Set up your exam server</h2>
+          <p>Five short steps. You only do this once on this computer.</p>
+        </div>
+        <div class="onb__track">
+          <span class="onb__rail"><i id="onbRailFill"></i></span>
+          <span class="onb__hl" id="onbHl" aria-hidden="true"></span>
+          <ol class="onb__steps" id="onbSteps">
+            <li data-step="0"><b><span>1</span><svg viewBox="0 0 24 24"><path d="m6 12.5 4 4 8-9"/></svg></b><span><strong>Welcome</strong><em>What CogniTara does</em></span></li>
+            <li data-step="1"><b><span>2</span><svg viewBox="0 0 24 24"><path d="m6 12.5 4 4 8-9"/></svg></b><span><strong>Your school</strong><em>Name, logo and term</em></span></li>
+            <li data-step="2"><b><span>3</span><svg viewBox="0 0 24 24"><path d="m6 12.5 4 4 8-9"/></svg></b><span><strong>Licence</strong><em>Activate this computer</em></span></li>
+            <li data-step="3"><b><span>4</span><svg viewBox="0 0 24 24"><path d="m6 12.5 4 4 8-9"/></svg></b><span><strong>School network</strong><em>How students connect</em></span></li>
+            <li data-step="4"><b><span>5</span><svg viewBox="0 0 24 24"><path d="m6 12.5 4 4 8-9"/></svg></b><span><strong>Super admin</strong><em>Your account and recovery</em></span></li>
+          </ol>
+        </div>
+        <div class="onb__eta"><span class="onb__eta-ring"><svg viewBox="0 0 36 36"><circle cx="18" cy="18" r="15"/><circle class="onb__eta-val" id="onbEta" cx="18" cy="18" r="15" pathLength="100"/></svg></span><span><strong id="onbEtaText">About 3 minutes left</strong><em>Your progress is saved as you go</em></span></div>
+        <a class="onb__help" id="supportLink" href="mailto:support@cognitara.net"><svg><use href="#i-help"/></svg>Need help? support@cognitara.net</a>
+      </aside>
+
+      <div class="onb__main">
+        <div class="aurora" aria-hidden="true"><i class="au-a"></i><i class="au-b"></i></div>
+        <div class="onb__panes" id="onbPanes">
+
+          <!-- Step 1: Welcome -->
+          <article class="pane" data-pane="0">
+            <div class="welcome">
+              <div class="welcome__copy">
+                <span class="badge rv"><svg><use href="#i-shield"/></svg>CogniTara Studio 2.0</span>
+                <h1 class="kinetic">Your exam hall, running from one computer</h1>
+                <p class="lede rv">This PC becomes your school's exam server. Students write on any laptop, desktop or tablet on the school Wi‑Fi or network cable. No internet needed during exams.</p>
+                <ul class="welcome__facts">
+                  <li class="rv"><svg><use href="#i-wifi"/></svg><span><strong>Works offline.</strong> If the internet drops mid-exam, nothing stops.</span></li>
+                  <li class="rv"><svg><use href="#i-shield"/></svg><span><strong>Saved on every click.</strong> A power cut doesn't wipe a student's work.</span></li>
+                  <li class="rv"><svg><use href="#i-power"/></svg><span><strong>One button to start.</strong> No more black terminal windows.</span></li>
+                </ul>
+              </div>
+              <div class="stage stage--hall rv" aria-hidden="true">
+                <div class="orbit orbit--1"></div><div class="orbit orbit--2"></div>
+                <div class="hub">
+                  <svg viewBox="0 0 200 200"><g clip-path="url(#ct-c-clip)"><path class="hub__arc" d="M 141.01 58.99 A 58 58 0 1 0 141.01 141.01" pathLength="100"/></g><use class="hub__star" href="#ct-star"/></svg>
+                </div>
+                <div class="dev" style="--a:200deg;--d:0"><svg><use href="#i-live"/></svg></div>
+                <div class="dev" style="--a:250deg;--d:1"><svg><use href="#i-live"/></svg></div>
+                <div class="dev" style="--a:300deg;--d:2"><svg viewBox="0 0 24 24"><rect x="6" y="3" width="12" height="18" rx="2.5"/><path d="M11 18h2"/></svg></div>
+                <div class="dev" style="--a:350deg;--d:3"><svg><use href="#i-live"/></svg></div>
+                <div class="dev" style="--a:40deg;--d:4"><svg viewBox="0 0 24 24"><rect x="6" y="3" width="12" height="18" rx="2.5"/><path d="M11 18h2"/></svg></div>
+                <div class="dev" style="--a:90deg;--d:5"><svg><use href="#i-live"/></svg></div>
+                <div class="dev" style="--a:140deg;--d:6"><svg><use href="#i-live"/></svg></div>
+                <div class="stage__count"><strong id="hallCount">0</strong><span>devices can connect at once, up to 300</span></div>
+              </div>
+            </div>
+          </article>
+
+          <!-- Step 2: School profile -->
+          <article class="pane" data-pane="1">
+            <h1 class="kinetic">Tell us about your school</h1>
+            <p class="lede rv">This appears on every student login screen and on printed results.</p>
+            <div class="split2">
+              <form class="form rv" id="schoolForm">
+                <label class="field"><span>School name</span><input id="fSchool" value="CogniTara School" autocomplete="off"></label>
+                <label class="field"><span>Motto <i>optional</i></span><input id="fMotto" value="Knowledge, Discipline, Excellence" autocomplete="off"></label>
+                <div class="field-row">
+                  <label class="field"><span>Session</span><input id="fSession" value="2026/2027"></label>
+                  <label class="field"><span>Term</span>
+                    <select id="fTerm"><option>First Term</option><option>Second Term</option><option>Third Term</option></select>
+                  </label>
+                </div>
+                <label class="drop" id="logoDrop"><svg><use href="#i-upload"/></svg><span><strong>Upload school logo</strong><em>PNG or SVG, square works best</em></span><input type="file" accept="image/*" id="fLogo" hidden></label>
+              </form>
+              <div class="stage stage--login rv" id="tiltStage">
+                <span class="stage__tag"><i></i>Live preview of the student login</span>
+                <div class="mock-login__card" id="tiltCard">
+                  <div class="mock-login__crest" id="mlCrest"><span id="mlInitials">CT</span></div>
+                  <strong id="mlSchool">CogniTara School</strong>
+                  <em id="mlMotto">Knowledge, Discipline, Excellence</em>
+                  <span class="mock-login__term" id="mlTerm">First Term, 2026/2027</span>
+                  <i class="mock-input">Admission number</i>
+                  <i class="mock-input">Password</i>
+                  <b class="mock-btn">Sign in</b>
+                </div>
+              </div>
+            </div>
+          </article>
+
+          <!-- Step 3: Licence -->
+          <article class="pane" data-pane="2">
+            <h1 class="kinetic">Activate your licence</h1>
+            <p class="lede rv">Enter the key from your cognitara.net account. It locks to this computer, so keep this PC as your exam server.</p>
+            <div class="lic-act">
+              <div class="keybox rv" id="keybox">
+                <label for="keyInput">Licence key</label>
+                <div class="segkey" id="segkey">
+                  <span class="segkey__pre">CGNT</span>
+                  <span class="segkey__box" data-i="0"></span><span class="segkey__box" data-i="1"></span><span class="segkey__box" data-i="2"></span><span class="segkey__box" data-i="3"></span>
+                  <input id="keyInput" maxlength="19" spellcheck="false" autocomplete="off" aria-describedby="keyHint" aria-label="Licence key">
+                </div>
+                <p class="hint" id="keyHint">16 letters and numbers. Dashes are added for you.</p>
+                <div class="pcid">
+                  <span><svg><use href="#i-cpu"/></svg>This computer's ID</span>
+                  <code id="pcId">CT-HWID-0000-0000-0000</code>
+                  <button class="btn btn--ghost btn--sm" data-copy="#pcId"><svg><use href="#i-copy"/></svg>Copy</button>
+                </div>
+                <div class="lic-act__actions">
+                  <button class="btn btn--primary" id="activateBtn" disabled><svg><use href="#i-key"/></svg>Activate</button>
+                  <button class="btn btn--ghost" id="licFileBtn"><svg><use href="#i-doc"/></svg>Use a licence file</button>
+                </div>
+                <p class="buy">No licence yet? <a id="buyLicLink" href="https://cognitara.net/pricing" target="_blank" rel="noopener">Buy one on cognitara.net</a>. Monthly, annual and lifetime plans.</p>
+              </div>
+              <div class="verify stage rv" id="verify" data-state="idle" aria-live="polite">
+                <span class="ripple"></span><span class="ripple"></span><span class="ripple"></span>
+                <svg class="verify__sym" viewBox="0 0 200 200" aria-hidden="true">
+                  <use class="verify__base" href="#ct-c"/>
+                  <g clip-path="url(#ct-c-clip)"><path class="verify__arc" id="verifyArc" d="M 141.01 58.99 A 58 58 0 1 0 141.01 141.01" pathLength="100"/></g>
+                  <use class="verify__star" href="#ct-star"/>
+                </svg>
+                <ul class="verify__list">
+                  <li data-k="sig"><i></i>Licence signature</li>
+                  <li data-k="pc"><i></i>Locked to this computer</li>
+                  <li data-k="clock"><i></i>System clock</li>
+                </ul>
+                <div class="verify__result" id="verifyResult"><span>Waiting for your key</span></div>
+              </div>
+            </div>
+          </article>
+
+          <!-- Step 4: Network -->
+          <article class="pane" data-pane="3">
+            <h1 class="kinetic">Connect students to this server</h1>
+            <p class="lede rv">Choose the network your exam hall uses. Students open this address in a browser, or scan the code.</p>
+            <div class="net">
+              <div class="net__list rv" id="netList" role="radiogroup" aria-label="Network adapters"></div>
+              <div class="net__connect stage rv">
+                <div class="qrframe" id="qrFrame" data-state="scan">
+                  <span class="qrframe__sweep"></span>
+                  <span class="qrframe__corner c1"></span><span class="qrframe__corner c2"></span><span class="qrframe__corner c3"></span><span class="qrframe__corner c4"></span>
+                  <div class="qr qr--build" id="onbQr"></div>
+                </div>
+                <div class="net__addr">
+                  <span>Students type</span>
+                  <code id="onbAddr">http://127.0.0.1:5000</code>
+                  <p class="hint">Tip: try it now on your phone while connected to the same Wi‑Fi.</p>
+                </div>
+              </div>
+            </div>
+          </article>
+
+          <!-- Step 5: Super admin -->
+          <article class="pane" data-pane="4">
+            <h1 class="kinetic">Create the super admin account</h1>
+            <p class="lede rv">This account controls the server, licence and every other admin. Keep the recovery codes safe; they're the only way back in if the password is lost.</p>
+            <div class="split2">
+              <form class="form rv" id="adminForm">
+                <label class="field"><span>Full name</span><input id="fName" value="" placeholder="e.g. Adaeze Okafor" autocomplete="off"></label>
+                <label class="field"><span>Username</span><input id="fUser" value="superadmin" autocomplete="off"></label>
+                <label class="field"><span>Password</span><input id="fPass" type="password" placeholder="At least 10 characters" autocomplete="new-password"></label>
+                <div class="meter" id="meter" data-score="0"><i></i><i></i><i></i><i></i><span id="meterText">Enter a password</span></div>
+              </form>
+              <div class="recovery stage rv">
+                <div class="recovery__head"><strong>Recovery codes</strong><span>Each works once</span></div>
+                <ol class="recovery__codes" id="recCodes"></ol>
+                <div class="recovery__actions">
+                  <button class="btn btn--ghost btn--sm" id="recDownload"><svg><use href="#i-upload"/></svg>Save as file</button>
+                  <button class="btn btn--ghost btn--sm" data-copy="#recCodes"><svg><use href="#i-copy"/></svg>Copy</button>
+                </div>
+                <label class="check"><input type="checkbox" id="recSaved"><span>I've saved my recovery codes</span></label>
+              </div>
+            </div>
+          </article>
+
+          <!-- Finish -->
+          <article class="pane pane--finish" data-pane="5">
+            <div class="finish">
+              <div class="finish__mark">
+                <span class="ripple"></span><span class="ripple"></span><span class="ripple"></span>
+                <svg viewBox="0 0 200 200" aria-hidden="true"><g clip-path="url(#ct-c-clip)"><path class="finish__arc" d="M 141.01 58.99 A 58 58 0 1 0 141.01 141.01" pathLength="100"/></g><use class="finish__star" href="#ct-star"/></svg>
+              </div>
+              <h1 class="kinetic">You're all set</h1>
+              <p class="lede rv">CogniTara is ready on this computer. Start the server whenever you're ready for exams.</p>
+              <ul class="finish__list" id="finishList"></ul>
+              <button class="btn btn--primary btn--lg rv" id="finishBtn"><svg><use href="#i-power"/></svg>Open CogniTara Studio</button>
+            </div>
+          </article>
+
+        </div>
+        <footer class="onb__nav" id="onbNav">
+          <button class="btn btn--ghost" id="onbBack"><svg viewBox="0 0 24 24"><path d="m14 6-6 6 6 6"/></svg>Back</button>
+          <span class="onb__count" id="onbCount"><span class="onb__count-roll" id="onbCountNum">1</span> of 5</span>
+          <button class="btn btn--primary" id="onbNext"><span id="onbNextLabel">Get started</span><svg class="btn__chev" viewBox="0 0 24 24"><path d="m10 6 6 6-6 6"/></svg></button>
+        </footer>
+      </div>
+    </section>
+
+    <!-- ---------- MAIN APP ---------- -->
+    <section class="app" id="app">
+      <nav class="rail" aria-label="Main">
+        <span class="rail__ind" id="railInd" aria-hidden="true"></span>
+        <ul class="rail__nav" id="railNav">
+          <li><button data-view="home" class="is-active"><svg><use href="#i-home"/></svg>Server</button></li>
+          <li><button data-view="live"><svg><use href="#i-live"/></svg>Live exams<b class="rail__badge" id="liveBadge" hidden>0</b></button></li>
+          <li><button data-view="licence"><svg><use href="#i-key"/></svg>Licence</button></li>
+          <li><button data-view="backups"><svg><use href="#i-backup"/></svg>Backups</button></li>
+          <li><button data-view="activity"><svg><use href="#i-activity"/></svg>Activity</button></li>
+          <li><button data-view="settings"><svg><use href="#i-settings"/></svg>Settings</button></li>
+        </ul>
+        <button class="rail__lic" data-view="licence" id="railLic">
+          <svg class="ring" viewBox="0 0 36 36" aria-hidden="true"><circle cx="18" cy="18" r="15"/><circle class="ring__val" id="railRing" cx="18" cy="18" r="15" pathLength="100"/></svg>
+          <span><strong id="railPlan">Licence</strong><em id="railDays">Checking…</em></span>
+        </button>
+      </nav>
+
+      <main class="views" id="views">
+
+        <!-- ===== HOME / SERVER ===== -->
+        <div class="view is-active" data-view="home">
+          <header class="greet">
+            <div>
+              <p class="greet__hello" id="greetHello">Good morning</p>
+              <h1 id="greetSchool">CogniTara School</h1>
+            </div>
+            <div class="greet__meta"><span class="chip"><svg><use href="#i-clock"/></svg><span id="greetTerm">First Term, 2026/2027</span></span></div>
+          </header>
+          <div class="home">
+            <section class="core card" id="core" data-state="stopped">
+              <div class="core__glow" aria-hidden="true"></div>
+              <button class="core__dial" id="dial" aria-label="Start server">
+                <svg viewBox="0 0 200 200" aria-hidden="true">
+                  <use class="core__base" href="#ct-c"/>
+                  <g clip-path="url(#ct-c-clip)"><path class="core__arc" id="coreArc" d="M 141.01 58.99 A 58 58 0 1 0 141.01 141.01" pathLength="100"/></g>
+                  <use class="core__star" href="#ct-star"/>
+                </svg>
+              </button>
+              <div class="core__info">
+                <span class="status" id="coreStatus"><i></i><span>Offline</span></span>
+                <h1 id="coreTitle">Server is off</h1>
+                <p id="coreSub">Students can't connect yet. Start the server when you're ready for exams.</p>
+                <div class="core__actions">
+                  <button class="btn btn--primary btn--lg" id="startBtn"><svg><use href="#i-power"/></svg><span>Start server</span></button>
+                  <span class="core__step" id="coreStep"></span>
+                </div>
+              </div>
+            </section>
+
+            <section class="connect card" id="connect">
+              <div class="connect__qr qr" id="homeQr"></div>
+              <div class="connect__body">
+                <span class="connect__label">Students connect at</span>
+                <code class="connect__addr" id="homeAddr">http://127.0.0.1:5000</code>
+                <div class="connect__row">
+                  <button class="btn btn--ghost btn--sm" data-copy="#homeAddr"><svg><use href="#i-copy"/></svg>Copy</button>
+                  <span class="connect__alt">or <code id="homeAltAddr">http://localhost:5000</code></span>
+                </div>
+              </div>
+            </section>
+
+            <section class="stats" aria-label="Server numbers">
+              <div class="stat card"><b class="tile tile--cyan"><svg><use href="#i-wifi"/></svg></b><span>Devices connected</span><strong id="stDevices">0</strong><em id="stDevicesSub">Server is off</em></div>
+              <div class="stat card"><b class="tile tile--cobalt"><svg><use href="#i-doc"/></svg></b><span>Exams running</span><strong id="stExams">0</strong><em id="stPublished">0 published</em></div>
+              <div class="stat card"><b class="tile tile--ok"><svg><use href="#i-users"/></svg></b><span>Students writing</span><strong id="stWriting">0</strong><em id="stRegistered">0 registered</em></div>
+              <div class="stat card"><b class="tile tile--slate"><svg><use href="#i-clock"/></svg></b><span>Uptime</span><strong id="stUptime" class="mono">00:00:00</strong><em id="stUptimeSub">Not started</em></div>
+            </section>
+
+            <section class="portals card">
+              <h2>Open a portal</h2>
+              <p>Opens in your web browser on this computer.</p>
+              <div class="portals__list">
+                <a class="portal" id="portalAdmin" href="#admin"><b class="tile tile--cobalt"><svg><use href="#i-settings"/></svg></b><span><strong>Admin and teachers</strong><em>Exams, results, users, settings</em></span><svg><use href="#i-external"/></svg></a>
+                <a class="portal" id="portalStudent" href="#student"><b class="tile tile--cyan"><svg><use href="#i-users"/></svg></b><span><strong>Student login</strong><em>What students see on their device</em></span><svg><use href="#i-external"/></svg></a>
+                <a class="portal" id="portalCe" href="#ce"><b class="tile tile--slate"><svg><use href="#i-doc"/></svg></b><span><strong>Common Entrance</strong><em>Entrance exam candidate login</em></span><svg><use href="#i-external"/></svg></a>
+              </div>
+            </section>
+
+            <section class="pulse card">
+              <div class="pulse__head"><h2>Activity</h2><span id="pulseRate">0 requests/min</span></div>
+              <canvas id="pulseCanvas" height="90" aria-label="Requests per second over the last two minutes"></canvas>
+              <ul class="events" id="homeEvents"></ul>
+            </section>
+          </div>
+        </div>
+
+        <!-- ===== LIVE EXAMS ===== -->
+        <div class="view" data-view="live">
+          <header class="vhead">
+            <div><h1>Live exams</h1><p id="liveSub">Start the server to see exams in progress.</p></div>
+            <div class="vhead__actions">
+              <button class="btn btn--ghost" id="pauseAllBtn"><svg><use href="#i-pause"/></svg>Pause all</button>
+            </div>
+          </header>
+          <div class="table-wrap is-empty">
+            <table class="table" id="liveTable">
+              <thead><tr><th>Exam</th><th>Class</th><th>Writing</th><th class="w-prog">Progress</th><th>Warnings</th><th>Time left</th><th></th></tr></thead>
+              <tbody></tbody>
+            </table>
+            <div class="empty" id="liveEmpty">
+              <svg><use href="#i-live"/></svg>
+              <strong>No exams in progress</strong>
+              <p>When students start writing, each exam appears here with live progress.</p>
+            </div>
+          </div>
+          <h2 class="subhead">Needs attention</h2>
+          <ul class="attention" id="attention"><li class="is-empty">Nothing needs your attention.</li></ul>
+        </div>
+
+        <!-- ===== LICENCE ===== -->
+        <div class="view" data-view="licence">
+          <header class="vhead">
+            <div><h1>Licence</h1><p>Your plan, how long it lasts, and how it's protected.</p></div>
+          </header>
+          <div class="lic">
+            <section class="lic__gauge">
+              <svg viewBox="0 0 200 200" aria-hidden="true">
+                <use class="lic__base" href="#ct-c"/>
+                <g clip-path="url(#ct-c-clip)"><path class="lic__arc" id="licArc" d="M 141.01 58.99 A 58 58 0 1 0 141.01 141.01" pathLength="100"/></g>
+                <use class="lic__star" href="#ct-star"/>
+              </svg>
+              <div class="lic__days"><strong id="licDays">—</strong><span id="licDaysLabel">checking licence</span></div>
+            </section>
+            <section class="lic__details">
+              <dl class="dl">
+                <div><dt>Plan</dt><dd id="licPlan">—</dd></div>
+                <div><dt>School</dt><dd id="licSchool">CogniTara School</dd></div>
+                <div><dt id="licExpLabel">Expires</dt><dd id="licExp">—</dd></div>
+                <div><dt>This computer</dt><dd><code id="licHwid">CT-HWID-0000-0000-0000</code></dd></div>
+                <div><dt>Last check-in</dt><dd id="licCheck">—</dd></div>
+                <div><dt>Check in again by</dt><dd id="licLease">—</dd></div>
+              </dl>
+              <div class="lic__actions">
+                <a class="btn btn--primary" id="renewLicBtn" href="https://cognitara.net/account/licences" target="_blank" rel="noopener"><svg><use href="#i-external"/></svg>Renew or upgrade</a>
+                <button class="btn btn--ghost" id="licImportBtn"><svg><use href="#i-doc"/></svg>Import licence file</button>
+                <button class="btn btn--ghost" id="checkInBtn"><svg><use href="#i-restore"/></svg>Check in now</button>
+              </div>
+            </section>
+          </div>
+          <h2 class="subhead">Protection</h2>
+          <ul class="checks">
+            <li id="checkSig"><svg><use href="#i-check"/></svg><span><strong>Licence signature is genuine</strong><em>Signed by CogniTara. Edited or copied licence files are rejected.</em></span></li>
+            <li id="checkPc"><svg><use href="#i-check"/></svg><span><strong>Locked to this computer</strong><em>Copying CogniTara to another PC won't carry the licence with it.</em></span></li>
+            <li id="checkClock"><svg><use href="#i-check"/></svg><span><strong>System clock is trusted</strong><em>Time used is tracked independently, so changing the date has no effect.</em></span></li>
+          </ul>
+        </div>
+
+        <!-- ===== BACKUPS ===== -->
+        <div class="view" data-view="backups">
+          <header class="vhead">
+            <div><h1>Backups</h1><p>Copies of every exam, question, student and result.</p></div>
+            <div class="vhead__actions"><button class="btn btn--primary" id="backupBtn"><svg><use href="#i-backup"/></svg>Back up now</button></div>
+          </header>
+          <div class="backup-progress" id="backupProg" hidden><i></i><span>Copying exam records…</span></div>
+          <div class="bk-settings">
+            <label class="field"><span>Automatic backups</span>
+              <select id="bkSchedule">
+                <option value="30m">Every 30 minutes while exams are running</option>
+                <option value="60m">Every hour</option>
+                <option value="daily">Once a day</option>
+                <option value="off">Off</option>
+              </select>
+            </label>
+            <label class="field"><span>Save backups to</span>
+              <div class="pathbox"><code id="bkDirPath">C:\ProgramData\CogniTara\Backups</code><button class="btn btn--ghost btn--sm" id="bkDirBtn">Change</button></div>
+            </label>
+          </div>
+          <div class="table-wrap">
+            <table class="table" id="bkTable">
+              <thead><tr><th>Backup</th><th>Type</th><th>Size</th><th>Check</th><th></th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- ===== ACTIVITY ===== -->
+        <div class="view" data-view="activity">
+          <header class="vhead">
+            <div><h1>Activity</h1><p>Everything the server has done today, in plain language.</p></div>
+          </header>
+          <div class="seg" id="actFilter" role="tablist">
+            <button class="is-active" data-f="all">All</button><button data-f="server">Server</button><button data-f="exam">Exams</button><button data-f="licence">Licence</button><button data-f="backup">Backups</button>
+          </div>
+          <ul class="events events--full" id="actList"></ul>
+        </div>
+
+        <!-- ===== SETTINGS ===== -->
+        <div class="view" data-view="settings">
+          <header class="vhead"><div><h1>Settings</h1><p>How CogniTara behaves on this computer.</p></div></header>
+          <div class="settings">
+            <section>
+              <h2>Appearance</h2>
+              <div class="set-row"><span><strong>Theme</strong><em>Dark suits server rooms, light suits bright offices.</em></span>
+                <div class="seg seg--sm" id="themeSeg"><button data-t="dark">Dark</button><button data-t="light">Light</button></div></div>
+            </section>
+            <section>
+              <h2>Startup</h2>
+              <div class="set-row"><span><strong>Open CogniTara when Windows starts</strong><em>Runs quietly in the tray.</em></span><label class="toggle"><input type="checkbox" id="setStartWin" checked><i></i></label></div>
+              <div class="set-row"><span><strong>Start the server automatically</strong><em>Students can connect as soon as the PC is on.</em></span><label class="toggle"><input type="checkbox" id="setAutoStart"><i></i></label></div>
+            </section>
+            <section>
+              <h2>Network</h2>
+              <div class="set-row"><span><strong>Port</strong><em id="setPortHint">Change only if another program uses 5000.</em></span><input class="input-sm mono" id="setPort" value="5000" inputmode="numeric" aria-label="Port"></div>
+              <div class="set-row"><span><strong>Allow access only from the school network</strong><em>Blocks connections from outside your local network.</em></span><label class="toggle"><input type="checkbox" id="setLanOnly" checked><i></i></label></div>
+            </section>
+            <section>
+              <h2>About</h2>
+              <div class="set-row"><span><strong id="aboutVersion">CogniTara Studio 2.0.0</strong><em>5-layer licence vault active.</em></span><button class="btn btn--ghost btn--sm" id="setCheckUpdateBtn">Check for updates</button></div>
+            </section>
+          </div>
+        </div>
+      </main>
+    </section>
+
+    <!-- ---------- LOCK SCREENS ---------- -->
+    <section class="lock" id="lock" data-kind="expired" aria-live="assertive">
+      <div class="lock__inner">
+        <svg class="lock__sym" viewBox="0 0 200 200" aria-hidden="true"><use class="lock__c" href="#ct-c"/><use class="lock__star" href="#ct-star"/></svg>
+        <h1 id="lockTitle">Your licence has ended</h1>
+        <p id="lockBody">The server has stopped accepting new exams. Your exams, questions and results are safe and will be here when you renew.</p>
+        <div class="drain" id="drain">
+          <svg><use href="#i-clock"/></svg>
+          <span><strong><span id="drainCount">0</span> exams are still in progress.</strong> Students have <b class="mono" id="drainTime">15:00</b> to finish and submit. Nobody new can start.</span>
+        </div>
+        <div class="lock__actions" id="lockActions"></div>
+        <p class="lock__meta" id="lockMeta"></p>
+      </div>
+    </section>
+
+    <!-- Command palette -->
+    <div class="palette" id="palette" hidden>
+      <div class="palette__box" role="dialog" aria-label="Command palette">
+        <div class="palette__input">
+          <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/></svg>
+          <input id="palInput" placeholder="Type a command or search" autocomplete="off" spellcheck="false">
+          <kbd>Esc</kbd>
+        </div>
+        <ul class="palette__list" id="palList" role="listbox"></ul>
+      </div>
+    </div>
+
+    <!-- Toast -->
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  </div>
+</div>
+
+<script src="./cognitara-qr.js"></script>
+<script src="./studio-desktop.js"></script>
+</body>
+</html>

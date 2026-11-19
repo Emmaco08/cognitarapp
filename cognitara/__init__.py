@@ -1,4 +1,5 @@
 import os
+import sys
 from flask import Flask, url_for
 from flask_wtf.csrf import generate_csrf, CSRFError
 
@@ -12,9 +13,12 @@ from cognitara.database.connection import get_db_connection
 from cognitara.routes import ALL_BLUEPRINTS
 
 def create_app(config_class=Config):
-    project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-    template_dir = os.path.join(project_root, "templates")
-    static_dir = os.path.join(project_root, "static")
+    if getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"):
+        asset_root = os.path.abspath(sys._MEIPASS)
+    else:
+        asset_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+    template_dir = os.path.join(asset_root, "templates")
+    static_dir = os.path.join(asset_root, "static")
 
     app = Flask(
         "cognitara",
@@ -50,6 +54,12 @@ def create_app(config_class=Config):
 
     # Security middleware & request pre-processors
     app.before_request(inject_csrf_from_body)
+    from cognitara.security.license_guard import (
+        enforce_license_before_request,
+        get_license_guard,
+        should_enforce_license,
+    )
+    app.before_request(enforce_license_before_request)
 
     # Initialize extensions
     csrf.init_app(app)
@@ -97,12 +107,27 @@ def create_app(config_class=Config):
 
     # Safe startup non-destructive schema validation & table initialization
     try:
-        from cognitara.database.initialization import init_analytics_tables, init_exam_management_tables
+        from cognitara.database.initialization import (
+            init_analytics_tables,
+            init_exam_management_tables,
+            init_license_tables,
+        )
         conn = get_db_connection()
         init_analytics_tables(conn)
         init_exam_management_tables(conn)
+        init_license_tables(conn)
         conn.close()
     except Exception as e:
         app.logger.warning(f"Startup database initialization note: {e}")
+
+    # Start 60-second monotonic license watchdog when enforcement is active
+    try:
+        guard = get_license_guard()
+        app.extensions["license_guard"] = guard
+        if should_enforce_license(app):
+            guard.evaluate(advance_monotonic=False)
+            guard.start_watchdog()
+    except Exception as e:
+        app.logger.warning(f"License watchdog startup note: {e}")
 
     return app

@@ -1,0 +1,24 @@
+{
+  "name": "cognitara-studio",
+  "productName": "CogniTara Studio",
+  "version": "2.0.0",
+  "description": "CogniTara v2 Windows Super Admin Desktop Studio — Offline LAN CBT Exam Server & 5-Layer Licence Vault",
+  "author": "CogniTara Education Technologies",
+  "license": "UNLICENSED",
+  "private": true,
+  "main": "dist/main/index.js",
+  "scripts": {
+    "build:ts": "tsc -p tsconfig.json",
+    "copy:renderer": "node -e \"const fs=require('fs');const path=require('path');fs.cpSync('src/renderer','dist/renderer',{recursive:true});\"",
+    "build": "npm run build:ts && npm run copy:renderer",
+    "start": "npm run build && electron .",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "dist:win": "npm run build && electron-builder --win --config electron-builder.yml"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "electron": "^35.1.5",
+    "electron-builder": "^25.1.8",
+    "typescript": "^5.8.2"
+  }
+}

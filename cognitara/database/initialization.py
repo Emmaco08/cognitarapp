@@ -48,7 +48,8 @@ def ensure_deadline_columns(conn):
             ("time_adjust_delta", "INTEGER DEFAULT 0"),
             ("time_adjusted_at", "DATETIME"),
             ("tab_closed", "INTEGER DEFAULT 0"),
-            ("pause_reason", "TEXT")
+            ("pause_reason", "TEXT"),
+            ("updated_at", "TIMESTAMP")
         ]
         for col_name, col_type in new_ce_cols:
             if col_name not in ce_cols:
@@ -101,6 +102,10 @@ def ensure_deadline_columns(conn):
                 conn.execute("ALTER TABLE ce_attempt_questions ADD COLUMN client_revision INTEGER DEFAULT 0;")
             if "client_timestamp" not in ce_aq_cols:
                 conn.execute("ALTER TABLE ce_attempt_questions ADD COLUMN client_timestamp INTEGER DEFAULT 0;")
+            if "time_spent" not in ce_aq_cols:
+                conn.execute("ALTER TABLE ce_attempt_questions ADD COLUMN time_spent INTEGER DEFAULT 0;")
+            if "completed_at" not in ce_aq_cols:
+                conn.execute("ALTER TABLE ce_attempt_questions ADD COLUMN completed_at TIMESTAMP;")
             conn.commit()
 
             cur.execute("SELECT name FROM sqlite_master WHERE type='index' AND name='uq_ce_aq_attempt_question';")
@@ -138,6 +143,9 @@ def ensure_deadline_columns(conn):
 
         # Run Phase 4.6 non-destructive schema initialization
         init_phase4_6_schema(conn)
+
+        # Run v2 licensing & desktop recovery non-destructive schema initialization
+        init_license_tables(conn)
 
         _CHECKED_DBS.add(db_file)
     except Exception as e:
@@ -505,4 +513,43 @@ def init_phase4_6_schema(conn):
         conn.commit()
     except Exception as e:
         logger.error(f"Error in init_phase4_6_schema: {e}")
+
+
+def init_license_tables(conn):
+    """
+    Non-destructive v2 desktop licensing & recovery schema additions:
+    - local_license_state: Anchor C of the triple-anchor anti-clock-tamper vault
+    - admin_recovery_codes: Hashed one-time super admin recovery codes
+    """
+    try:
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS local_license_state (
+                id INTEGER PRIMARY KEY CHECK (id = 1),
+                license_id TEXT NOT NULL,
+                max_seen_utc INTEGER NOT NULL,
+                used_seconds INTEGER NOT NULL DEFAULT 0,
+                lock_state TEXT NOT NULL DEFAULT 'ACTIVE',
+                active_exam_drain_until INTEGER DEFAULT NULL,
+                vault_checksum TEXT NOT NULL,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            );
+        """)
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS admin_recovery_codes (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                admin_id INTEGER NOT NULL,
+                code_hash TEXT NOT NULL,
+                used INTEGER NOT NULL DEFAULT 0,
+                used_at DATETIME DEFAULT NULL,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (admin_id) REFERENCES admin(id) ON DELETE CASCADE
+            );
+        """)
+        conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_admin_recovery_admin ON admin_recovery_codes(admin_id, used);"
+        )
+        conn.commit()
+    except Exception as e:
+        logger.error(f"Error in init_license_tables: {e}")
+
 

@@ -12,6 +12,7 @@ from cognitara.routes.admin.results import admin_results_bp
 from cognitara.routes.admin.common_entrance import admin_ce_bp
 from cognitara.routes.admin.settings import admin_settings_bp
 from cognitara.routes.preview import preview_bp
+from cognitara.routes.internal_desktop import internal_desktop_bp
 
 ALL_BLUEPRINTS = [
     home_bp,
@@ -28,4 +29,5 @@ ALL_BLUEPRINTS = [
     admin_ce_bp,
     admin_settings_bp,
     preview_bp,
+    internal_desktop_bp,
 ]

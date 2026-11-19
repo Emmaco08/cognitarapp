@@ -96,3 +96,12 @@ Thumbs.db
 ehthumbs.db
 Desktop.ini
 user_prompt*.txt
+
+# Electron Desktop & PyInstaller Build Outputs
+build/
+dist/
+desktop/node_modules/
+desktop/dist/
+desktop/release/
+desktop/resources/engine/
+

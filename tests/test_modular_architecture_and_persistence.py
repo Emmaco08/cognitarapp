@@ -38,6 +38,7 @@ class TestCognitaraModularSuite(unittest.TestCase):
     def setUpClass(cls):
         import shutil
         cls.test_db = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "backups_phase4_3", "exam_test_disposable.db"))
+        os.makedirs(os.path.dirname(cls.test_db), exist_ok=True)
         prod_db = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "backups_phase4_3", "exam_pre_phase4_3.db"))
         if not os.path.exists(prod_db):
             prod_db = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "exam.db"))
@@ -136,10 +137,30 @@ class TestCognitaraModularSuite(unittest.TestCase):
     def _ensure_active_regular_attempt(cls, conn):
         attempt = conn.execute("SELECT id, student_id, exam_id FROM scores WHERE status='in_progress' LIMIT 1").fetchone()
         if not attempt:
+            cur = conn.cursor()
             student = conn.execute("SELECT id FROM students LIMIT 1").fetchone()
+            if not student:
+                cur.execute(
+                    "INSERT INTO students (username, password, class, full_name, status) "
+                    "VALUES ('ci_student_1', 'scrypt:dummy', 'JSS 1', 'CI Test Student', 'approved')"
+                )
+                conn.commit()
+                student = conn.execute("SELECT id FROM students WHERE id=?", (cur.lastrowid,)).fetchone()
             exam = conn.execute("SELECT e.id FROM exams e JOIN questions q ON e.id = q.exam_id LIMIT 1").fetchone()
+            if not exam:
+                cur.execute(
+                    "INSERT INTO exams (name, class, duration, active, max_warnings) "
+                    "VALUES ('CI Sample Exam', 'JSS 1', 30, 1, 3)"
+                )
+                exam_id = cur.lastrowid
+                cur.execute(
+                    "INSERT INTO questions (exam_id, question, option1, option2, option3, option4, answer) "
+                    "VALUES (?, 'What is 2 + 2?', '3', '4', '5', '6', '4')",
+                    (exam_id,)
+                )
+                conn.commit()
+                exam = conn.execute("SELECT id FROM exams WHERE id=?", (exam_id,)).fetchone()
             if student and exam:
-                cur = conn.cursor()
                 cur.execute(
                     "INSERT INTO scores (student_id, exam_id, score, total, percentage, submitted, status, start_time, is_paused, warnings_count, remaining_time, authoritative_deadline) "
                     "VALUES (?, ?, 0, 0, 0, 0, 'in_progress', DATETIME('now'), 0, 0, 1800, DATETIME('now', '+30 minutes'))",
@@ -153,10 +174,31 @@ class TestCognitaraModularSuite(unittest.TestCase):
     def _ensure_active_ce_attempt(cls, conn):
         attempt = conn.execute("SELECT id, student_id, exam_id FROM ce_attempts WHERE status='in_progress' LIMIT 1").fetchone()
         if not attempt:
-            student = conn.execute("SELECT id FROM ce_students LIMIT 1").fetchone()
+            cur = conn.cursor()
             exam = conn.execute("SELECT e.id FROM ce_exams e JOIN ce_questions q ON e.id = q.exam_id LIMIT 1").fetchone()
+            if not exam:
+                cur.execute(
+                    "INSERT INTO ce_exams (name, target_class, duration, active, max_warnings, passing_score) "
+                    "VALUES ('CI Common Entrance', 'JSS 1', 45, 1, 3, 50)"
+                )
+                ce_exam_id = cur.lastrowid
+                cur.execute(
+                    "INSERT INTO ce_questions (exam_id, question, option1, option2, option3, option4, answer) "
+                    "VALUES (?, 'Capital of Nigeria?', 'Lagos', 'Abuja', 'Kano', 'Ibadan', 'Abuja')",
+                    (ce_exam_id,)
+                )
+                conn.commit()
+                exam = conn.execute("SELECT id FROM ce_exams WHERE id=?", (ce_exam_id,)).fetchone()
+            student = conn.execute("SELECT id FROM ce_students LIMIT 1").fetchone()
+            if not student and exam:
+                cur.execute(
+                    "INSERT INTO ce_students (full_name, username, password, exam_id) "
+                    "VALUES ('CI Candidate', 'ci_ce_cand_1', 'scrypt:dummy', ?)",
+                    (exam["id"],)
+                )
+                conn.commit()
+                student = conn.execute("SELECT id FROM ce_students WHERE id=?", (cur.lastrowid,)).fetchone()
             if student and exam:
-                cur = conn.cursor()
                 cur.execute(
                     "INSERT INTO ce_attempts (student_id, exam_id, score, total, percentage, passed, status, started_at, is_paused, warnings_count, remaining_time, authoritative_deadline) "
                     "VALUES (?, ?, 0, 0, 0, 0, 'in_progress', DATETIME('now'), 0, 0, 1800, DATETIME('now', '+30 minutes'))",
