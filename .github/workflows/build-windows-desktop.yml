@@ -91,25 +91,7 @@ jobs:
 
       - name: Verify cross-runtime Python <-> Electron Ed25519 signature verification
         shell: pwsh
-        run: |
-          python -c "
-          import json, base64, subprocess
-          from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
-          from cryptography.hazmat.primitives import serialization
-          from cognitara.security.license_guard import canonical_json_bytes
-          b64u = lambda b: base64.urlsafe_b64encode(b).decode('ascii').rstrip('=')
-          priv = Ed25519PrivateKey.generate()
-          pub_b64 = b64u(priv.public_key().public_bytes(serialization.Encoding.Raw, serialization.PublicFormat.Raw))
-          payload = {'license_id': 'LIC-CI', 'plan_tier': 'annual', 'school_name': 'CI School', 'hwid_hash': 'ci-hwid'}
-          env = {'payload': payload, 'ed25519_sig': b64u(priv.sign(canonical_json_bytes(payload)))}
-          js = f'''
-          const {{ verifyEd25519LeaseInElectron }} = require(\"./desktop/dist/main/license-bridge.js\");
-          const ok = verifyEd25519LeaseInElectron({json.dumps(env)}, {json.dumps(pub_b64)});
-          if (!ok.ok) {{ console.error(ok); process.exit(1); }}
-          console.log(\"Electron Layer 5 Ed25519 check passed:\", ok);
-          '''
-          subprocess.run(['node', '-e', js], check=True)
-          "
+        run: python scripts/verify_cross_runtime_ed25519.py
 
       - name: Package Windows NSIS .exe installer (electron-builder)
         working-directory: desktop
