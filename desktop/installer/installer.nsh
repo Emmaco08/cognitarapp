@@ -35,41 +35,17 @@
   !define MUI_FINISHPAGE_TEXT "Your offline-first LAN exam server and 5-layer licence vault have been installed.$\r$\n$\r$\nLaunch CogniTara Studio now to complete the 5-step school setup or sign in with your CogniTara Cloud account."
   !define MUI_FINISHPAGE_RUN_TEXT "Launch CogniTara Studio now"
 
-  Var ctShowcaseDialog
-  Var ctSlideImgCtrl
-  Var ctSlideImgHandle
-  Var ctSlideCaptionCtrl
-  Var ctPrevBtn
-  Var ctNextBtn
-  Var ctSlideIdx
-  Var ctInstSlideCtrl
-  Var ctInstSlideHandle
-  Var ctInstSlideIdx
-  Var ctInstTimerActive
-
   ; ---------------------------------------------------------------------------
-  ; Native Windows 10/11 Dark Title Bar + Dark Frame Initialization
+  ; Page Declarations (inserted by electron-builder assistedInstaller.nsh)
   ; ---------------------------------------------------------------------------
-  Function CogniTaraGuiInit
-    ${If} ${Silent}
-      Return
-    ${EndIf}
+  !macro customWelcomePage
+    Page custom CogniTaraShowcaseCreate CogniTaraShowcaseLeave
+  !macroend
 
-    ; Enable Immersive Dark Mode titlebar on Windows 10 (19) and Windows 11 (20)
-    System::Call 'dwmapi::DwmSetWindowAttribute(p $HWNDPARENT, i 20, *i 1, i 4) i .r0'
-    System::Call 'dwmapi::DwmSetWindowAttribute(p $HWNDPARENT, i 19, *i 1, i 4) i .r0'
-
-    ; Paint outer dialog frame Midnight Navy
-    SetCtlColors $HWNDPARENT ${CT_INK_HEX} ${CT_BG_HEX}
-    GetDlgItem $0 $HWNDPARENT 1037
-    SetCtlColors $0 ${CT_INK_HEX} ${CT_BG_HEX}
-    GetDlgItem $0 $HWNDPARENT 1038
-    SetCtlColors $0 ${CT_MUTED_HEX} ${CT_BG_HEX}
-    GetDlgItem $0 $HWNDPARENT 1034
-    SetCtlColors $0 ${CT_INK_HEX} ${CT_BG_HEX}
-    GetDlgItem $0 $HWNDPARENT 1028
-    SetCtlColors $0 ${CT_MUTED_HEX} ${CT_BG_HEX}
-  FunctionEnd
+  !macro customPageAfterChangeDir
+    !define MUI_PAGE_CUSTOMFUNCTION_SHOW CogniTaraInstFilesShow
+    !define MUI_PAGE_CUSTOMFUNCTION_LEAVE CogniTaraInstFilesLeave
+  !macroend
 
   ; ---------------------------------------------------------------------------
   ; Extract 5 High-DPI Feature Showcase Slide BMPs on Installer Init
@@ -83,181 +59,204 @@
     File /oname=$PLUGINSDIR\slide_5.bmp "${PROJECT_DIR}\installer\assets\slide_5.bmp"
     StrCpy $ctSlideIdx 1
     StrCpy $ctInstSlideIdx 1
-    StrCpy $ctInstTimerActive 0
   !macroend
 
   ; ---------------------------------------------------------------------------
-  ; Helper: Paint Current Slide BMP + Caption on Welcome Feature Showcase Page
+  ; Functions & Vars (emitted inside customHeader AFTER all plugins/MUI load)
   ; ---------------------------------------------------------------------------
-  Function CogniTaraRenderWelcomeSlide
-    ${If} $ctSlideImgHandle != ""
-      ${NSD_FreeImage} $ctSlideImgHandle
-      StrCpy $ctSlideImgHandle ""
-    ${EndIf}
+  !macro customHeader
+    Var ctShowcaseDialog
+    Var ctSlideImgCtrl
+    Var ctSlideImgHandle
+    Var ctSlideCaptionCtrl
+    Var ctPrevBtn
+    Var ctNextBtn
+    Var ctSlideIdx
+    Var ctInstSlideCtrl
+    Var ctInstSlideHandle
+    Var ctInstSlideIdx
 
-    ${If} $ctSlideIdx == 1
-      ${NSD_SetImage} $ctSlideImgCtrl "$PLUGINSDIR\slide_1.bmp" $ctSlideImgHandle
-      ${NSD_SetText} $ctSlideCaptionCtrl "Feature 1 of 5  •  Offline-First LAN Exam Engine (300+ concurrent PCs)"
-    ${ElseIf} $ctSlideIdx == 2
-      ${NSD_SetImage} $ctSlideImgCtrl "$PLUGINSDIR\slide_2.bmp" $ctSlideImgHandle
-      ${NSD_SetText} $ctSlideCaptionCtrl "Feature 2 of 5  •  5-Layer Ed25519 Licence Vault & 15-Min Exam Drain"
-    ${ElseIf} $ctSlideIdx == 3
-      ${NSD_SetImage} $ctSlideImgCtrl "$PLUGINSDIR\slide_3.bmp" $ctSlideImgHandle
-      ${NSD_SetText} $ctSlideCaptionCtrl "Feature 3 of 5  •  60fps Proctor Studio & One-Click Server Dial"
-    ${ElseIf} $ctSlideIdx == 4
-      ${NSD_SetImage} $ctSlideImgCtrl "$PLUGINSDIR\slide_4.bmp" $ctSlideImgHandle
-      ${NSD_SetText} $ctSlideCaptionCtrl "Feature 4 of 5  •  Automated Hot SQLite Backups & Safe Restore"
-    ${Else}
-      ${NSD_SetImage} $ctSlideImgCtrl "$PLUGINSDIR\slide_5.bmp" $ctSlideImgHandle
-      ${NSD_SetText} $ctSlideCaptionCtrl "Feature 5 of 5  •  Neon Cloud Sign-In & Direct In-App Auto-Updates"
-    ${EndIf}
-  FunctionEnd
+    ; Native Windows 10/11 Dark Title Bar + Dark Frame Initialization
+    Function CogniTaraGuiInit
+      ${If} ${Silent}
+        Return
+      ${EndIf}
 
-  Function CogniTaraSlideNext
-    IntOp $ctSlideIdx $ctSlideIdx + 1
-    ${If} $ctSlideIdx > 5
+      ; Enable Immersive Dark Mode titlebar on Windows 10 (19) and Windows 11 (20)
+      System::Call 'dwmapi::DwmSetWindowAttribute(p $HWNDPARENT, i 20, *i 1, i 4) i .r0'
+      System::Call 'dwmapi::DwmSetWindowAttribute(p $HWNDPARENT, i 19, *i 1, i 4) i .r0'
+
+      ; Paint outer dialog frame Midnight Navy
+      SetCtlColors $HWNDPARENT ${CT_INK_HEX} ${CT_BG_HEX}
+      GetDlgItem $0 $HWNDPARENT 1037
+      SetCtlColors $0 ${CT_INK_HEX} ${CT_BG_HEX}
+      GetDlgItem $0 $HWNDPARENT 1038
+      SetCtlColors $0 ${CT_MUTED_HEX} ${CT_BG_HEX}
+      GetDlgItem $0 $HWNDPARENT 1034
+      SetCtlColors $0 ${CT_INK_HEX} ${CT_BG_HEX}
+      GetDlgItem $0 $HWNDPARENT 1028
+      SetCtlColors $0 ${CT_MUTED_HEX} ${CT_BG_HEX}
+    FunctionEnd
+
+    ; Paint Current Slide BMP + Caption on Welcome Feature Showcase Page
+    Function CogniTaraRenderWelcomeSlide
+      ${If} $ctSlideImgHandle != ""
+        ${NSD_FreeImage} $ctSlideImgHandle
+        StrCpy $ctSlideImgHandle ""
+      ${EndIf}
+
+      ${If} $ctSlideIdx == 1
+        ${NSD_SetImage} $ctSlideImgCtrl "$PLUGINSDIR\slide_1.bmp" $ctSlideImgHandle
+        ${NSD_SetText} $ctSlideCaptionCtrl "Feature 1 of 5  •  Offline-First LAN Exam Engine (300+ concurrent PCs)"
+      ${ElseIf} $ctSlideIdx == 2
+        ${NSD_SetImage} $ctSlideImgCtrl "$PLUGINSDIR\slide_2.bmp" $ctSlideImgHandle
+        ${NSD_SetText} $ctSlideCaptionCtrl "Feature 2 of 5  •  5-Layer Ed25519 Licence Vault & 15-Min Exam Drain"
+      ${ElseIf} $ctSlideIdx == 3
+        ${NSD_SetImage} $ctSlideImgCtrl "$PLUGINSDIR\slide_3.bmp" $ctSlideImgHandle
+        ${NSD_SetText} $ctSlideCaptionCtrl "Feature 3 of 5  •  60fps Proctor Studio & One-Click Server Dial"
+      ${ElseIf} $ctSlideIdx == 4
+        ${NSD_SetImage} $ctSlideImgCtrl "$PLUGINSDIR\slide_4.bmp" $ctSlideImgHandle
+        ${NSD_SetText} $ctSlideCaptionCtrl "Feature 4 of 5  •  Automated Hot SQLite Backups & Safe Restore"
+      ${Else}
+        ${NSD_SetImage} $ctSlideImgCtrl "$PLUGINSDIR\slide_5.bmp" $ctSlideImgHandle
+        ${NSD_SetText} $ctSlideCaptionCtrl "Feature 5 of 5  •  Neon Cloud Sign-In & Direct In-App Auto-Updates"
+      ${EndIf}
+    FunctionEnd
+
+    Function CogniTaraSlideNext
+      IntOp $ctSlideIdx $ctSlideIdx + 1
+      ${If} $ctSlideIdx > 5
+        StrCpy $ctSlideIdx 1
+      ${EndIf}
+      Call CogniTaraRenderWelcomeSlide
+    FunctionEnd
+
+    Function CogniTaraSlidePrev
+      IntOp $ctSlideIdx $ctSlideIdx - 1
+      ${If} $ctSlideIdx < 1
+        StrCpy $ctSlideIdx 5
+      ${EndIf}
+      Call CogniTaraRenderWelcomeSlide
+    FunctionEnd
+
+    Function CogniTaraWelcomeTick
+      Call CogniTaraSlideNext
+    FunctionEnd
+
+    ; Custom Welcome Page: Full-Width Opus Studio Feature Showcase Slider
+    Function CogniTaraShowcaseCreate
+      ${If} ${Silent}
+        Abort
+      ${EndIf}
+      ${If} ${isUpdated}
+        Abort
+      ${EndIf}
+
+      !insertmacro MUI_HEADER_TEXT "Welcome to CogniTara Studio 2.1" "Offline-first LAN CBT examination server with 5-layer vault & cloud sync."
+
+      nsDialogs::Create 1018
+      Pop $ctShowcaseDialog
+      ${If} $ctShowcaseDialog == error
+        Abort
+      ${EndIf}
+
+      SetCtlColors $ctShowcaseDialog ${CT_INK_HEX} ${CT_BG_HEX}
+
+      ; Full-width 490x218 Feature Showcase Stage
+      ${NSD_CreateBitmap} 0u 0u 100% 118u ""
+      Pop $ctSlideImgCtrl
+
+      ; Interactive slider control bar underneath the stage
+      ${NSD_CreateButton} 0u 122u 44u 16u "< Prev"
+      Pop $ctPrevBtn
+      ${NSD_OnClick} $ctPrevBtn CogniTaraSlidePrev
+
+      ${NSD_CreateLabel} 50u 125u 200u 12u "Feature 1 of 5  •  Offline-First LAN Exam Engine"
+      Pop $ctSlideCaptionCtrl
+      SetCtlColors $ctSlideCaptionCtrl ${CT_CYAN_HEX} ${CT_BG_HEX}
+
+      ${NSD_CreateButton} 256u 122u 44u 16u "Next >"
+      Pop $ctNextBtn
+      ${NSD_OnClick} $ctNextBtn CogniTaraSlideNext
+
       StrCpy $ctSlideIdx 1
-    ${EndIf}
-    Call CogniTaraRenderWelcomeSlide
-  FunctionEnd
+      Call CogniTaraRenderWelcomeSlide
 
-  Function CogniTaraSlidePrev
-    IntOp $ctSlideIdx $ctSlideIdx - 1
-    ${If} $ctSlideIdx < 1
-      StrCpy $ctSlideIdx 5
-    ${EndIf}
-    Call CogniTaraRenderWelcomeSlide
-  FunctionEnd
+      ; Auto-advance slides smoothly every 4.0 seconds
+      ${NSD_CreateTimer} CogniTaraWelcomeTick 4000
 
-  Function CogniTaraWelcomeTick
-    Call CogniTaraSlideNext
-  FunctionEnd
+      nsDialogs::Show
+    FunctionEnd
 
-  ; ---------------------------------------------------------------------------
-  ; Custom Welcome Page: Full-Width Opus Studio Feature Showcase Slider
-  ; ---------------------------------------------------------------------------
-  Function CogniTaraShowcaseCreate
-    ${If} ${isUpdated}
-    ${OrIf} ${Silent}
-      Abort
-    ${EndIf}
+    Function CogniTaraShowcaseLeave
+      ${NSD_KillTimer} CogniTaraWelcomeTick
+      ${If} $ctSlideImgHandle != ""
+        ${NSD_FreeImage} $ctSlideImgHandle
+        StrCpy $ctSlideImgHandle ""
+      ${EndIf}
+    FunctionEnd
 
-    !insertmacro MUI_HEADER_TEXT "Welcome to CogniTara Studio 2.1" "Offline-first LAN CBT examination server with 5-layer vault & cloud sync."
+    ; Animated Feature Showcase Slider DURING Installation (InstFiles Page)
+    Function CogniTaraLoadInstSlide
+      ${If} $ctInstSlideCtrl == ""
+        Return
+      ${EndIf}
+      ${If} $ctInstSlideHandle != ""
+        System::Call 'gdi32::DeleteObject(p $ctInstSlideHandle)'
+        StrCpy $ctInstSlideHandle ""
+      ${EndIf}
 
-    nsDialogs::Create 1018
-    Pop $ctShowcaseDialog
-    ${If} $ctShowcaseDialog == error
-      Abort
-    ${EndIf}
+      StrCpy $0 "$PLUGINSDIR\slide_$ctInstSlideIdx.bmp"
+      ; LoadImageW(NULL, path, IMAGE_BITMAP=0, 0, 0, LR_LOADFROMFILE=0x10)
+      System::Call 'user32::LoadImage(p 0, t r0, i 0, i 0, i 0, i 0x10) p .r1'
+      StrCpy $ctInstSlideHandle $1
+      ; STM_SETIMAGE = 0x0172, IMAGE_BITMAP = 0
+      SendMessage $ctInstSlideCtrl 0x0172 0 $ctInstSlideHandle
+    FunctionEnd
 
-    SetCtlColors $ctShowcaseDialog ${CT_INK_HEX} ${CT_BG_HEX}
+    Function CogniTaraAdvanceInstSlide
+      ${If} ${Silent}
+        Return
+      ${EndIf}
+      IntOp $ctInstSlideIdx $ctInstSlideIdx + 1
+      ${If} $ctInstSlideIdx > 5
+        StrCpy $ctInstSlideIdx 1
+      ${EndIf}
+      Call CogniTaraLoadInstSlide
+    FunctionEnd
 
-    ; Full-width 490x218 Feature Showcase Stage (dialog units: 0, 2u, 100%, 118u)
-    ${NSD_CreateBitmap} 0u 0u 100% 118u ""
-    Pop $ctSlideImgCtrl
+    Function CogniTaraInstFilesShow
+      ${If} ${Silent}
+        Return
+      ${EndIf}
 
-    ; Interactive slider control bar underneath the stage
-    ${NSD_CreateButton} 0u 122u 44u 16u "< Prev"
-    Pop $ctPrevBtn
-    ${NSD_OnClick} $ctPrevBtn CogniTaraSlidePrev
+      FindWindow $0 "#32770" "" $HWNDPARENT
+      SetCtlColors $0 ${CT_INK_HEX} ${CT_BG_HEX}
 
-    ${NSD_CreateLabel} 50u 125u 200u 12u "Feature 1 of 5  •  Offline-First LAN Exam Engine"
-    Pop $ctSlideCaptionCtrl
-    SetCtlColors $ctSlideCaptionCtrl ${CT_CYAN_HEX} ${CT_BG_HEX}
+      ; Status text label (IDC_INTROTEXT / 1006)
+      GetDlgItem $1 $0 1006
+      SetCtlColors $1 ${CT_CYAN_HEX} ${CT_BG_HEX}
 
-    ${NSD_CreateButton} 256u 122u 44u 16u "Next >"
-    Pop $ctNextBtn
-    ${NSD_OnClick} $ctNextBtn CogniTaraSlideNext
+      ; Hide noisy raw details list (1016) & Show Details button (1027)
+      GetDlgItem $1 $0 1016
+      ShowWindow $1 0
+      GetDlgItem $1 $0 1027
+      ShowWindow $1 0
 
-    StrCpy $ctSlideIdx 1
-    Call CogniTaraRenderWelcomeSlide
-
-    ; Auto-advance slides smoothly every 4.0 seconds
-    ${NSD_CreateTimer} CogniTaraWelcomeTick 4000
-
-    nsDialogs::Show
-  FunctionEnd
-
-  Function CogniTaraShowcaseLeave
-    ${NSD_KillTimer} CogniTaraWelcomeTick
-    ${If} $ctSlideImgHandle != ""
-      ${NSD_FreeImage} $ctSlideImgHandle
-      StrCpy $ctSlideImgHandle ""
-    ${EndIf}
-  FunctionEnd
-
-  !macro customWelcomePage
-    Page custom CogniTaraShowcaseCreate CogniTaraShowcaseLeave
-  !macroend
-
-  ; ---------------------------------------------------------------------------
-  ; Animated Feature Showcase Slider DURING Installation (InstFiles Page)
-  ; ---------------------------------------------------------------------------
-  Function CogniTaraLoadInstSlide
-    ${If} $ctInstSlideCtrl == ""
-      Return
-    ${EndIf}
-    ${If} $ctInstSlideHandle != ""
-      System::Call 'gdi32::DeleteObject(p $ctInstSlideHandle)'
-      StrCpy $ctInstSlideHandle ""
-    ${EndIf}
-
-    StrCpy $0 "$PLUGINSDIR\slide_$ctInstSlideIdx.bmp"
-    ; LoadImageW(NULL, path, IMAGE_BITMAP=0, 0, 0, LR_LOADFROMFILE=0x10)
-    System::Call 'user32::LoadImage(p 0, t r0, i 0, i 0, i 0, i 0x10) p .r1'
-    StrCpy $ctInstSlideHandle $1
-    ; STM_SETIMAGE = 0x0172, IMAGE_BITMAP = 0
-    SendMessage $ctInstSlideCtrl 0x0172 0 $ctInstSlideHandle
-  FunctionEnd
-
-  Function CogniTaraAdvanceInstSlide
-    ${If} ${Silent}
-      Return
-    ${EndIf}
-    IntOp $ctInstSlideIdx $ctInstSlideIdx + 1
-    ${If} $ctInstSlideIdx > 5
+      ; Create 490x218 Feature Showcase Bitmap Stage below the progress bar
+      ; WS_CHILD(0x40000000) | WS_VISIBLE(0x10000000) | SS_BITMAP(0x0000000E) | SS_CENTERIMAGE(0x00000200) = 0x5000020E
+      System::Call 'user32::CreateWindowEx(i 0, t "STATIC", t "", i 0x5000020E, i 0, i 46, i 490, i 218, p $0, p 0, p 0, p 0) p .r2'
+      StrCpy $ctInstSlideCtrl $2
       StrCpy $ctInstSlideIdx 1
-    ${EndIf}
-    Call CogniTaraLoadInstSlide
-  FunctionEnd
+      Call CogniTaraLoadInstSlide
+    FunctionEnd
 
-  Function CogniTaraInstFilesShow
-    ${If} ${Silent}
-      Return
-    ${EndIf}
-
-    FindWindow $0 "#32770" "" $HWNDPARENT
-    SetCtlColors $0 ${CT_INK_HEX} ${CT_BG_HEX}
-
-    ; Status text label (IDC_INTROTEXT / 1006)
-    GetDlgItem $1 $0 1006
-    SetCtlColors $1 ${CT_CYAN_HEX} ${CT_BG_HEX}
-
-    ; Hide the noisy raw details list (1016) & Show Details button (1027)
-    GetDlgItem $1 $0 1016
-    ShowWindow $1 0
-    GetDlgItem $1 $0 1027
-    ShowWindow $1 0
-
-    ; Create a clean 490x218 Feature Showcase Bitmap Stage inside InstFiles below the progress bar
-    ; WS_CHILD(0x40000000) | WS_VISIBLE(0x10000000) | SS_BITMAP(0x0000000E) | SS_CENTERIMAGE(0x00000200) = 0x5000020E
-    System::Call 'user32::CreateWindowEx(i 0, t "STATIC", t "", i 0x5000020E, i 0, i 46, i 490, i 218, p $0, p 0, p 0, p 0) p .r2'
-    StrCpy $ctInstSlideCtrl $2
-    StrCpy $ctInstSlideIdx 1
-    Call CogniTaraLoadInstSlide
-  FunctionEnd
-
-  Function CogniTaraInstFilesLeave
-    ${If} $ctInstSlideHandle != ""
-      System::Call 'gdi32::DeleteObject(p $ctInstSlideHandle)'
-      StrCpy $ctInstSlideHandle ""
-    ${EndIf}
-  FunctionEnd
-
-  ; Attach InstFiles show/leave hooks cleanly right before MUI_PAGE_INSTFILES
-  !macro customPageAfterChangeDir
-    !define MUI_PAGE_CUSTOMFUNCTION_SHOW CogniTaraInstFilesShow
-    !define MUI_PAGE_CUSTOMFUNCTION_LEAVE CogniTaraInstFilesLeave
+    Function CogniTaraInstFilesLeave
+      ${If} $ctInstSlideHandle != ""
+        System::Call 'gdi32::DeleteObject(p $ctInstSlideHandle)'
+        StrCpy $ctInstSlideHandle ""
+      ${EndIf}
+    FunctionEnd
   !macroend
 
   ; ---------------------------------------------------------------------------
