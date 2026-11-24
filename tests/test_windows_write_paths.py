@@ -41,16 +41,23 @@ def test_frozen_uses_programdata_then_falls_back_to_localappdata(tmp_path, monke
         str(program_data / "CogniTara" / "data" / "static" / "images")
     )
 
-    # 2. Read-only PROGRAMDATA -> automatic fallback to %LOCALAPPDATA%\CogniTara\data
+    # 2. Unwritable PROGRAMDATA -> automatic fallback to %LOCALAPPDATA%\CogniTara\data
+    # (On Windows NTFS, os.chmod(0o555) does not block Administrator writes; simulate PermissionError deterministically.)
+    import cognitara.config as cfg_mod
+
     ro_program_data = tmp_path / "ReadOnlyProgramData"
     ro_program_data.mkdir()
-    os.chmod(ro_program_data, 0o555)
-    try:
-        monkeypatch.setenv("PROGRAMDATA", str(ro_program_data))
-        fallback_dir = resolve_data_dir()
-        assert os.path.normpath(fallback_dir) == os.path.normpath(str(local_app / "CogniTara" / "data"))
-    finally:
-        os.chmod(ro_program_data, 0o755)
+    real_ensure = cfg_mod._ensure_writable_dir
+
+    def _blocked_programdata(cand: str) -> bool:
+        if os.path.normcase(os.path.abspath(cand)).startswith(os.path.normcase(os.path.abspath(str(ro_program_data)))):
+            return False
+        return real_ensure(cand)
+
+    monkeypatch.setenv("PROGRAMDATA", str(ro_program_data))
+    monkeypatch.setattr(cfg_mod, "_ensure_writable_dir", _blocked_programdata)
+    fallback_dir = resolve_data_dir()
+    assert os.path.normpath(fallback_dir) == os.path.normpath(str(local_app / "CogniTara" / "data"))
 
 
 def test_setup_logging_writes_into_data_dir_not_install_dir(tmp_path, monkeypatch):
