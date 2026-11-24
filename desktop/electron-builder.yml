@@ -24,8 +24,23 @@ win:
       arch:
         - x64
   icon: assets/cognitara-favicon.ico
-  artifactName: "CogniTara-Studio-Setup-${version}-${arch}.${ext}"
+  # The NSIS installer is the electron-updater package (and the payload embedded in
+  # the custom Tauri setup). The human-facing download is the Tauri setup, published
+  # as "CogniTara-Studio-Setup-<ver>-x64.exe" by CI. latest.yml is generated from
+  # this artifactName, so the updater always points at the right asset.
+  artifactName: "CogniTara-Studio-Update-${version}-${arch}.${ext}"
   requestedExecutionLevel: asInvoker
+  # Code signing (see docs/CODE_SIGNING.md). Inert while no certificate is configured:
+  #   - PFX:   CI exports WIN_CSC_LINK / WIN_CSC_KEY_PASSWORD secrets as CSC_LINK /
+  #            CSC_KEY_PASSWORD; publisherName is then read from the certificate CN.
+  #   - Azure: CI passes -c.win.azureSignOptions.* (+ optional publisherName) on the
+  #            command line only when the AZURE_* secrets exist.
+  # Do NOT hard-code publisherName here while builds are unsigned: electron-updater
+  # would then reject every unsigned update.
+  signtoolOptions:
+    signingHashAlgorithms:
+      - sha256
+    rfc3161TimeStampServer: http://timestamp.digicert.com
 nsis:
   oneClick: false
   allowToChangeInstallationDirectory: true

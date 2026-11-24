@@ -1,16 +1,13 @@
 /**
- * CogniTara Studio — Neon Postgres + Vercel Online Auth & Offline-Ready Local Cache
- *
- * Connects CogniTara Studio to the live CogniTara Cloud API (`https://cognitara-cloud.vercel.app`)
- * for real online Sign Up, Sign In, and profile sync, while persisting an encrypted local cache
- * (`studio-cloud-account.json`) so schools remain seamlessly signed in even when completely offline.
+ * CogniTara Studio — Neon Postgres + Vercel Cloud Auth, Paystack Billing,
+ * Promo/Redeem Codes & Live Developer Directives (with Offline Encrypted Cache)
  */
 
 import fs from "fs";
 import os from "os";
 import path from "path";
 import { app, safeStorage } from "electron";
-import { CloudAccountSession } from "./types";
+import { CloudAccountSession, CloudDirectives } from "./types";
 
 export const DEFAULT_CLOUD_API_URL =
   process.env.COGNITARA_CLOUD_URL || "https://cognitara-cloud.vercel.app";
@@ -28,6 +25,7 @@ interface PersistedCloudFile {
   school: CloudAccountSession["school"];
   referralCode: string | null;
   licenses: CloudAccountSession["licenses"];
+  directives?: CloudDirectives | null;
 }
 
 export class CloudAuthManager {
@@ -54,7 +52,7 @@ export class CloudAuthManager {
         return { tokenEnc: safeStorage.encryptString(raw).toString("base64") };
       }
     } catch {
-      // Fallback on headless/Linux environments without keyring
+      // Fallback on headless Linux environments without keyring
     }
     return { tokenPlain: raw };
   }
@@ -115,6 +113,7 @@ export class CloudAuthManager {
         school: null,
         referralCode: null,
         licenses: [],
+        directives: null,
       };
     }
     return {
@@ -126,7 +125,12 @@ export class CloudAuthManager {
       school: this.cached.school,
       referralCode: this.cached.referralCode,
       licenses: this.cached.licenses || [],
+      directives: this.cached.directives || null,
     };
+  }
+
+  public getAccessToken(): string | null {
+    return this.decryptToken(this.cached);
   }
 
   private async requestJson(
@@ -136,7 +140,7 @@ export class CloudAuthManager {
     token?: string | null
   ): Promise<{ ok: boolean; status: number; data: any; networkError?: boolean }> {
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 12_000);
+    const timeout = setTimeout(() => controller.abort(), 15_000);
     try {
       const res = await fetch(`${this.cloudUrl}${urlPath}`, {
         method,
@@ -184,6 +188,7 @@ export class CloudAuthManager {
       ...payload,
       client_type: "desktop",
       device_label: os.hostname(),
+      app_version: app.getVersion(),
     });
 
     if (!res.ok) {
@@ -205,6 +210,7 @@ export class CloudAuthManager {
       school: res.data.school || null,
       referralCode: res.data.referral_code || null,
       licenses: res.data.licenses || [],
+      directives: res.data.directives || null,
     });
 
     return { ok: true, session: this.getSession() };
@@ -219,6 +225,7 @@ export class CloudAuthManager {
       ...payload,
       client_type: "desktop",
       device_label: os.hostname(),
+      app_version: app.getVersion(),
     });
 
     if (!res.ok) {
@@ -240,6 +247,7 @@ export class CloudAuthManager {
       school: res.data.school || null,
       referralCode: res.data.referral_code || null,
       licenses: res.data.licenses || [],
+      directives: res.data.directives || null,
     });
 
     return { ok: true, session: this.getSession() };
@@ -253,7 +261,6 @@ export class CloudAuthManager {
 
     const res = await this.requestJson("/api/v1/auth/me", "GET", undefined, token);
     if (res.networkError) {
-      // Offline-ready: keep cached profile active!
       return {
         ok: true,
         offline: true,
@@ -267,7 +274,7 @@ export class CloudAuthManager {
       return {
         ok: false,
         session: this.getSession(),
-        message: "Cloud session expired. Please sign in again.",
+        message: res.data?.message || "Cloud session expired. Please sign in again.",
       };
     }
 
@@ -279,6 +286,7 @@ export class CloudAuthManager {
         school: res.data.school || this.cached.school,
         referralCode: res.data.referral_code ?? this.cached.referralCode,
         licenses: Array.isArray(res.data.licenses) ? res.data.licenses : this.cached.licenses,
+        directives: res.data.directives || this.cached.directives || null,
       });
       return { ok: true, offline: false, session: this.getSession() };
     }
@@ -293,5 +301,88 @@ export class CloudAuthManager {
     }
     this.clearCacheFile();
     return { ok: true, session: this.getSession() };
+  }
+
+  // ---- Dynamic Plans, Promo/Redeem Codes & Paystack Checkout ----
+
+  public async fetchPlans(): Promise<{ ok: boolean; plans?: any[]; platform?: any; message?: string }> {
+    const res = await this.requestJson("/api/v1/plans", "GET");
+    if (!res.ok) {
+      return { ok: false, message: res.data?.message || "Could not load CogniTara plans." };
+    }
+    return { ok: true, plans: res.data.plans || [], platform: res.data.platform || {} };
+  }
+
+  public async validatePromo(payload: {
+    code: string;
+    plan_id?: string | null;
+    currency?: string;
+  }): Promise<any> {
+    const token = this.getAccessToken();
+    const res = await this.requestJson("/api/v1/promo/validate", "POST", payload, token);
+    return res.ok ? res.data : { ok: false, error: res.data?.error, message: res.data?.message || "Invalid code." };
+  }
+
+  public async redeemCode(payload: {
+    code: string;
+    plan_id?: string | null;
+    currency?: string;
+    hwid_hash?: string;
+    display_hwid?: string;
+    hw_component_hashes?: Record<string, string>;
+  }): Promise<any> {
+    const token = this.getAccessToken();
+    if (!token) {
+      return { ok: false, error: "unauthorized", message: "Sign in to your CogniTara Cloud account first." };
+    }
+    const res = await this.requestJson(
+      "/api/v1/promo/redeem",
+      "POST",
+      {
+        ...payload,
+        machine_hostname: os.hostname(),
+        os_version: `${os.platform()} ${os.release()}`,
+      },
+      token
+    );
+    return res.ok ? res.data : { ok: false, error: res.data?.error, message: res.data?.message || "Redeem failed." };
+  }
+
+  public async initializePaystack(payload: {
+    plan_id: string;
+    currency?: string;
+    promo_code?: string;
+    hwid_hash?: string;
+    display_hwid?: string;
+  }): Promise<any> {
+    const token = this.getAccessToken();
+    if (!token) {
+      return { ok: false, error: "unauthorized", message: "Sign in to your CogniTara Cloud account first." };
+    }
+    const res = await this.requestJson("/api/v1/payments/paystack/initialize", "POST", payload, token);
+    return res.ok ? res.data : { ok: false, error: res.data?.error, message: res.data?.message || "Checkout failed." };
+  }
+
+  public async verifyPaystack(payload: {
+    reference: string;
+    hwid_hash?: string;
+    display_hwid?: string;
+    hw_component_hashes?: Record<string, string>;
+  }): Promise<any> {
+    const token = this.getAccessToken();
+    if (!token) {
+      return { ok: false, error: "unauthorized", message: "Sign in to verify your payment." };
+    }
+    const res = await this.requestJson(
+      "/api/v1/payments/paystack/verify",
+      "POST",
+      {
+        ...payload,
+        machine_hostname: os.hostname(),
+        os_version: `${os.platform()} ${os.release()}`,
+      },
+      token
+    );
+    return res.ok ? res.data : { ok: false, error: res.data?.error, message: res.data?.message || "Verification failed." };
   }
 }

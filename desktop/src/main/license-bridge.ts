@@ -10,7 +10,7 @@ import crypto from "crypto";
 import { LicenseStatus } from "./types";
 
 // Matches cognitara/security/license_guard.py DEFAULT_ED25519_PUBLIC_KEY_B64
-const DEFAULT_ED25519_PUBLIC_KEY_B64 = "p9fN2h7Y5c3K8m1Q4v6W0x2Z9b4D7f1H3j5L8n0P2r4";
+const DEFAULT_ED25519_PUBLIC_KEY_B64 = "cUDQSjHQMeXyWg3Ydptk-APs7Pd_lEyIp_XqBErD00g";
 
 // ASN.1 DER SPKI prefix for raw 32-byte Ed25519 public key (RFC 8410)
 const ED25519_SPKI_PREFIX = Buffer.from("302a300506032b6570032100", "hex");

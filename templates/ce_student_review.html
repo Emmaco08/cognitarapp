@@ -1,5 +1,6 @@
+{%- from '_ct_shell.html' import ico, ct_boot_script, admin_shell_start, teacher_shell_start, student_topbar, shell_end -%}
 <!DOCTYPE html>
-<html>
+<html lang="en" data-theme="dark">
 <head>
     <title>{{ student.full_name }} - Exam Review | COGNITARA EXAM SYSTEM</title>
     <link href="{{ url_for('static', filename='vendor/bootstrap/css/bootstrap.min.css') }}" rel="stylesheet">
@@ -17,44 +18,44 @@
         .review-container { max-width: 1200px; margin: 0 auto; padding: 30px; }
         
         /* Header Card */
-        .header-card { background: linear-gradient(135deg, #1a56db 0%, #0e3b9e 100%); color: white; border-radius: 24px; padding: 30px; margin-bottom: 30px; }
+        .header-card { background: var(--ct-brand-grad); color: white; border-radius: 24px; padding: 30px; margin-bottom: 30px; }
         
         /* Stat Cards */
-        .stat-card { background: white; border-radius: 20px; padding: 20px; text-align: center; border: 1px solid #e2e8f0; transition: all 0.3s; height: 100%; }
+        .stat-card { background: var(--ct-surface); border-radius: 20px; padding: 20px; text-align: center; border: 1px solid var(--ct-line-2); transition: all 0.3s; height: 100%; }
         .stat-card:hover { transform: translateY(-3px); box-shadow: 0 10px 20px -10px rgba(0,0,0,0.1); }
         .stat-card i { font-size: 32px; margin-bottom: 10px; }
         .stat-card h3 { font-size: 32px; font-weight: 800; margin: 5px 0; }
-        .stat-card p { color: #64748b; font-size: 13px; margin: 0; }
+        .stat-card p { color: var(--ct-ink-3); font-size: 13px; margin: 0; }
         
         /* Question Cards */
-        .question-card { background: white; border-radius: 16px; padding: 20px; margin-bottom: 15px; border: 1px solid #e2e8f0; transition: all 0.3s; }
+        .question-card { background: var(--ct-surface); border-radius: 16px; padding: 20px; margin-bottom: 15px; border: 1px solid var(--ct-line-2); transition: all 0.3s; }
         .question-card.correct { border-left: 4px solid #10b981; }
         .question-card.incorrect { border-left: 4px solid #ef4444; }
         .question-card:hover { transform: translateX(5px); box-shadow: 0 5px 15px rgba(0,0,0,0.05); }
         
         /* Badges */
-        .badge-correct { background: #d1fae5; color: #065f46; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 600; }
-        .badge-incorrect { background: #fee2e2; color: #991b1b; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 600; }
-        .badge-pending { background: #fef3c7; color: #d97706; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+        .badge-correct { background: var(--ct-ok-soft); color: #065f46; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+        .badge-incorrect { background: var(--ct-bad-soft); color: #991b1b; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+        .badge-pending { background: var(--ct-warn-soft); color: #d97706; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 600; }
         
         /* Buttons */
-        .btn-back { background: white; border: 2px solid #e2e8f0; padding: 10px 25px; border-radius: 12px; color: #64748b; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; transition: all 0.3s; }
-        .btn-back:hover { border-color: #8b5cf6; color: #8b5cf6; transform: translateY(-2px); }
+        .btn-back { background: var(--ct-surface); border: 2px solid var(--ct-line-2); padding: 10px 25px; border-radius: 12px; color: var(--ct-ink-3); text-decoration: none; display: inline-flex; align-items: center; gap: 8px; transition: all 0.3s; }
+        .btn-back:hover { border-color: var(--ct-primary); color: var(--ct-primary); transform: translateY(-2px); }
         .btn-approve { background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; border: none; padding: 12px 24px; border-radius: 12px; font-weight: 600; cursor: pointer; transition: all 0.3s; }
         .btn-approve:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(16,185,129,0.3); }
-        .btn-reject { background: white; border: 2px solid #ef4444; color: #ef4444; padding: 10px 22px; border-radius: 12px; font-weight: 600; cursor: pointer; transition: all 0.3s; }
+        .btn-reject { background: var(--ct-surface); border: 2px solid #ef4444; color: #ef4444; padding: 10px 22px; border-radius: 12px; font-weight: 600; cursor: pointer; transition: all 0.3s; }
         .btn-reject:hover { background: #ef4444; color: white; transform: translateY(-2px); }
         .btn-export { background: #3b82f6; color: white; border: none; padding: 10px 20px; border-radius: 10px; cursor: pointer; transition: all 0.3s; display: inline-flex; align-items: center; gap: 8px; }
         .btn-export:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(59,130,246,0.3); }
         
         /* Filter Buttons */
         .filter-buttons { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
-        .filter-btn { padding: 8px 16px; border-radius: 10px; border: 1px solid #e2e8f0; background: white; cursor: pointer; transition: all 0.3s; font-size: 13px; }
-        .filter-btn.active { background: #1a56db; color: white; border-color: #1a56db; }
-        .filter-btn:hover { background: #e2e8f0; }
+        .filter-btn { padding: 8px 16px; border-radius: 10px; border: 1px solid var(--ct-line-2); background: var(--ct-surface); cursor: pointer; transition: all 0.3s; font-size: 13px; }
+        .filter-btn.active { background: var(--ct-primary); color: white; border-color: var(--ct-primary); }
+        .filter-btn:hover { background: var(--ct-line-2); }
         
         /* Progress Bar */
-        .progress-custom { height: 10px; background: #e2e8f0; border-radius: 10px; overflow: hidden; margin: 10px 0; }
+        .progress-custom { height: 10px; background: var(--ct-line-2); border-radius: 10px; overflow: hidden; margin: 10px 0; }
         .progress-fill { height: 100%; border-radius: 10px; transition: width 0.5s; }
         
         /* Score Ring */
@@ -70,7 +71,7 @@
         .score-ring-inner {
             width: 96px;
             height: 96px;
-            background: white;
+            background: var(--ct-surface);
             border-radius: 50%;
             display: flex;
             align-items: center;
@@ -80,11 +81,11 @@
         }
         
         /* Time Badge */
-        .time-badge { background: #f1f5f9; padding: 4px 12px; border-radius: 20px; font-size: 11px; display: inline-flex; align-items: center; gap: 6px; }
+        .time-badge { background: var(--ct-surface); padding: 4px 12px; border-radius: 20px; font-size: 11px; display: inline-flex; align-items: center; gap: 6px; }
         
         /* Section Header */
-        .section-header { background: #f8fafc; padding: 12px 16px; border-radius: 12px; margin-bottom: 15px; border-left: 4px solid #8b5cf6; }
-        .section-header h4 { margin: 0; font-size: 16px; font-weight: 600; color: #1e293b; }
+        .section-header { background: var(--ct-surface); padding: 12px 16px; border-radius: 12px; margin-bottom: 15px; border-left: 4px solid var(--ct-primary); }
+        .section-header h4 { margin: 0; font-size: 16px; font-weight: 600; color: var(--ct-ink); }
         
         @media (max-width: 768px) {
             .review-container { padding: 15px; }
@@ -158,8 +159,17 @@
         });
     })();
     </script>
+
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/cognitara-web.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/cognitara-portal-unified.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/cognitara-teacher-studio.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/cognitara-admin-studio.css') }}">
+  {{ ct_boot_script() }}
 </head>
-<body>
+<body class="ct-app ct-bs ad-studio">
+{{ student_topbar(crumb='Exam Review', home_href='/ce_dashboard', badge='Common Entrance') }}
+<main class="ct-content ct-enter" style="max-width:1120px">
+
 <div class="review-container">
     <!-- Back Button -->
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 15px;">
@@ -306,7 +316,7 @@
                         <span class="badge-incorrect"><i class="fas fa-times-circle"></i> Incorrect</span>
                     {% endif %}
                 </div>
-                <div class="mb-3" style="font-size: 15px; line-height: 1.5;">{{ q.question|safe }}</div>
+                <div class="mb-3" style="font-size: 15px; line-height: 1.5;">{{ q.question|sanitize|safe }}</div>
                 {% if q.image %}
                 <div class="mb-2"><img src="/static/images/{{ q.image }}" style="max-width: 150px; border-radius: 10px; border: 1px solid #e2e8f0;"></div>
                 {% endif %}
@@ -314,13 +324,13 @@
                     <div class="col-md-6">
                         <strong>Student's Answer:</strong> 
                         <span class="{% if not q.is_correct %}text-danger{% else %}text-success{% endif %}" style="font-weight: 500;">
-                            {{ q.selected_letter }}. {{ (q.selected or '')|safe }}
+                            {{ q.selected_letter }}. {{ (q.selected or '')|sanitize|safe }}
                         </span>
                     </div>
                     <div class="col-md-6">
                         <strong>Correct Answer:</strong> 
                         <span class="text-success" style="font-weight: 500;">
-                            {{ q.correct_letter }}. {{ (q.correct_answer or '')|safe }}
+                            {{ q.correct_letter }}. {{ (q.correct_answer or '')|sanitize|safe }}
                         </span>
                     </div>
                 </div>
@@ -461,5 +471,8 @@
         }
     });
 </script>
+
+</main>
+<script src="{{ url_for('static', filename='js/cognitara-web.js') }}"></script>
 </body>
 </html>

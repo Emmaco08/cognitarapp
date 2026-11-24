@@ -1,5 +1,6 @@
+{%- from '_ct_shell.html' import ico, ct_boot_script, admin_shell_start, teacher_shell_start, student_topbar, shell_end -%}
 <!DOCTYPE html>
-<html>
+<html lang="en" data-theme="dark">
 <head>
     <title>Import Exam | Teacher Portal</title>
     <link href="{{ url_for('static', filename='vendor/bootstrap/css/bootstrap.min.css') }}" rel="stylesheet">
@@ -11,38 +12,38 @@
     <script src="{{ url_for('static', filename='vendor/katex/contrib/auto-render.min.js') }}"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { background: #f0f2f5; font-family: 'Segoe UI', system-ui, sans-serif; }
+        body { background: var(--ct-surface); font-family: 'Segoe UI', system-ui, sans-serif; }
         
         .import-container { max-width: 800px; margin: 30px auto; padding: 0 16px; }
         
         .page-header {
-            background: linear-gradient(135deg, #1a56db 0%, #0e3b9e 100%);
+            background: var(--ct-brand-grad);
             border-radius: 20px; padding: 24px; margin-bottom: 20px; color: white; text-align: center;
         }
         .page-header h1 { font-size: 22px; font-weight: 700; margin-bottom: 5px; }
         .page-header p { font-size: 13px; opacity: 0.9; }
         
         .card {
-            background: white; border-radius: 16px; padding: 20px; margin-bottom: 16px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05); border: 1px solid #e2e8f0;
+            background: var(--ct-surface); border-radius: 16px; padding: 20px; margin-bottom: 16px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05); border: 1px solid var(--ct-line-2);
         }
         .card-title {
-            font-size: 16px; font-weight: 700; color: #1e293b; margin-bottom: 15px;
+            font-size: 16px; font-weight: 700; color: var(--ct-ink); margin-bottom: 15px;
             display: flex; align-items: center; gap: 8px;
         }
-        .card-title i { color: #1a56db; }
+        .card-title i { color: var(--ct-primary); }
         
         .upload-zone {
-            border: 2px dashed #cbd5e1; border-radius: 16px; padding: 35px 20px;
-            text-align: center; cursor: pointer; transition: all 0.2s; background: #f8fafc;
+            border: 2px dashed var(--ct-line-2); border-radius: 16px; padding: 35px 20px;
+            text-align: center; cursor: pointer; transition: all 0.2s; background: var(--ct-surface);
         }
-        .upload-zone:hover { border-color: #1a56db; background: #eff6ff; }
-        .upload-zone i { font-size: 44px; color: #1a56db; margin-bottom: 12px; }
-        .upload-zone.drag-over { border-color: #10b981; background: #f0fdf4; }
+        .upload-zone:hover { border-color: var(--ct-primary); background: var(--ct-surface); }
+        .upload-zone i { font-size: 44px; color: var(--ct-primary); margin-bottom: 12px; }
+        .upload-zone.drag-over { border-color: #10b981; background: var(--ct-ok-soft); }
         
         .file-info {
             display: flex; align-items: center; gap: 10px; padding: 12px 16px;
-            background: #f0fdf4; border-radius: 12px; margin-top: 12px;
+            background: var(--ct-ok-soft); border-radius: 12px; margin-top: 12px;
         }
         
         .exam-summary {
@@ -50,29 +51,29 @@
             gap: 10px; margin-bottom: 15px;
         }
         .summary-chip {
-            background: #f1f5f9; border-radius: 10px; padding: 10px; text-align: center;
+            background: var(--ct-surface); border-radius: 10px; padding: 10px; text-align: center;
         }
-        .summary-chip .value { font-size: 20px; font-weight: 700; color: #1e293b; }
-        .summary-chip .label { font-size: 10px; color: #64748b; }
+        .summary-chip .value { font-size: 20px; font-weight: 700; color: var(--ct-ink); }
+        .summary-chip .label { font-size: 10px; color: var(--ct-ink-3); }
         
         .section-preview {
-            border: 1px solid #e2e8f0; border-radius: 12px; margin-bottom: 8px; overflow: hidden;
+            border: 1px solid var(--ct-line-2); border-radius: 12px; margin-bottom: 8px; overflow: hidden;
         }
         .section-header-click {
             display: flex; justify-content: space-between; align-items: center;
-            padding: 10px 14px; background: #f8fafc; cursor: pointer; font-weight: 600;
+            padding: 10px 14px; background: var(--ct-surface); cursor: pointer; font-weight: 600;
         }
-        .section-header-click:hover { background: #eff6ff; }
+        .section-header-click:hover { background: var(--ct-surface); }
         .section-body-preview { display: none; padding: 10px 14px; }
         .section-body-preview.open { display: block; }
         
         .q-preview {
-            background: #f8fafc; border-radius: 8px; padding: 10px; margin-bottom: 6px;
-            font-size: 13px; border-left: 3px solid #1a56db;
+            background: var(--ct-surface); border-radius: 8px; padding: 10px; margin-bottom: 6px;
+            font-size: 13px; border-left: 3px solid var(--ct-primary);
         }
         .group-preview {
-            background: #eff6ff; border-radius: 8px; padding: 10px; margin-bottom: 6px;
-            font-size: 13px; border-left: 3px solid #8b5cf6;
+            background: var(--ct-surface); border-radius: 8px; padding: 10px; margin-bottom: 6px;
+            font-size: 13px; border-left: 3px solid var(--ct-primary);
         }
         
         .btn {
@@ -84,7 +85,7 @@
         .btn-success:hover { background: #059669; }
         .btn-success:disabled { background: #9ca3af; cursor: not-allowed; }
         .btn-back {
-            background: white; border: 1.5px solid #e2e8f0; color: #64748b; text-decoration: none;
+            background: var(--ct-surface); border: 1.5px solid var(--ct-line-2); color: var(--ct-ink-3); text-decoration: none;
             display: inline-flex; align-items: center; gap: 6px; padding: 10px 20px; border-radius: 10px;
             font-weight: 600; font-size: 13px;
         }
@@ -166,8 +167,15 @@
         });
     })();
     </script>
+
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/cognitara-web.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/cognitara-portal-unified.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/cognitara-teacher-studio.css') }}">
+  {{ ct_boot_script() }}
 </head>
-<body>
+<body class="ct-app ct-bs tc-studio">
+{{ teacher_shell_start(active='import', crumb='Import Exam') }}
+
     <div class="import-container">
         <!-- Header -->
         <div class="page-header">
@@ -218,7 +226,7 @@
                 <i class="fas fa-exclamation-triangle"></i> Use the <strong>Offline Exam Builder</strong> to create compatible JSON files.
             </div>
             <div style="display:flex; gap:10px; margin-top:14px; flex-wrap:wrap;">
-                <button type="button" class="btn-back" onclick="downloadCsvTemplate()" style="cursor:pointer; background:#f0fdf4; border-color:#86efac; color:#166534;">
+                <button type="button" class="btn-back" onclick="downloadCsvTemplate()" style="cursor:pointer; background: var(--ct-ok-soft); border-color:#86efac; color:#166534;">
                     <i class="fas fa-file-csv" style="color:#16a34a;"></i> Download CSV Formula Template
                 </button>
                 <a href="/teacher/download_builder" class="btn-back">
@@ -530,5 +538,7 @@
             return div.innerHTML;
         }
     </script>
+
+{{ shell_end(role='teacher') }}
 </body>
 </html>

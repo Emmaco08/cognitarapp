@@ -720,16 +720,35 @@
         });
     })();
     </script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/cognitara-web.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/cognitara-exam-studio.css') }}">
+    <script>
+      (function () {
+        var saved = null; try { saved = localStorage.getItem("ct-theme"); } catch (e) {}
+        var q = new URLSearchParams(location.search).get("theme");
+        document.documentElement.setAttribute("data-theme", (q === "light" || q === "dark") ? q : (saved === "light" ? "light" : "dark"));
+      })();
+    </script>
 </head>
-<body>
+<body class="ct-app ct-exam-studio">
     <!-- Fixed Header -->
     <div class="fixed-header">
         <div class="header-top">
-            <div class="exam-title">{{ exam.exam_name }}</div>
+            <div class="exam-title">
+                <span class="ct-appicon" style="width:28px;height:28px;border-radius:8px;flex:none"><svg viewBox="0 0 200 200"><use href="{{ url_for('static', filename='icons/cognitara-icons.svg') }}#ct-mark"/></svg></span>
+                <span>{{ exam.exam_name }}</span>
+            </div>
             <div class="header-actions">
+                <button type="button" class="ct-iconbtn" data-ct-theme-toggle aria-label="Switch theme" title="Switch light or dark theme">
+                    <span class="ct-theme-ico">
+                        <svg class="ct-ico ct-theme-ico__moon" aria-hidden="true"><use href="{{ url_for('static', filename='icons/cognitara-icons.svg') }}#i-moon"/></svg>
+                        <svg class="ct-ico ct-theme-ico__sun" aria-hidden="true"><use href="{{ url_for('static', filename='icons/cognitara-icons.svg') }}#i-sun"/></svg>
+                    </span>
+                </button>
                 {% if exam.calculator_type and exam.calculator_type != 'none' %}
-                <button class="calculator-btn" id="calculatorBtn" title="Calculator">
-                    <i class="fas fa-calculator"></i>
+                <button class="calculator-btn" id="calculatorBtn" title="Open Scientific Calculator">
+                    <svg class="ct-ico ct-ico--sm" aria-hidden="true"><use href="{{ url_for('static', filename='icons/cognitara-icons.svg') }}#i-calculator"/></svg>
+                    <span>Calculator</span>
                 </button>
                 {% endif %}
                 <div class="student-name-badge" style="display:inline-flex; align-items:center; gap:10px; padding:6px 16px; background:#ffffff; border:1.5px solid #cbd5e1; border-radius:24px; box-shadow:0 2px 4px rgba(0,0,0,0.04);">
@@ -2578,6 +2597,7 @@ document.addEventListener('keydown', function(event) {
         }
     });
     </script>
+<script src="{{ url_for('static', filename='js/cognitara-web.js') }}"></script>
 </body>
 </html>
 

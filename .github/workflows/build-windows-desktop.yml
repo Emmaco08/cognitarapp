@@ -23,12 +23,44 @@ concurrency:
 
 jobs:
   build-windows-installer:
-    name: Test, Freeze Engine & Package Windows .exe
+    name: Test, Freeze Engine, Package NSIS & Custom Tauri Setup (.exe)
     runs-on: windows-latest
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Detect optional Windows code signing configuration
+        id: signing
+        shell: pwsh
+        env:
+          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+          AZURE_SIGNING_ENDPOINT: ${{ secrets.AZURE_SIGNING_ENDPOINT }}
+          AZURE_SIGNING_ACCOUNT: ${{ secrets.AZURE_SIGNING_ACCOUNT }}
+          AZURE_CERT_PROFILE: ${{ secrets.AZURE_CERT_PROFILE }}
+          WIN_CSC_LINK: ${{ secrets.WIN_CSC_LINK }}
+          WIN_CSC_KEY_PASSWORD: ${{ secrets.WIN_CSC_KEY_PASSWORD }}
+        run: |
+          $hasAzure = -not [string]::IsNullOrWhiteSpace($env:AZURE_TENANT_ID) `
+            -and -not [string]::IsNullOrWhiteSpace($env:AZURE_CLIENT_ID) `
+            -and -not [string]::IsNullOrWhiteSpace($env:AZURE_CLIENT_SECRET) `
+            -and -not [string]::IsNullOrWhiteSpace($env:AZURE_SIGNING_ENDPOINT) `
+            -and -not [string]::IsNullOrWhiteSpace($env:AZURE_SIGNING_ACCOUNT) `
+            -and -not [string]::IsNullOrWhiteSpace($env:AZURE_CERT_PROFILE)
+          $hasPfx = -not [string]::IsNullOrWhiteSpace($env:WIN_CSC_LINK) `
+            -and -not [string]::IsNullOrWhiteSpace($env:WIN_CSC_KEY_PASSWORD)
+          if ($hasAzure) {
+            "mode=azure" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+            Write-Host "Code signing mode: Azure Trusted Signing"
+          } elseif ($hasPfx) {
+            "mode=pfx" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+            Write-Host "Code signing mode: PFX (Authenticode)"
+          } else {
+            "mode=none" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+            Write-Host "Code signing mode: unsigned (add secrets per docs/CODE_SIGNING.md to enable)"
+          }
 
       - name: Set up Python 3.11
         uses: actions/setup-python@v5
@@ -43,6 +75,14 @@ jobs:
           node-version: "22"
           cache: "npm"
           cache-dependency-path: desktop/package-lock.json
+
+      - name: Set up Rust toolchain (for custom Tauri v2 setup app)
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Rust cargo build artifacts
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: desktop/setup/src-tauri
 
       - name: Install Python dependencies & PyInstaller
         shell: pwsh
@@ -70,10 +110,15 @@ jobs:
             tests/test_modular_architecture_and_persistence.py `
             tests/test_phase4_6_master.py `
             tests/test_security_audit_phase4_4.py `
+            tests/test_v22_security_and_hardening.py `
             tests/test_disaster_recovery.py `
             -v
 
-      - name: Generate modern Opus Studio Windows installer showcase bitmaps
+      - name: Run Rust unit tests for custom setup app
+        shell: pwsh
+        run: cargo test --manifest-path desktop/setup/src-tauri/Cargo.toml
+
+      - name: Generate NSIS fallback artwork bitmaps
         shell: pwsh
         run: python desktop/installer/generate_installer_assets.py
 
@@ -82,6 +127,36 @@ jobs:
         env:
           COGNITARA_USE_PYARMOR: ${{ inputs.use_pyarmor == true && '1' || '0' }}
         run: python desktop/build_engine.py
+
+      - name: Sign cognitara-engine.exe (Azure Trusted Signing)
+        if: steps.signing.outputs.mode == 'azure'
+        uses: azure/trusted-signing-action@v0.5.5
+        with:
+          azure-tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          azure-client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          azure-client-secret: ${{ secrets.AZURE_CLIENT_SECRET }}
+          endpoint: ${{ secrets.AZURE_SIGNING_ENDPOINT }}
+          trusted-signing-account-name: ${{ secrets.AZURE_SIGNING_ACCOUNT }}
+          certificate-profile-name: ${{ secrets.AZURE_CERT_PROFILE }}
+          files-folder: desktop/resources/engine
+          files-folder-filter: cognitara-engine.exe
+          file-digest: SHA256
+          timestamp-rfc3161: http://timestamp.digicert.com
+          timestamp-digest: SHA256
+
+      - name: Sign cognitara-engine.exe (PFX)
+        if: steps.signing.outputs.mode == 'pfx'
+        shell: pwsh
+        env:
+          WIN_CSC_LINK: ${{ secrets.WIN_CSC_LINK }}
+          WIN_CSC_KEY_PASSWORD: ${{ secrets.WIN_CSC_KEY_PASSWORD }}
+        run: |
+          $pfx = Join-Path $env:RUNNER_TEMP "signing.pfx"
+          [IO.File]::WriteAllBytes($pfx, [Convert]::FromBase64String($env:WIN_CSC_LINK))
+          $signtool = Get-ChildItem "C:\Program Files (x86)\Windows Kits\10\bin\*\x64\signtool.exe" | Sort-Object FullName -Descending | Select-Object -First 1
+          if (-not $signtool) { throw "signtool.exe not found on runner" }
+          & $signtool.FullName sign /fd SHA256 /tr http://timestamp.digicert.com /td SHA256 /f $pfx /p $env:WIN_CSC_KEY_PASSWORD "desktop/resources/engine/cognitara-engine.exe"
+          Remove-Item $pfx -Force -ErrorAction SilentlyContinue
 
       - name: Install Electron desktop dependencies
         working-directory: desktop
@@ -99,64 +174,155 @@ jobs:
         shell: pwsh
         run: python scripts/verify_cross_runtime_ed25519.py
 
-      - name: Package modern Windows NSIS .exe installer & electron-updater metadata
+      - name: Package NSIS update installer & electron-updater metadata (unsigned)
+        if: steps.signing.outputs.mode == 'none'
         working-directory: desktop
         shell: pwsh
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: "false"
         run: npm run dist:win
 
-      - name: Verify electron-updater metadata (latest.yml + .blockmap + .exe) & generate SHA-256 checksums
+      - name: Package NSIS update installer & electron-updater metadata (PFX signed)
+        if: steps.signing.outputs.mode == 'pfx'
+        working-directory: desktop
+        shell: pwsh
+        env:
+          CSC_LINK: ${{ secrets.WIN_CSC_LINK }}
+          CSC_KEY_PASSWORD: ${{ secrets.WIN_CSC_KEY_PASSWORD }}
+          WIN_PUBLISHER_NAME: ${{ secrets.WIN_PUBLISHER_NAME }}
+        run: |
+          if (-not [string]::IsNullOrWhiteSpace($env:WIN_PUBLISHER_NAME)) {
+            npx electron-builder --win nsis --x64 --publish never "-c.win.publisherName=$env:WIN_PUBLISHER_NAME"
+          } else {
+            npm run dist:win
+          }
+
+      - name: Package NSIS update installer & electron-updater metadata (Azure Trusted Signing)
+        if: steps.signing.outputs.mode == 'azure'
+        working-directory: desktop
+        shell: pwsh
+        env:
+          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+          AZURE_SIGNING_ENDPOINT: ${{ secrets.AZURE_SIGNING_ENDPOINT }}
+          AZURE_SIGNING_ACCOUNT: ${{ secrets.AZURE_SIGNING_ACCOUNT }}
+          AZURE_CERT_PROFILE: ${{ secrets.AZURE_CERT_PROFILE }}
+          WIN_PUBLISHER_NAME: ${{ secrets.WIN_PUBLISHER_NAME }}
+        run: |
+          $argsList = @(
+            "electron-builder", "--win", "nsis", "--x64", "--publish", "never",
+            "-c.win.azureSignOptions.endpoint=$env:AZURE_SIGNING_ENDPOINT",
+            "-c.win.azureSignOptions.codeSigningAccountName=$env:AZURE_SIGNING_ACCOUNT",
+            "-c.win.azureSignOptions.certificateProfileName=$env:AZURE_CERT_PROFILE"
+          )
+          if (-not [string]::IsNullOrWhiteSpace($env:WIN_PUBLISHER_NAME)) {
+            $argsList += "-c.win.publisherName=$env:WIN_PUBLISHER_NAME"
+          }
+          & npx @argsList
+
+      - name: Stage NSIS payload & build custom Tauri v2 portrait Setup (.exe)
+        shell: pwsh
+        run: |
+          python desktop/setup/scripts/prepare_payload.py
+          cargo build --release --manifest-path desktop/setup/src-tauri/Cargo.toml
+          $pkgVer = (Get-Content "desktop/package.json" | ConvertFrom-Json).version
+          $srcExe = "desktop/setup/src-tauri/target/release/cognitara-setup.exe"
+          $dstExe = "desktop/release/CogniTara-Studio-Setup-$pkgVer-x64.exe"
+          if (-not (Test-Path $srcExe)) { throw "Missing built Tauri setup binary: $srcExe" }
+          Copy-Item -Path $srcExe -Destination $dstExe -Force
+          Write-Host "Built custom setup executable: $dstExe"
+
+      - name: Sign custom Tauri Setup .exe (Azure Trusted Signing)
+        if: steps.signing.outputs.mode == 'azure'
+        uses: azure/trusted-signing-action@v0.5.5
+        with:
+          azure-tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          azure-client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          azure-client-secret: ${{ secrets.AZURE_CLIENT_SECRET }}
+          endpoint: ${{ secrets.AZURE_SIGNING_ENDPOINT }}
+          trusted-signing-account-name: ${{ secrets.AZURE_SIGNING_ACCOUNT }}
+          certificate-profile-name: ${{ secrets.AZURE_CERT_PROFILE }}
+          files-folder: desktop/release
+          files-folder-filter: CogniTara-Studio-Setup-*.exe
+          file-digest: SHA256
+          timestamp-rfc3161: http://timestamp.digicert.com
+          timestamp-digest: SHA256
+
+      - name: Sign custom Tauri Setup .exe (PFX)
+        if: steps.signing.outputs.mode == 'pfx'
+        shell: pwsh
+        env:
+          WIN_CSC_LINK: ${{ secrets.WIN_CSC_LINK }}
+          WIN_CSC_KEY_PASSWORD: ${{ secrets.WIN_CSC_KEY_PASSWORD }}
+        run: |
+          $pfx = Join-Path $env:RUNNER_TEMP "signing.pfx"
+          [IO.File]::WriteAllBytes($pfx, [Convert]::FromBase64String($env:WIN_CSC_LINK))
+          $signtool = Get-ChildItem "C:\Program Files (x86)\Windows Kits\10\bin\*\x64\signtool.exe" | Sort-Object FullName -Descending | Select-Object -First 1
+          if (-not $signtool) { throw "signtool.exe not found on runner" }
+          $setupExe = (Get-ChildItem -Path "desktop/release" -Filter "CogniTara-Studio-Setup-*.exe" | Select-Object -First 1).FullName
+          & $signtool.FullName sign /fd SHA256 /tr http://timestamp.digicert.com /td SHA256 /f $pfx /p $env:WIN_CSC_KEY_PASSWORD $setupExe
+          Remove-Item $pfx -Force -ErrorAction SilentlyContinue
+
+      - name: Verify release artifacts (Setup .exe + Update .exe + .blockmap + latest.yml) & generate SHA-256 checksums
         working-directory: desktop/release
         shell: pwsh
         run: |
           Get-ChildItem -Name
           if (-not (Test-Path "latest.yml")) { throw "Missing latest.yml required by electron-updater!" }
+          $setupExe = Get-ChildItem -Filter "CogniTara-Studio-Setup-*.exe" | Select-Object -First 1
+          if (-not $setupExe) { throw "Missing custom Tauri Setup .exe!" }
+          $updateExe = Get-ChildItem -Filter "CogniTara-Studio-Update-*.exe" | Select-Object -First 1
+          if (-not $updateExe) { throw "Missing NSIS Update .exe required by electron-updater!" }
           $blockmap = Get-ChildItem -Filter "*.blockmap" | Select-Object -First 1
           if (-not $blockmap) { throw "Missing .blockmap required by electron-updater!" }
-          Get-ChildItem -Filter "*.exe" | ForEach-Object {
+          Get-ChildItem -Filter "*.exe" | Sort-Object Name | ForEach-Object {
             $hash = (Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLower()
             "$hash  $($_.Name)"
           } | Out-File -FilePath "SHA256SUMS.txt" -Encoding utf8
           Get-Content "SHA256SUMS.txt"
 
-      - name: Upload Windows .exe installer & auto-update artifacts
+      - name: Upload Windows Setup & Auto-Update Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: CogniTara-Studio-Windows-Installer
           path: |
-            desktop/release/*.exe
+            desktop/release/CogniTara-Studio-Setup-*.exe
+            desktop/release/CogniTara-Studio-Update-*.exe
             desktop/release/*.blockmap
             desktop/release/latest.yml
             desktop/release/SHA256SUMS.txt
           if-no-files-found: error
           retention-days: 30
 
-      - name: Publish direct-download Windows Installer Release (v2.1.0 + electron-updater feed)
+      - name: Publish Direct-Download Windows Installer Release (v2.2.0 + electron-updater feed)
         shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           $pkgVer = (Get-Content "desktop/package.json" | ConvertFrom-Json).version
           $tag = if ("${{ github.ref_type }}" -eq "tag") { "${{ github.ref_name }}" } else { "v$pkgVer" }
-          $exe = (Get-ChildItem -Path "desktop/release" -Filter "*.exe" | Select-Object -First 1).FullName
+          $setupExe = (Get-ChildItem -Path "desktop/release" -Filter "CogniTara-Studio-Setup-$pkgVer-x64.exe" | Select-Object -First 1).FullName
+          $updateExe = (Get-ChildItem -Path "desktop/release" -Filter "CogniTara-Studio-Update-$pkgVer-x64.exe" | Select-Object -First 1).FullName
           $blockmap = (Get-ChildItem -Path "desktop/release" -Filter "*.blockmap" | Select-Object -First 1).FullName
           $latestYml = (Resolve-Path "desktop/release/latest.yml").Path
           $sums = (Resolve-Path "desktop/release/SHA256SUMS.txt").Path
           $notes = @'
-          CogniTara Studio __VER__ — Windows Desktop App, Modern Showcase Installer & Cloud Sync
+          CogniTara Studio __VER__ — Custom Portrait Installer & Full Opus Studio Web Portal Redesign
 
-          What's New in __VER__:
-          - **Fixed Windows C:\Program Files\ PermissionError:** All engine writes (`logs/`, `static/images/`, `exam.db`, `.secret_key`, backups) now route strictly into `%ProgramData%\CogniTara\data\` (with `%LOCALAPPDATA%` fallback).
-          - **Butter-Smooth 60fps Studio UI:** Removed heavy full-window `backdrop-filter: blur(60px)` & blur keyframes, GPU-accelerated transitions (`transform`/`opacity`), and eliminated canvas/DOM layout jank.
-          - **Modern Photoshop/CorelDRAW-Style Windows Installer:** Dark Midnight Navy Opus Studio setup with interactive 5-slide feature showcase carousel and animated progress installation.
-          - **Direct In-App Auto-Updates (`electron-updater`):** Includes `latest.yml` + `.blockmap` delta updates with live download progress and safe server-stop + active-exam protection before restart.
-          - **Neon Postgres + Vercel Cloud Sign-Up & Sign-In:** Real online school account registration & sign-in (`https://cognitara-cloud.vercel.app`) with encrypted offline-ready local caching inside Studio.
+          ### Downloads
+          - **Recommended Direct Installer:** `CogniTara-Studio-Setup-__VER__-x64.exe` — Borderless Adobe/CorelDRAW-style custom setup wizard with install-path picker, shortcut toggles, live progress ring, and Dark/Light themes.
+          - **In-App Auto-Updater Channel:** `CogniTara-Studio-Update-__VER__-x64.exe` + `.blockmap` + `latest.yml` (used automatically by CogniTara Studio's built-in updater).
+
+          ### What's New in __VER__
+          - **Custom Tauri v2 Windows Setup Experience:** Replaces the old clipped NSIS UI with a crisp 460×620 portrait installer featuring animated progress ring, feature cards, shortcut toggles, UAC handling, and clean NSIS fallback.
+          - **Ready-to-Activate Code Signing Pipeline:** Automatic Authenticode signing for Azure Trusted Signing and OV `.pfx` certificates (see `docs/CODE_SIGNING.md`).
+          - **Full Web Portal Redesign (Student · Teacher · Admin · Exam · Calculator · Common Entrance):** Unified Opus Studio v3 design system across every web page with Dark & Light themes, smooth GPU motion, sticky headers, command palette, and 100% feature parity.
           '@.Replace("__VER__", $pkgVer)
           gh release view $tag 2>$null
           if ($LASTEXITCODE -eq 0) {
-            gh release upload $tag $exe $blockmap $latestYml $sums --clobber
-            gh release edit $tag --title "CogniTara Studio $pkgVer (Windows Installer)" --notes $notes --latest
+            gh release upload $tag $setupExe $updateExe $blockmap $latestYml $sums --clobber
+            gh release edit $tag --title "CogniTara Studio $pkgVer" --notes $notes --latest
           } else {
-            gh release create $tag $exe $blockmap $latestYml $sums --title "CogniTara Studio $pkgVer (Windows Installer)" --notes $notes --latest
+            gh release create $tag $setupExe $updateExe $blockmap $latestYml $sums --title "CogniTara Studio $pkgVer" --notes $notes --latest
           }

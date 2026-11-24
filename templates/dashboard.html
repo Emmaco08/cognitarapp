@@ -1,566 +1,407 @@
+{%- from '_ct_shell.html' import ico, ct_boot_script -%}
+{%- set ICONS = url_for('static', filename='icons/cognitara-icons.svg') -%}
+{%- set _school = school_branding if school_branding is defined and school_branding else {'school_name': 'CogniTara School', 'current_term': 'First Term', 'academic_session': '2026/2027'} -%}
+{%- set warning_count = session.get('warning_count', 0) -%}
+{%- set total_pct = namespace(value=0) -%}
+{%- set count = namespace(value=0) -%}
+{%- set highest = namespace(value=0) -%}
+{%- set has_released = namespace(value=false) -%}
+{%- for exam in completed -%}
+  {%- set is_withheld = (exam.results_released == 0 or (exam.result_release_policy == 'withheld' and not exam.exam_results_released)) -%}
+  {%- if not is_withheld and exam.total and exam.total > 0 -%}
+    {%- set pct = (exam.score / exam.total * 100) -%}
+    {%- set total_pct.value = total_pct.value + pct -%}
+    {%- set count.value = count.value + 1 -%}
+    {%- set has_released.value = true -%}
+    {%- if pct|round|int > highest.value -%}{%- set highest.value = pct|round|int -%}{%- endif -%}
+  {%- endif -%}
+{%- endfor -%}
+{%- set avg_score = (total_pct.value / count.value)|round(1) if count.value > 0 else 0 -%}
+{%- set display_name = full_name or username -%}
+{%- set name_parts = display_name.split() -%}
+{%- set initials = ((name_parts[0][0] + name_parts[-1][0]) if name_parts|length >= 2 else display_name[:2])|upper -%}
+{%- set has_real_photo = photo and photo != 'default.png' and photo != 'None' -%}
 <!DOCTYPE html>
-<html>
+<html lang="en" data-theme="dark">
 <head>
-    <title>Student Dashboard | COGNITARA EXAM SYSTEM</title>
-    <link href="{{ url_for('static', filename='vendor/bootstrap/css/bootstrap.min.css') }}" rel="stylesheet">
-    <link href="{{ url_for('static', filename='vendor/fontawesome/css/all.min.css') }}" rel="stylesheet">
-    <script src="{{ url_for('static', filename='vendor/sweetalert2/sweetalert2.all.min.js') }}"></script>
-    <meta name="viewport" content="width=device-width,initial-scale=1.0">
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { background: #f5f7fa; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
-        
-        .dashboard-container { max-width: 1200px; margin: 0 auto; padding: 24px; }
-        
-        .header-card {
-            background: white; border-radius: 24px; padding: 24px 30px; margin-bottom: 24px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05); border: 1px solid #e9ecef;
-            display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px;
-        }
-        
-        .student-info { display: flex; align-items: center; gap: 20px; }
-        .student-avatar { width: 70px; height: 70px; border-radius: 50%; object-fit: cover; border: 3px solid #1a56db; padding: 2px; }
-        .student-details h1 { font-size: 24px; color: #1e293b; margin-bottom: 4px; font-weight: 600; }
-        .student-details p { color: #64748b; font-size: 14px; margin: 0; }
-        .student-details i { margin-right: 6px; color: #1a56db; }
-        
-        .logout-btn {
-            background: #ef4444; color: white; border: none; padding: 10px 24px;
-            border-radius: 12px; font-weight: 500; text-decoration: none; transition: all 0.2s;
-            display: inline-flex; align-items: center; gap: 8px;
-        }
-        .logout-btn:hover { background: #dc2626; transform: translateY(-2px); color: white; }
-        
-        .warning-banner {
-            background: linear-gradient(135deg, #fef3c7 0%, #fffbeb 100%);
-            border-left: 4px solid #f59e0b; border-radius: 16px; padding: 16px 20px;
-            margin-bottom: 24px; display: flex; align-items: center; gap: 15px; flex-wrap: wrap;
-        }
-        .warning-icon { width: 45px; height: 45px; background: #f59e0b; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
-        .warning-icon i { font-size: 22px; color: white; }
-        .warning-content { flex: 1; }
-        .warning-content h4 { font-size: 16px; font-weight: 600; color: #92400e; margin: 0 0 4px 0; }
-        .warning-content p { font-size: 13px; color: #b45309; margin: 0; }
-        .warning-count { background: #fef3c7; padding: 8px 16px; border-radius: 40px; font-weight: 700; color: #d97706; font-size: 14px; }
-        
-        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 30px; }
-        .stat-card {
-            background: white; border-radius: 20px; padding: 20px; display: flex; align-items: center;
-            gap: 15px; transition: all 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.05); border: 1px solid #e9ecef;
-        }
-        .stat-card:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(0,0,0,0.08); }
-        .stat-icon {
-            width: 52px; height: 52px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border-radius: 16px; display: flex; align-items: center; justify-content: center;
-        }
-        .stat-icon i { font-size: 24px; color: white; }
-        .stat-info h3 { font-size: 28px; font-weight: 700; color: #1e293b; margin: 0; }
-        .stat-info p { color: #64748b; font-size: 13px; margin: 0; }
-        
-        .section-card {
-            background: white; border-radius: 24px; margin-bottom: 28px; overflow: hidden;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05); border: 1px solid #e9ecef;
-        }
-        .section-header {
-            background: white; padding: 18px 24px; border-bottom: 1px solid #e9ecef;
-            display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;
-        }
-        .section-header h3 { color: #1e293b; margin: 0; font-size: 18px; font-weight: 600; }
-        .section-header h3 i { margin-right: 10px; color: #1a56db; }
-        .badge-count { background: #e2e8f0; color: #475569; padding: 4px 12px; border-radius: 30px; font-size: 13px; font-weight: 500; }
-        
-        .exams-list { padding: 20px 24px; }
-        .exam-card {
-            background: #f8fafc; border-radius: 16px; padding: 18px 20px; margin-bottom: 12px;
-            transition: all 0.2s; border: 1px solid #e2e8f0;
-            display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;
-        }
-        .exam-card:hover { background: #f1f5f9; transform: translateX(5px); }
-        .exam-card.in-progress { border-left: 4px solid #f59e0b; }
-        
-        .exam-info h4 { font-size: 16px; font-weight: 600; color: #1e293b; margin: 0 0 5px 0; }
-        .exam-info p { font-size: 13px; color: #64748b; margin: 0; }
-        
-        .start-exam-btn {
-            background: #1a56db; color: white; border: none; padding: 10px 24px;
-            border-radius: 12px; font-weight: 500; text-decoration: none; transition: all 0.2s;
-            display: inline-flex; align-items: center; gap: 8px; cursor: pointer;
-        }
-        .start-exam-btn:hover { background: #0e3b9e; transform: translateY(-2px); color: white; }
-        .start-exam-btn.resume { background: #f59e0b; }
-        .start-exam-btn.resume:hover { background: #d97706; }
-        
-        .table-wrapper { padding: 0 24px 24px 24px; overflow-x: auto; }
-        .results-table { width: 100%; border-collapse: collapse; }
-        .results-table th {
-            padding: 14px 12px; text-align: left; font-size: 12px; font-weight: 600;
-            color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid #e9ecef;
-        }
-        .results-table td { padding: 14px 12px; border-bottom: 1px solid #f0f2f5; font-size: 14px; color: #334155; }
-        .results-table tbody tr:hover { background: #f8fafc; }
-        
-        .score-badge {
-            background: #dbeafe; color: #1a56db; padding: 4px 12px; border-radius: 20px; font-size: 13px; font-weight: 600;
-        }
-        .score-badge.A { background: #d1fae5; color: #065f46; }
-        .score-badge.B { background: #dbeafe; color: #1e40af; }
-        .score-badge.C { background: #fef3c7; color: #92400e; }
-        .score-badge.D { background: #fed7aa; color: #78350f; }
-        .score-badge.F { background: #fee2e2; color: #991b1b; }
-        
-        .empty-state { text-align: center; padding: 40px; color: #94a3b8; }
-        .empty-state i { font-size: 48px; margin-bottom: 15px; }
-        
-        .instructions-card {
-            background: white; border-radius: 24px; margin-bottom: 28px; overflow: hidden;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05); border: 1px solid #e9ecef;
-        }
-        .instructions-header {
-            background: linear-gradient(135deg, #1a56db 0%, #0e3b9e 100%);
-            color: white; padding: 16px 24px;
-        }
-        .instructions-header h3 { margin: 0; font-size: 16px; font-weight: 600; }
-        .instructions-header h3 i { margin-right: 10px; }
-        .instructions-body { padding: 20px 24px; }
-        .instruction-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px; margin-bottom: 20px; }
-        .instruction-item { display: flex; align-items: center; gap: 12px; padding: 12px; background: #f8fafc; border-radius: 12px; }
-        .instruction-icon { width: 36px; height: 36px; background: #e0e7ff; border-radius: 10px; display: flex; align-items: center; justify-content: center; }
-        .instruction-icon i { font-size: 18px; color: #1a56db; }
-        .instruction-text { flex: 1; }
-        .instruction-text strong { font-size: 14px; color: #1e293b; display: block; }
-        .instruction-text span { font-size: 12px; color: #64748b; }
-        
-        .warning-list { background: #fef2f2; border-radius: 12px; padding: 15px; margin-top: 15px; }
-        .warning-list p { font-size: 13px; color: #991b1b; margin: 0 0 8px 0; font-weight: 600; }
-        .warning-tags { display: flex; flex-wrap: wrap; gap: 8px; }
-        .warning-tag {
-            background: #fee2e2; color: #991b1b; padding: 4px 12px; border-radius: 20px;
-            font-size: 12px; display: inline-flex; align-items: center; gap: 6px;
-        }
-        
-        @media (max-width: 768px) {
-            .dashboard-container { padding: 16px; }
-            .header-card { flex-direction: column; text-align: center; }
-            .student-info { flex-direction: column; }
-            .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
-            .exam-card { flex-direction: column; text-align: center; }
-            .instruction-list { grid-template-columns: 1fr; }
-        }
-        @media (max-width: 480px) {
-            .stats-grid { grid-template-columns: 1fr; }
-            .start-exam-btn, .logout-btn { width: 100%; justify-content: center; box-sizing: border-box; }
-            .header-card { padding: 16px; }
-            .student-details h1 { font-size: 18px; }
-            .exam-card { padding: 16px; }
-        }
-    </style>
-    <!-- CSRF Protection Shield -->
-    <meta name="csrf-token" content="{{ csrf_token() }}">
-    <script>
-    window.CSRF_TOKEN = "{{ csrf_token() }}";
-    (function() {
-        if (window.fetch) {
-            const _origFetch = window.fetch;
-            window.fetch = function(url, options) {
-                options = options || {};
-                const method = (options.method || 'GET').toUpperCase();
-                if (!['GET', 'HEAD', 'OPTIONS', 'TRACE'].includes(method)) {
-                    options.headers = options.headers || {};
-                    const token = window.CSRF_TOKEN || (document.querySelector('meta[name="csrf-token"]') && document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
-                    if (token) {
-                        if (typeof Headers !== 'undefined' && options.headers instanceof Headers) {
-                            if (!options.headers.has('X-CSRFToken')) options.headers.set('X-CSRFToken', token);
-                        } else if (Array.isArray(options.headers)) {
-                            options.headers.push(['X-CSRFToken', token]);
-                        } else {
-                            if (!options.headers['X-CSRFToken']) options.headers['X-CSRFToken'] = token;
-                        }
-                    }
-                }
-                return _origFetch(url, options);
-            };
-        }
-        if (window.$ && $.ajaxSetup) {
-            $.ajaxSetup({
-                beforeSend: function(xhr, settings) {
-                    if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type)) {
-                        xhr.setRequestHeader("X-CSRFToken", window.CSRF_TOKEN);
-                    }
-                }
-            });
-        }
-        if (navigator.sendBeacon) {
-            const _origBeacon = navigator.sendBeacon.bind(navigator);
-            navigator.sendBeacon = function(url, data) {
-                if (data instanceof FormData) {
-                    if (!data.has('csrf_token')) data.append('csrf_token', window.CSRF_TOKEN);
-                } else if (typeof data === 'string') {
-                    try {
-                        const obj = JSON.parse(data);
-                        if (typeof obj === 'object' && obj !== null && !obj.csrf_token) {
-                            obj.csrf_token = window.CSRF_TOKEN;
-                            data = JSON.stringify(obj);
-                        }
-                    } catch(e) {}
-                }
-                return _origBeacon(url, data);
-            };
-        }
-        document.addEventListener('DOMContentLoaded', function() {
-            document.querySelectorAll('form[method="POST"], form[method="post"]').forEach(function(form) {
-                if (!form.querySelector('input[name="csrf_token"]')) {
-                    var input = document.createElement('input');
-                    input.type = 'hidden';
-                    input.name = 'csrf_token';
-                    input.value = window.CSRF_TOKEN;
-                    form.appendChild(input);
-                }
-            });
-        });
-    })();
-    </script>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+  <meta name="color-scheme" content="dark light">
+  <meta name="description" content="Student examination portal for {{ _school.school_name }} — view scheduled exams, resume active papers, and review grades.">
+  <title>Student Portal — {{ _school.school_name }} | CogniTara</title>
+  <link rel="icon" href="{{ url_for('static', filename='images/cognitara-favicon.ico') }}">
+  <link rel="preload" href="{{ url_for('static', filename='fonts/ui/PlusJakartaSans-Variable.woff2') }}" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/cognitara-web.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/cognitara-student-studio.css') }}">
+  {{ ct_boot_script() }}
 </head>
-<body>
-    <div class="dashboard-container">
-        <!-- Header Card -->
-        <div class="header-card">
-            <div class="student-info">
-                <img src="{{ url_for('static', filename='images/' + (photo or 'default.png')) }}" class="student-avatar" alt="Profile Photo">
-                <div class="student-details">
-                    <h1><i class="fas fa-graduation-cap"></i> Welcome, {{ full_name }}!</h1>
-                    <p><i class="fas fa-users"></i> Class: {{ session.class }} | <i class="fas fa-user"></i> {{ username }} | <i class="fas fa-calendar-alt"></i> Student Dashboard</p>
-                </div>
-            </div>
-            <a href="{{ url_for('logout') }}" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</a>
-        </div>
-        
-        <!-- Warning Banner -->
-        {% set warning_count = session.get('warning_count', 0) %}
-        {% if warning_count > 0 %}
-        <div class="warning-banner">
-            <div class="warning-icon"><i class="fas fa-exclamation-triangle"></i></div>
-            <div class="warning-content">
-                <h4><i class="fas fa-exclamation-triangle"></i> Attention: Warnings Recorded</h4>
-                <p>You have received warnings during previous exams. Please follow exam rules strictly.</p>
-            </div>
-            <div class="warning-count"><i class="fas fa-flag"></i> {{ warning_count }} Warnings</div>
-        </div>
-        {% endif %}
-        
-        <!-- Stats Cards -->
-        <div class="stats-grid">
-            <div class="stat-card">
-                <div class="stat-icon"><i class="fas fa-file-alt"></i></div>
-                <div class="stat-info">
-                    <h3>{{ exams|length }}</h3>
-                    <p>Available Exams</p>
-                </div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-icon"><i class="fas fa-check-circle"></i></div>
-                <div class="stat-info">
-                    <h3>{{ completed|length }}</h3>
-                    <p>Completed Exams</p>
-                </div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-icon"><i class="fas fa-chart-line"></i></div>
-                <div class="stat-info">
-                    {% set total_pct = namespace(value=0) %}
-                    {% set count = namespace(value=0) %}
-                    {% for exam in completed %}
-                        {% set is_withheld = (exam.results_released == 0 or (exam.result_release_policy == 'withheld' and not exam.exam_results_released)) %}
-                        {% if not is_withheld and exam.total and exam.total > 0 %}
-                            {% set pct = (exam.score / exam.total * 100) %}
-                            {% set total_pct.value = total_pct.value + pct %}
-                            {% set count.value = count.value + 1 %}
-                        {% endif %}
-                    {% endfor %}
-                    <h3>{{ (total_pct.value / count.value)|round(1) if count.value > 0 else 0 }}%</h3>
-                    <p>Average Score</p>
-                </div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-icon"><i class="fas fa-trophy"></i></div>
-                <div class="stat-info">
-                    {% set highest = namespace(value=0) %}
-                    {% set has_released = namespace(value=false) %}
-                    {% for exam in completed %}
-                        {% set is_withheld = (exam.results_released == 0 or (exam.result_release_policy == 'withheld' and not exam.exam_results_released)) %}
-                        {% if not is_withheld and exam.total and exam.total > 0 %}
-                            {% set pct = (exam.score / exam.total * 100)|round|int %}
-                            {% set has_released.value = true %}
-                            {% if pct > highest.value %}
-                                {% set highest.value = pct %}
-                            {% endif %}
-                        {% endif %}
-                    {% endfor %}
-                    <h3>{{ highest.value if has_released.value else 0 }}%</h3>
-                    <p>Highest Score</p>
-                </div>
-            </div>
-        </div>
-        
-        <!-- IN-PROGRESS EXAMS -->
-        {% if in_progress %}
-        <div class="section-card">
-            <div class="section-header" style="background: linear-gradient(135deg, #fef3c7 0%, #fffbeb 100%);">
-                <h3 style="color: #d97706;"><i class="fas fa-hourglass-half" style="color: #d97706;"></i> In-Progress Exams</h3>
-                <span class="badge-count" style="background: #fef3c7; color: #d97706;">{{ in_progress|length }} ongoing</span>
-            </div>
-            <div class="exams-list">
-                {% for exam in in_progress %}
-                <div class="exam-card in-progress">
-                    <div class="exam-info">
-                        <h4><i class="fas fa-spinner fa-spin"></i> {{ exam.name }}</h4>
-                        <p><i class="fas fa-hourglass-half"></i> {{ exam.duration }} minutes</p>
-                    </div>
-                    <div>
-                        <a href="/exam/{{ exam.id }}" class="start-exam-btn resume">
-                            <i class="fas fa-play"></i> Resume Exam
-                        </a>
-                    </div>
-                </div>
-                {% endfor %}
-            </div>
-        </div>
-        {% endif %}
-        
-        <!-- AVAILABLE EXAMS -->
-        <div class="section-card">
-            <div class="section-header">
-                <h3><i class="fas fa-play-circle"></i> Available Exams</h3>
-                <span class="badge-count">{{ exams|length }} available</span>
-            </div>
-            <div class="exams-list">
-                {% if exams %}
-                    {% for exam in exams %}
-                    <div class="exam-card">
-                        <div class="exam-info">
-                            <h4><i class="fas fa-file-alt"></i> {{ exam.name }}</h4>
-                            <p><i class="fas fa-hourglass-half"></i> {{ exam.duration }} minutes</p>
-                        </div>
-                        <div>
-                            <button class="start-exam-btn" onclick="showStartPopup({{ exam.id }}, '{{ exam.name }}', {{ exam.duration }})">
-                                <i class="fas fa-play"></i> Start Exam
-                            </button>
-                        </div>
-                    </div>
-                    {% endfor %}
-                {% else %}
-                    <div class="empty-state">
-                        <i class="fas fa-smile-wink"></i>
-                        <p>No active exams at the moment. Check back later!</p>
-                    </div>
-                {% endif %}
-            </div>
-        </div>
-        
-        <!-- COMPLETED EXAMS -->
-        <div class="section-card">
-            <div class="section-header">
-                <h3><i class="fas fa-check-circle"></i> Completed Exams</h3>
-                <span class="badge-count">{{ completed|length }} completed</span>
-            </div>
-            <div class="table-wrapper">
-                {% if completed %}
-                <table class="results-table">
-                    <thead>
-                        <tr><th>Exam Name</th><th>Score</th><th>Percentage</th><th>Grade</th></tr>
-                    </thead>
-                    <tbody>
-                        {% for exam in completed %}
-                        {% set is_withheld = (exam.results_released == 0 or (exam.result_release_policy == 'withheld' and not exam.exam_results_released)) %}
-                        {% if is_withheld %}
-                        <tr>
-                            <td><strong><i class="fas fa-file-alt"></i> {{ exam.exam_name }}</strong></td>
-                            <td><span class="score-badge" style="background:#f1f5f9; color:#64748b;"><i class="fas fa-lock"></i> Withheld</span></td>
-                            <td><span class="text-muted">—</span></td>
-                            <td><span class="score-badge" style="background:#e0f2fe; color:#0369a1;"><i class="fas fa-clock"></i> Pending Release</span></td>
-                        </tr>
-                        {% else %}
-                        {% if exam.total and exam.total > 0 %}
-                            {% set percentage = (exam.score / exam.total * 100)|round|int %}
-                        {% else %}
-                            {% set percentage = 0 %}
-                        {% endif %}
-                        
-                        {% set grade = exam.grade_label or ('A' if percentage >= 90 else ('B' if percentage >= 80 else ('C' if percentage >= 70 else ('D' if percentage >= 65 else 'F')))) %}
-                        {% set grade_class = grade[0] if grade else 'F' %}
-                        
-                        <tr>
-                            <td><strong><i class="fas fa-file-alt"></i> {{ exam.exam_name }}</strong></td>
-                            <td><span class="score-badge">{{ exam.score }}/{{ exam.total }}</span></td>
-                            <td>{{ percentage }}%</td>
-                            <td><span class="score-badge {{ grade_class }}">{{ grade }}</span></td>
-                        </tr>
-                        {% endif %}
-                        {% endfor %}
-                    </tbody>
-                </table>
-                {% else %}
-                <div class="empty-state">
-                    <i class="fas fa-folder-open"></i>
-                    <p>You haven't completed any exams yet.</p>
-                </div>
-                {% endif %}
-            </div>
-        </div>
-        
-        <!-- Instructions -->
-        <div class="instructions-card">
-            <div class="instructions-header">
-                <h3><i class="fas fa-info-circle"></i> Exam Guidelines & Instructions</h3>
-            </div>
-            <div class="instructions-body">
-                <div class="instruction-list">
-                    <div class="instruction-item">
-                        <div class="instruction-icon"><i class="fas fa-hourglass-start"></i></div>
-                        <div class="instruction-text"><strong>Timer</strong><span>Each exam has a time limit. Timer starts when you begin.</span></div>
-                    </div>
-                    <div class="instruction-item">
-                        <div class="instruction-icon"><i class="fas fa-save"></i></div>
-                        <div class="instruction-text"><strong>Auto-Save</strong><span>Your answers are automatically saved.</span></div>
-                    </div>
-                    <div class="instruction-item">
-                        <div class="instruction-icon"><i class="fas fa-undo-alt"></i></div>
-                        <div class="instruction-text"><strong>Resume Support</strong><span>Continue from where you stopped.</span></div>
-                    </div>
-                    <div class="instruction-item">
-                        <div class="instruction-icon"><i class="fas fa-chart-simple"></i></div>
-                        <div class="instruction-text"><strong>Instant Results</strong><span>Results shown immediately after submission.</span></div>
-                    </div>
-                </div>
-                <div class="warning-list">
-                    <p><i class="fas fa-gavel"></i> Important Rules:</p>
-                    <div class="warning-tags">
-                        <span class="warning-tag"><i class="fas fa-ban"></i> No tab switching</span>
-                        <span class="warning-tag"><i class="fas fa-mouse-pointer"></i> No right-click</span>
-                        <span class="warning-tag"><i class="fas fa-copy"></i> No copy/paste</span>
-                        <span class="warning-tag"><i class="fas fa-arrow-left"></i> No back button</span>
-                        <span class="warning-tag"><i class="fas fa-keyboard"></i> No F12 / DevTools</span>
-                    </div>
-                    <p class="mt-2"><small><i class="fas fa-info-circle"></i> 5 warnings will automatically submit your exam.</small></p>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Premium Start Exam Popup -->
-    
-    
-    <style>
-        @keyframes popIn { from { transform: scale(0.95) translateY(-10px); opacity: 0; } to { transform: scale(1) translateY(0); opacity: 1; } }
-    </style>
-    
-    <script>
-        let pendingExamId = null;
-        
-        const confirmBtn = document.getElementById('confirmStartBtn');
-        if (confirmBtn) {
-            confirmBtn.addEventListener('click', function() {
-                if (pendingExamId) {
-                    // Go to exam_start for proper initialization
-                    window.location.href = '/exam_start/' + pendingExamId;
-                }
-            });
-        }
-    </script>
-</body>
-<!-- Clean White Loading Overlay -->
-<div id="loadingOverlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.98); z-index: 10000; display: none; justify-content: center; align-items: center; flex-direction: column;">
-    
-    <!-- Loader Container -->
-    <div style="text-align: center;">
-        <!-- Animated Circle -->
-        <div style="position: relative; width: 80px; height: 80px; margin: 0 auto 30px;">
-            <svg width="80" height="80" viewBox="0 0 80 80" style="animation: spin 1s linear infinite;">
-                <circle cx="40" cy="40" r="34" fill="none" stroke="#e2e8f0" stroke-width="5"/>
-                <circle cx="40" cy="40" r="34" fill="none" stroke="#1a56db" stroke-width="5" 
-                        stroke-linecap="round" stroke-dasharray="50 170"/>
-            </svg>
-            <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);">
-                <i class="fas fa-graduation-cap" style="font-size: 28px; color: #1a56db;"></i>
-            </div>
-        </div>
-        
-        <!-- Title -->
-        <h3 style="font-size: 20px; font-weight: 700; color: #1e293b; margin: 0 0 8px;" id="loadingLabel">Preparing Your Exam</h3>
-        
-        <!-- Progress Bar -->
-        <div style="width: 300px; margin: 0 auto 15px;">
-            <div style="height: 5px; background: #e2e8f0; border-radius: 5px; overflow: hidden;">
-                <div id="loadingBar" style="height: 100%; width: 0%; background: linear-gradient(90deg, #1a56db, #0e3b9e); border-radius: 5px; transition: width 0.2s ease;"></div>
-            </div>
-            <div id="loadingPercent" style="text-align: right; font-size: 12px; font-weight: 600; color: #1a56db; margin-top: 5px;">0%</div>
-        </div>
-        
-        <!-- Status -->
-        <p id="loadingStatus" style="font-size: 13px; color: #64748b; margin: 0;">Initializing...</p>
-    </div>
-</div>
+<body class="st-body">
+  <div class="st-grain" aria-hidden="true"></div>
+  <div class="ct-toasts" id="ctToasts" role="status" aria-live="polite"></div>
 
-<style>
-    @keyframes spin {
-        from { transform: rotate(0deg); }
-        to { transform: rotate(360deg); }
-    }
-</style>
+  <div class="st-shell">
+    <!-- Editorial Top Bar -->
+    <header class="st-nav">
+      <a class="st-brand" href="/dashboard" aria-label="CogniTara Student Portal">
+        <span class="st-brand__mark"><svg viewBox="0 0 200 200"><use href="{{ ICONS }}#ct-mark"/></svg></span>
+        <span class="st-brand__name">CogniTara</span>
+        <span class="st-brand__sep" aria-hidden="true"></span>
+        <span class="st-brand__meta">{{ _school.school_name }}</span>
+      </a>
 
-<script>
+      <div class="st-nav__right">
+        <span class="st-term-pill">{{ _school.current_term }} · {{ _school.academic_session }}</span>
+        <button type="button" class="st-icon-btn" data-ct-theme-toggle aria-label="Switch theme" title="Switch light or dark theme">
+          <span class="ct-theme-ico">{{ ico('i-moon', 'ct-theme-ico__moon') }}{{ ico('i-sun', 'ct-theme-ico__sun') }}</span>
+        </button>
+
+        <div class="ct-dropdown" data-ct-dropdown>
+          <button type="button" class="st-user-btn" data-ct-dropdown-trigger aria-haspopup="menu" aria-expanded="false">
+            {% if has_real_photo %}
+            <img class="st-user-btn__img" src="{{ url_for('static', filename='images/' + photo) }}" alt="" onerror="this.style.display='none'">
+            {% else %}
+            <span class="st-user-btn__img" style="display:grid;place-items:center;font-size:11px;font-weight:720;color:var(--st-ink)">{{ initials }}</span>
+            {% endif %}
+            <span>{{ display_name }}</span>
+            {{ ico('i-chevron-down', 'ct-ico--xs') }}
+          </button>
+          <div class="ct-menu" role="menu">
+            <div class="ct-menu__head">
+              <strong>{{ display_name }}</strong>
+              <span>{{ session.class }} · @{{ username }}</span>
+            </div>
+            <a class="ct-menu__item ct-menu__item--danger" role="menuitem" href="{{ url_for('logout') }}">{{ ico('i-logout') }}Sign out</a>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main class="st-main" id="main">
+      <!-- Editorial Greeting + Typographic KPI Strip -->
+      <section class="st-header" aria-label="Student overview">
+        <div class="st-identity">
+          <div class="st-avatar" aria-hidden="true">
+            {% if has_real_photo %}
+            <img src="{{ url_for('static', filename='images/' + photo) }}" alt="{{ display_name }}" onerror="this.remove()">
+            {% else %}
+            {{ initials }}
+            {% endif %}
+          </div>
+          <div class="st-greeting">
+            <span class="st-eyebrow">Student Portal · {{ session.class }}</span>
+            <h1>Welcome back, {{ display_name }}</h1>
+            <div class="st-meta-row">
+              <span class="st-mono">@{{ username }}</span>
+              <span class="st-meta-dot" aria-hidden="true"></span>
+              <span class="st-status-live"><i></i>Ready for examinations</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="st-kpi-rail" aria-label="Performance summary">
+          <div class="st-kpi">
+            <span class="st-kpi__label">Available</span>
+            <strong class="st-kpi__val" data-ct-count>{{ exams|length }}</strong>
+          </div>
+          <div class="st-kpi">
+            <span class="st-kpi__label">Completed</span>
+            <strong class="st-kpi__val" data-ct-count>{{ completed|length }}</strong>
+          </div>
+          <div class="st-kpi">
+            <span class="st-kpi__label">Average</span>
+            <strong class="st-kpi__val" data-ct-count data-ct-decimals="1" data-ct-suffix="%">{{ avg_score }}%</strong>
+          </div>
+          <div class="st-kpi">
+            <span class="st-kpi__label">Best Score</span>
+            <strong class="st-kpi__val" data-ct-count data-ct-suffix="%">{{ highest.value if has_released.value else 0 }}%</strong>
+          </div>
+        </div>
+      </section>
+
+      <!-- Asymmetric Two-Column Editorial Workspace -->
+      <div class="st-workspace">
+        <!-- Left Primary Column: Active & Scheduled Exams + Transcript -->
+        <div class="st-col">
+          {% if in_progress %}
+          <section class="st-card st-card--spotlight" aria-label="In-progress examinations">
+            <div class="st-card__head">
+              <div>
+                <h2>Resume In-Progress Examination</h2>
+                <p>Answers and remaining time are auto-saved on your local school server.</p>
+              </div>
+              <span class="st-pill st-pill--warn">{{ in_progress|length }} active</span>
+            </div>
+            <div class="st-exam-list">
+              {% for exam in in_progress %}
+              <div class="st-exam-row">
+                <div class="st-exam-row__info">
+                  <span class="st-exam-row__title">{{ exam.name }}</span>
+                  <div class="st-exam-row__meta">
+                    <span class="st-mono">{{ ico('i-clock', 'ct-ico--xs') }}{{ exam.duration }} min</span>
+                    <span class="st-pill st-pill--warn">In progress</span>
+                  </div>
+                </div>
+                <a href="/exam/{{ exam.id }}" class="st-btn st-btn--primary">
+                  <span>Resume Exam</span>
+                  {{ ico('i-arrow-right', 'ct-ico--sm st-arrow') }}
+                </a>
+              </div>
+              {% endfor %}
+            </div>
+          </section>
+          {% endif %}
+
+          <!-- Scheduled Examinations -->
+          <section class="st-card" aria-label="Available examinations">
+            <div class="st-card__head">
+              <div>
+                <h2>Scheduled Examinations</h2>
+                <p>Active papers assigned to {{ session.class }}</p>
+              </div>
+              <span class="st-pill">{{ exams|length }} ready</span>
+            </div>
+
+            {% if exams %}
+            <div class="st-exam-list">
+              {% for exam in exams %}
+              <div class="st-exam-row">
+                <div class="st-exam-row__info">
+                  <span class="st-exam-row__title">{{ exam.name }}</span>
+                  <div class="st-exam-row__meta">
+                    <span class="st-mono">{{ ico('i-clock', 'ct-ico--xs') }}{{ exam.duration }} minutes</span>
+                    <span>{{ ico('i-shield', 'ct-ico--xs') }}Auto-save &amp; integrity monitoring</span>
+                  </div>
+                </div>
+                <button type="button" class="st-btn {% if not in_progress and loop.first %}st-btn--primary{% else %}st-btn--secondary{% endif %}" onclick="showStartPopup({{ exam.id }}, {{ exam.name|tojson|forceescape }}, {{ exam.duration }})">
+                  <span>Start Exam</span>
+                  {{ ico('i-arrow-right', 'ct-ico--sm st-arrow') }}
+                </button>
+              </div>
+              {% endfor %}
+            </div>
+            {% else %}
+            <div class="st-empty">
+              <span class="st-empty__ico">{{ ico('i-check-circle') }}</span>
+              <strong>No active examinations right now</strong>
+              <p>When your teacher or administrator activates an exam for {{ session.class }}, it will appear here automatically.</p>
+            </div>
+            {% endif %}
+          </section>
+
+          <!-- Completed Examination Transcript -->
+          <section class="st-card" aria-label="Completed examinations">
+            <div class="st-card__head">
+              <div>
+                <h2>Academic Transcript</h2>
+                <p>Completed papers and released grades for this session</p>
+              </div>
+              <span class="st-pill">{{ completed|length }} recorded</span>
+            </div>
+
+            {% if completed %}
+            <div class="st-table-wrap">
+              <table class="st-table">
+                <thead>
+                  <tr>
+                    <th>Examination</th>
+                    <th>Score</th>
+                    <th>Accuracy</th>
+                    <th style="text-align:right">Grade</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for exam in completed %}
+                  {% set is_withheld = (exam.results_released == 0 or (exam.result_release_policy == 'withheld' and not exam.exam_results_released)) %}
+                  {% if is_withheld %}
+                  <tr>
+                    <td class="st-table__name">{{ exam.exam_name }}</td>
+                    <td><span class="st-pill">{{ ico('i-lock', 'ct-ico--xs') }}Withheld</span></td>
+                    <td class="st-mono" style="color:var(--st-ink-3)">—</td>
+                    <td style="text-align:right"><span class="st-pill">Pending</span></td>
+                  </tr>
+                  {% else %}
+                  {% set percentage = (exam.score / exam.total * 100)|round|int if (exam.total and exam.total > 0) else 0 %}
+                  {% set grade = exam.grade_label or ('A' if percentage >= 90 else ('B' if percentage >= 80 else ('C' if percentage >= 70 else ('D' if percentage >= 65 else 'F')))) %}
+                  {% set g0 = grade[0] if grade else 'F' %}
+                  <tr>
+                    <td class="st-table__name">{{ exam.exam_name }}</td>
+                    <td class="st-mono">{{ exam.score }} / {{ exam.total }}</td>
+                    <td>
+                      <div class="st-table__bar">
+                        <span class="st-mini-bar {% if percentage < 50 %}st-mini-bar--bad{% elif percentage < 65 %}st-mini-bar--warn{% endif %}"><i style="width:{{ percentage }}%"></i></span>
+                        <span class="st-mono" style="font-size:13px">{{ percentage }}%</span>
+                      </div>
+                    </td>
+                    <td style="text-align:right">
+                      <span class="st-grade {% if g0 in ['A', 'B'] %}st-grade--ok{% elif g0 == 'C' %}st-grade--accent{% elif g0 == 'D' %}st-grade--warn{% else %}st-grade--bad{% endif %}">{{ grade }}</span>
+                    </td>
+                  </tr>
+                  {% endif %}
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+            {% else %}
+            <div class="st-empty">
+              <span class="st-empty__ico">{{ ico('i-folder') }}</span>
+              <strong>No completed papers yet</strong>
+              <p>Submitted exams and released grades will appear on your transcript here.</p>
+            </div>
+            {% endif %}
+          </section>
+        </div>
+
+        <!-- Right Contextual Rail: Integrity Standing & Concise Guidelines -->
+        <aside class="st-col" aria-label="Exam integrity and guidelines">
+          <section class="st-card">
+            <div class="st-standing">
+              <div class="st-standing__top">
+                <span class="st-standing__title">
+                  {{ ico('i-shield', 'ct-ico--sm') }}
+                  <span>Integrity Standing</span>
+                </span>
+                {% if warning_count > 0 %}
+                <span class="st-pill st-pill--warn">{{ warning_count }} warning{{ 's' if warning_count != 1 else '' }}</span>
+                {% else %}
+                <span class="st-pill st-pill--ok">Clean</span>
+                {% endif %}
+              </div>
+              {% if warning_count > 0 %}
+              <p>Previous sessions recorded {{ warning_count }} focus warning{{ 's' if warning_count != 1 else '' }}. Stay inside your exam window and avoid switching tabs during papers.</p>
+              {% else %}
+              <p>No rule violations recorded. Keep your browser focused inside the examination window for an uninterrupted sitting.</p>
+              {% endif %}
+            </div>
+          </section>
+
+          <section class="st-card">
+            <div class="st-card__head">
+              <div>
+                <h2>Before You Begin</h2>
+                <p>How examinations operate on this network</p>
+              </div>
+            </div>
+            <div class="st-checklist">
+              <div class="st-check-item">
+                <span class="st-check-num">01</span>
+                <div class="st-check-body">
+                  <strong>Authoritative Timer</strong>
+                  <span>Each paper has a server-synced countdown starting when you begin.</span>
+                </div>
+              </div>
+              <div class="st-check-item">
+                <span class="st-check-num">02</span>
+                <div class="st-check-body">
+                  <strong>Instant Auto-Save</strong>
+                  <span>Every selected option is saved immediately to your local school server.</span>
+                </div>
+              </div>
+              <div class="st-check-item">
+                <span class="st-check-num">03</span>
+                <div class="st-check-body">
+                  <strong>Power-Safe Resume</strong>
+                  <span>If power drops or your device restarts, sign back in to continue.</span>
+                </div>
+              </div>
+              <div class="st-check-item">
+                <span class="st-check-num">04</span>
+                <div class="st-check-body">
+                  <strong>Verified Grading</strong>
+                  <span>Scores appear upon submission when instant release is enabled.</span>
+                </div>
+              </div>
+            </div>
+            <div class="st-policy-foot">
+              <span class="st-policy-foot__title">
+                {{ ico('i-alert', 'ct-ico--xs') }}
+                <span>5 warnings auto-submit your paper</span>
+              </span>
+              <div class="st-policy-foot__rules">
+                <span class="st-rule-chip">No tab switching</span>
+                <span class="st-rule-chip">No right-click</span>
+                <span class="st-rule-chip">No copy / paste</span>
+                <span class="st-rule-chip">No DevTools</span>
+              </div>
+            </div>
+          </section>
+        </aside>
+      </div>
+    </main>
+
+    <footer class="st-foot">
+      <span>{{ _school.school_name }} · Offline Examination Server</span>
+      <span class="st-mono" style="font-size:11px;letter-spacing:0.06em">LOCAL LAN SESSION</span>
+    </footer>
+  </div>
+
+  <!-- Exam Launch Overlay -->
+  <div class="st-overlay" id="loadingOverlay" aria-hidden="true">
+    <div class="st-overlay__card">
+      <div style="display:grid;gap:6px">
+        <span class="st-eyebrow">Preparing Examination</span>
+        <h3 id="loadingLabel" style="margin:0;font-size:18px;font-weight:720;letter-spacing:-0.02em;color:var(--st-ink)">Preparing Your Exam</h3>
+        <p id="loadingStatus" style="margin:0;font-size:13px;color:var(--st-ink-3)">Initializing secure session…</p>
+      </div>
+      <div style="display:grid;gap:8px">
+        <div class="st-overlay__track" id="loadingTrack" style="--value:0">
+          <div class="st-overlay__fill" id="loadingBar"></div>
+        </div>
+        <div style="display:flex;justify-content:flex-end;font-family:var(--ct-mono);font-size:12px;color:var(--st-ink-2)" id="loadingPercent">0%</div>
+      </div>
+    </div>
+  </div>
+
+  <script src="{{ url_for('static', filename='js/cognitara-web.js') }}"></script>
+  <script>
     function showLoading(examId, examName) {
-        const overlay = document.getElementById('loadingOverlay');
-        const bar = document.getElementById('loadingBar');
-        const percent = document.getElementById('loadingPercent');
-        const label = document.getElementById('loadingLabel');
-        const status = document.getElementById('loadingStatus');
-        
-        overlay.style.display = 'flex';
-        label.textContent = examName;
-        
-        const messages = [
-            'Randomizing questions...',
-            'Setting up timer...',
-            'Preparing anti-cheat...',
-            'Almost ready...'
-        ];
-        
-        let progress = 0;
-        let msgIndex = 0;
-        
-        // Smooth progress animation
-        const progressInterval = setInterval(() => {
-            progress += Math.random() * 15 + 5;
-            if (progress > 90) progress = 90;
-            bar.style.width = progress + '%';
-            percent.textContent = Math.round(progress) + '%';
-        }, 150);
-        
-        // Status messages
-        const msgInterval = setInterval(() => {
-            if (msgIndex < messages.length) {
-                status.textContent = messages[msgIndex];
-                msgIndex++;
-            }
-        }, 400);
-        
-        // Complete and redirect
-        setTimeout(() => {
-            clearInterval(progressInterval);
-            clearInterval(msgInterval);
-            bar.style.width = '100%';
-            percent.textContent = '100%';
-            status.textContent = 'Starting exam...';
-            
-            setTimeout(() => {
-                window.location.href = '/exam_start/' + examId;
-            }, 200);
-        }, 1800);
+      var overlay = document.getElementById("loadingOverlay");
+      var track = document.getElementById("loadingTrack");
+      var percent = document.getElementById("loadingPercent");
+      var label = document.getElementById("loadingLabel");
+      var status = document.getElementById("loadingStatus");
+
+      overlay.classList.add("is-open");
+      overlay.setAttribute("aria-hidden", "false");
+      label.textContent = examName;
+
+      var messages = [
+        "Randomizing question order…",
+        "Synchronizing exam timer…",
+        "Enabling integrity shield…",
+        "Opening exam studio…"
+      ];
+
+      var progress = 0;
+      var msgIndex = 0;
+
+      var progressInterval = setInterval(function () {
+        progress = Math.min(90, progress + Math.random() * 16 + 6);
+        track.style.setProperty("--value", String(Math.round(progress)));
+        percent.textContent = Math.round(progress) + "%";
+      }, 140);
+
+      var msgInterval = setInterval(function () {
+        if (msgIndex < messages.length) {
+          status.textContent = messages[msgIndex++];
+        }
+      }, 360);
+
+      setTimeout(function () {
+        clearInterval(progressInterval);
+        clearInterval(msgInterval);
+        track.style.setProperty("--value", "100");
+        percent.textContent = "100%";
+        status.textContent = "Launching exam…";
+        setTimeout(function () {
+          window.location.href = "/exam_start/" + examId;
+        }, 180);
+      }, 1400);
     }
-    
-    // Replace old popup function
+
     function showStartPopup(examId, examName, duration) {
-        showLoading(examId, examName);
+      showLoading(examId, examName);
     }
-</script>
+  </script>
+</body>
 </html>

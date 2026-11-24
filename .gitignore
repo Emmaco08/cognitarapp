@@ -30,6 +30,7 @@ static/images/*
 !static/images/cognitara-*.ico
 !static/images/cognitara-*.png
 !static/images/cognitara-*.svg
+!static/images/auth-editorial-*.jpg
 !static/images/favicon.ico
 !static/images/default.png
 
@@ -97,11 +98,14 @@ ehthumbs.db
 Desktop.ini
 user_prompt*.txt
 
-# Electron Desktop & PyInstaller Build Outputs
+# Electron Desktop, Tauri Setup & PyInstaller Build Outputs
 build/
 dist/
 desktop/node_modules/
 desktop/dist/
 desktop/release/
 desktop/resources/engine/
+desktop/setup/src-tauri/target/
+desktop/setup/payload/payload.exe
+desktop/setup/payload/manifest.json
 

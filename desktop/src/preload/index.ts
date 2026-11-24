@@ -57,11 +57,18 @@ export interface CogniTaraDesktopBridge {
   cloudSignIn: (payload: { email: string; password: string }) => Promise<any>;
   cloudSync: () => Promise<any>;
   cloudSignOut: () => Promise<any>;
+  // Paystack In-App Billing, Plans, Discount & Redeem Codes
+  getBillingPlans: () => Promise<any>;
+  validatePromoCode: (payload: { code: string; plan_id?: string | null; currency?: string }) => Promise<any>;
+  redeemVoucherCode: (payload: { code: string; plan_id?: string | null; currency?: string }) => Promise<any>;
+  startPaystackCheckout: (payload: { plan_id: string; currency?: string; promo_code?: string }) => Promise<any>;
+  verifyPaystackReference: (reference: string) => Promise<any>;
   // Main-to-renderer push subscriptions
   onServerStateChanged: (cb: (state: string) => void) => () => void;
   onLicenseLockTriggered: (cb: (license: any) => void) => () => void;
   onUpdateStatusChanged: (cb: (status: any) => void) => () => void;
   onCloudSessionChanged: (cb: (session: any) => void) => () => void;
+  onBillingCompleted: (cb: (result: any) => void) => () => void;
 }
 
 const api: CogniTaraDesktopBridge = {
@@ -103,6 +110,11 @@ const api: CogniTaraDesktopBridge = {
   cloudSignIn: (payload) => ipcRenderer.invoke("cloud:signIn", payload),
   cloudSync: () => ipcRenderer.invoke("cloud:sync"),
   cloudSignOut: () => ipcRenderer.invoke("cloud:signOut"),
+  getBillingPlans: () => ipcRenderer.invoke("billing:getPlans"),
+  validatePromoCode: (payload) => ipcRenderer.invoke("billing:validatePromo", payload),
+  redeemVoucherCode: (payload) => ipcRenderer.invoke("billing:redeemCode", payload),
+  startPaystackCheckout: (payload) => ipcRenderer.invoke("billing:startPaystack", payload),
+  verifyPaystackReference: (reference) => ipcRenderer.invoke("billing:verifyPaystack", reference),
   onServerStateChanged: (cb) => {
     const listener = (_evt: Electron.IpcRendererEvent, state: string) => cb(state);
     ipcRenderer.on("server:stateChanged", listener);
@@ -122,6 +134,11 @@ const api: CogniTaraDesktopBridge = {
     const listener = (_evt: Electron.IpcRendererEvent, session: any) => cb(session);
     ipcRenderer.on("cloud:sessionChanged", listener);
     return () => ipcRenderer.removeListener("cloud:sessionChanged", listener);
+  },
+  onBillingCompleted: (cb) => {
+    const listener = (_evt: Electron.IpcRendererEvent, result: any) => cb(result);
+    ipcRenderer.on("billing:completed", listener);
+    return () => ipcRenderer.removeListener("billing:completed", listener);
   },
 };
 

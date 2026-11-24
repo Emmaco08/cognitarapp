@@ -1,6 +1,7 @@
 import crypto from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { getSql } from "./db";
+import { getPlatformSettings, toPublicPlatformDirectives } from "./platform";
 
 export const SESSION_COOKIE_NAME = "ct_cloud_session";
 const SESSION_TTL_DAYS = 30;
@@ -118,7 +119,7 @@ export async function resolveAuthenticatedAccount(rawToken: string) {
   const tokenHash = hashSessionToken(rawToken);
 
   const sessions = await sql`
-    SELECT s.id AS session_id, s.user_id, s.school_id, s.client_type, s.expires_at,
+    SELECT s.id AS session_id, s.user_id, s.school_id, s.client_type, s.expires_at, s.created_at AS session_created_at,
            u.email, u.full_name, u.phone, u.role, u.status AS user_status, u.created_at AS user_created_at
     FROM cloud_sessions s
     JOIN users_hq u ON u.id = s.user_id
@@ -132,18 +133,31 @@ export async function resolveAuthenticatedAccount(rawToken: string) {
   const row = sessions[0] as Record<string, any>;
   if (row.user_status !== "active") return null;
 
-  await sql`
-    UPDATE cloud_sessions SET last_used_at = NOW() WHERE id = ${row.session_id}::uuid
-  `;
-
   const schools = await sql`
-    SELECT id, school_name, country_code, state_region, contact_email, contact_phone, status, created_at
+    SELECT id, school_name, country_code, state_region, contact_email, contact_phone, status,
+           ban_reason, custom_notice, custom_notice_level, feature_overrides_json,
+           force_signout_before, created_at
     FROM schools
     WHERE owner_user_id = ${row.user_id}::uuid
     ORDER BY created_at ASC
     LIMIT 1
   `;
-  const school = schools[0] || null;
+  const school = (schools[0] as Record<string, any>) || null;
+
+  // Enforce Developer HQ "Force Sign-Out" timestamp
+  if (school?.force_signout_before) {
+    const cutoff = new Date(school.force_signout_before).getTime();
+    const sessCreated = new Date(row.session_created_at).getTime();
+    if (sessCreated < cutoff) {
+      await sql`UPDATE cloud_sessions SET revoked_at = NOW() WHERE id = ${row.session_id}::uuid`;
+      return null;
+    }
+  }
+
+  await sql`UPDATE cloud_sessions SET last_used_at = NOW() WHERE id = ${row.session_id}::uuid`;
+  if (school) {
+    await sql`UPDATE schools SET last_seen_at = NOW() WHERE id = ${school.id}::uuid`;
+  }
 
   const referrals = await sql`
     SELECT referral_code, reward_mode
@@ -156,13 +170,26 @@ export async function resolveAuthenticatedAccount(rawToken: string) {
 
   const licenses = school
     ? await sql`
-        SELECT id, license_key, plan_tier, status, issued_at, expires_at, bonus_days_total, lease_seconds
-        FROM licenses
-        WHERE school_id = ${(school as any).id}::uuid
-        ORDER BY created_at DESC
+        SELECT l.id, l.license_key, l.plan_tier, l.status, l.issued_at, l.expires_at,
+               l.bonus_days_total, l.lease_seconds, l.signed_lease_json, l.revocation_tombstone_json,
+               p.display_name AS plan_name, p.slug AS plan_slug
+        FROM licenses l
+        LEFT JOIN plans p ON p.id = l.plan_id
+        WHERE l.school_id = ${school.id}::uuid
+        ORDER BY l.created_at DESC
         LIMIT 10
       `
     : [];
+
+  const settings = await getPlatformSettings();
+  const directives = {
+    ...toPublicPlatformDirectives(settings),
+    school_status: school?.status || "active",
+    school_ban_reason: school?.ban_reason || null,
+    school_notice: school?.custom_notice || "",
+    school_notice_level: school?.custom_notice_level || "info",
+    feature_overrides: school?.feature_overrides_json || {},
+  };
 
   return {
     sessionId: row.session_id as string,
@@ -177,16 +204,29 @@ export async function resolveAuthenticatedAccount(rawToken: string) {
     },
     school: school
       ? {
-          id: (school as any).id as string,
-          school_name: (school as any).school_name as string,
-          country_code: String((school as any).country_code || "NG").trim(),
-          state_region: (school as any).state_region || "",
-          contact_email: (school as any).contact_email as string,
-          contact_phone: (school as any).contact_phone || "",
-          status: (school as any).status as string,
+          id: school.id as string,
+          school_name: school.school_name as string,
+          country_code: String(school.country_code || "NG").trim(),
+          state_region: school.state_region || "",
+          contact_email: school.contact_email as string,
+          contact_phone: school.contact_phone || "",
+          status: school.status as string,
+          ban_reason: school.ban_reason || null,
         }
       : null,
     referral_code: (referral as any)?.referral_code || null,
     licenses,
+    directives,
   };
+}
+
+export async function requireHqAdmin(req: NextRequest) {
+  const token = extractBearerOrCookieToken(req);
+  if (!token) return null;
+  const account = await resolveAuthenticatedAccount(token);
+  if (!account) return null;
+  if (account.user.role !== "hq_super_admin" && account.user.role !== "hq_admin") {
+    return null;
+  }
+  return account;
 }

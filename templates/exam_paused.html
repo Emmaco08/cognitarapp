@@ -1,225 +1,83 @@
+{%- from '_ct_shell.html' import ico, ct_boot_script -%}
+{%- set ICONS = url_for('static', filename='icons/cognitara-icons.svg') -%}
+{%- set _school = school_branding if school_branding is defined and school_branding else {'school_name': 'CogniTara School'} -%}
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Examination Paused | COGNITARA EXAM SYSTEM</title>
-    <link href="{{ url_for('static', filename='vendor/bootstrap/css/bootstrap.min.css') }}" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='vendor/fontawesome/css/all.min.css') }}">
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        body {
-            background-color: #F8FAFC;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 24px;
-            color: #0F172A;
-        }
-        .paused-card-wrap {
-            max-width: 480px;
-            width: 100%;
-        }
-        .paused-card {
-            background: #FFFFFF;
-            border-radius: 28px;
-            padding: 40px 32px;
-            box-shadow: 0 20px 40px -15px rgba(15, 23, 42, 0.08), 0 0 1px 1px rgba(15, 23, 42, 0.04);
-            text-align: center;
-            border: 1px solid #E2E8F0;
-        }
-        .paused-icon-badge {
-            width: 76px;
-            height: 76px;
-            background: #FEF3C7;
-            color: #D97706;
-            border-radius: 50%;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 32px;
-            margin-bottom: 24px;
-            box-shadow: 0 8px 20px rgba(217, 119, 6, 0.15);
-            animation: softPulse 2.5s infinite ease-in-out;
-        }
-        @keyframes softPulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.04); }
-        }
-        .paused-title {
-            font-size: 22px;
-            font-weight: 700;
-            color: #0F172A;
-            margin-bottom: 8px;
-            letter-spacing: -0.01em;
-        }
-        .paused-exam-name {
-            display: inline-block;
-            background: #F1F5F9;
-            color: #475569;
-            font-size: 13px;
-            font-weight: 600;
-            padding: 4px 14px;
-            border-radius: 999px;
-            margin-bottom: 24px;
-        }
-        .paused-message-box {
-            background: #FFFBEB;
-            border: 1px solid #FDE68A;
-            border-radius: 16px;
-            padding: 18px 20px;
-            text-align: left;
-            margin-bottom: 28px;
-        }
-        .paused-message-header {
-            font-size: 14px;
-            font-weight: 700;
-            color: #92400E;
-            margin-bottom: 6px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .paused-message-body {
-            font-size: 13px;
-            color: #78350F;
-            line-height: 1.5;
-            margin: 0;
-        }
-        .paused-live-indicator {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            font-size: 13px;
-            color: #64748B;
-            margin-bottom: 24px;
-            font-weight: 500;
-        }
-        .pulse-dot {
-            width: 8px;
-            height: 8px;
-            background: #10B981;
-            border-radius: 50%;
-            display: inline-block;
-            animation: pulseGreen 1.5s infinite;
-        }
-        @keyframes pulseGreen {
-            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
-            70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
-            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
-        }
-        .btn-return-dashboard {
-            background: #F8FAFC;
-            color: #475569;
-            border: 1.5px solid #E2E8F0;
-            padding: 12px 24px;
-            border-radius: 14px;
-            font-weight: 600;
-            font-size: 14px;
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            width: 100%;
-            transition: all 0.2s ease;
-        }
-        .btn-return-dashboard:hover {
-            background: #F1F5F9;
-            color: #0F172A;
-            border-color: #CBD5E1;
-        }
-        .paused-footer-meta {
-            margin-top: 24px;
-            font-size: 12px;
-            color: #94A3B8;
-        }
-        @media (max-width: 480px) {
-            .paused-card {
-                padding: 32px 20px;
-                border-radius: 24px;
-            }
-            .paused-title {
-                font-size: 20px;
-            }
-        }
-    </style>
-    <meta name="csrf-token" content="{{ csrf_token() }}">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+  <meta name="color-scheme" content="dark light">
+  <title>Examination Paused — CogniTara</title>
+  <link rel="icon" href="{{ url_for('static', filename='images/cognitara-favicon.ico') }}">
+  <link rel="preload" href="{{ url_for('static', filename='fonts/ui/PlusJakartaSans-Variable.woff2') }}" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/cognitara-web.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/cognitara-student-studio.css') }}">
+  {{ ct_boot_script() }}
 </head>
-<body>
-    <div class="paused-card-wrap">
-        <div class="paused-card blocked-card">
-            <div class="paused-icon-badge">
-                <i class="fas fa-lock"></i>
-            </div>
-            
-            <h1 class="paused-title">Examination Temporarily Paused</h1>
-            <div class="paused-exam-name">{{ exam.name if exam else "Exam Session" }}</div>
+<body class="st-body">
+  <div class="st-grain" aria-hidden="true"></div>
 
-            <div class="paused-message-box message-box">
-                <div class="paused-message-header">
-                    <i class="fas fa-shield-alt"></i> Proctoring Notice
-                </div>
-                <p class="paused-message-body">
-                    {{ pause_reason or "Your examination attempt has been paused by the examination supervisor or proctoring system." }}
-                </p>
-                <p class="paused-message-body" style="margin-top: 8px; color: #92400E; font-weight: 600;">
-                    Please notify your invigilator or administrator. Your answers and remaining time are securely preserved.
-                </p>
-            </div>
+  <div class="st-shell">
+    <header class="st-nav">
+      <a class="st-brand" href="{% if is_ce %}/ce_dashboard{% else %}/dashboard{% endif %}">
+        <span class="st-brand__mark"><svg viewBox="0 0 200 200"><use href="{{ ICONS }}#ct-mark"/></svg></span>
+        <span class="st-brand__name">CogniTara</span>
+        <span class="st-brand__sep" aria-hidden="true"></span>
+        <span class="st-brand__meta">{{ _school.school_name }}</span>
+      </a>
+      <div class="st-nav__right">
+        <button type="button" class="st-icon-btn" data-ct-theme-toggle aria-label="Switch theme">
+          <span class="ct-theme-ico">{{ ico('i-moon', 'ct-theme-ico__moon') }}{{ ico('i-sun', 'ct-theme-ico__sun') }}</span>
+        </button>
+      </div>
+    </header>
 
-            <div class="paused-live-indicator">
-                <span class="pulse-dot"></span>
-                <span>Waiting for administrator to resume...</span>
-            </div>
-
-            <a href="{% if is_ce %}/ce_dashboard{% else %}/dashboard{% endif %}" class="btn-return-dashboard">
-                <i class="fas fa-arrow-left"></i> Return to Student Dashboard
-            </a>
-
-            <div class="paused-footer-meta">
-                <i class="fas fa-check-shield"></i> CogniTara Fenced Session Integrity
-            </div>
+    <main class="st-folio-stage">
+      <section class="st-brief blocked-card" aria-label="Examination paused">
+        <div class="st-folio__top">
+          <span class="st-folio__doc-id">{{ exam.name if exam else "Exam Session" }}</span>
+          <span class="st-pill st-pill--warn">{{ ico('i-lock', 'ct-ico--xs') }}Paused</span>
         </div>
-    </div>
 
-    {% if attempt and attempt.id %}
-    <script>
-        // Automatic polling for administrator resumption
-        (function() {
-            var attemptId = {{ attempt.id }};
-            var examId = {{ attempt.exam_id if attempt.exam_id else 0 }};
-            var isCe = {{ 1 if is_ce else 0 }};
-            var checkUrl = isCe ? '/ce_exam_check_pause' : '/exam_check_pause';
-            var resumeUrl = isCe ? ('/ce_exam/' + examId) : ('/take_exam/' + examId);
+        <div class="st-brief__body">
+          <div class="st-folio__headline">
+            <span class="st-eyebrow">Proctoring Notice</span>
+            <h1>Examination Temporarily Paused</h1>
+            <p class="message-box">{{ pause_reason or "Your examination attempt has been paused by the examination supervisor or proctoring system." }} Please notify your invigilator — your answers and remaining time are safely preserved.</p>
+          </div>
 
-            function checkResumeStatus() {
-                fetch(checkUrl + '?attempt_id=' + attemptId, {
-                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
-                })
-                .then(function(res) { return res.json(); })
-                .then(function(data) {
-                    if (data && data.is_paused === false) {
-                        // Administrator has resumed the examination
-                        window.location.href = resumeUrl;
-                    }
-                })
-                .catch(function(err) {
-                    // Fail silently, retry next interval
-                });
-            }
+          <div style="display:flex;align-items:center;gap:10px;padding:13px 16px;border-radius:12px;background:var(--st-well);border:1px solid var(--st-line);font-size:13px;color:var(--st-ink-2)">
+            <span class="st-status-live" style="color:var(--st-warn)"><i></i></span>
+            <span>Waiting for administrator to resume your session automatically…</span>
+          </div>
 
-            // Check every 3 seconds
-            setInterval(checkResumeStatus, 3000);
-        })();
-    </script>
-    {% endif %}
+          <a href="{% if is_ce %}/ce_dashboard{% else %}/dashboard{% endif %}" class="st-btn st-btn--secondary st-btn--lg st-btn--block">
+            {{ ico('i-arrow-left', 'ct-ico--sm') }}
+            <span>Return to Dashboard</span>
+          </a>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="{{ url_for('static', filename='js/cognitara-web.js') }}"></script>
+  {% if attempt and attempt.id %}
+  <script>
+    (function () {
+      var attemptId = {{ attempt.id }};
+      var examId = {{ attempt.exam_id if attempt.exam_id else 0 }};
+      var isCe = {{ 1 if is_ce else 0 }};
+      var checkUrl = isCe ? "/ce_exam_check_pause" : "/exam_check_pause";
+      var resumeUrl = isCe ? ("/ce_exam/" + examId) : ("/take_exam/" + examId);
+      setInterval(function () {
+        fetch(checkUrl + "?attempt_id=" + attemptId, { headers: { "X-Requested-With": "XMLHttpRequest" } })
+          .then(function (r) { return r.json(); })
+          .then(function (d) { if (d && d.is_paused === false) window.location.href = resumeUrl; })
+          .catch(function () {});
+      }, 3000);
+    })();
+  </script>
+  {% endif %}
 </body>
 </html>

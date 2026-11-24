@@ -1,397 +1,175 @@
+{%- from '_ct_shell.html' import ico, ct_boot_script, admin_shell_start, shell_end -%}
+{%- set st_name = student.full_name or student.username -%}
+{%- set st_has_photo = student.photo and student.photo != 'default.png' -%}
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ student.full_name or student.username }} | Student Profile</title>
-    <link href="{{ url_for('static', filename='vendor/bootstrap/css/bootstrap.min.css') }}" rel="stylesheet">
-    <link href="{{ url_for('static', filename='vendor/fontawesome/css/all.min.css') }}" rel="stylesheet">
-    <script src="{{ url_for('static', filename='vendor/chartjs/chart.umd.min.js') }}"></script>
-    <style>
-        :root {
-            --primary: #1a56db; --primary-dark: #0e3b9e; --success: #10b981;
-            --warning: #f59e0b; --danger: #ef4444; --purple: #8b5cf6;
-            --bg: #f0f2f5; --card: #ffffff; --border: #e5e7eb;
-            --text: #111827; --text-light: #6b7280;
-            --grade-a: #10b981; --grade-b: #3b82f6; --grade-c: #f59e0b;
-            --grade-d: #f97316; --grade-f: #ef4444;
-            --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
-            --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.07), 0 2px 4px -2px rgba(0,0,0,0.05);
-            --shadow-lg: 0 10px 25px -5px rgba(0,0,0,0.08), 0 4px 10px -6px rgba(0,0,0,0.04);
-            --shadow-xl: 0 20px 40px -10px rgba(0,0,0,0.1);
-        }
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { background: linear-gradient(135deg, #f8fafc 0%, #eef2ff 50%, #f8fafc 100%); font-family: 'Segoe UI', 'Inter', system-ui, sans-serif; color: var(--text); min-height: 100vh; }
-
-        .profile-container { max-width: 1200px; margin: 0 auto; padding: 28px 20px; }
-
-        /* Navigation */
-        .nav-bar {
-            background: var(--card); border-radius: 18px; padding: 14px 22px;
-            margin-bottom: 22px; display: flex; align-items: center;
-            justify-content: space-between; flex-wrap: wrap; gap: 12px;
-            border: 1px solid var(--border); box-shadow: var(--shadow-sm);
-            animation: slideDown 0.4s ease;
-        }
-        @keyframes slideDown { from { opacity: 0; transform: translateY(-15px); } to { opacity: 1; transform: translateY(0); } }
-        .nav-brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 16px; }
-        .nav-brand i { font-size: 20px; color: var(--primary); }
-        .btn-back {
-            background: var(--card); border: 1.5px solid var(--border); padding: 8px 16px;
-            border-radius: 10px; color: var(--text-light); text-decoration: none;
-            font-weight: 600; font-size: 12px; display: inline-flex; align-items: center; gap: 6px;
-            transition: all 0.25s;
-        }
-        .btn-back:hover { border-color: var(--primary); color: var(--primary); background: #eff6ff; transform: translateY(-1px); }
-
-        /* Hero Card */
-        .hero-card {
-            background: linear-gradient(135deg, #1e3a5f 0%, #1a56db 40%, #4f46e5 100%);
-            border-radius: 24px; padding: 30px 32px; margin-bottom: 24px;
-            display: flex; align-items: center; gap: 28px; flex-wrap: wrap;
-            color: white; position: relative; overflow: hidden;
-            box-shadow: var(--shadow-xl); animation: fadeInUp 0.5s ease;
-        }
-        @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-        .hero-card::before {
-            content: ''; position: absolute; top: -50%; right: -20%;
-            width: 400px; height: 400px; background: rgba(255,255,255,0.03);
-            border-radius: 50%; pointer-events: none;
-        }
-        .hero-card::after {
-            content: ''; position: absolute; bottom: -30%; left: -10%;
-            width: 300px; height: 300px; background: rgba(255,255,255,0.04);
-            border-radius: 50%; pointer-events: none;
-        }
-        .hero-avatar {
-            width: 100px; height: 100px; border-radius: 50%; object-fit: cover;
-            border: 4px solid rgba(255,255,255,0.3); flex-shrink: 0;
-            position: relative; z-index: 1; box-shadow: 0 8px 20px rgba(0,0,0,0.2);
-        }
-        .hero-info { position: relative; z-index: 1; }
-        .hero-info h1 { font-size: 26px; font-weight: 800; margin-bottom: 6px; }
-        .hero-info .meta-tags { display: flex; gap: 10px; flex-wrap: wrap; }
-        .meta-tag {
-            background: rgba(255,255,255,0.15); backdrop-filter: blur(10px);
-            padding: 4px 12px; border-radius: 20px; font-size: 12px;
-            display: inline-flex; align-items: center; gap: 5px;
-        }
-
-        /* Stats Grid */
-        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px; }
-        .stat-card {
-            background: var(--card); border-radius: 18px; padding: 20px 22px;
-            border: 1px solid var(--border); transition: all 0.3s; position: relative; overflow: hidden;
-            box-shadow: var(--shadow-sm); animation: fadeInUp 0.5s ease forwards; opacity: 0;
-        }
-        .stat-card:nth-child(1) { animation-delay: 0.1s; }
-        .stat-card:nth-child(2) { animation-delay: 0.2s; }
-        .stat-card:nth-child(3) { animation-delay: 0.3s; }
-        .stat-card:nth-child(4) { animation-delay: 0.4s; }
-        .stat-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-lg); }
-        .stat-card .stat-icon {
-            width: 44px; height: 44px; border-radius: 12px; display: flex;
-            align-items: center; justify-content: center; font-size: 20px; margin-bottom: 10px;
-        }
-        .stat-card .stat-value { font-size: 30px; font-weight: 800; line-height: 1.1; }
-        .stat-card .stat-label { font-size: 12px; color: var(--text-light); margin-top: 4px; }
-        .stat-card .stat-sub { font-size: 11px; color: var(--text-light); margin-top: 2px; }
-
-        /* Section Cards */
-        .section-card {
-            background: var(--card); border-radius: 20px; overflow: hidden;
-            border: 1px solid var(--border); margin-bottom: 22px;
-            box-shadow: var(--shadow-sm); animation: fadeInUp 0.5s ease forwards; opacity: 0;
-        }
-        .section-card:nth-child(4) { animation-delay: 0.5s; }
-        .section-card:nth-child(5) { animation-delay: 0.6s; }
-        .section-header {
-            padding: 16px 22px; border-bottom: 1px solid var(--border);
-            display: flex; align-items: center; gap: 10px; background: #fafbfc;
-        }
-        .section-header i { font-size: 18px; }
-        .section-header h3 { margin: 0; font-size: 15px; font-weight: 700; }
-        .section-body { padding: 16px 20px; }
-
-        /* Results Table */
-        .results-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-        .results-table th {
-            padding: 12px 14px; text-align: left; font-size: 10px; font-weight: 600;
-            color: var(--text-light); text-transform: uppercase; letter-spacing: 0.5px;
-            border-bottom: 2px solid var(--border); background: #fafbfc;
-        }
-        .results-table td { padding: 12px 14px; border-bottom: 1px solid #f3f4f6; vertical-align: middle; }
-        .results-table tbody tr { transition: all 0.2s; }
-        .results-table tbody tr:hover { background: #f8fafc; transform: scale(1.002); }
-
-        .grade-badge {
-            display: inline-flex; align-items: center; justify-content: center;
-            width: 32px; height: 32px; border-radius: 8px; font-weight: 800; font-size: 13px;
-        }
-        .progress-bar-mini {
-            height: 8px; background: #e5e7eb; border-radius: 10px; overflow: hidden;
-            flex: 1; min-width: 80px;
-        }
-        .progress-bar-fill {
-            height: 100%; border-radius: 10px; transition: width 0.8s ease;
-        }
-        .btn-view-exam {
-            padding: 6px 14px; border-radius: 8px; font-size: 11px; font-weight: 600;
-            background: var(--primary); color: white; text-decoration: none;
-            display: inline-flex; align-items: center; gap: 5px; transition: all 0.2s;
-        }
-        .btn-view-exam:hover { background: var(--primary-dark); transform: translateY(-2px); box-shadow: 0 4px 10px rgba(26,86,219,0.3); color: white; }
-
-        /* Highlight Boxes */
-        .highlight-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
-        @media (max-width: 640px) { .highlight-row { grid-template-columns: 1fr; } }
-        .highlight-box {
-            border-radius: 16px; padding: 16px 20px; border-left: 4px solid;
-            display: flex; align-items: center; gap: 14px; font-size: 13px;
-            animation: fadeInUp 0.5s ease forwards; opacity: 0;
-        }
-        .highlight-box.success { background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%); border-left-color: var(--success); animation-delay: 0.2s; }
-        .highlight-box.danger { background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%); border-left-color: var(--danger); animation-delay: 0.3s; }
-        .highlight-box i { font-size: 30px; }
-        .highlight-box strong { display: block; font-size: 14px; margin-bottom: 2px; }
-
-        /* Time Badge */
-        .time-badge {
-            background: #f3f4f6; padding: 3px 8px; border-radius: 10px;
-            font-size: 10px; color: var(--text-light); display: inline-flex; align-items: center; gap: 4px;
-        }
-
-        @media (max-width: 640px) {
-            .profile-container { padding: 14px 10px; }
-            .hero-card { padding: 20px; text-align: center; flex-direction: column; }
-            .hero-info h1 { font-size: 20px; }
-            .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
-            .stat-card { padding: 14px 16px; }
-            .stat-card .stat-value { font-size: 22px; }
-        }
-    </style>
-    <!-- CSRF Protection Shield -->
-    <meta name="csrf-token" content="{{ csrf_token() }}">
-    <script>
-    window.CSRF_TOKEN = "{{ csrf_token() }}";
-    (function() {
-        if (window.fetch) {
-            const _origFetch = window.fetch;
-            window.fetch = function(url, options) {
-                options = options || {};
-                const method = (options.method || 'GET').toUpperCase();
-                if (!['GET', 'HEAD', 'OPTIONS', 'TRACE'].includes(method)) {
-                    options.headers = options.headers || {};
-                    const token = window.CSRF_TOKEN || (document.querySelector('meta[name="csrf-token"]') && document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
-                    if (token) {
-                        if (typeof Headers !== 'undefined' && options.headers instanceof Headers) {
-                            if (!options.headers.has('X-CSRFToken')) options.headers.set('X-CSRFToken', token);
-                        } else if (Array.isArray(options.headers)) {
-                            options.headers.push(['X-CSRFToken', token]);
-                        } else {
-                            if (!options.headers['X-CSRFToken']) options.headers['X-CSRFToken'] = token;
-                        }
-                    }
-                }
-                return _origFetch(url, options);
-            };
-        }
-        if (window.$ && $.ajaxSetup) {
-            $.ajaxSetup({
-                beforeSend: function(xhr, settings) {
-                    if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type)) {
-                        xhr.setRequestHeader("X-CSRFToken", window.CSRF_TOKEN);
-                    }
-                }
-            });
-        }
-        if (navigator.sendBeacon) {
-            const _origBeacon = navigator.sendBeacon.bind(navigator);
-            navigator.sendBeacon = function(url, data) {
-                if (data instanceof FormData) {
-                    if (!data.has('csrf_token')) data.append('csrf_token', window.CSRF_TOKEN);
-                } else if (typeof data === 'string') {
-                    try {
-                        const obj = JSON.parse(data);
-                        if (typeof obj === 'object' && obj !== null && !obj.csrf_token) {
-                            obj.csrf_token = window.CSRF_TOKEN;
-                            data = JSON.stringify(obj);
-                        }
-                    } catch(e) {}
-                }
-                return _origBeacon(url, data);
-            };
-        }
-        document.addEventListener('DOMContentLoaded', function() {
-            document.querySelectorAll('form[method="POST"], form[method="post"]').forEach(function(form) {
-                if (!form.querySelector('input[name="csrf_token"]')) {
-                    var input = document.createElement('input');
-                    input.type = 'hidden';
-                    input.name = 'csrf_token';
-                    input.value = window.CSRF_TOKEN;
-                    form.appendChild(input);
-                }
-            });
-        });
-    })();
-    </script>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+  <meta name="color-scheme" content="dark light">
+  <title>{{ st_name }} — Admin Student Profile</title>
+  <link rel="icon" href="{{ url_for('static', filename='images/cognitara-favicon.ico') }}">
+  <link rel="preload" href="{{ url_for('static', filename='fonts/ui/PlusJakartaSans-Variable.woff2') }}" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="{{ url_for('static', filename='fonts/ui/GeistMono-Variable.woff2') }}" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/cognitara-web.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/cognitara-teacher-studio.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/cognitara-admin-studio.css') }}">
+  <script src="{{ url_for('static', filename='vendor/chartjs/chart.umd.min.js') }}"></script>
+  {{ ct_boot_script() }}
 </head>
-<body>
-    <div class="profile-container">
-        <!-- Navigation -->
-        <div class="nav-bar">
-            <div class="nav-brand"><i class="fas fa-user-graduate"></i> Student Profile</div>
-            <div style="display:flex;gap:8px;">
-                <a href="/admin/results" class="btn-back"><i class="fas fa-arrow-left"></i> Results</a>
-                <a href="/admin" class="btn-back"><i class="fas fa-home"></i> Dashboard</a>
-            </div>
-        </div>
+<body class="ct-app ad-studio">
+{{ admin_shell_start(active='students', crumb='Student Profile') }}
 
-        <!-- Hero Card -->
-        <div class="hero-card">
-            <img src="{{ url_for('static', filename='images/' + student.photo) }}" class="hero-avatar" 
-                 onerror="this.src='/avatar?name={{ student.username }}&background=ffffff&color=1a56db&size=100&font-size=0.4'">
-            <div class="hero-info">
-                <h1>{{ student.full_name or student.username }}</h1>
-                <div class="meta-tags">
-                    <span class="meta-tag"><i class="fas fa-at"></i> {{ student.username }}</span>
-                    <span class="meta-tag"><i class="fas fa-graduation-cap"></i> {{ student.class }}</span>
-                    <span class="meta-tag"><i class="fas fa-flask"></i> {{ student.specialisation or 'General' }}</span>
-                    {% if student.email %}
-                    <span class="meta-tag"><i class="fas fa-envelope"></i> {{ student.email }}</span>
-                    {% endif %}
-                </div>
-            </div>
+  <header class="tc-head">
+    <div class="tc-head__left">
+      <div class="tc-avatar" aria-hidden="true">
+        {% if st_has_photo %}
+        <img src="{{ url_for('static', filename='images/' + student.photo) }}" alt="{{ st_name }}" onerror="this.parentElement.textContent='{{ st_name[:2]|upper }}'">
+        {% else %}
+        {{ st_name[:2]|upper }}
+        {% endif %}
+      </div>
+      <div class="tc-head__txt">
+        <span class="tc-eyebrow">Official Student Record</span>
+        <h1>{{ st_name }}</h1>
+        <div class="tc-head__tags">
+          <span class="tc-pill">@{{ student.username }}</span>
+          <span class="tc-pill">{{ student.class }}</span>
+          <span class="tc-pill tc-pill--accent">{{ student.specialisation or 'General' }}</span>
+          {% if student.email %}<span class="tc-pill">{{ student.email }}</span>{% endif %}
         </div>
-
-        <!-- Stats Cards -->
-        <div class="stats-grid">
-            <div class="stat-card">
-                <div class="stat-icon" style="background:#dbeafe;"><i class="fas fa-chart-line" style="color:#1a56db;"></i></div>
-                <div class="stat-value" style="color:#1a56db;">{{ avg_score }}%</div>
-                <div class="stat-label">Overall Average</div>
-                <div class="stat-sub">Across {{ total_exams }} exams</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-icon" style="background:#d1fae5;"><i class="fas fa-trophy" style="color:#10b981;"></i></div>
-                <div class="stat-value" style="color:#10b981;">{{ best_exam.percentage|round|int if best_exam else 0 }}%</div>
-                <div class="stat-label">Best Score</div>
-                <div class="stat-sub">{{ best_exam.exam_name[:25] if best_exam else 'N/A' }}</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-icon" style="background:#fee2e2;"><i class="fas fa-arrow-down" style="color:#ef4444;"></i></div>
-                <div class="stat-value" style="color:#ef4444;">{{ worst_exam.percentage|round|int if worst_exam else 0 }}%</div>
-                <div class="stat-label">Lowest Score</div>
-                <div class="stat-sub">{{ worst_exam.exam_name[:25] if worst_exam else 'N/A' }}</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-icon" style="background:#ede9fe;"><i class="fas fa-file-alt" style="color:#8b5cf6;"></i></div>
-                <div class="stat-value" style="color:#8b5cf6;">{{ total_exams }}</div>
-                <div class="stat-label">Exams Completed</div>
-                <div class="stat-sub">Total taken</div>
-            </div>
-        </div>
-
-        <!-- Best & Worst Highlights -->
-        <div class="highlight-row">
-            <div class="highlight-box success">
-                <i class="fas fa-star"></i>
-                <div>
-                    <strong>Best Subject</strong>
-                    {% if best_exam %}
-                    {{ best_exam.exam_name }} — <span style="font-weight:700;color:#065f46;">{{ best_exam.percentage|round|int }}%</span>
-                    {% else %}No exams yet{% endif %}
-                </div>
-            </div>
-            <div class="highlight-box danger">
-                <i class="fas fa-exclamation-circle"></i>
-                <div>
-                    <strong>Needs Improvement</strong>
-                    {% if worst_exam %}
-                    {{ worst_exam.exam_name }} — <span style="font-weight:700;color:#991b1b;">{{ worst_exam.percentage|round|int }}%</span>
-                    {% else %}No exams yet{% endif %}
-                </div>
-            </div>
-        </div>
-
-        <!-- Exam Results Table -->
-        <div class="section-card">
-            <div class="section-header">
-                <i class="fas fa-list-ul" style="color:#1a56db;"></i>
-                <h3>Exam History</h3>
-                <span style="margin-left:auto;font-size:12px;color:var(--text-light);">{{ results|length }} exams</span>
-            </div>
-            <div class="section-body">
-                <table class="results-table">
-                    <thead>
-                        <tr>
-                            <th>Exam</th>
-                            <th>Subject</th>
-                            <th>Score</th>
-                            <th>Performance</th>
-                            <th>Grade</th>
-                            <th>Time</th>
-                            <th>Teacher</th>
-                            <th></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for r in results %}
-                        {% set pct = r.percentage or 0 %}
-                        {% if pct >= 90 %}{% set g='A' %}{% set gc='#10b981' %}{% set gb='#d1fae5' %}
-                        {% elif pct >= 80 %}{% set g='B' %}{% set gc='#3b82f6' %}{% set gb='#dbeafe' %}
-                        {% elif pct >= 70 %}{% set g='C' %}{% set gc='#f59e0b' %}{% set gb='#fef3c7' %}
-                        {% elif pct >= 65 %}{% set g='D' %}{% set gc='#f97316' %}{% set gb='#fed7aa' %}
-                        {% else %}{% set g='F' %}{% set gc='#ef4444' %}{% set gb='#fee2e2' %}{% endif %}
-                        <tr>
-                            <td><strong>{{ r.exam_name[:30] }}{% if r.exam_name|length > 30 %}...{% endif %}</strong></td>
-                            <td><span style="font-size:11px;color:var(--text-light);">{{ r.subject_tag or 'General' }}</span></td>
-                            <td><strong>{{ r.score }}</strong>/{{ r.total }}</td>
-                            <td>
-                                <div style="display:flex;align-items:center;gap:10px;">
-                                    <div class="progress-bar-mini">
-                                        <div class="progress-bar-fill" style="width:{{ pct }}%;background:{% if pct >= 70 %}#10b981{% elif pct >= 50 %}#f59e0b{% else %}#ef4444{% endif %};"></div>
-                                    </div>
-                                    <span style="font-weight:700;font-size:12px;">{{ "%.1f"|format(pct) }}%</span>
-                                </div>
-                            </td>
-                            <td><span class="grade-badge" style="background:{{ gb }};color:{{ gc }};">{{ g }}</span></td>
-                            <td>
-                                <span class="time-badge">
-                                    <i class="fas fa-clock"></i>
-                                    {% if r.time_spent_seconds %}
-                                    {{ (r.time_spent_seconds // 60)|int }}m {{ (r.time_spent_seconds % 60)|int }}s
-                                    {% else %}—{% endif %}
-                                </span>
-                            </td>
-                            <td style="font-size:11px;color:var(--text-light);">{{ r.teacher_name }}</td>
-                            <td>
-                                <a href="/admin/student/{{ student.id }}/exam/{{ r.exam_id }}" class="btn-view-exam">
-                                    <i class="fas fa-eye"></i> View
-                                </a>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                        {% if not results %}
-                        <tr><td colspan="8" style="text-align:center;padding:30px;color:#9ca3af;">
-                            <i class="fas fa-inbox" style="font-size:30px;display:block;margin-bottom:8px;"></i>No exams completed yet
-                        </td></tr>
-                        {% endif %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
+      </div>
     </div>
+    <div class="tc-head__actions">
+      <a href="/admin/results" class="tc-btn tc-btn--secondary">{{ ico('i-doc', 'ct-ico--sm') }}Results</a>
+      <a href="/admin" class="tc-btn tc-btn--secondary">{{ ico('i-arrow-left', 'ct-ico--sm') }}Dashboard</a>
+    </div>
+  </header>
 
-    <script>
-        // Animate progress bars on load
-        document.addEventListener('DOMContentLoaded', function() {
-            document.querySelectorAll('.progress-bar-fill').forEach(bar => {
-                const targetWidth = bar.style.width;
-                bar.style.width = '0%';
-                setTimeout(() => { bar.style.width = targetWidth; }, 200);
-            });
-        });
-    </script>
+  <section class="tc-kpi-strip" aria-label="Student academic summary">
+    <div class="tc-kpi">
+      <span class="tc-kpi__label">Overall Average</span>
+      <strong class="tc-kpi__val" data-ct-count data-ct-decimals="1" data-ct-suffix="%">{{ avg_score }}%</strong>
+      <span class="tc-kpi__meta">Across {{ total_exams }} {{ 'exam' if total_exams == 1 else 'exams' }}</span>
+    </div>
+    <div class="tc-kpi">
+      <span class="tc-kpi__label">Best Score</span>
+      <strong class="tc-kpi__val" style="color:var(--tc-ok)">{{ best_exam.percentage|round|int if best_exam else 0 }}%</strong>
+      <span class="tc-kpi__meta">{{ best_exam.exam_name[:26] if best_exam else 'No attempts yet' }}</span>
+    </div>
+    <div class="tc-kpi">
+      <span class="tc-kpi__label">Lowest Score</span>
+      <strong class="tc-kpi__val">{{ worst_exam.percentage|round|int if worst_exam else 0 }}%</strong>
+      <span class="tc-kpi__meta">{{ worst_exam.exam_name[:26] if worst_exam else 'No attempts yet' }}</span>
+    </div>
+    <div class="tc-kpi">
+      <span class="tc-kpi__label">Exams Completed</span>
+      <strong class="tc-kpi__val" data-ct-count>{{ total_exams }}</strong>
+      <span class="tc-kpi__meta">Archived transcripts</span>
+    </div>
+  </section>
+
+  {% if results %}
+  <section class="tc-card">
+    <div class="tc-card__head">
+      <div class="tc-card__title">
+        <h2>Assessment Score Profile</h2>
+        <p>Performance across every completed examination against the 50% pass benchmark</p>
+      </div>
+      <span class="tc-pill">Avg {{ avg_score }}%</span>
+    </div>
+    <div class="tc-card__body">
+      <div class="tc-chart-stage tc-chart-stage--compact">
+        <canvas id="adminStudentChart" aria-label="Student score chart"></canvas>
+      </div>
+    </div>
+  </section>
+  {% endif %}
+
+  <section class="tc-card">
+    <div class="tc-card__head">
+      <div class="tc-card__title">
+        <h2>Examination History</h2>
+        <p>Complete transcript with teacher attribution, pacing, and item-level script review</p>
+      </div>
+      <span class="tc-pill">{{ results|length }} {{ 'record' if results|length == 1 else 'records' }}</span>
+    </div>
+    {% if results %}
+    <div class="tc-table-wrap">
+      <table class="tc-table">
+        <thead>
+          <tr>
+            <th>Examination</th>
+            <th>Subject</th>
+            <th>Score</th>
+            <th>Accuracy</th>
+            <th>Grade</th>
+            <th>Time</th>
+            <th>Teacher</th>
+            <th style="text-align:right">Script</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in results %}
+          {% set pct = (r.percentage or 0)|float %}
+          {% if pct >= 75 %}{% set grade = 'A' %}{% set gcls = 'tc-pill--ok' %}
+          {% elif pct >= 60 %}{% set grade = 'B' %}{% set gcls = 'tc-pill--accent' %}
+          {% elif pct >= 50 %}{% set grade = 'C' %}{% set gcls = 'tc-pill--warn' %}
+          {% elif pct >= 40 %}{% set grade = 'D' %}{% set gcls = 'tc-pill--warn' %}
+          {% else %}{% set grade = 'F' %}{% set gcls = 'tc-pill--bad' %}{% endif %}
+          <tr>
+            <td><strong style="font-weight:650">{{ r.exam_name }}</strong></td>
+            <td><span class="tc-pill">{{ r.subject_tag or 'General' }}</span></td>
+            <td class="tc-mono">{{ r.score }}/{{ r.total }}</td>
+            <td>
+              <div class="tc-bar-cell">
+                <span class="tc-bar {% if pct >= 75 %}{% elif pct >= 60 %}tc-bar--accent{% elif pct >= 50 %}tc-bar--warn{% else %}tc-bar--bad{% endif %}">
+                  <i style="width:{{ [pct, 100]|min }}%"></i>
+                </span>
+                <span class="tc-mono" style="font-weight:650">{{ "%.1f"|format(pct) }}%</span>
+              </div>
+            </td>
+            <td><span class="tc-pill {{ gcls }}">{{ grade }}</span></td>
+            <td class="tc-mono" style="font-size:12px;color:var(--tc-ink-3)">
+              {% if r.time_spent_seconds %}{{ (r.time_spent_seconds // 60)|int }}m {{ (r.time_spent_seconds % 60)|int }}s{% else %}—{% endif %}
+            </td>
+            <td style="font-size:12.5px;color:var(--tc-ink-2)">{{ r.teacher_name or '—' }}</td>
+            <td style="text-align:right">
+              <a href="/admin/student/{{ student.id }}/exam/{{ r.exam_id }}" class="tc-btn tc-btn--secondary tc-btn--sm">View {{ ico('i-arrow-right', 'ct-ico--xs') }}</a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="tc-empty">
+      <span class="tc-empty__ico">{{ ico('i-doc') }}</span>
+      <strong>No exams completed yet</strong>
+      <p>Examination history will populate here once {{ st_name }} finishes a paper.</p>
+    </div>
+    {% endif %}
+  </section>
+
+{{ shell_end(role='admin') }}
+<script src="{{ url_for('static', filename='js/cognitara-charts.js') }}"></script>
+<script>
+  {% if results %}
+  document.addEventListener("DOMContentLoaded", function () {
+    if (window.CogniTaraCharts) {
+      CogniTaraCharts.verticalBars("adminStudentChart", {
+        labels: [{% for r in results %}{{ r.exam_name|tojson }}{% if not loop.last %},{% endif %}{% endfor %}],
+        values: [{% for r in results %}{{ (r.percentage or 0)|round(1) }}{% if not loop.last %},{% endif %}{% endfor %}],
+        seriesLabel: "Score",
+        passMark: 50,
+        passLabel: "50% PASS",
+        avgValue: {{ avg_score }},
+        avgLabel: "AVG {{ avg_score }}%"
+      });
+    }
+  });
+  {% endif %}
+</script>
 </body>
 </html>

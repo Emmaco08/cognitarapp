@@ -643,6 +643,190 @@ function registerIpcHandlers(): void {
     }
     return res;
   });
+
+  // ---- Paystack Billing, Dynamic Plans, Discount & Redeem Codes ----
+  async function activateSignedLeaseLocally(
+    signedLease: Record<string, unknown> | null | undefined,
+    fallbackLicenseKey?: string | null
+  ): Promise<any> {
+    if (signedLease && typeof signedLease === "object" && signedLease.payload && signedLease.ed25519_sig) {
+      const electronCheck = verifyEd25519LeaseInElectron(signedLease);
+      if (electronCheck.ok) {
+        const actRes = await engine!.callInternal("POST", "/license/activate", { lease: signedLease });
+        if (actRes.data?.ok) return actRes.data;
+      }
+    }
+    if (fallbackLicenseKey) {
+      const actRes = await engine!.callInternal("POST", "/license/activate", {
+        license_key: fallbackLicenseKey,
+        cloud_url: cloudAuth?.getCloudUrl(),
+      });
+      return actRes.data;
+    }
+    return { ok: false, error: "no_activatable_lease" };
+  }
+
+  ipcMain.handle("billing:getPlans", async () => {
+    if (!cloudAuth) return { ok: false, message: "Cloud service unavailable." };
+    return cloudAuth.fetchPlans();
+  });
+
+  ipcMain.handle("billing:validatePromo", async (_evt, payload) => {
+    if (!cloudAuth) return { ok: false, message: "Cloud service unavailable." };
+    return cloudAuth.validatePromo(payload);
+  });
+
+  ipcMain.handle("billing:redeemCode", async (_evt, payload) => {
+    if (!cloudAuth) return { ok: false, message: "Cloud service unavailable." };
+    const lic = await engine?.getLicenseStatus().catch(() => null);
+    const res = await cloudAuth.redeemCode({
+      ...payload,
+      hwid_hash: lic?.hwid_hash || undefined,
+      display_hwid: lic?.display_hwid || undefined,
+      hw_component_hashes: (lic as any)?.component_hashes || undefined,
+    });
+    if (!res.ok) return res;
+
+    const localAct = await activateSignedLeaseLocally(res.signed_lease, res.license?.license_key);
+    await cloudAuth.syncProfile().catch(() => {});
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send("cloud:sessionChanged", cloudAuth.getSession());
+      mainWindow.webContents.send("billing:completed", {
+        ok: true,
+        source: "redeem",
+        license: localAct?.status || res.license,
+        message: res.message || "Voucher redeemed and licence activated!",
+      });
+    }
+    return {
+      ok: true,
+      message: res.message || "Code redeemed and licence activated on this PC!",
+      license: localAct?.status || res.license,
+      license_key: res.license?.license_key,
+    };
+  });
+
+  ipcMain.handle("billing:verifyPaystack", async (_evt, reference: string) => {
+    if (!cloudAuth) return { ok: false, message: "Cloud service unavailable." };
+    const lic = await engine?.getLicenseStatus().catch(() => null);
+    const res = await cloudAuth.verifyPaystack({
+      reference: String(reference || "").trim(),
+      hwid_hash: lic?.hwid_hash || undefined,
+      display_hwid: lic?.display_hwid || undefined,
+      hw_component_hashes: (lic as any)?.component_hashes || undefined,
+    });
+    if (!res.ok) return res;
+
+    const localAct = await activateSignedLeaseLocally(res.signed_lease, res.license?.license_key);
+    await cloudAuth.syncProfile().catch(() => {});
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send("cloud:sessionChanged", cloudAuth.getSession());
+      mainWindow.webContents.send("billing:completed", {
+        ok: true,
+        source: "paystack",
+        license: localAct?.status || res.license,
+        message: res.message || "Paystack payment verified and licence activated!",
+      });
+    }
+    return {
+      ok: true,
+      message: res.message || "Payment verified and licence activated!",
+      license: localAct?.status || res.license,
+      license_key: res.license?.license_key,
+    };
+  });
+
+  ipcMain.handle("billing:startPaystack", async (_evt, payload) => {
+    if (!cloudAuth) return { ok: false, message: "Cloud service unavailable." };
+    const lic = await engine?.getLicenseStatus().catch(() => null);
+    const initRes = await cloudAuth.initializePaystack({
+      ...payload,
+      hwid_hash: lic?.hwid_hash || undefined,
+      display_hwid: lic?.display_hwid || undefined,
+    });
+    if (!initRes.ok || !initRes.authorization_url) {
+      return initRes;
+    }
+
+    const reference = String(initRes.reference || "");
+    const checkoutUrl = String(initRes.authorization_url || "");
+    if (!isSafeExternalUrl(checkoutUrl)) {
+      return { ok: false, message: "Unsafe checkout URL returned by gateway." };
+    }
+
+    // Open a clean, sandboxed Paystack Checkout Window right inside CogniTara Studio
+    const payWin = new BrowserWindow({
+      parent: mainWindow || undefined,
+      modal: false,
+      width: 520,
+      height: 700,
+      title: "CogniTara — Paystack Secure Checkout",
+      autoHideMenuBar: true,
+      backgroundColor: "#111111",
+      webPreferences: {
+        contextIsolation: true,
+        nodeIntegration: false,
+        sandbox: true,
+        webSecurity: true,
+      },
+    });
+
+    let verifiedOnce = false;
+    const tryAutoVerify = async () => {
+      if (verifiedOnce || !reference || !cloudAuth) return;
+      verifiedOnce = true;
+      const curLic = await engine?.getLicenseStatus().catch(() => null);
+      const vRes = await cloudAuth.verifyPaystack({
+        reference,
+        hwid_hash: curLic?.hwid_hash || undefined,
+        display_hwid: curLic?.display_hwid || undefined,
+        hw_component_hashes: (curLic as any)?.component_hashes || undefined,
+      });
+      if (vRes.ok) {
+        const localAct = await activateSignedLeaseLocally(vRes.signed_lease, vRes.license?.license_key);
+        await cloudAuth.syncProfile().catch(() => {});
+        if (!payWin.isDestroyed()) payWin.close();
+        if (mainWindow && !mainWindow.isDestroyed()) {
+          mainWindow.webContents.send("cloud:sessionChanged", cloudAuth.getSession());
+          mainWindow.webContents.send("billing:completed", {
+            ok: true,
+            source: "paystack",
+            reference,
+            license: localAct?.status || vRes.license,
+            license_key: vRes.license?.license_key,
+            message: "Paystack payment confirmed! Licence activated on this PC.",
+          });
+        }
+      } else {
+        verifiedOnce = false;
+      }
+    };
+
+    const handlePotentialCallback = (url: string) => {
+      if (url.includes("paystack_ref=") || url.includes("/dashboard")) {
+        void tryAutoVerify();
+      }
+    };
+
+    payWin.webContents.on("will-redirect", (_e, url) => handlePotentialCallback(url));
+    payWin.webContents.on("did-navigate", (_e, url) => handlePotentialCallback(url));
+    payWin.on("closed", () => {
+      // Also run one quick verify check when user closes the window after completing payment
+      void tryAutoVerify();
+    });
+
+    payWin.loadURL(checkoutUrl).catch(() => {
+      shell.openExternal(checkoutUrl).catch(() => {});
+    });
+
+    return {
+      ok: true,
+      reference,
+      authorization_url: checkoutUrl,
+      amount_minor: initRes.amount_minor,
+      currency: initRes.currency,
+    };
+  });
 }
 
 function broadcastUpdateState(nextState: UpdateStatusState): void {

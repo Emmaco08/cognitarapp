@@ -1,5 +1,6 @@
+{%- from '_ct_shell.html' import ico, ct_boot_script, admin_shell_start, teacher_shell_start, student_topbar, shell_end -%}
 <!DOCTYPE html>
-<html>
+<html lang="en" data-theme="dark">
 <head>
     <title>Edit Group Question | COGNITARA EXAM SYSTEM</title>
     <link href="{{ url_for('static', filename='vendor/bootstrap/css/bootstrap.min.css') }}" rel="stylesheet">
@@ -13,19 +14,19 @@
     <style>
         body { background: linear-gradient(135deg, #f5f7fa 0%, #e8edf5 100%); padding: 40px; font-family: 'Segoe UI', 'Poppins', sans-serif; }
         .edit-container { max-width: 800px; margin: 0 auto; }
-        .card-custom { background: white; border-radius: 24px; border: 1px solid #e2e8f0; overflow: hidden; }
-        .card-header-custom { padding: 20px 25px; border-bottom: 1px solid #e2e8f0; background: #f8fafc; }
+        .card-custom { background: var(--ct-surface); border-radius: 24px; border: 1px solid var(--ct-line-2); overflow: hidden; }
+        .card-header-custom { padding: 20px 25px; border-bottom: 1px solid var(--ct-line-2); background: var(--ct-surface); }
         .card-header-custom h3 { margin: 0; font-size: 20px; font-weight: 700; }
         .card-body-custom { padding: 25px; }
-        .form-control-custom { width: 100%; padding: 12px 15px; border: 2px solid #e2e8f0; border-radius: 12px; margin-bottom: 15px; }
+        .form-control-custom { width: 100%; padding: 12px 15px; border: 2px solid var(--ct-line-2); border-radius: 12px; margin-bottom: 15px; }
         .btn-save { background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; border: none; padding: 12px 25px; border-radius: 12px; font-weight: 600; cursor: pointer; }
-        .btn-back { background: white; border: 2px solid #e2e8f0; padding: 10px 25px; border-radius: 12px; text-decoration: none; color: #64748b; }
-        .toolbar-btn { padding: 6px 12px; font-size: 12px; cursor: pointer; border: 1px solid #e2e8f0; background: white; border-radius: 6px; }
-        .toolbar-btn:hover { background: #8b5cf6; color: white; border-color: #8b5cf6; }
-        .current-image { max-width: 150px; border-radius: 10px; margin-top: 5px; border: 1px solid #e2e8f0; padding: 5px; }
+        .btn-back { background: var(--ct-surface); border: 2px solid var(--ct-line-2); padding: 10px 25px; border-radius: 12px; text-decoration: none; color: var(--ct-ink-3); }
+        .toolbar-btn { padding: 6px 12px; font-size: 12px; cursor: pointer; border: 1px solid var(--ct-line-2); background: var(--ct-surface); border-radius: 6px; }
+        .toolbar-btn:hover { background: var(--ct-primary); color: white; border-color: var(--ct-primary); }
+        .current-image { max-width: 150px; border-radius: 10px; margin-top: 5px; border: 1px solid var(--ct-line-2); padding: 5px; }
         .group-badge {
-            background: #ede9fe;
-            color: #6d28d9;
+            background: var(--ct-accent-soft);
+            color: var(--ct-primary);
             padding: 4px 12px;
             border-radius: 20px;
             font-size: 12px;
@@ -99,8 +100,16 @@
         });
     })();
     </script>
+
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/cognitara-web.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/cognitara-portal-unified.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/cognitara-teacher-studio.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/cognitara-admin-studio.css') }}">
+  {{ ct_boot_script() }}
 </head>
-<body>
+<body class="ct-app ct-bs ad-studio">
+{{ admin_shell_start(active='ce', crumb='Edit CE Group Question') }}
+
     <div class="edit-container">
         <div class="card-custom">
             <div class="card-header-custom">
@@ -220,5 +229,7 @@
             }
         });
     </script>
+
+{{ shell_end(role='admin') }}
 </body>
 </html>

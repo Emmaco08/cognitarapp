@@ -1,5 +1,6 @@
+{%- from '_ct_shell.html' import ico, ct_boot_script, admin_shell_start, teacher_shell_start, student_topbar, shell_end -%}
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -14,10 +15,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
         :root {
-            --primary: #1a56db; --primary-dark: #0e3b9e; --success: #10b981;
+            --primary: var(--ct-primary); --primary-dark: #0e3b9e; --success: #10b981;
             --warning: #f59e0b; --danger: #ef4444; --orange: #f97316;
-            --bg: #f1f5f9; --card: #ffffff; --border: #e2e8f0;
-            --text: #1e293b; --text-light: #64748b;
+            --bg: var(--ct-surface-2); --card: var(--ct-surface); --border: var(--ct-line-2);
+            --text: var(--ct-ink); --text-light: #64748b;
             --grade-a: #10b981; --grade-b: #3b82f6; --grade-c: #f59e0b;
             --grade-d: #f97316; --grade-f: #ef4444;
         }
@@ -32,12 +33,12 @@
             margin-bottom: 24px; flex-wrap: wrap; gap: 12px;
         }
         .btn-back {
-            background: white; border: 2px solid var(--border); padding: 10px 22px;
+            background: var(--ct-surface); border: 2px solid var(--border); padding: 10px 22px;
             border-radius: 12px; color: var(--text-light); text-decoration: none;
             display: inline-flex; align-items: center; gap: 8px; font-weight: 600;
             font-size: 13px; transition: all 0.3s;
         }
-        .btn-back:hover { border-color: var(--primary); color: var(--primary); background: #eff6ff; transform: translateY(-2px); }
+        .btn-back:hover { border-color: var(--primary); color: var(--primary); background: var(--ct-surface); transform: translateY(-2px); }
         
         .btn-export {
             background: var(--success); color: white; border: none; padding: 10px 22px;
@@ -48,7 +49,7 @@
         
         /* Header Card */
         .header-card {
-            background: linear-gradient(135deg, #1a56db 0%, #0e3b9e 100%);
+            background: var(--ct-brand-grad);
             color: white; border-radius: 24px; padding: 28px 30px; margin-bottom: 24px;
             display: flex; justify-content: space-between; align-items: center;
             flex-wrap: wrap; gap: 24px; box-shadow: 0 10px 30px rgba(26,86,219,0.2);
@@ -80,7 +81,7 @@
         .stat-card.accent-red i { color: var(--danger); }
         .stat-card.accent-blue i { color: var(--primary); }
         .stat-card.accent-amber i { color: var(--warning); }
-        .stat-card.accent-purple i { color: #8b5cf6; }
+        .stat-card.accent-purple i { color: var(--ct-primary); }
         .stat-card.accent-orange i { color: var(--orange); }
         
         /* Speed Comparison Highlight */
@@ -88,9 +89,9 @@
             border-radius: 16px; padding: 16px 20px; margin-bottom: 20px;
             border-left: 4px solid; font-size: 14px; display: flex; align-items: center; gap: 12px;
         }
-        .highlight-box.success { background: linear-gradient(135deg, #d1fae5 0%, #ecfdf5 100%); border-left-color: var(--success); color: #065f46; }
-        .highlight-box.warning { background: linear-gradient(135deg, #fef3c7 0%, #fffbeb 100%); border-left-color: var(--warning); color: #92400e; }
-        .highlight-box.info { background: linear-gradient(135deg, #dbeafe 0%, #eff6ff 100%); border-left-color: var(--primary); color: #1e40af; }
+        .highlight-box.success { background: var(--ct-surface-2); border-left-color: var(--success); color: #065f46; }
+        .highlight-box.warning { background: var(--ct-surface-2); border-left-color: var(--warning); color: #92400e; }
+        .highlight-box.info { background: var(--ct-surface-2); border-left-color: var(--primary); color: #1e40af; }
         .highlight-box.danger { background: linear-gradient(135deg, #fee2e2 0%, #fef2f2 100%); border-left-color: var(--danger); color: #991b1b; }
         .highlight-box i { font-size: 28px; flex-shrink: 0; }
         
@@ -106,7 +107,7 @@
         .comparison-card .compare-item strong { display: block; font-size: 13px; color: var(--text); }
         .comparison-card .compare-item span { font-size: 11px; color: var(--text-light); }
         .progress-custom {
-            height: 10px; background: #e2e8f0; border-radius: 10px; overflow: hidden;
+            height: 10px; background: var(--ct-line-2); border-radius: 10px; overflow: hidden;
         }
         .progress-custom .progress-fill {
             height: 100%; border-radius: 10px; transition: width 0.5s ease;
@@ -123,7 +124,7 @@
         }
         .section-row .section-name { flex: 1; font-size: 13px; font-weight: 600; min-width: 100px; }
         .section-row .mini-bar {
-            flex: 2; height: 8px; background: #e2e8f0; border-radius: 10px; overflow: hidden;
+            flex: 2; height: 8px; background: var(--ct-line-2); border-radius: 10px; overflow: hidden;
         }
         .section-row .mini-bar-fill { height: 100%; border-radius: 10px; transition: width 0.5s ease; }
         .section-row .section-pct { font-size: 12px; font-weight: 700; width: 40px; text-align: right; }
@@ -132,7 +133,7 @@
         .filter-buttons { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
         .filter-btn {
             padding: 9px 18px; border-radius: 10px; border: 1.5px solid var(--border);
-            background: white; cursor: pointer; transition: all 0.3s; font-weight: 600; font-size: 13px;
+            background: var(--ct-surface); cursor: pointer; transition: all 0.3s; font-weight: 600; font-size: 13px;
             display: inline-flex; align-items: center; gap: 6px;
         }
         .filter-btn:hover { border-color: var(--primary); color: var(--primary); }
@@ -144,7 +145,7 @@
             border: 1px solid var(--border); transition: all 0.3s; position: relative;
         }
         .question-card:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(0,0,0,0.05); }
-        .question-card.correct { border-left: 4px solid var(--success); background: linear-gradient(135deg, #ffffff 0%, #f0fdf4 100%); }
+        .question-card.correct { border-left: 4px solid var(--success); background: var(--ct-surface-2); }
         .question-card.incorrect { border-left: 4px solid var(--danger); background: linear-gradient(135deg, #ffffff 0%, #fff5f5 100%); }
         
         .q-header {
@@ -155,11 +156,11 @@
         .q-header .q-section { font-size: 11px; color: var(--text-light); }
         
         .badge-correct {
-            background: #d1fae5; color: #065f46; padding: 4px 12px; border-radius: 20px;
+            background: var(--ct-ok-soft); color: #065f46; padding: 4px 12px; border-radius: 20px;
             font-size: 12px; font-weight: 600; display: inline-flex; align-items: center; gap: 5px;
         }
         .badge-incorrect {
-            background: #fee2e2; color: #991b1b; padding: 4px 12px; border-radius: 20px;
+            background: var(--ct-bad-soft); color: #991b1b; padding: 4px 12px; border-radius: 20px;
             font-size: 12px; font-weight: 600; display: inline-flex; align-items: center; gap: 5px;
         }
         
@@ -174,14 +175,14 @@
         .q-answer-box {
             padding: 10px 14px; border-radius: 10px; font-size: 13px;
         }
-        .q-answer-box.your-answer { background: #f8fafc; border: 1.5px solid #e2e8f0; }
-        .q-answer-box.your-answer.wrong { background: #fef2f2; border-color: #fecaca; }
-        .q-answer-box.your-answer.right { background: #f0fdf4; border-color: #a7f3d0; }
-        .q-answer-box.correct-answer { background: #f0fdf4; border-color: #a7f3d0; }
+        .q-answer-box.your-answer { background: var(--ct-surface); border: 1.5px solid var(--ct-line-2); }
+        .q-answer-box.your-answer.wrong { background: var(--ct-bad-soft); border-color: #fecaca; }
+        .q-answer-box.your-answer.right { background: var(--ct-ok-soft); border-color: #a7f3d0; }
+        .q-answer-box.correct-answer { background: var(--ct-ok-soft); border-color: #a7f3d0; }
         .q-answer-box strong { display: block; font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
         
         .time-badge {
-            background: #f1f5f9; padding: 4px 12px; border-radius: 20px; font-size: 12px;
+            background: var(--ct-surface); padding: 4px 12px; border-radius: 20px; font-size: 12px;
             display: inline-flex; align-items: center; gap: 6px; margin-top: 8px;
         }
         
@@ -203,26 +204,26 @@
         }
         .custom-modal-overlay.active { opacity: 1; visibility: visible; }
         .custom-modal {
-            background: white; border-radius: 22px; width: 90%; max-width: 480px;
+            background: var(--ct-surface); border-radius: 22px; width: 90%; max-width: 480px;
             overflow: hidden; transform: translateY(20px) scale(0.96);
             transition: all 0.3s cubic-bezier(0.34, 1.2, 0.64, 1);
             box-shadow: 0 25px 50px -12px rgba(0,0,0,0.3);
         }
         .custom-modal-overlay.active .custom-modal { transform: translateY(0) scale(1); }
         .modal-header-custom {
-            padding: 16px 20px; border-bottom: 1px solid #e2e8f0;
+            padding: 16px 20px; border-bottom: 1px solid var(--ct-line-2);
             display: flex; align-items: center; justify-content: space-between; background: #fafbfc;
         }
         .modal-header-custom h4 { margin: 0; font-size: 15px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
         .modal-close {
-            width: 30px; height: 30px; border-radius: 50%; border: none; background: #f1f5f9;
+            width: 30px; height: 30px; border-radius: 50%; border: none; background: var(--ct-surface);
             cursor: pointer; font-size: 14px; transition: all 0.2s;
             display: flex; align-items: center; justify-content: center;
         }
-        .modal-close:hover { background: #fee2e2; color: var(--danger); transform: rotate(90deg); }
+        .modal-close:hover { background: var(--ct-bad-soft); color: var(--danger); transform: rotate(90deg); }
         .modal-body-custom { padding: 18px 20px; }
         .modal-footer-custom {
-            padding: 12px 20px; border-top: 1px solid #e2e8f0;
+            padding: 12px 20px; border-top: 1px solid var(--ct-line-2);
             display: flex; gap: 10px; justify-content: flex-end; background: #fafbfc;
         }
         .modal-btn {
@@ -233,7 +234,7 @@
         .modal-btn-primary:hover { background: var(--primary-dark); }
         .modal-btn-danger { background: var(--danger); color: white; }
         .modal-btn-danger:hover { background: #dc2626; }
-        .modal-btn-cancel { background: white; border: 1.5px solid #e2e8f0; color: var(--text-light); }
+        .modal-btn-cancel { background: var(--ct-surface); border: 1.5px solid var(--ct-line-2); color: var(--text-light); }
         .modal-btn-cancel:hover { border-color: var(--primary); color: var(--primary); }
     </style>
     <!-- CSRF Protection Shield -->
@@ -301,8 +302,15 @@
         });
     })();
     </script>
+
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/cognitara-web.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/cognitara-portal-unified.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/cognitara-teacher-studio.css') }}">
+  {{ ct_boot_script() }}
 </head>
-<body>
+<body class="ct-app ct-bs tc-studio">
+{{ teacher_shell_start(active='dashboard', crumb='Student Exam Detail') }}
+
     <div class="container-custom">
         <!-- Navigation -->
         <div class="nav-row">
@@ -451,18 +459,18 @@
                     </div>
                     <span class="badge-correct"><i class="fas fa-check-circle"></i> Correct</span>
                 </div>
-                <div class="q-question">{{ (q.question or '')|safe }}</div>
+                <div class="q-question">{{ (q.question or '')|sanitize|safe }}</div>
                 {% if q.image %}
                 <img src="/static/images/{{ q.image }}" class="q-image" alt="Question Image">
                 {% endif %}
                 <div class="q-answers">
                     <div class="q-answer-box your-answer right">
                         <strong>Your Answer</strong>
-                        {{ q.chosen_letter or '—' }}. {{ (q.user_answer or 'Not answered')|safe }}
+                        {{ q.chosen_letter or '—' }}. {{ (q.user_answer or 'Not answered')|sanitize|safe }}
                     </div>
                     <div class="q-answer-box correct-answer">
                         <strong>Correct Answer</strong>
-                        {{ q.correct_letter or '—' }}. {{ (q.answer or '')|safe }}
+                        {{ q.correct_letter or '—' }}. {{ (q.answer or '')|sanitize|safe }}
                     </div>
                 </div>
                 <span class="time-badge"><i class="fas fa-clock"></i> Time spent: {{ q.time_spent or 0 }} seconds</span>
@@ -478,18 +486,18 @@
                     </div>
                     <span class="badge-incorrect"><i class="fas fa-times-circle"></i> Incorrect</span>
                 </div>
-                <div class="q-question">{{ (q.question or '')|safe }}</div>
+                <div class="q-question">{{ (q.question or '')|sanitize|safe }}</div>
                 {% if q.image %}
                 <img src="/static/images/{{ q.image }}" class="q-image" alt="Question Image">
                 {% endif %}
                 <div class="q-answers">
                     <div class="q-answer-box your-answer wrong">
                         <strong>Your Answer</strong>
-                        {{ q.chosen_letter or '—' }}. {{ (q.user_answer or 'Not answered')|safe }}
+                        {{ q.chosen_letter or '—' }}. {{ (q.user_answer or 'Not answered')|sanitize|safe }}
                     </div>
                     <div class="q-answer-box correct-answer">
                         <strong>Correct Answer</strong>
-                        {{ q.correct_letter or '—' }}. {{ (q.answer or '')|safe }}
+                        {{ q.correct_letter or '—' }}. {{ (q.answer or '')|sanitize|safe }}
                     </div>
                 </div>
                 <span class="time-badge"><i class="fas fa-clock"></i> Time spent: {{ q.time_spent or 0 }} seconds</span>
@@ -585,5 +593,7 @@
             }
         });
     </script>
+
+{{ shell_end(role='teacher') }}
 </body>
 </html>

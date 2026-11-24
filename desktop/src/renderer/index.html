@@ -228,10 +228,11 @@
                 </div>
                 <div class="lic-act__actions">
                   <button class="btn btn--primary" id="activateBtn" disabled><svg><use href="#i-key"/></svg>Activate</button>
-                  <button class="btn btn--ghost" id="licFileBtn"><svg><use href="#i-doc"/></svg>Use a licence file</button>
+                  <button class="btn btn--ghost" id="onbBuyBtn"><svg><use href="#i-spark"/></svg>Buy / Redeem</button>
+                  <button class="btn btn--ghost" id="licFileBtn"><svg><use href="#i-doc"/></svg>Licence file</button>
                   <button class="btn btn--ghost" id="licTrialBtn"><svg><use href="#i-shield"/></svg>Start 14-day trial</button>
                 </div>
-                <p class="buy">No licence yet? <a id="buyLicLink" href="https://cognitara.net/pricing" target="_blank" rel="noopener">Buy one on cognitara.net</a>. Monthly, annual and lifetime plans.</p>
+                <p class="buy">No licence yet? <a id="buyLicLink" href="#">Buy via Paystack or redeem a code</a> · <a id="onbCloudLink" href="#">Sign in / Register Cloud Account</a>.</p>
               </div>
               <div class="verify stage rv" id="verify" data-state="idle" aria-live="polite">
                 <span class="ripple"></span><span class="ripple"></span><span class="ripple"></span>
@@ -336,6 +337,13 @@
       </nav>
 
       <main class="views" id="views">
+        <div class="hq-banner" id="hqNoticeBanner" data-level="info" hidden>
+          <div class="hq-banner__body">
+            <strong id="hqNoticeLabel">CogniTara HQ Notice</strong>
+            <span id="hqNoticeText"></span>
+          </div>
+          <button type="button" class="btn btn--ghost btn--sm" id="hqNoticeDismiss">Dismiss</button>
+        </div>
 
         <!-- ===== HOME / SERVER ===== -->
         <div class="view is-active" data-view="home">
@@ -451,9 +459,10 @@
                 <div><dt>Check in again by</dt><dd id="licLease">—</dd></div>
               </dl>
               <div class="lic__actions">
-                <a class="btn btn--primary" id="renewLicBtn" href="https://cognitara.net/account/licences" target="_blank" rel="noopener"><svg><use href="#i-external"/></svg>Renew or upgrade</a>
-                <button class="btn btn--ghost" id="licImportBtn"><svg><use href="#i-doc"/></svg>Import licence file</button>
-                <button class="btn btn--ghost" id="checkInBtn"><svg><use href="#i-restore"/></svg>Check in now</button>
+                <button type="button" class="btn btn--primary" id="renewLicBtn"><svg><use href="#i-spark"/></svg>Buy / Upgrade (Paystack)</button>
+                <button type="button" class="btn btn--ghost" id="licRedeemBtn"><svg><use href="#i-key"/></svg>Redeem code</button>
+                <button type="button" class="btn btn--ghost" id="licImportBtn"><svg><use href="#i-doc"/></svg>Import file</button>
+                <button type="button" class="btn btn--ghost" id="checkInBtn"><svg><use href="#i-restore"/></svg>Check in</button>
               </div>
             </section>
           </div>
@@ -540,7 +549,7 @@
               <h2>Software Updates & About</h2>
               <div class="set-row">
                 <span>
-                  <strong id="aboutVersion">CogniTara Studio 2.1.0</strong>
+                  <strong id="aboutVersion">CogniTara Studio 2.2.0</strong>
                   <em id="updSubtitle">5-layer licence vault active · Direct GitHub Releases auto-updater ready.</em>
                 </span>
                 <button class="btn btn--ghost btn--sm" id="setCheckUpdateBtn">Check for updates</button>
@@ -616,6 +625,7 @@
             <div class="cloud-profile__row"><span>Sync Status</span><strong id="cmSync">Synced</strong></div>
           </div>
           <div class="cloud-modal__actions" style="margin-top:16px">
+            <button class="btn btn--primary btn--sm" id="cmUpgradeBtn"><svg><use href="#i-spark"/></svg>Buy / Redeem Licence</button>
             <button class="btn btn--ghost btn--sm" id="cmOpenPortalBtn"><svg><use href="#i-external"/></svg>Web Dashboard</button>
             <button class="btn btn--ghost btn--sm" id="cmSyncNowBtn"><svg><use href="#i-restore"/></svg>Sync now</button>
             <button class="btn btn--ghost btn--sm" id="cmSignOutBtn">Sign out</button>
@@ -654,6 +664,80 @@
               <button type="submit" class="btn btn--primary" id="cuSubmitBtn">Create account &amp; sync</button>
             </div>
           </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- In-App Paystack Licence Store & Redeem Voucher Modal -->
+    <div class="cloud-modal" id="billingModal" hidden>
+      <div class="cloud-modal__box billing-box" role="dialog" aria-label="Buy or Redeem CogniTara Licence">
+        <div class="cloud-modal__head">
+          <div>
+            <h2>CogniTara Licence Store</h2>
+            <p id="billingSub">Choose a plan set by CogniTara HQ, apply a discount code, or redeem a licence voucher.</p>
+          </div>
+          <button class="cloud-modal__close" id="billingModalClose" aria-label="Close">
+            <svg viewBox="0 0 24 24"><path d="m7 7 10 10M17 7 7 17"/></svg>
+          </button>
+        </div>
+
+        <div class="cloud-modal__err" id="billingErr" hidden></div>
+        <div class="cloud-modal__ok" id="billingOk" hidden></div>
+
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
+          <div class="seg seg--sm" id="billingTabs">
+            <button type="button" class="is-active" data-btab="plans">Buy with Paystack</button>
+            <button type="button" data-btab="redeem">Redeem Voucher Code</button>
+          </div>
+          <div class="seg seg--sm" id="billingCurrencySeg">
+            <button type="button" class="is-active" data-curr="NGN">NGN (₦)</button>
+            <button type="button" data-curr="USD">USD ($)</button>
+          </div>
+        </div>
+
+        <!-- TAB 1: PAYSTACK PLANS & DISCOUNT CODE -->
+        <div id="billingPlansPane" style="display:grid;gap:14px">
+          <div class="billing-plans" id="billingPlansGrid">
+            <div style="grid-column:1/-1;padding:18px;text-align:center;color:var(--ink-3);font-size:13px">Loading live plans from CogniTara Cloud…</div>
+          </div>
+
+          <div class="field">
+            <span>Discount / Promo Code <i>optional</i></span>
+            <div class="billing-promo-row">
+              <input id="billingPromoInput" class="mono" placeholder="e.g. SCHOOL20" autocomplete="off">
+              <button type="button" class="btn btn--ghost btn--sm" id="billingApplyPromoBtn">Apply</button>
+            </div>
+          </div>
+
+          <div class="billing-summary" id="billingSummary">
+            <div class="billing-summary__row"><span>Selected Plan</span><strong id="bsPlanName">—</strong></div>
+            <div class="billing-summary__row" id="bsDiscountRow" hidden><span>Promo Discount</span><strong style="color:var(--ok)" id="bsDiscountVal">—</strong></div>
+            <div class="billing-summary__row is-total"><span>Total Due</span><span class="mono" id="bsTotalVal">—</span></div>
+          </div>
+
+          <div id="billingPendingRefBox" class="cloud-profile" hidden>
+            <div class="cloud-profile__row"><span>Checkout Reference</span><code id="bsPendingRef">—</code></div>
+            <div class="cloud-modal__actions" style="margin-top:4px">
+              <button type="button" class="btn btn--primary btn--sm" id="billingVerifyRefBtn">I completed payment — Verify &amp; Activate</button>
+            </div>
+          </div>
+
+          <div class="cloud-modal__actions">
+            <button type="button" class="btn btn--ghost" id="billingSignInHintBtn" hidden>Sign in / Register Cloud Account</button>
+            <button type="button" class="btn btn--primary" id="billingPayBtn">Pay securely with Paystack</button>
+          </div>
+        </div>
+
+        <!-- TAB 2: REDEEM VOUCHER CODE -->
+        <div id="billingRedeemPane" hidden style="display:grid;gap:14px">
+          <div class="field">
+            <span>Enter Redeem / Voucher Code</span>
+            <input id="billingRedeemInput" class="mono" placeholder="CT-RDM-XXXX-XXXX" autocomplete="off" style="text-transform:uppercase;font-size:15px">
+          </div>
+          <p class="hint" style="margin:0">Redeem codes issued by CogniTara HQ instantly generate and sign an official Ed25519 licence bound to this computer — no card needed.</p>
+          <div class="cloud-modal__actions">
+            <button type="button" class="btn btn--primary" id="billingRedeemSubmitBtn">Redeem &amp; Activate Now</button>
+          </div>
         </div>
       </div>
     </div>

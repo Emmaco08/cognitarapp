@@ -1,5 +1,6 @@
+{%- from '_ct_shell.html' import ico, ct_boot_script, admin_shell_start, teacher_shell_start, student_topbar, shell_end -%}
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -13,17 +14,17 @@
     <script src="{{ url_for('static', filename='vendor/chartjs/chart.umd.min.js') }}"></script>
     <style>
         :root {
-            --primary: #1a56db; --primary-dark: #0e3b9e; --success: #10b981;
-            --warning: #f59e0b; --danger: #ef4444; --purple: #8b5cf6;
-            --bg: #f0f2f5; --card: #ffffff; --border: #e5e7eb;
-            --text: #111827; --text-light: #6b7280;
+            --primary: var(--ct-primary); --primary-dark: #0e3b9e; --success: #10b981;
+            --warning: #f59e0b; --danger: #ef4444; --purple: var(--ct-primary);
+            --bg: var(--ct-surface-2); --card: var(--ct-surface); --border: var(--ct-line-2);
+            --text: var(--ct-ink); --text-light: #6b7280;
             --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
             --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.07);
             --shadow-lg: 0 10px 25px -5px rgba(0,0,0,0.08);
             --shadow-xl: 0 20px 40px -10px rgba(0,0,0,0.1);
         }
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { background: linear-gradient(135deg, #f8fafc 0%, #eef2ff 50%, #f8fafc 100%); font-family: 'Segoe UI', 'Inter', system-ui, sans-serif; color: var(--text); min-height: 100vh; }
+        body { background: var(--ct-surface-2); font-family: 'Segoe UI', 'Inter', system-ui, sans-serif; color: var(--text); min-height: 100vh; }
 
         .detail-container { max-width: 1100px; margin: 0 auto; padding: 28px 20px; }
 
@@ -41,11 +42,11 @@
             font-weight: 600; font-size: 12px; display: inline-flex; align-items: center; gap: 6px;
             transition: all 0.25s;
         }
-        .btn-back:hover { border-color: var(--primary); color: var(--primary); background: #eff6ff; transform: translateY(-1px); }
+        .btn-back:hover { border-color: var(--primary); color: var(--primary); background: var(--ct-surface); transform: translateY(-1px); }
 
         /* Score Hero */
         .score-hero {
-            background: linear-gradient(135deg, #1e3a5f 0%, #1a56db 40%, #4f46e5 100%);
+            background: var(--ct-brand-grad);
             border-radius: 24px; padding: 28px 30px; margin-bottom: 22px;
             display: flex; align-items: center; gap: 30px; flex-wrap: wrap;
             color: white; position: relative; overflow: hidden;
@@ -102,8 +103,8 @@
             font-size: 14px; animation: fadeInUp 0.5s ease forwards; opacity: 0;
             animation-delay: 0.4s;
         }
-        .speed-alert.fast { background: linear-gradient(135deg, #d1fae5 0%, #ecfdf5 100%); border-left-color: var(--success); color: #065f46; }
-        .speed-alert.slow { background: linear-gradient(135deg, #fef3c7 0%, #fffbeb 100%); border-left-color: var(--warning); color: #92400e; }
+        .speed-alert.fast { background: var(--ct-surface-2); border-left-color: var(--success); color: #065f46; }
+        .speed-alert.slow { background: var(--ct-surface-2); border-left-color: var(--warning); color: #92400e; }
         .speed-alert i { font-size: 32px; }
 
         /* Question Card */
@@ -132,26 +133,26 @@
         .q-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 8px; }
         .q-number { font-weight: 700; font-size: 13px; display: flex; align-items: center; gap: 8px; }
         .section-chip {
-            background: #e5e7eb; padding: 2px 8px; border-radius: 10px; font-size: 10px;
+            background: var(--ct-line-2); padding: 2px 8px; border-radius: 10px; font-size: 10px;
             color: var(--text-light); font-weight: 500;
         }
-        .badge-correct { background: #d1fae5; color: #065f46; padding: 3px 10px; border-radius: 12px; font-size: 10px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px; }
-        .badge-incorrect { background: #fee2e2; color: #991b1b; padding: 3px 10px; border-radius: 12px; font-size: 10px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px; }
+        .badge-correct { background: var(--ct-ok-soft); color: #065f46; padding: 3px 10px; border-radius: 12px; font-size: 10px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px; }
+        .badge-incorrect { background: var(--ct-bad-soft); color: #991b1b; padding: 3px 10px; border-radius: 12px; font-size: 10px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px; }
         .q-text { font-size: 14px; margin-bottom: 10px; line-height: 1.5; word-wrap: break-word; }
         .q-answers { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 8px; }
         @media (max-width: 500px) { .q-answers { grid-template-columns: 1fr; } }
         .q-answer-box { padding: 8px 12px; border-radius: 8px; font-size: 12px; }
-        .q-answer-box.wrong { background: #fef2f2; border: 1px solid #fecaca; }
-        .q-answer-box.right { background: #f0fdf4; border: 1px solid #a7f3d0; }
+        .q-answer-box.wrong { background: var(--ct-bad-soft); border: 1px solid #fecaca; }
+        .q-answer-box.right { background: var(--ct-ok-soft); border: 1px solid #a7f3d0; }
         .time-badge {
-            background: #f3f4f6; padding: 3px 8px; border-radius: 10px;
+            background: var(--ct-surface); padding: 3px 8px; border-radius: 10px;
             font-size: 10px; color: var(--text-light); display: inline-flex; align-items: center; gap: 4px;
         }
 
         .filter-buttons { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
         .filter-btn {
             padding: 7px 16px; border-radius: 20px; border: 1.5px solid var(--border);
-            background: white; cursor: pointer; font-weight: 600; font-size: 12px;
+            background: var(--ct-surface); cursor: pointer; font-weight: 600; font-size: 12px;
             transition: all 0.2s; display: inline-flex; align-items: center; gap: 5px;
         }
         .filter-btn:hover { border-color: var(--primary); color: var(--primary); }
@@ -228,8 +229,16 @@
         });
     })();
     </script>
+
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/cognitara-web.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/cognitara-portal-unified.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/cognitara-teacher-studio.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/cognitara-admin-studio.css') }}">
+  {{ ct_boot_script() }}
 </head>
-<body>
+<body class="ct-app ct-bs ad-studio">
+{{ admin_shell_start(active='students', crumb='Student Exam Detail') }}
+
     <div class="detail-container">
         <!-- Nav -->
         <div class="nav-bar">
@@ -291,7 +300,7 @@
             </div>
             <div class="stat-card">
                 <span class="stat-icon"><i class="fas fa-chart-bar"></i></span>
-                <div class="stat-value" style="color:#8b5cf6;">{{ ((avg_time or 0) // 60)|int }}m</div>
+                <div class="stat-value" style="color: var(--ct-accent);">{{ ((avg_time or 0) // 60)|int }}m</div>
                 <div class="stat-label">Class Avg Time</div>
             </div>
         </div>
@@ -334,15 +343,15 @@
                         </div>
                         <span class="badge-incorrect"><i class="fas fa-times"></i> Incorrect</span>
                     </div>
-                    <div class="q-text">{{ (q.question or '')|safe }}</div>
+                    <div class="q-text">{{ (q.question or '')|sanitize|safe }}</div>
                     <div class="q-answers">
                         <div class="q-answer-box wrong">
                             <strong style="color:#ef4444;display:block;font-size:10px;">YOUR ANSWER</strong>
-                            {{ q.chosen_letter }}. {{ (q.user_answer or 'Not answered')|safe }}
+                            {{ q.chosen_letter }}. {{ (q.user_answer or 'Not answered')|sanitize|safe }}
                         </div>
                         <div class="q-answer-box right">
                             <strong style="color:#10b981;display:block;font-size:10px;">CORRECT ANSWER</strong>
-                            {{ q.correct_letter }}. {{ (q.answer or '')|safe }}
+                            {{ q.correct_letter }}. {{ (q.answer or '')|sanitize|safe }}
                         </div>
                     </div>
                     <span class="time-badge"><i class="fas fa-clock"></i> {{ q.time_spent or 0 }}s spent</span>
@@ -355,7 +364,7 @@
         <!-- Correct Questions -->
         {% if correct_questions %}
         <div class="section-card" id="correctSection">
-            <div class="section-header" style="background:#f0fdf4;">
+            <div class="section-header" style="background: var(--ct-ok-soft);">
                 <i class="fas fa-check-circle" style="color:#10b981;"></i>
                 <h3 style="color:#065f46;">Correct Questions</h3>
                 <span style="margin-left:auto;font-size:12px;color:#10b981;font-weight:600;">{{ correct_questions|length }} questions</span>
@@ -370,8 +379,8 @@
                         </div>
                         <span class="badge-correct"><i class="fas fa-check"></i> Correct</span>
                     </div>
-                    <div class="q-text">{{ (q.question or '')|safe }}</div>
-                    <div style="font-size:12px;color:#10b981;font-weight:600;">{{ q.correct_letter }}. {{ (q.answer or '')|safe }}</div>
+                    <div class="q-text">{{ (q.question or '')|sanitize|safe }}</div>
+                    <div style="font-size:12px;color:#10b981;font-weight:600;">{{ q.correct_letter }}. {{ (q.answer or '')|sanitize|safe }}</div>
                     <span class="time-badge"><i class="fas fa-clock"></i> {{ q.time_spent or 0 }}s spent</span>
                 </div>
                 {% endfor %}
@@ -414,5 +423,7 @@
             }
         });
     </script>
+
+{{ shell_end(role='admin') }}
 </body>
 </html>

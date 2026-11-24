@@ -1,362 +1,286 @@
+{%- from '_ct_shell.html' import ico, ct_boot_script, teacher_shell_start, shell_end -%}
 <!DOCTYPE html>
-<html>
+<html lang="en" data-theme="dark">
 <head>
-    <title>Create New Exam | Teacher Portal</title>
-    <link href="{{ url_for('static', filename='vendor/bootstrap/css/bootstrap.min.css') }}" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='vendor/fontawesome/css/all.min.css') }}">
-    <script src="{{ url_for('static', filename='vendor/sweetalert2/sweetalert2.all.min.js') }}"></script>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { background: linear-gradient(135deg, #f5f7fa 0%, #e8edf5 100%); font-family: 'Segoe UI', 'Poppins', sans-serif; }
-        
-        .settings-container { max-width: 900px; margin: 0 auto; padding: 40px 30px; position: relative; z-index: 10; }
-        
-        .edu-icon { position: absolute; color: rgba(26, 86, 219, 0.05); pointer-events: none; z-index: 0; animation: floatIcon 20s infinite ease-in-out; }
-        @keyframes floatIcon { 0% { transform: translate(0, 0) rotate(0deg); opacity: 0; } 10% { opacity: 0.08; } 90% { opacity: 0.08; } 100% { transform: translate(100px, -100px) rotate(360deg); opacity: 0; } }
-        
-        .page-header { text-align: center; margin-bottom: 30px; }
-        .logo-icon { width: 80px; height: 80px; background: linear-gradient(135deg, #1a56db 0%, #0e3b9e 100%); border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; margin: 0 auto 20px; animation: pulse 2s infinite; box-shadow: 0 10px 25px rgba(26, 86, 219, 0.2); }
-        @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
-        .logo-icon i { font-size: 40px; color: white; }
-        .page-header h1 { font-size: 32px; font-weight: 800; background: linear-gradient(135deg, #1a56db 0%, #0e3b9e 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 8px; }
-        .page-header p { font-size: 15px; color: #64748b; }
-        
-        .card-custom { background: white; border-radius: 24px; border: 1px solid #e2e8f0; margin-bottom: 30px; overflow: hidden; box-shadow: 0 5px 15px rgba(0,0,0,0.03); }
-        .card-header-custom { padding: 20px 25px; border-bottom: 1px solid #e2e8f0; background: linear-gradient(135deg, #eff6ff 0%, #ffffff 100%); display: flex; align-items: center; gap: 12px; }
-        .card-header-custom i { font-size: 24px; color: #1a56db; }
-        .card-header-custom h3 { margin: 0; font-size: 18px; font-weight: 700; color: #1e293b; }
-        .card-body-custom { padding: 25px; }
-        
-        .form-group { margin-bottom: 20px; }
-        .form-label { font-weight: 600; color: #1e293b; margin-bottom: 8px; display: block; font-size: 13px; }
-        .form-label i { margin-right: 6px; color: #1a56db; }
-        .form-control-custom { width: 100%; padding: 12px 15px; border: 2px solid #e2e8f0; border-radius: 12px; font-size: 14px; transition: all 0.3s; background: #f8fafc; }
-        .form-control-custom:focus { outline: none; border-color: #1a56db; background: white; box-shadow: 0 0 0 3px rgba(26,86,219,0.1); }
-        
-        .btn-save { background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; border: none; padding: 14px 30px; border-radius: 14px; font-weight: 600; cursor: pointer; transition: all 0.3s; display: inline-flex; align-items: center; gap: 8px; font-size: 15px; width: 100%; justify-content: center; }
-        .btn-save:hover { transform: translateY(-2px); box-shadow: 0 8px 20px -5px rgba(16,185,129,0.4); }
-        .btn-save:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
-        
-        .btn-back { display: inline-flex; align-items: center; gap: 8px; background: white; border: 2px solid #e2e8f0; padding: 10px 25px; border-radius: 12px; text-decoration: none; color: #64748b; font-weight: 600; transition: all 0.3s; }
-        .btn-back:hover { border-color: #1a56db; color: #1a56db; background: #eff6ff; transform: translateY(-2px); }
-        
-        .smart-override-info { background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%); border-radius: 16px; padding: 16px 20px; margin-bottom: 25px; border-left: 4px solid #10b981; display: flex; align-items: flex-start; gap: 15px; }
-        .smart-override-info i { font-size: 28px; color: #10b981; }
-        .smart-override-info .info-content h5 { font-size: 15px; font-weight: 700; color: #065f46; margin-bottom: 5px; }
-        .smart-override-info .info-content p { font-size: 13px; color: #047857; margin: 0; }
-        
-        .class-spec-row { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-        .advanced-settings-row { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; margin-top: 15px; }
-        
-        .toast-notification { position: fixed; bottom: 20px; right: 20px; background: white; border-radius: 12px; padding: 12px 20px; display: flex; align-items: center; gap: 12px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1); z-index: 1000; animation: slideInRight 0.3s ease; border-left: 4px solid #10b981; }
-        .toast-notification.error { border-left-color: #ef4444; }
-        .toast-notification.error i { color: #ef4444; }
-        @keyframes slideInRight { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
-        .toast-notification i { font-size: 18px; color: #10b981; }
-        .toast-notification span { font-size: 13px; color: #1e293b; }
-        
-        @media (max-width: 768px) {
-            .settings-container { padding: 20px 15px; }
-            .page-header h1 { font-size: 26px; }
-            .class-spec-row { grid-template-columns: 1fr; }
-            .advanced-settings-row { grid-template-columns: 1fr; }
-        }
-    </style>
-    <!-- CSRF Protection Shield -->
-    <meta name="csrf-token" content="{{ csrf_token() }}">
-    <script>
-    window.CSRF_TOKEN = "{{ csrf_token() }}";
-    (function() {
-        if (window.fetch) {
-            const _origFetch = window.fetch;
-            window.fetch = function(url, options) {
-                options = options || {};
-                const method = (options.method || 'GET').toUpperCase();
-                if (!['GET', 'HEAD', 'OPTIONS', 'TRACE'].includes(method)) {
-                    options.headers = options.headers || {};
-                    const token = window.CSRF_TOKEN || (document.querySelector('meta[name="csrf-token"]') && document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
-                    if (token) {
-                        if (typeof Headers !== 'undefined' && options.headers instanceof Headers) {
-                            if (!options.headers.has('X-CSRFToken')) options.headers.set('X-CSRFToken', token);
-                        } else if (Array.isArray(options.headers)) {
-                            options.headers.push(['X-CSRFToken', token]);
-                        } else {
-                            if (!options.headers['X-CSRFToken']) options.headers['X-CSRFToken'] = token;
-                        }
-                    }
-                }
-                return _origFetch(url, options);
-            };
-        }
-        if (window.$ && $.ajaxSetup) {
-            $.ajaxSetup({
-                beforeSend: function(xhr, settings) {
-                    if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type)) {
-                        xhr.setRequestHeader("X-CSRFToken", window.CSRF_TOKEN);
-                    }
-                }
-            });
-        }
-        if (navigator.sendBeacon) {
-            const _origBeacon = navigator.sendBeacon.bind(navigator);
-            navigator.sendBeacon = function(url, data) {
-                if (data instanceof FormData) {
-                    if (!data.has('csrf_token')) data.append('csrf_token', window.CSRF_TOKEN);
-                } else if (typeof data === 'string') {
-                    try {
-                        const obj = JSON.parse(data);
-                        if (typeof obj === 'object' && obj !== null && !obj.csrf_token) {
-                            obj.csrf_token = window.CSRF_TOKEN;
-                            data = JSON.stringify(obj);
-                        }
-                    } catch(e) {}
-                }
-                return _origBeacon(url, data);
-            };
-        }
-        document.addEventListener('DOMContentLoaded', function() {
-            document.querySelectorAll('form[method="POST"], form[method="post"]').forEach(function(form) {
-                if (!form.querySelector('input[name="csrf_token"]')) {
-                    var input = document.createElement('input');
-                    input.type = 'hidden';
-                    input.name = 'csrf_token';
-                    input.value = window.CSRF_TOKEN;
-                    form.appendChild(input);
-                }
-            });
-        });
-    })();
-    </script>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+  <meta name="color-scheme" content="dark light">
+  <title>Create Exam — Teacher Portal</title>
+  <link rel="icon" href="{{ url_for('static', filename='images/cognitara-favicon.ico') }}">
+  <link rel="preload" href="{{ url_for('static', filename='fonts/ui/PlusJakartaSans-Variable.woff2') }}" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="{{ url_for('static', filename='fonts/ui/GeistMono-Variable.woff2') }}" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/cognitara-web.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/cognitara-teacher-studio.css') }}">
+  {{ ct_boot_script() }}
 </head>
-<body>
-    <div class="edu-icon"><i class="fas fa-cog"></i></div>
-    <div class="edu-icon"><i class="fas fa-file-alt"></i></div>
-    <div class="edu-icon"><i class="fas fa-plus-circle"></i></div>
+<body class="ct-app tc-studio">
+{{ teacher_shell_start(active='add_exam', crumb='Create Exam') }}
 
-    <div class="settings-container">
-        <div class="page-header">
-            <div class="logo-icon"><i class="fas fa-chalkboard-teacher"></i></div>
-            <h1>Create New Exam</h1>
-            <p>Configure your exam settings - you can add questions after creation</p>
-        </div>
-
-        <!-- Smart Override Info Box -->
-        <div class="smart-override-info">
-            <i class="fas fa-lightbulb"></i>
-            <div class="info-content">
-                <h5>Smart Override System</h5>
-                <p><strong>General</strong> exams are visible to ALL students in the selected class.<br>
-                <strong>Specific specialisations</strong> (Science/Art/Commercial) restrict visibility to that department only.</p>
-            </div>
-        </div>
-
-        <!-- Create Exam Form -->
-        <div class="card-custom">
-            <div class="card-header-custom">
-                <i class="fas fa-sliders-h"></i>
-                <h3>Exam Configuration</h3>
-            </div>
-            <div class="card-body-custom">
-                <form id="createExamForm" method="POST" action="/teacher/create_exam">
-    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-    <div class="form-group">
-        <label class="form-label"><i class="fas fa-tag"></i> Exam Name</label>
-        <input type="text" name="name" class="form-control-custom" placeholder="e.g., Mathematics Mid-Term Exam" required>
+  <!-- Clean Editorial Header -->
+  <header class="tc-head">
+    <div class="tc-head__txt">
+      <span class="tc-eyebrow">Assessment Authoring</span>
+      <h1>Create New Exam</h1>
+      <p>Configure audience visibility, timing, and tools — you will add sections and questions right after saving.</p>
     </div>
-    
-    <div class="class-spec-row">
-        <div class="form-group">
-            <label class="form-label"><i class="fas fa-users"></i> Target Class</label>
-            <select name="target_class" id="targetClass" class="form-control-custom" required onchange="updateSpecialisationOptions()">
-                <option value="">-- Select Class --</option>
+    <div class="tc-head__actions">
+      <a href="/teacher" class="tc-btn tc-btn--secondary">{{ ico('i-arrow-left', 'ct-ico--sm') }}Back to Dashboard</a>
+    </div>
+  </header>
+
+  <!-- Asymmetric 2-Column Configuration Studio -->
+  <div class="tc-grid-form">
+    <!-- Left: Configuration Form Card -->
+    <section class="tc-card">
+      <div class="tc-card__head">
+        <div class="tc-card__title">
+          <h2>Exam Configuration</h2>
+          <p>Core metadata, class targeting, and student tool permissions</p>
+        </div>
+        <span class="tc-pill">Step 1 of 3</span>
+      </div>
+      <div class="tc-card__body">
+        <form id="createExamForm" method="POST" action="/teacher/create_exam" class="tc-form-grid">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+          <div class="tc-field">
+            <label class="tc-label" for="examNameInput">Examination Title</label>
+            <input id="examNameInput" type="text" name="name" class="tc-input tc-input--lg" placeholder="e.g., Mathematics Mid-Term Assessment" required>
+          </div>
+
+          <div class="tc-form-row2">
+            <div class="tc-field">
+              <label class="tc-label" for="targetClass">Target Class</label>
+              <select name="target_class" id="targetClass" class="tc-select tc-select--lg" required onchange="updateSpecialisationOptions()">
+                <option value="">Select class…</option>
                 {% for class_name in teaching_classes %}
                 <option value="{{ class_name }}">{{ class_name }}</option>
                 {% endfor %}
-            </select>
-        </div>
-        <div class="form-group">
-            <label class="form-label"><i class="fas fa-flask"></i> Specialisation</label>
-            <select name="specialisation_tag" id="specialisationTag" class="form-control-custom" required onchange="updateSmartOverrideHint()">
+              </select>
+            </div>
+            <div class="tc-field">
+              <label class="tc-label" for="specialisationTag">Specialisation Scope</label>
+              <select name="specialisation_tag" id="specialisationTag" class="tc-select tc-select--lg" required onchange="updateSmartOverrideHint()">
                 <option value="General">General (All students in class)</option>
-            </select>
-        </div>
-    </div>
-    
-    <div id="smartOverrideHint" class="smart-override-info" style="display: none; margin-top: 0; padding: 12px 16px;">
-        <i class="fas fa-info-circle"></i>
-        <div class="info-content">
-            <p id="hintText">Select a class to see visibility information.</p>
-        </div>
-    </div>
-    
-    <div class="form-group">
-        <label class="form-label"><i class="fas fa-book"></i> Subject</label>
-        <input type="text" name="subject_tag" class="form-control-custom" placeholder="e.g., Mathematics, English, Physics" value="General" required>
-    </div>
-    
-    <div class="form-group">
-        <label class="form-label"><i class="fas fa-hourglass-half"></i> Duration (minutes)</label>
-        <input type="number" name="duration" class="form-control-custom" value="60" min="1" required>
-    </div>
-    
-    <div class="row">
-        <div class="col-md-6">
-            <div class="form-group">
-                <label class="form-label"><i class="fas fa-shield-alt"></i> Anti-Cheating & Warnings</label>
-                <div class="form-control-custom" style="background:#f8fafc; color:#64748b; display:flex; align-items:center; gap:8px;">
-                    <i class="fas fa-lock text-primary"></i> Governed by School Settings
-                </div>
-                <small class="text-muted">Max violations & anti-cheating policy set in School Settings</small>
+              </select>
             </div>
-        </div>
-        <div class="col-md-6">
-            <div class="form-group">
-                <label class="form-label"><i class="fas fa-calculator"></i> Calculator</label>
-                <select name="calculator_type" class="form-control-custom">
-                    <option value="none">None</option>
-                    <option value="simple">Simple Calculator</option>
-                    <option value="advanced">Advanced Calculator</option>
-                </select>
-            </div>
-        </div>
-    </div>
-    
-    <div class="form-group">
-        <label class="form-label">
-            <input type="checkbox" name="active" value="1" checked> 
-            <span style="margin-left: 8px;"><i class="fas fa-power-off"></i> Active (students can take this exam immediately)</span>
-        </label>
-    </div>
-    
-    <div style="margin-top: 25px;">
-        <button type="submit" class="btn-save" id="submitBtn">
-            <i class="fas fa-plus-circle"></i> Create Exam & Continue to Settings
-        </button>
-    </div>
-</form>
-            </div>
-        </div>
-        
-        <div style="display: flex; justify-content: center; margin-top: 20px;">
-            <a href="/teacher" class="btn-back"><i class="fas fa-arrow-left"></i> Back to Dashboard</a>
-        </div>
-    </div>
+          </div>
 
-    <script>
-        const specialisationsByClass = {{ specialisations_by_class|tojson }};
-        
-        function updateSpecialisationOptions() {
-            const classSelect = document.getElementById('targetClass');
-            const specSelect = document.getElementById('specialisationTag');
-            const selectedClass = classSelect.value;
-            
-            specSelect.innerHTML = '<option value="General">General (All students in class)</option>';
-            
-            if (selectedClass && specialisationsByClass[selectedClass]) {
-                const specs = specialisationsByClass[selectedClass];
-                specs.forEach(spec => {
-                    if (spec !== 'General') {
-                        const option = document.createElement('option');
-                        option.value = spec;
-                        option.textContent = spec;
-                        specSelect.appendChild(option);
-                    }
-                });
-                
-                // Auto-select if only General is available
-                if (specs.length === 1 && specs[0] === 'General') {
-                    specSelect.value = 'General';
-                }
-            }
-            
-            updateSmartOverrideHint();
+          <div class="tc-form-row2">
+            <div class="tc-field">
+              <label class="tc-label" for="subjectTagInput">Subject Tag</label>
+              <input id="subjectTagInput" type="text" name="subject_tag" class="tc-input tc-input--lg" placeholder="e.g., Mathematics, Physics, English" value="General" required>
+            </div>
+            <div class="tc-field">
+              <label class="tc-label" for="durationInput">Duration (minutes)</label>
+              <input id="durationInput" type="number" name="duration" class="tc-input tc-input--lg tc-mono" value="60" min="1" required>
+            </div>
+          </div>
+
+          <div class="tc-form-row2">
+            <div class="tc-field">
+              <label class="tc-label" for="calculatorTypeSelect">On-Screen Calculator</label>
+              <select id="calculatorTypeSelect" name="calculator_type" class="tc-select tc-select--lg">
+                <option value="none">Disabled (No calculator)</option>
+                <option value="simple">Simple Calculator</option>
+                <option value="advanced">Scientific Calculator</option>
+              </select>
+            </div>
+            <div class="tc-field">
+              <label class="tc-label">Integrity &amp; Proctoring Policy</label>
+              <div class="tc-input tc-input--lg" style="display:flex;align-items:center;gap:9px;color:var(--tc-ink-2);cursor:default" aria-readonly="true">
+                {{ ico('i-lock', 'ct-ico--sm') }}
+                <span>Governed by School Settings</span>
+              </div>
+              <span class="tc-help">Warning limits and focus rules inherit school-wide policy.</span>
+            </div>
+          </div>
+
+          <label class="tc-switch">
+            <span class="tc-switch__txt">
+              <strong>Publish as Active Immediately</strong>
+              <span>Allow eligible students to see and begin this exam right away.</span>
+            </span>
+            <input type="checkbox" name="active" value="1" checked>
+          </label>
+
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding-top:6px;border-top:1px solid var(--tc-line)">
+            <a href="/teacher" class="tc-btn tc-btn--ghost">Cancel</a>
+            <button type="submit" class="tc-btn tc-btn--primary tc-btn--lg" id="submitBtn">
+              Create Exam &amp; Continue {{ ico('i-arrow-right', 'ct-ico--sm') }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <!-- Right Rail: Live Visibility Preview + 3-Step Workflow -->
+    <aside style="display:grid;gap:20px">
+      <section class="tc-card">
+        <div class="tc-card__head">
+          <div class="tc-card__title">
+            <h3>Audience Visibility</h3>
+            <p>Smart Override rules preview</p>
+          </div>
+          <span class="tc-pill tc-pill--ok" id="hintBadge">General</span>
+        </div>
+        <div class="tc-card__body" style="display:grid;gap:14px">
+          <div id="smartOverrideHint" class="tc-callout">
+            <strong id="hintTitle">General Visibility Mode</strong>
+            <p id="hintText">Select a target class to preview exactly which students can access this examination.</p>
+          </div>
+          <p style="margin:0;font-size:12px;line-height:1.55;color:var(--tc-ink-3)">
+            <strong>General</strong> papers appear for every approved student in the chosen class. Picking a department specialisation (e.g., Science, Arts, Commercial) limits visibility strictly to that stream.
+          </p>
+        </div>
+      </section>
+
+      <section class="tc-card">
+        <div class="tc-card__head">
+          <div class="tc-card__title">
+            <h3>Authoring Workflow</h3>
+            <p>What happens next</p>
+          </div>
+        </div>
+        <div class="tc-steps">
+          <div class="tc-step">
+            <span class="tc-step__num">01</span>
+            <div>
+              <strong>Configure Paper</strong>
+              <span>Set class scope, subject tag, timing, and calculator availability.</span>
+            </div>
+          </div>
+          <div class="tc-step">
+            <span class="tc-step__num">02</span>
+            <div>
+              <strong>Add Sections &amp; Questions</strong>
+              <span>Author MCQ items, passages, LaTeX math, or import JSON/CSV banks.</span>
+            </div>
+          </div>
+          <div class="tc-step">
+            <span class="tc-step__num">03</span>
+            <div>
+              <strong>Monitor &amp; Analyze</strong>
+              <span>Track live attempts, grade distribution rings, and item error rates.</span>
+            </div>
+          </div>
+        </div>
+      </section>
+    </aside>
+  </div>
+
+{{ shell_end(role='teacher') }}
+<script>
+  const specialisationsByClass = {{ specialisations_by_class|tojson }};
+
+  function updateSpecialisationOptions() {
+    const classSelect = document.getElementById("targetClass");
+    const specSelect = document.getElementById("specialisationTag");
+    const selectedClass = classSelect.value;
+
+    specSelect.innerHTML = '<option value="General">General (All students in class)</option>';
+
+    if (selectedClass && specialisationsByClass[selectedClass]) {
+      const specs = specialisationsByClass[selectedClass];
+      specs.forEach(function (spec) {
+        if (spec !== "General") {
+          const option = document.createElement("option");
+          option.value = spec;
+          option.textContent = spec;
+          specSelect.appendChild(option);
         }
-        
-        function updateSmartOverrideHint() {
-            const classSelect = document.getElementById('targetClass');
-            const specSelect = document.getElementById('specialisationTag');
-            const hintBox = document.getElementById('smartOverrideHint');
-            const hintText = document.getElementById('hintText');
-            
-            const selectedClass = classSelect.value;
-            const selectedSpec = specSelect.value;
-            
-            if (!selectedClass) {
-                hintBox.style.display = 'none';
-                return;
-            }
-            
-            hintBox.style.display = 'flex';
-            
-            if (selectedSpec === 'General') {
-                hintBox.style.background = 'linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)';
-                hintBox.style.borderLeftColor = '#10b981';
-                hintText.innerHTML = `<strong><i class="fas fa-bullhorn"></i> General Mode:</strong> This exam will be visible to <strong>ALL students</strong> in ${selectedClass} (Science, Art, and Commercial).`;
-            } else {
-                hintBox.style.background = 'linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)';
-                hintBox.style.borderLeftColor = '#1a56db';
-                hintText.innerHTML = `<strong><i class="fas fa-lock"></i> Restricted Mode:</strong> This exam will be <strong>ONLY visible</strong> to ${selectedSpec} students in ${selectedClass}.`;
-            }
-        }
-        
-        function showToast(message, type = 'success') {
-            const existingToast = document.querySelector('.toast-notification');
-            if (existingToast) existingToast.remove();
-            
-            const toast = document.createElement('div');
-            toast.className = `toast-notification ${type === 'error' ? 'error' : ''}`;
-            toast.innerHTML = `<i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-triangle'}"></i><span>${message}</span>`;
-            document.body.appendChild(toast);
-            setTimeout(() => toast.remove(), 4000);
-        }
-        
-        document.getElementById('createExamForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            
-            const form = e.target;
-            const formData = new FormData(form);
-            const submitBtn = document.getElementById('submitBtn');
-            const originalText = submitBtn.innerHTML;
-            
-            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating Exam...';
-            submitBtn.disabled = true;
-            
-            try {
-                const response = await fetch(form.action, {
-                    method: 'POST',
-                    body: formData
-                });
-                
-                const data = await response.json();
-                
-                if (data.success) {
-                    showToast(data.message, 'success');
-                    // Redirect to exam settings page
-                    setTimeout(() => {
-                        window.location.href = data.redirect;
-                    }, 1500);
-                } else {
-                    showToast(data.error || 'Failed to create exam', 'error');
-                    submitBtn.innerHTML = originalText;
-                    submitBtn.disabled = false;
-                }
-            } catch (error) {
-                showToast('Network error. Please try again.', 'error');
-                submitBtn.innerHTML = originalText;
-                submitBtn.disabled = false;
-            }
-        });
-        
-        // Initialize
-        document.addEventListener('DOMContentLoaded', function() {
-            const classSelect = document.getElementById('targetClass');
-            if (classSelect.options.length > 1) {
-                classSelect.selectedIndex = 1;
-                updateSpecialisationOptions();
-            }
-        });
-    </script>
+      });
+
+      if (specs.length === 1 && specs[0] === "General") {
+        specSelect.value = "General";
+      }
+    }
+
+    updateSmartOverrideHint();
+  }
+
+  function updateSmartOverrideHint() {
+    const classSelect = document.getElementById("targetClass");
+    const specSelect = document.getElementById("specialisationTag");
+    const hintBox = document.getElementById("smartOverrideHint");
+    const hintTitle = document.getElementById("hintTitle");
+    const hintText = document.getElementById("hintText");
+    const hintBadge = document.getElementById("hintBadge");
+
+    const selectedClass = classSelect.value;
+    const selectedSpec = specSelect.value;
+
+    if (!selectedClass) {
+      hintBox.className = "tc-callout";
+      hintBadge.className = "tc-pill";
+      hintBadge.textContent = "Pending";
+      hintTitle.textContent = "Select a Target Class";
+      hintText.textContent = "Choose a class to preview student visibility rules for this examination.";
+      return;
+    }
+
+    if (selectedSpec === "General") {
+      hintBox.className = "tc-callout";
+      hintBadge.className = "tc-pill tc-pill--ok";
+      hintBadge.textContent = "General";
+      hintTitle.textContent = "Visible to All " + selectedClass + " Students";
+      hintText.innerHTML = "Every approved student in <strong>" + (window.CT && CT.esc ? CT.esc(selectedClass) : selectedClass) + "</strong> across all streams will see this exam on their portal.";
+    } else {
+      hintBox.className = "tc-callout tc-callout--accent";
+      hintBadge.className = "tc-pill tc-pill--accent";
+      hintBadge.textContent = "Restricted";
+      hintTitle.textContent = "Restricted to " + selectedSpec + " Stream";
+      hintText.innerHTML = "Only <strong>" + (window.CT && CT.esc ? CT.esc(selectedSpec) : selectedSpec) + "</strong> students in <strong>" + (window.CT && CT.esc ? CT.esc(selectedClass) : selectedClass) + "</strong> will be able to access this exam.";
+    }
+  }
+
+  function notifyUser(message, type) {
+    if (window.CT && CT.toast) {
+      CT.toast(message, type === "error" ? "bad" : "ok");
+      return;
+    }
+    alert(message);
+  }
+
+  document.getElementById("createExamForm").addEventListener("submit", async function (e) {
+    e.preventDefault();
+    const form = e.target;
+    const formData = new FormData(form);
+    const submitBtn = document.getElementById("submitBtn");
+    const originalHTML = submitBtn.innerHTML;
+
+    submitBtn.textContent = "Creating Exam…";
+    submitBtn.disabled = true;
+
+    try {
+      const response = await fetch(form.action, { method: "POST", body: formData });
+      const data = await response.json();
+
+      if (data.success) {
+        notifyUser(data.message || "Exam created successfully.", "success");
+        setTimeout(function () { window.location.href = data.redirect; }, 900);
+      } else {
+        notifyUser(data.error || "Failed to create exam.", "error");
+        submitBtn.innerHTML = originalHTML;
+        submitBtn.disabled = false;
+      }
+    } catch (error) {
+      notifyUser("Network error. Please try again.", "error");
+      submitBtn.innerHTML = originalHTML;
+      submitBtn.disabled = false;
+    }
+  });
+
+  document.addEventListener("DOMContentLoaded", function () {
+    const classSelect = document.getElementById("targetClass");
+    if (classSelect.options.length > 1) {
+      classSelect.selectedIndex = 1;
+      updateSpecialisationOptions();
+    } else {
+      updateSmartOverrideHint();
+    }
+  });
+</script>
 </body>
 </html>
-

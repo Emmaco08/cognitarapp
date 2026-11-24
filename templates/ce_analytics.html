@@ -1,5 +1,6 @@
+{%- from '_ct_shell.html' import ico, ct_boot_script, admin_shell_start, teacher_shell_start, student_topbar, shell_end -%}
 <!DOCTYPE html>
-<html>
+<html lang="en" data-theme="dark">
 <head>
     <title>{{ exam.name }} - Analytics | COGNITARA EXAM SYSTEM</title>
     <link href="{{ url_for('static', filename='vendor/bootstrap/css/bootstrap.min.css') }}" rel="stylesheet">
@@ -21,60 +22,60 @@
         @keyframes floatIcon { 0% { transform: translate(0, 0) rotate(0deg); opacity: 0; } 10% { opacity: 0.08; } 90% { opacity: 0.08; } 100% { transform: translate(100px, -100px) rotate(360deg); opacity: 0; } }
         
         .page-header { text-align: center; margin-bottom: 30px; }
-        .logo-icon { width: 70px; height: 70px; background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%); border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 15px; animation: pulse 2s infinite; }
+        .logo-icon { width: 70px; height: 70px; background: var(--ct-brand-grad); border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 15px; animation: pulse 2s infinite; }
         @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
         .logo-icon i { font-size: 35px; color: white; }
-        .page-header h1 { font-size: 28px; font-weight: 800; background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 5px; }
-        .page-header p { font-size: 14px; color: #64748b; }
+        .page-header h1 { font-size: 28px; font-weight: 800; background: var(--ct-brand-grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 5px; }
+        .page-header p { font-size: 14px; color: var(--ct-ink-3); }
         
-        .stats-bar { background: white; border-radius: 20px; padding: 20px 30px; margin-bottom: 30px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px; border: 1px solid #e2e8f0; }
+        .stats-bar { background: var(--ct-surface); border-radius: 20px; padding: 20px 30px; margin-bottom: 30px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px; border: 1px solid var(--ct-line-2); }
         .stats-info { display: flex; align-items: center; gap: 15px; }
-        .stats-icon { width: 50px; height: 50px; background: #ede9fe; border-radius: 15px; display: flex; align-items: center; justify-content: center; }
-        .stats-icon i { font-size: 24px; color: #8b5cf6; }
-        .stats-text h3 { font-size: 28px; font-weight: 800; color: #1e293b; margin: 0; }
-        .stats-text p { margin: 0; color: #64748b; font-size: 13px; }
+        .stats-icon { width: 50px; height: 50px; background: var(--ct-accent-soft); border-radius: 15px; display: flex; align-items: center; justify-content: center; }
+        .stats-icon i { font-size: 24px; color: var(--ct-primary); }
+        .stats-text h3 { font-size: 28px; font-weight: 800; color: var(--ct-ink); margin: 0; }
+        .stats-text p { margin: 0; color: var(--ct-ink-3); font-size: 13px; }
         
-        .btn-back { background: white; border: 2px solid #e2e8f0; padding: 8px 20px; border-radius: 12px; color: #64748b; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; transition: all 0.3s; font-size: 13px; }
-        .btn-back:hover { border-color: #8b5cf6; color: #8b5cf6; background: #f5f3ff; }
+        .btn-back { background: var(--ct-surface); border: 2px solid var(--ct-line-2); padding: 8px 20px; border-radius: 12px; color: var(--ct-ink-3); font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; transition: all 0.3s; font-size: 13px; }
+        .btn-back:hover { border-color: var(--ct-primary); color: var(--ct-primary); background: var(--ct-accent-soft); }
         .btn-export { background: #10b981; color: white; border: none; padding: 8px 20px; border-radius: 12px; font-weight: 600; cursor: pointer; transition: all 0.3s; font-size: 13px; display: inline-flex; align-items: center; gap: 8px; }
         .btn-export:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(16,185,129,0.3); }
         
-        .card-custom { background: white; border-radius: 24px; border: 1px solid #e2e8f0; margin-bottom: 25px; overflow: hidden; }
-        .card-header-custom { padding: 15px 20px; border-bottom: 1px solid #e2e8f0; background: #f8fafc; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; }
-        .card-header-custom h3 { margin: 0; font-size: 16px; font-weight: 600; color: #1e293b; display: flex; align-items: center; gap: 8px; }
-        .card-header-custom i { color: #8b5cf6; }
+        .card-custom { background: var(--ct-surface); border-radius: 24px; border: 1px solid var(--ct-line-2); margin-bottom: 25px; overflow: hidden; }
+        .card-header-custom { padding: 15px 20px; border-bottom: 1px solid var(--ct-line-2); background: var(--ct-surface); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; }
+        .card-header-custom h3 { margin: 0; font-size: 16px; font-weight: 600; color: var(--ct-ink); display: flex; align-items: center; gap: 8px; }
+        .card-header-custom i { color: var(--ct-primary); }
         .card-body-custom { padding: 20px; }
         
         .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 15px; margin-bottom: 25px; }
-        .stat-card { background: white; border-radius: 20px; padding: 15px; text-align: center; border: 1px solid #e2e8f0; transition: all 0.3s; }
+        .stat-card { background: var(--ct-surface); border-radius: 20px; padding: 15px; text-align: center; border: 1px solid var(--ct-line-2); transition: all 0.3s; }
         .stat-card:hover { transform: translateY(-3px); box-shadow: 0 10px 20px -10px rgba(0,0,0,0.1); }
         .stat-card i { font-size: 28px; margin-bottom: 8px; }
         .stat-card h4 { font-size: 28px; font-weight: 800; margin: 5px 0; }
-        .stat-card p { color: #64748b; font-size: 12px; margin: 0; }
+        .stat-card p { color: var(--ct-ink-3); font-size: 12px; margin: 0; }
         
-        .progress-custom { height: 6px; background: #e2e8f0; border-radius: 10px; overflow: hidden; margin: 8px 0; }
+        .progress-custom { height: 6px; background: var(--ct-line-2); border-radius: 10px; overflow: hidden; margin: 8px 0; }
         .progress-fill { height: 100%; border-radius: 10px; transition: width 0.5s; }
         
         .data-table { width: 100%; border-collapse: collapse; }
-        .data-table th { padding: 12px 12px; text-align: left; font-size: 12px; font-weight: 600; color: #64748b; border-bottom: 1px solid #e2e8f0; background: #f8fafc; }
+        .data-table th { padding: 12px 12px; text-align: left; font-size: 12px; font-weight: 600; color: var(--ct-ink-3); border-bottom: 1px solid var(--ct-line-2); background: var(--ct-surface); }
         .data-table td { padding: 10px 12px; border-bottom: 1px solid #f0f2f5; font-size: 13px; vertical-align: middle; }
-        .data-table tr:hover { background: #f8fafc; }
+        .data-table tr:hover { background: var(--ct-surface); }
         
-        .badge-pass { background: #d1fae5; color: #065f46; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; display: inline-block; }
-        .badge-fail { background: #fee2e2; color: #991b1b; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; display: inline-block; }
-        .badge-pending { background: #fef3c7; color: #d97706; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; display: inline-block; }
-        .badge-rejected { background: #f1f5f9; color: #64748b; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; display: inline-block; }
-        .badge-not-started { background: #e2e8f0; color: #64748b; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; display: inline-block; }
+        .badge-pass { background: var(--ct-ok-soft); color: #065f46; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; display: inline-block; }
+        .badge-fail { background: var(--ct-bad-soft); color: #991b1b; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; display: inline-block; }
+        .badge-pending { background: var(--ct-warn-soft); color: #d97706; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; display: inline-block; }
+        .badge-rejected { background: var(--ct-surface); color: var(--ct-ink-3); padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; display: inline-block; }
+        .badge-not-started { background: var(--ct-line-2); color: var(--ct-ink-3); padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; display: inline-block; }
         
-        .difficulty-easy { background: #d1fae5; color: #065f46; padding: 2px 8px; border-radius: 20px; font-size: 10px; }
-        .difficulty-medium { background: #fef3c7; color: #d97706; padding: 2px 8px; border-radius: 20px; font-size: 10px; }
-        .difficulty-hard { background: #fee2e2; color: #991b1b; padding: 2px 8px; border-radius: 20px; font-size: 10px; }
-        .difficulty-very-hard { background: #ede9fe; color: #5b21b6; padding: 2px 8px; border-radius: 20px; font-size: 10px; }
+        .difficulty-easy { background: var(--ct-ok-soft); color: #065f46; padding: 2px 8px; border-radius: 20px; font-size: 10px; }
+        .difficulty-medium { background: var(--ct-warn-soft); color: #d97706; padding: 2px 8px; border-radius: 20px; font-size: 10px; }
+        .difficulty-hard { background: var(--ct-bad-soft); color: #991b1b; padding: 2px 8px; border-radius: 20px; font-size: 10px; }
+        .difficulty-very-hard { background: var(--ct-accent-soft); color: var(--ct-primary); padding: 2px 8px; border-radius: 20px; font-size: 10px; }
         
         .nav-tabs { border: none; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; }
-        .nav-tabs .nav-link { background: white; border: 1px solid #e2e8f0; border-radius: 30px; padding: 8px 20px; color: #64748b; font-weight: 500; font-size: 13px; transition: all 0.3s; }
-        .nav-tabs .nav-link:hover { border-color: #8b5cf6; color: #8b5cf6; }
-        .nav-tabs .nav-link.active { background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%); border-color: #8b5cf6; color: white; }
+        .nav-tabs .nav-link { background: var(--ct-surface); border: 1px solid var(--ct-line-2); border-radius: 30px; padding: 8px 20px; color: var(--ct-ink-3); font-weight: 500; font-size: 13px; transition: all 0.3s; }
+        .nav-tabs .nav-link:hover { border-color: var(--ct-primary); color: var(--ct-primary); }
+        .nav-tabs .nav-link.active { background: var(--ct-brand-grad); border-color: var(--ct-primary); color: white; }
         
         .scrollable-table { max-height: 400px; overflow-y: auto; }
         .two-columns { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
@@ -150,8 +151,16 @@
         });
     })();
     </script>
+
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/cognitara-web.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/cognitara-portal-unified.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/cognitara-teacher-studio.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/cognitara-admin-studio.css') }}">
+  {{ ct_boot_script() }}
 </head>
-<body>
+<body class="ct-app ct-bs ad-studio">
+{{ admin_shell_start(active='ce', crumb='CE Analytics') }}
+
 <div class="edu-icon"><i class="fas fa-chart-line"></i></div>
 <div class="edu-icon"><i class="fas fa-chart-bar"></i></div>
 
@@ -282,7 +291,7 @@
                                     {% for q in most_missed %}
                                     <tr>
                                         <td>{{ loop.index }}</td>
-                                        <td><div style="max-height:3em; overflow:hidden;">{{ q.question|safe }}</div></td>
+                                        <td><div style="max-height:3em; overflow:hidden;">{{ q.question|sanitize|safe }}</div></td>
                                         <td>{{ q.section }}</td>
                                         <td><span class="badge-fail">{{ q.correct_percentage }}%</span></td>
                                     </tr>
@@ -304,7 +313,7 @@
                                     {% for q in most_correct %}
                                     <tr>
                                         <td>{{ loop.index }}</td>
-                                        <td><div style="max-height:3em; overflow:hidden;">{{ q.question|safe }}</div></td>
+                                        <td><div style="max-height:3em; overflow:hidden;">{{ q.question|sanitize|safe }}</div></td>
                                         <td>{{ q.section }}</td>
                                         <td><span class="badge-pass">{{ q.correct_percentage }}%</span></td>
                                     </tr>
@@ -326,7 +335,7 @@
                                     {% for q in most_time_spent %}
                                     <tr>
                                         <td>{{ loop.index }}</td>
-                                        <td><div style="max-height:3em; overflow:hidden;">{{ q.question|safe }}</div></td>
+                                        <td><div style="max-height:3em; overflow:hidden;">{{ q.question|sanitize|safe }}</div></td>
                                         <td>{{ q.section }}</td>
                                         <td><span class="badge-pending">{{ q.avg_time_spent }}s</span></td>
                                     </tr>
@@ -348,7 +357,7 @@
                                     {% for q in least_time_spent %}
                                     <tr>
                                         <td>{{ loop.index }}</td>
-                                        <td><div style="max-height:3em; overflow:hidden;">{{ q.question|safe }}</div></td>
+                                        <td><div style="max-height:3em; overflow:hidden;">{{ q.question|sanitize|safe }}</div></td>
                                         <td>{{ q.section }}</td>
                                         <td><span class="badge-pass">{{ q.avg_time_spent }}s</span></td>
                                     </tr>
@@ -518,5 +527,7 @@
         }
     });
 </script>
+
+{{ shell_end(role='admin') }}
 </body>
 </html>

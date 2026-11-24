@@ -1,650 +1,303 @@
+{%- from '_ct_shell.html' import ico, ct_boot_script -%}
+{%- set ICONS = url_for('static', filename='icons/cognitara-icons.svg') -%}
+{%- set _school = school_branding if school_branding is defined and school_branding else {'school_name': 'CogniTara School', 'current_term': 'First Term', 'academic_session': '2026/2027'} -%}
+{%- set pct = ((score / total * 100)|round|int) if (not withheld and total is defined and total and total > 0) else 0 -%}
+{%- set circ = 540.35 -%}
+{%- set dash_offset = (circ - (circ * pct / 100))|round(2) -%}
+{%- set grade_letter = 'A' if pct >= 85 else ('B' if pct >= 70 else ('C' if pct >= 60 else ('D' if pct >= 50 else 'F'))) -%}
+{%- set grade_desc = 'Distinction' if pct >= 85 else ('Very Good' if pct >= 70 else ('Credit' if pct >= 60 else ('Pass' if pct >= 50 else 'Below Pass Mark'))) -%}
+{%- set candidate_name = session.get('full_name') or username -%}
+{%- set candidate_class = session.get('class') or '' -%}
 <!DOCTYPE html>
-<html>
+<html lang="en" data-theme="dark">
 <head>
-    <title>Exam Result | COGNITARA EXAM SYSTEM</title>
-    <link href="{{ url_for('static', filename='vendor/bootstrap/css/bootstrap.min.css') }}" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='vendor/fontawesome/css/all.min.css') }}">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            background: linear-gradient(135deg, #f5f7fa 0%, #e8edf5 100%);
-            font-family: 'Segoe UI', 'Poppins', Tahoma, Geneva, Verdana, sans-serif;
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            position: relative;
-            overflow-x: hidden;
-        }
-
-        /* Animated Educational Icons Background */
-        .edu-icon {
-            position: absolute;
-            color: rgba(26, 86, 219, 0.06);
-            pointer-events: none;
-            z-index: 0;
-            animation: floatIcon 20s infinite ease-in-out;
-        }
-
-        @keyframes floatIcon {
-            0% {
-                transform: translate(0, 0) rotate(0deg);
-                opacity: 0;
-            }
-            10% {
-                opacity: 0.08;
-            }
-            90% {
-                opacity: 0.08;
-            }
-            100% {
-                transform: translate(100px, -100px) rotate(360deg);
-                opacity: 0;
-            }
-        }
-
-        .edu-icon:nth-child(1) { top: 10%; left: 5%; animation-duration: 18s; font-size: 50px; }
-        .edu-icon:nth-child(2) { top: 70%; left: 15%; animation-duration: 22s; font-size: 40px; animation-delay: 2s; }
-        .edu-icon:nth-child(3) { top: 30%; left: 85%; animation-duration: 20s; font-size: 55px; animation-delay: 4s; }
-        .edu-icon:nth-child(4) { top: 80%; left: 80%; animation-duration: 25s; font-size: 35px; animation-delay: 1s; }
-        .edu-icon:nth-child(5) { top: 50%; left: 10%; animation-duration: 19s; font-size: 45px; animation-delay: 3s; }
-        .edu-icon:nth-child(6) { top: 20%; left: 70%; animation-duration: 23s; font-size: 60px; animation-delay: 5s; }
-        .edu-icon:nth-child(7) { top: 60%; left: 90%; animation-duration: 21s; font-size: 42px; animation-delay: 2.5s; }
-        .edu-icon:nth-child(8) { top: 85%; left: 25%; animation-duration: 24s; font-size: 38px; animation-delay: 6s; }
-        .edu-icon:nth-child(9) { top: 15%; left: 45%; animation-duration: 17s; font-size: 48px; animation-delay: 1.5s; }
-        .edu-icon:nth-child(10) { top: 45%; left: 75%; animation-duration: 26s; font-size: 52px; animation-delay: 3.5s; }
-
-        /* Main Container */
-        .result-container {
-            max-width: 550px;
-            width: 100%;
-            margin: 20px;
-            position: relative;
-            z-index: 10;
-        }
-
-        /* Result Card */
-        .result-card {
-            background: white;
-            border-radius: 32px;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
-            overflow: hidden;
-            transition: transform 0.3s ease;
-            text-align: center;
-        }
-
-        .result-card:hover {
-            transform: translateY(-5px);
-        }
-
-        /* Header Section - Changes color based on pass/fail */
-        .card-header {
-            padding: 40px 30px;
-            text-align: center;
-            color: white;
-        }
-
-        .card-header.passed {
-            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-        }
-
-        .card-header.failed {
-            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-        }
-
-        .result-icon {
-            width: 90px;
-            height: 90px;
-            background: rgba(255, 255, 255, 0.2);
-            border-radius: 50%;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            margin-bottom: 20px;
-            animation: pulse 2s infinite;
-        }
-
-        @keyframes pulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.05); }
-        }
-
-        .result-icon i {
-            font-size: 45px;
-            color: white;
-        }
-
-        .card-header h2 {
-            font-size: 28px;
-            font-weight: 700;
-            margin-bottom: 8px;
-        }
-
-        .card-header p {
-            font-size: 14px;
-            opacity: 0.9;
-            margin: 0;
-        }
-
-        /* Body Section */
-        .card-body {
-            padding: 35px;
-        }
-
-        /* Student Info */
-        .student-info {
-            background: #f8fafc;
-            border-radius: 20px;
-            padding: 20px;
-            margin-bottom: 25px;
-            border: 1px solid #e2e8f0;
-        }
-
-        .info-row {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 10px 0;
-            border-bottom: 1px solid #e2e8f0;
-        }
-
-        .info-row:last-child {
-            border-bottom: none;
-        }
-
-        .info-label {
-            font-weight: 600;
-            color: #1e293b;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .info-label i {
-            color: #667eea;
-            width: 25px;
-        }
-
-        .info-value {
-            color: #64748b;
-            font-weight: 500;
-        }
-
-        /* Score Display */
-        .score-section {
-            margin: 25px 0;
-        }
-
-        .score-circle {
-            width: 180px;
-            height: 180px;
-            margin: 0 auto;
-            position: relative;
-        }
-
-        .score-circle svg {
-            width: 100%;
-            height: 100%;
-        }
-
-        .score-text {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            text-align: center;
-        }
-
-        .score-number {
-            font-size: 48px;
-            font-weight: 800;
-            color: #1e293b;
-            line-height: 1;
-        }
-
-        .score-total {
-            font-size: 18px;
-            color: #64748b;
-        }
-
-        .score-label {
-            font-size: 12px;
-            color: #94a3b8;
-            margin-top: 5px;
-        }
-
-        /* Percentage Badge */
-        .percentage-badge {
-            display: inline-block;
-            padding: 8px 20px;
-            border-radius: 50px;
-            font-size: 18px;
-            font-weight: 700;
-            margin: 15px 0;
-        }
-
-        .percentage-badge.passed {
-            background: #d1fae5;
-            color: #065f46;
-        }
-
-        .percentage-badge.failed {
-            background: #fee2e2;
-            color: #991b1b;
-        }
-
-        /* Message */
-        .result-message {
-            padding: 15px;
-            border-radius: 16px;
-            margin: 20px 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 12px;
-        }
-
-        .result-message.passed {
-            background: #d1fae5;
-            color: #065f46;
-        }
-
-        .result-message.failed {
-            background: #fee2e2;
-            color: #991b1b;
-        }
-
-        .result-message i {
-            font-size: 24px;
-        }
-
-        .result-message span {
-            font-size: 16px;
-            font-weight: 600;
-        }
-
-        /* Countdown */
-        .countdown-section {
-            background: #f1f5f9;
-            border-radius: 14px;
-            padding: 12px;
-            margin: 20px 0;
-        }
-
-        .countdown-timer {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 14px;
-            color: #64748b;
-        }
-
-        .countdown-number {
-            font-weight: 800;
-            font-size: 18px;
-            color: #667eea;
-            background: white;
-            padding: 4px 12px;
-            border-radius: 30px;
-        }
-
-        /* Button */
-        .btn-dashboard {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 14px 30px;
-            border-radius: 50px;
-            text-decoration: none;
-            font-weight: 600;
-            font-size: 16px;
-            transition: all 0.3s ease;
-            width: 100%;
-            border: none;
-            cursor: pointer;
-        }
-
-        .btn-dashboard:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 20px -5px rgba(102, 126, 234, 0.4);
-            color: white;
-        }
-
-        /* Confetti Canvas */
-        #confetti-canvas {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-            z-index: 999;
-        }
-
-        /* Responsive */
-        @media (max-width: 576px) {
-            .card-header {
-                padding: 30px 20px;
-            }
-            
-            .card-body {
-                padding: 25px 20px;
-            }
-            
-            .card-header h2 {
-                font-size: 24px;
-            }
-            
-            .score-circle {
-                width: 150px;
-                height: 150px;
-            }
-            
-            .score-number {
-                font-size: 38px;
-            }
-            
-            .btn-dashboard {
-                padding: 12px 25px;
-                font-size: 14px;
-            }
-        }
-    </style>
-    <!-- CSRF Protection Shield -->
-    <meta name="csrf-token" content="{{ csrf_token() }}">
-    <script>
-    window.CSRF_TOKEN = "{{ csrf_token() }}";
-    (function() {
-        if (window.fetch) {
-            const _origFetch = window.fetch;
-            window.fetch = function(url, options) {
-                options = options || {};
-                const method = (options.method || 'GET').toUpperCase();
-                if (!['GET', 'HEAD', 'OPTIONS', 'TRACE'].includes(method)) {
-                    options.headers = options.headers || {};
-                    const token = window.CSRF_TOKEN || (document.querySelector('meta[name="csrf-token"]') && document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
-                    if (token) {
-                        if (typeof Headers !== 'undefined' && options.headers instanceof Headers) {
-                            if (!options.headers.has('X-CSRFToken')) options.headers.set('X-CSRFToken', token);
-                        } else if (Array.isArray(options.headers)) {
-                            options.headers.push(['X-CSRFToken', token]);
-                        } else {
-                            if (!options.headers['X-CSRFToken']) options.headers['X-CSRFToken'] = token;
-                        }
-                    }
-                }
-                return _origFetch(url, options);
-            };
-        }
-        if (window.$ && $.ajaxSetup) {
-            $.ajaxSetup({
-                beforeSend: function(xhr, settings) {
-                    if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type)) {
-                        xhr.setRequestHeader("X-CSRFToken", window.CSRF_TOKEN);
-                    }
-                }
-            });
-        }
-        if (navigator.sendBeacon) {
-            const _origBeacon = navigator.sendBeacon.bind(navigator);
-            navigator.sendBeacon = function(url, data) {
-                if (data instanceof FormData) {
-                    if (!data.has('csrf_token')) data.append('csrf_token', window.CSRF_TOKEN);
-                } else if (typeof data === 'string') {
-                    try {
-                        const obj = JSON.parse(data);
-                        if (typeof obj === 'object' && obj !== null && !obj.csrf_token) {
-                            obj.csrf_token = window.CSRF_TOKEN;
-                            data = JSON.stringify(obj);
-                        }
-                    } catch(e) {}
-                }
-                return _origBeacon(url, data);
-            };
-        }
-        document.addEventListener('DOMContentLoaded', function() {
-            document.querySelectorAll('form[method="POST"], form[method="post"]').forEach(function(form) {
-                if (!form.querySelector('input[name="csrf_token"]')) {
-                    var input = document.createElement('input');
-                    input.type = 'hidden';
-                    input.name = 'csrf_token';
-                    input.value = window.CSRF_TOKEN;
-                    form.appendChild(input);
-                }
-            });
-        });
-    })();
-    </script>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+  <meta name="color-scheme" content="dark light">
+  <meta name="description" content="Official examination score report for {{ exam_name }} — {{ _school.school_name }}.">
+  <title>Score Report — {{ exam_name }} | CogniTara</title>
+  <link rel="icon" href="{{ url_for('static', filename='images/cognitara-favicon.ico') }}">
+  <link rel="preload" href="{{ url_for('static', filename='fonts/ui/PlusJakartaSans-Variable.woff2') }}" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/cognitara-web.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/cognitara-student-studio.css') }}">
+  {{ ct_boot_script() }}
 </head>
-<body>
+<body class="st-body">
+  <div class="st-grain" aria-hidden="true"></div>
+  {% if passed and not withheld %}
+  <canvas id="confetti-canvas" aria-hidden="true"></canvas>
+  {% endif %}
 
-    <!-- Animated Educational Icons Background -->
-    <div class="edu-icon"><i class="fas fa-graduation-cap"></i></div>
-    <div class="edu-icon"><i class="fas fa-trophy"></i></div>
-    <div class="edu-icon"><i class="fas fa-chart-line"></i></div>
-    <div class="edu-icon"><i class="fas fa-star"></i></div>
-    <div class="edu-icon"><i class="fas fa-award"></i></div>
-    <div class="edu-icon"><i class="fas fa-medal"></i></div>
-    <div class="edu-icon"><i class="fas fa-crown"></i></div>
-    <div class="edu-icon"><i class="fas fa-check-circle"></i></div>
-    <div class="edu-icon"><i class="fas fa-book"></i></div>
-    <div class="edu-icon"><i class="fas fa-pencil-alt"></i></div>
+  <div class="st-shell">
+    <!-- Top Editorial Header -->
+    <header class="st-nav">
+      <a class="st-brand" href="{{ url_for('dashboard') }}" aria-label="Back to Student Portal">
+        <span class="st-brand__mark"><svg viewBox="0 0 200 200"><use href="{{ ICONS }}#ct-mark"/></svg></span>
+        <span class="st-brand__name">CogniTara</span>
+        <span class="st-brand__sep" aria-hidden="true"></span>
+        <span class="st-brand__meta">{{ _school.school_name }}</span>
+      </a>
 
-    <!-- Confetti Canvas (only for passed exams) -->
-    {% if passed %}
-    <canvas id="confetti-canvas"></canvas>
-    {% endif %}
-
-    <div class="result-container">
-        <div class="result-card">
-            <!-- Header - Changes based on pass/fail or withheld -->
-            {% if withheld %}
-            <div class="card-header" style="background: linear-gradient(135deg, #1e3a8a 0%, #1d4ed8 100%);">
-                <div class="result-icon">
-                    <i class="fas fa-shield-alt"></i>
-                </div>
-                <h2>Exam Submitted!</h2>
-                <p>Result Withheld</p>
-            </div>
-            {% else %}
-            <div class="card-header {% if passed %}passed{% else %}failed{% endif %}">
-                <div class="result-icon">
-                    {% if passed %}
-                        <i class="fas fa-trophy"></i>
-                    {% else %}
-                        <i class="fas fa-frown"></i>
-                    {% endif %}
-                </div>
-                <h2>{% if passed %}Congratulations!{% else %}Better Luck Next Time{% endif %}</h2>
-                <p>Exam Completed</p>
-            </div>
-            {% endif %}
-            
-            <div class="card-body">
-                <!-- Student Information -->
-                <div class="student-info">
-                    <div class="info-row">
-                        <div class="info-label">
-                            <i class="fas fa-user-graduate"></i>
-                            <span>Student Name</span>
-                        </div>
-                        <div class="info-value">{{ username }}</div>
-                    </div>
-                    <div class="info-row">
-                        <div class="info-label">
-                            <i class="fas fa-file-alt"></i>
-                            <span>Exam Name</span>
-                        </div>
-                        <div class="info-value">{{ exam_name }}</div>
-                    </div>
-                </div>
-
-                {% if withheld %}
-                <!-- Withheld Score Display -->
-                <div class="score-section" style="padding: 20px 0;">
-                    <div style="width: 80px; height: 80px; border-radius: 50%; background: #eff6ff; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 12px; border: 2px dashed #93c5fd;">
-                        <i class="fas fa-lock" style="font-size: 32px; color: #1d4ed8;"></i>
-                    </div>
-                    <div style="font-size: 20px; font-weight: 700; color: #1e293b; margin-top: 8px;">Pending Administrative Release</div>
-                    <p style="color: #64748b; font-size: 14px; max-width: 400px; margin: 8px auto 0;">Your answers have been securely submitted and recorded. The scores for this examination are withheld and will be released by the school administration.</p>
-                </div>
-
-                <div class="result-message" style="background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0;">
-                    <i class="fas fa-check-circle" style="color: #16a34a;"></i>
-                    <span>Submission confirmed. You may now return to your dashboard.</span>
-                </div>
-                {% else %}
-                <!-- Score Display -->
-                <div class="score-section">
-                    <div class="score-circle">
-                        <svg viewBox="0 0 100 100">
-                            <circle cx="50" cy="50" r="45" fill="none" stroke="#e2e8f0" stroke-width="8"/>
-                            <circle cx="50" cy="50" r="45" fill="none" 
-                                    stroke="{% if passed %}#10b981{% else %}#ef4444{% endif %}" 
-                                    stroke-width="8"
-                                    stroke-dasharray="283"
-                                    stroke-dashoffset="{{ 283 - (283 * (score/total)) }}"
-                                    stroke-linecap="round"
-                                    transform="rotate(-90 50 50)"/>
-                        </svg>
-                        <div class="score-text">
-                            <div class="score-number">{{ score }}</div>
-                            <div class="score-total">/ {{ total }}</div>
-                            <div class="score-label">Score</div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Percentage Badge -->
-                {% set percentage = (score / total * 100)|round|int if total > 0 else 0 %}
-                <div class="percentage-badge {% if passed %}passed{% else %}failed{% endif %}">
-                    <i class="fas fa-percent"></i> {{ percentage }}% Overall
-                </div>
-
-                <!-- Result Message -->
-                <div class="result-message {% if passed %}passed{% else %}failed{% endif %}">
-                    {% if passed %}
-                        <i class="fas fa-check-circle"></i>
-                        <span>Excellent work! You have successfully passed the exam.</span>
-                    {% else %}
-                        <i class="fas fa-exclamation-triangle"></i>
-                        <span>Keep practicing! You'll do better next time.</span>
-                    {% endif %}
-                </div>
-                {% endif %}
-
-                <!-- Countdown -->
-                <div class="countdown-section">
-                    <div class="countdown-timer">
-                        <i class="fas fa-clock"></i>
-                        <span>This window will close in</span>
-                        <span class="countdown-number" id="countdown">10</span>
-                        <span>seconds</span>
-                    </div>
-                </div>
-
-                <!-- Button -->
-                <button class="btn-dashboard" onclick="backToDashboard()">
-                    <i class="fas fa-tachometer-alt"></i> Back to Dashboard
-                </button>
-            </div>
+      <div class="st-nav__right">
+        <div class="st-countdown-pill" id="countdownPill">
+          {{ ico('i-clock', 'ct-ico--xs') }}
+          <span id="countdownLabel">Returning in <strong id="countdown">10</strong>s</span>
+          <button type="button" id="pauseReturnBtn">Stay</button>
         </div>
-    </div>
+        <button type="button" class="st-icon-btn" data-ct-theme-toggle aria-label="Switch theme" title="Switch light or dark theme">
+          <span class="ct-theme-ico">{{ ico('i-moon', 'ct-theme-ico__moon') }}{{ ico('i-sun', 'ct-theme-ico__sun') }}</span>
+        </button>
+      </div>
+    </header>
 
-    <script>
-        let timeLeft = 10;
-        const countdownEl = document.getElementById("countdown");
+    <!-- Official Examination Score Report Folio -->
+    <main class="st-folio-stage">
+      {% if withheld %}
+      <section class="st-brief" aria-label="Examination submission receipt">
+        <div class="st-folio__top">
+          <span class="st-folio__doc-id">Submission Receipt · {{ _school.current_term }} {{ _school.academic_session }}</span>
+          <span class="st-pill">{{ ico('i-lock', 'ct-ico--xs') }}Pending Release</span>
+        </div>
+        <div class="st-brief__body">
+          <div class="st-folio__headline">
+            <h1>{{ exam_name }}</h1>
+            <p>Your examination answers have been securely recorded on the local school server. Detailed scores will appear on your Academic Transcript once released by administration.</p>
+          </div>
 
-        // Countdown timer
-        const timer = setInterval(function() {
-            timeLeft--;
-            countdownEl.textContent = timeLeft;
-            if (timeLeft <= 0) {
-                clearInterval(timer);
-                if (window.opener && !window.opener.closed) {
-                    window.opener.location.href = "{{ url_for('dashboard') }}";
-                }
-                window.close();
-            }
-        }, 1000);
+          <div class="st-ledger">
+            <div class="st-ledger__cell">
+              <span>Candidate</span>
+              <strong>{{ candidate_name }}</strong>
+            </div>
+            <div class="st-ledger__cell">
+              <span>Account</span>
+              <strong class="st-mono">@{{ username }}{% if candidate_class %} · {{ candidate_class }}{% endif %}</strong>
+            </div>
+            <div class="st-ledger__cell">
+              <span>Paper Status</span>
+              <strong>Submitted &amp; Verified</strong>
+            </div>
+            <div class="st-ledger__cell">
+              <span>Result Policy</span>
+              <strong>Held by Administration</strong>
+            </div>
+          </div>
 
-        function backToDashboard() {
-            if (window.opener && !window.opener.closed) {
-                window.opener.location.href = "{{ url_for('dashboard') }}";
-            }
-            window.close();
+          <div class="st-folio__actions">
+            <button type="button" class="st-btn st-btn--primary st-btn--lg" onclick="backToDashboard()">
+              <span>Return to Dashboard</span>
+              {{ ico('i-arrow-right', 'ct-ico--sm st-arrow') }}
+            </button>
+          </div>
+        </div>
+      </section>
+      {% else %}
+      <section class="st-folio" aria-label="Official examination score report">
+        <div class="st-folio__top">
+          <span class="st-folio__doc-id">Official Score Report · {{ _school.school_name }} · {{ _school.current_term }} {{ _school.academic_session }}</span>
+          {% if passed %}
+          <span class="st-pill st-pill--ok">{{ ico('i-check-circle', 'ct-ico--xs') }}Passed Examination</span>
+          {% else %}
+          <span class="st-pill st-pill--bad">{{ ico('i-alert', 'ct-ico--xs') }}Below Pass Benchmark</span>
+          {% endif %}
+        </div>
+
+        <div class="st-folio__grid">
+          <!-- Left Column: Precision Architectural Score Dial -->
+          <div class="st-folio__dial-col">
+            <div class="st-dial {% if not passed %}st-dial--fail{% endif %}" aria-label="Score {{ score }} out of {{ total }}, {{ pct }} percent">
+              <svg viewBox="0 0 204 204">
+                <circle class="st-dial__ticks" cx="102" cy="102" r="96"/>
+                <circle class="st-dial__track" cx="102" cy="102" r="86"/>
+                <circle class="st-dial__arc" id="ringFill" cx="102" cy="102" r="86" stroke-dasharray="{{ circ }}" stroke-dashoffset="{{ circ }}" data-target="{{ dash_offset }}"/>
+              </svg>
+              <div class="st-dial__center">
+                <strong class="st-dial__pct" data-ct-count data-ct-suffix="%">{{ pct }}%</strong>
+                <span class="st-dial__sub">{{ score }} / {{ total }} marks</span>
+              </div>
+            </div>
+
+            <div class="st-tier {% if not passed %}st-tier--fail{% endif %}">
+              <span>Grade <strong>{{ grade_letter }}</strong></span>
+              <span style="opacity:.35">·</span>
+              <span>{{ grade_desc }}</span>
+            </div>
+          </div>
+
+          <!-- Right Column: Academic Summary, Benchmark Bar & Transcript Ledger -->
+          <div class="st-folio__detail-col">
+            <div class="st-folio__headline">
+              <span class="st-eyebrow">{% if passed %}Examination Passed{% else %}Examination Completed{% endif %}</span>
+              <h1>{{ exam_name }}</h1>
+              <p>
+                {% if passed %}
+                Well done, {{ candidate_name }}. You exceeded the 50% passing benchmark and your final score has been recorded on your Academic Transcript.
+                {% else %}
+                Your paper has been graded and recorded, {{ candidate_name }}. Review the topics covered in this paper and consult your teacher before your next sitting.
+                {% endif %}
+              </p>
+            </div>
+
+            <!-- College Board-inspired Benchmark Progress Scale -->
+            <div class="st-bench">
+              <div class="st-bench__labels">
+                <span>0%</span>
+                <span>Pass Benchmark · 50%</span>
+                <span>100%</span>
+              </div>
+              <div class="st-bench__track">
+                <div class="st-bench__fill {% if not passed %}st-bench__fill--fail{% endif %}" id="benchFill" data-pct="{{ pct }}"></div>
+                <div class="st-bench__mark" title="50% Pass Benchmark"></div>
+              </div>
+            </div>
+
+            <!-- Clean Hairline Transcript Ledger -->
+            <div class="st-ledger">
+              <div class="st-ledger__cell">
+                <span>Candidate</span>
+                <strong>{{ candidate_name }}</strong>
+              </div>
+              <div class="st-ledger__cell">
+                <span>Username &amp; Class</span>
+                <strong class="st-mono">@{{ username }}{% if candidate_class %} · {{ candidate_class }}{% endif %}</strong>
+              </div>
+              <div class="st-ledger__cell">
+                <span>Correct Responses</span>
+                <strong class="st-mono">{{ score }} of {{ total }}</strong>
+              </div>
+              <div class="st-ledger__cell">
+                <span>Final Standing</span>
+                <strong>{{ 'Passed' if passed else 'Needs Review' }} · Grade {{ grade_letter }}</strong>
+              </div>
+            </div>
+
+            <div class="st-folio__actions">
+              <button type="button" class="st-btn st-btn--primary st-btn--lg" onclick="backToDashboard()">
+                <span>Return to Dashboard</span>
+                {{ ico('i-arrow-right', 'ct-ico--sm st-arrow') }}
+              </button>
+              <button type="button" class="st-btn st-btn--secondary st-btn--lg" onclick="window.print()">
+                {{ ico('i-doc', 'ct-ico--sm') }}
+                <span>Print Score Slip</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+      {% endif %}
+    </main>
+
+    <footer class="st-foot">
+      <span>{{ _school.school_name }} · Official Examination Record</span>
+      <span class="st-mono" style="font-size:11px;letter-spacing:0.06em">VERIFIED LOCAL SERVER</span>
+    </footer>
+  </div>
+
+  <script src="{{ url_for('static', filename='js/cognitara-web.js') }}"></script>
+  <script>
+    (function () {
+      var ring = document.getElementById("ringFill");
+      var bench = document.getElementById("benchFill");
+      requestAnimationFrame(function () {
+        if (ring) ring.style.strokeDashoffset = ring.getAttribute("data-target") || "0";
+        if (bench) bench.style.width = (bench.getAttribute("data-pct") || "0") + "%";
+      });
+
+      var timeLeft = 10;
+      var paused = false;
+      var countdownEl = document.getElementById("countdown");
+      var labelEl = document.getElementById("countdownLabel");
+      var pauseBtn = document.getElementById("pauseReturnBtn");
+
+      var timer = setInterval(function () {
+        if (paused) return;
+        timeLeft--;
+        if (countdownEl) countdownEl.textContent = String(Math.max(0, timeLeft));
+        if (timeLeft <= 0) {
+          clearInterval(timer);
+          backToDashboard();
         }
+      }, 1000);
 
-        // Confetti effect for passed exams
-        {% if passed %}
-        (function() {
-            const canvas = document.getElementById('confetti-canvas');
-            const ctx = canvas.getContext('2d');
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-            
-            const particles = [];
-            const colors = ['#10b981', '#34d399', '#6ee7b7', '#a7f3d0', '#059669'];
-            
-            for (let i = 0; i < 150; i++) {
-                particles.push({
-                    x: Math.random() * canvas.width,
-                    y: Math.random() * canvas.height - canvas.height,
-                    size: Math.random() * 6 + 2,
-                    speedY: Math.random() * 5 + 3,
-                    speedX: (Math.random() - 0.5) * 2,
-                    color: colors[Math.floor(Math.random() * colors.length)],
-                    rotation: Math.random() * 360,
-                    rotationSpeed: (Math.random() - 0.5) * 10
-                });
+      if (pauseBtn) {
+        pauseBtn.addEventListener("click", function () {
+          paused = !paused;
+          if (paused) {
+            labelEl.textContent = "Auto-return paused";
+            pauseBtn.textContent = "Resume";
+          } else {
+            labelEl.innerHTML = 'Returning in <strong id="countdown">' + timeLeft + "</strong>s";
+            countdownEl = document.getElementById("countdown");
+            pauseBtn.textContent = "Stay";
+          }
+        });
+      }
+
+      window.backToDashboard = function () {
+        if (window.opener && !window.opener.closed) {
+          window.opener.location.href = "{{ url_for('dashboard') }}";
+          window.close();
+        } else {
+          window.location.href = "{{ url_for('dashboard') }}";
+        }
+      };
+
+      {% if passed and not withheld %}
+      if (!(window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches)) {
+        var canvas = document.getElementById("confetti-canvas");
+        if (canvas && canvas.getContext) {
+          var ctx = canvas.getContext("2d");
+          var dpr = Math.min(window.devicePixelRatio || 1, 2);
+          var W = window.innerWidth, H = window.innerHeight;
+          canvas.width = W * dpr;
+          canvas.height = H * dpr;
+          ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+          /* Subtle refined architectural shimmer motes (champagne pearl & sage) */
+          var colors = ["#34D399", "#F1F3F7", "#E5B869", "#94A3B8"];
+          var parts = [];
+          for (var i = 0; i < 42; i++) {
+            parts.push({
+              x: W * (0.25 + Math.random() * 0.5),
+              y: H * 0.22 + (Math.random() - 0.5) * 80,
+              vx: (Math.random() - 0.5) * 3.4,
+              vy: -1.8 - Math.random() * 2.6,
+              s: 2.5 + Math.random() * 3.5,
+              c: colors[i % colors.length],
+              a: 0.85,
+              r: Math.random() * Math.PI * 2,
+              vr: (Math.random() - 0.5) * 0.12
+            });
+          }
+          var start = performance.now();
+          function tick(now) {
+            var elapsed = now - start;
+            ctx.clearRect(0, 0, W, H);
+            if (elapsed > 2400) return;
+            var fade = Math.max(0, 1 - Math.max(0, elapsed - 1300) / 1100);
+            for (var j = 0; j < parts.length; j++) {
+              var p = parts[j];
+              p.x += p.vx;
+              p.y += p.vy;
+              p.vy += 0.085;
+              p.vx *= 0.99;
+              p.r += p.vr;
+              ctx.save();
+              ctx.globalAlpha = p.a * fade;
+              ctx.translate(p.x, p.y);
+              ctx.rotate(p.r);
+              ctx.fillStyle = p.c;
+              ctx.fillRect(-p.s / 2, -p.s * 0.35, p.s, p.s * 0.7);
+              ctx.restore();
             }
-            
-            function animateConfetti() {
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-                
-                let anyVisible = false;
-                for (let i = 0; i < particles.length; i++) {
-                    const p = particles[i];
-                    p.y += p.speedY;
-                    p.x += p.speedX;
-                    p.rotation += p.rotationSpeed;
-                    
-                    if (p.y < canvas.height + 50) {
-                        anyVisible = true;
-                        ctx.save();
-                        ctx.translate(p.x, p.y);
-                        ctx.rotate(p.rotation * Math.PI / 180);
-                        ctx.fillStyle = p.color;
-                        ctx.fillRect(-p.size/2, -p.size/2, p.size, p.size);
-                        ctx.restore();
-                    } else {
-                        p.y = -20;
-                        p.x = Math.random() * canvas.width;
-                    }
-                }
-                
-                if (anyVisible) {
-                    requestAnimationFrame(animateConfetti);
-                }
-            }
-            
-            animateConfetti();
-            
-            // Stop confetti after 5 seconds
-            setTimeout(() => {
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-            }, 5000);
-        })();
-        {% endif %}
-    </script>
+            requestAnimationFrame(tick);
+          }
+          requestAnimationFrame(tick);
+        }
+      }
+      {% endif %}
+    })();
+  </script>
 </body>
 </html>

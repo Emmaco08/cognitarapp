@@ -1,540 +1,269 @@
+{%- from '_ct_shell.html' import ico, ct_boot_script -%}
+{%- set ICONS = url_for('static', filename='icons/cognitara-icons.svg') -%}
 <!DOCTYPE html>
-<html>
+<html lang="en" data-theme="dark">
 <head>
-    <title>Student Registration | COGNITARA EXAM SYSTEM</title>
-    <link href="{{ url_for('static', filename='vendor/bootstrap/css/bootstrap.min.css') }}" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='vendor/fontawesome/css/all.min.css') }}">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { background: linear-gradient(135deg, #f5f7fa 0%, #e8edf5 100%); font-family: 'Segoe UI', sans-serif; min-height: 100vh; padding: 40px 20px; position: relative; }
-        
-        .edu-icon { position: absolute; color: rgba(26, 86, 219, 0.06); pointer-events: none; z-index: 0; animation: floatIcon 20s infinite ease-in-out; }
-        @keyframes floatIcon { 0% { transform: translate(0,0) rotate(0deg); opacity:0; } 10% { opacity:0.08; } 90% { opacity:0.08; } 100% { transform: translate(100px,-100px) rotate(360deg); opacity:0; } }
-        .edu-icon:nth-child(1) { top:10%; left:5%; animation-duration:18s; font-size:50px; }
-        .edu-icon:nth-child(2) { top:70%; left:15%; animation-duration:22s; font-size:40px; animation-delay:2s; }
-        .edu-icon:nth-child(3) { top:30%; left:85%; animation-duration:20s; font-size:55px; animation-delay:4s; }
-
-        .register-container { max-width: 550px; margin: 0 auto; position: relative; z-index: 10; }
-        
-        .register-card { background: white; border-radius: 32px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.15); overflow: hidden; }
-        .card-header { background: linear-gradient(135deg, #1a56db 0%, #0e3b9e 100%); padding: 35px 30px; text-align: center; color: white; }
-        .logo-icon { width: 70px; height: 70px; background: rgba(255,255,255,0.15); border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 20px; animation: pulse 2s infinite; }
-        @keyframes pulse { 0%,100% { transform:scale(1); } 50% { transform:scale(1.05); } }
-        .logo-icon i { font-size: 35px; color: white; }
-        .card-header h3 { font-size: 26px; font-weight: 700; margin-bottom: 8px; }
-        .card-header p { font-size: 14px; opacity: 0.9; margin: 0; }
-
-        .card-body { padding: 35px 30px; }
-        .form-group { margin-bottom: 22px; }
-        .input-group-custom { position: relative; }
-        .input-group-custom i.input-icon { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 16px; z-index: 1; }
-        .form-control-custom { width: 100%; padding: 13px 15px 13px 45px; border: 2px solid #e2e8f0; border-radius: 14px; font-size: 14px; background: #f8fafc; }
-        .form-control-custom:focus { outline: none; border-color: #1a56db; background: white; box-shadow: 0 0 0 3px rgba(26,86,219,0.1); }
-        .form-control-custom.valid { border-color: #10b981; background: #f0fdf4; }
-        .form-control-custom.invalid { border-color: #ef4444; background: #fef2f2; }
-        label { font-weight: 600; color: #1e293b; margin-bottom: 8px; display: block; font-size: 13px; }
-        label i { margin-right: 8px; color: #1a56db; }
-
-        .password-box { position: relative; }
-        .password-box input { padding-left: 45px; padding-right: 45px; }
-        .toggle-password { position: absolute; right: 15px; top: 50%; transform: translateY(-50%); cursor: pointer; color: #94a3b8; }
-        .not { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 16px; z-index: 1; }
-
-        .validation-message { font-size: 12px; margin-top: 6px; display: flex; align-items: center; gap: 6px; }
-        .validation-message.valid { color: #10b981; }
-        .validation-message.invalid { color: #ef4444; }
-
-        .password-requirements { background: #f8fafc; border-radius: 12px; padding: 12px 15px; margin-top: 10px; border: 1px solid #e2e8f0; }
-        .password-requirements p { font-size: 12px; font-weight: 600; color: #1e293b; margin-bottom: 8px; }
-        .requirement { font-size: 11px; color: #64748b; margin-bottom: 5px; display: flex; align-items: center; gap: 8px; }
-        .requirement i { width: 14px; font-size: 10px; }
-        .requirement.valid { color: #10b981; }
-        .requirement.invalid { color: #ef4444; }
-
-        .specialisation-info { background: #e0e7ff; border-radius: 12px; padding: 12px 15px; margin-top: 10px; font-size: 13px; color: #1a56db; }
-        .specialisation-info i { margin-right: 8px; }
-
-        .image-preview { max-width: 100px; max-height: 100px; margin-top: 12px; border: 2px solid #1a56db; border-radius: 12px; padding: 4px; display: none; object-fit: cover; }
-        .image-status { font-size: 12px; margin-top: 8px; padding: 8px 12px; border-radius: 10px; display: none; }
-        .image-status.error { color: #991b1b; background-color: #fee2e2; border-left: 3px solid #ef4444; }
-        .image-status.success { color: #065f46; background-color: #d1fae5; border-left: 3px solid #10b981; }
-
-        .btn-register { width: 100%; padding: 14px; background: linear-gradient(135deg, #1a56db 0%, #0e3b9e 100%); border: none; border-radius: 14px; color: white; font-size: 16px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 10px; }
-        .btn-register:hover { transform: translateY(-2px); box-shadow: 0 10px 20px -5px rgba(26,86,219,0.4); }
-        .btn-register:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
-
-        .login-link { text-align: center; margin-top: 25px; padding-top: 20px; border-top: 1px solid #e2e8f0; }
-        .login-link a { color: #1a56db; text-decoration: none; font-weight: 600; }
-        .login-link a:hover { color: #0e3b9e; text-decoration: underline; }
-
-        .alert-custom { background: #fee2e2; border-left: 4px solid #ef4444; color: #991b1b; padding: 12px 18px; border-radius: 12px; margin-bottom: 25px; display: flex; align-items: center; gap: 10px; font-size: 14px; }
-
-        .username-status { font-size: 12px; margin-top: 5px; }
-        .text-danger { color: #dc2626 !important; }
-        .text-success { color: #10b981 !important; }
-
-        input[type="file"] { padding: 10px; background: #f8fafc; border: 2px solid #e2e8f0; border-radius: 14px; cursor: pointer; width: 100%; }
-        input[type="file"]:hover { border-color: #1a56db; }
-
-        @media (max-width: 576px) {
-            .card-header { padding: 25px 20px; }
-            .card-body { padding: 25px 20px; }
-            .card-header h3 { font-size: 22px; }
-        }
-    </style>
-    <!-- CSRF Protection Shield -->
-    <meta name="csrf-token" content="{{ csrf_token() }}">
-    <script>
-    window.CSRF_TOKEN = "{{ csrf_token() }}";
-    (function() {
-        if (window.fetch) {
-            const _origFetch = window.fetch;
-            window.fetch = function(url, options) {
-                options = options || {};
-                const method = (options.method || 'GET').toUpperCase();
-                if (!['GET', 'HEAD', 'OPTIONS', 'TRACE'].includes(method)) {
-                    options.headers = options.headers || {};
-                    const token = window.CSRF_TOKEN || (document.querySelector('meta[name="csrf-token"]') && document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
-                    if (token) {
-                        if (typeof Headers !== 'undefined' && options.headers instanceof Headers) {
-                            if (!options.headers.has('X-CSRFToken')) options.headers.set('X-CSRFToken', token);
-                        } else if (Array.isArray(options.headers)) {
-                            options.headers.push(['X-CSRFToken', token]);
-                        } else {
-                            if (!options.headers['X-CSRFToken']) options.headers['X-CSRFToken'] = token;
-                        }
-                    }
-                }
-                return _origFetch(url, options);
-            };
-        }
-        if (window.$ && $.ajaxSetup) {
-            $.ajaxSetup({
-                beforeSend: function(xhr, settings) {
-                    if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type)) {
-                        xhr.setRequestHeader("X-CSRFToken", window.CSRF_TOKEN);
-                    }
-                }
-            });
-        }
-        if (navigator.sendBeacon) {
-            const _origBeacon = navigator.sendBeacon.bind(navigator);
-            navigator.sendBeacon = function(url, data) {
-                if (data instanceof FormData) {
-                    if (!data.has('csrf_token')) data.append('csrf_token', window.CSRF_TOKEN);
-                } else if (typeof data === 'string') {
-                    try {
-                        const obj = JSON.parse(data);
-                        if (typeof obj === 'object' && obj !== null && !obj.csrf_token) {
-                            obj.csrf_token = window.CSRF_TOKEN;
-                            data = JSON.stringify(obj);
-                        }
-                    } catch(e) {}
-                }
-                return _origBeacon(url, data);
-            };
-        }
-        document.addEventListener('DOMContentLoaded', function() {
-            document.querySelectorAll('form[method="POST"], form[method="post"]').forEach(function(form) {
-                if (!form.querySelector('input[name="csrf_token"]')) {
-                    var input = document.createElement('input');
-                    input.type = 'hidden';
-                    input.name = 'csrf_token';
-                    input.value = window.CSRF_TOKEN;
-                    form.appendChild(input);
-                }
-            });
-        });
-    })();
-    </script>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+  <meta name="color-scheme" content="dark light">
+  <meta name="description" content="Create your student account for {{ school_branding.school_name if school_branding is defined else 'CogniTara' }}.">
+  <title>Student Registration — {{ school_branding.school_name if school_branding is defined else 'CogniTara' }}</title>
+  <link rel="icon" href="{{ url_for('static', filename='images/cognitara-favicon.ico') }}">
+  <link rel="preload" href="{{ url_for('static', filename='fonts/ui/PlusJakartaSans-Variable.woff2') }}" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/cognitara-web.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/cognitara-editorial-auth.css') }}">
+  {{ ct_boot_script() }}
 </head>
-<body>
-    <div class="edu-icon"><i class="fas fa-graduation-cap"></i></div>
-    <div class="edu-icon"><i class="fas fa-book"></i></div>
-    <div class="edu-icon"><i class="fas fa-pencil-alt"></i></div>
+<body class="ed-body">
+  <div class="ed-grain" aria-hidden="true"></div>
 
-    <div class="register-container">
-        <div class="register-card">
-            <div class="card-header">
-                <div class="logo-icon"><i class="fas fa-user-graduate"></i></div>
-                <h3>Create Account</h3>
-                <p>Join our learning community today</p>
+  <div class="ed-auth">
+    <!-- Framed Editorial Study Photograph -->
+    <aside class="ed-gallery" aria-label="Student Registration">
+      <img class="ed-gallery__img" src="{{ url_for('static', filename='images/auth-editorial-register.jpg') }}" alt="">
+      <div class="ed-gallery__scrim" aria-hidden="true"></div>
+
+      <div class="ed-gallery__top">
+        <a class="ed-gallery__brand" href="/" aria-label="CogniTara Home">
+          <span class="ed-brand__mark" style="width:26px;height:26px;border-radius:7px"><svg viewBox="0 0 200 200"><use href="{{ ICONS }}#ct-mark"/></svg></span>
+          <strong>CogniTara</strong>
+        </a>
+        <span class="ed-gallery__tag">Student Enrollment</span>
+      </div>
+
+      <div class="ed-gallery__caption">
+        <span class="ed-gallery__caption-eyebrow">{{ school_branding.school_name if school_branding is defined else 'CogniTara School' }}</span>
+        <h2>One verified profile for every exam this session.</h2>
+        <p>Submit your details and passport photograph once. After your administrator approves your profile, you can sit papers and review released results.</p>
+      </div>
+    </aside>
+
+    <!-- Elevated Registration Surface -->
+    <main class="ed-pane" style="overflow-y:auto">
+      <div class="ed-pane__top">
+        <a class="ed-back" href="/">{{ ico('i-arrow-left', 'ct-ico--sm') }}<span>Welcome</span></a>
+        <button type="button" class="ed-icon-toggle" data-ct-theme-toggle aria-label="Switch theme" title="Switch light or dark theme">
+          <span class="ct-theme-ico">
+            {{ ico('i-moon', 'ct-theme-ico__moon') }}
+            {{ ico('i-sun', 'ct-theme-ico__sun') }}
+          </span>
+        </button>
+      </div>
+
+      <div class="ed-pane__center">
+        <section class="ed-form-card ed-form-card--wide" aria-label="Student registration">
+          <div class="ed-school-row">
+            <div class="ed-crest">{{ ico('i-grad') }}</div>
+            <div style="min-width:0">
+              <h1>Create student account</h1>
+              <p>{{ school_branding.school_name if school_branding is defined else 'CogniTara' }} · Accounts activate after admin approval</p>
             </div>
-            
-            <div class="card-body">
-                {% if error %}
-                <div class="alert-custom">
-                    <i class="fas fa-exclamation-triangle"></i>
-                    <span>{{ error }}</span>
+          </div>
+
+          {% if error %}
+          <div class="ed-alert" role="alert">
+            {{ ico('i-alert', 'ct-ico--sm') }}
+            <span>{{ error }}</span>
+          </div>
+          {% endif %}
+
+          <form method="POST" enctype="multipart/form-data" onsubmit="return validateForm()" class="ed-fields">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+            <div class="ed-row-2">
+              <div class="ed-field">
+                <label class="ed-label" for="full_name">Full name</label>
+                <div class="ed-input-box">
+                  {{ ico('i-user') }}
+                  <input type="text" id="full_name" name="full_name" class="ed-input" placeholder="Ada Okafor" required>
                 </div>
-                {% endif %}
-
-                <form method="POST" enctype="multipart/form-data" onsubmit="return validateForm()">
-    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                    <!-- Full Name -->
-                    <div class="form-group">
-                        <label><i class="fas fa-user"></i> Full Name</label>
-                        <div class="input-group-custom">
-                            <i class="fas fa-user input-icon"></i>
-                            <input type="text" name="full_name" class="form-control-custom" placeholder="Enter your full name" required>
-                        </div>
-                    </div>
-                    
-                    <!-- Username -->
-                    <div class="form-group">
-                        <label><i class="fas fa-id-card"></i> Username</label>
-                        <div class="input-group-custom">
-                            <i class="fas fa-at input-icon"></i>
-                            <input type="text" name="username" id="username" class="form-control-custom" placeholder="Choose a username" required>
-                        </div>
-                        <div id="usernameError" class="username-status" style="display: none;"></div>
-                    </div>
-
-                    <!-- Email -->
-                    <div class="form-group">
-                        <label><i class="fas fa-envelope"></i> Email Address</label>
-                        <div class="input-group-custom">
-                            <i class="fas fa-envelope input-icon"></i>
-                            <input type="email" name="email" class="form-control-custom" placeholder="your@email.com" required>
-                        </div>
-                    </div>
-
-                    <!-- Password -->
-                    <div class="form-group">
-                        <label><i class="fas fa-lock"></i> Password</label>
-                        <div class="password-box">
-                            <i class="fas fa-lock input-icon not"></i>
-                            <input type="password" name="password" class="form-control-custom" id="password" placeholder="Create a password" required onkeyup="validatePasswordLive()">
-                            <i class="fa-solid fa-eye toggle-password"></i>
-                        </div>
-                        <div id="passwordMessage" class="validation-message"></div>
-                        
-                        <div class="password-requirements" id="passwordRequirements">
-                            <p><i class="fas fa-shield-alt"></i> Password must contain:</p>
-                            <div class="requirement" id="reqLength"><i class="fas fa-circle"></i> At least 6 characters</div>
-                            <div class="requirement" id="reqUppercase"><i class="fas fa-circle"></i> At least 1 uppercase letter</div>
-                            <div class="requirement" id="reqLowercase"><i class="fas fa-circle"></i> At least 1 lowercase letter</div>
-                            <div class="requirement" id="reqNumber"><i class="fas fa-circle"></i> At least 1 number</div>
-                        </div>
-                    </div>
-
-                    <!-- Confirm Password -->
-                    <div class="form-group">
-                        <label><i class="fas fa-check-circle"></i> Confirm Password</label>
-                        <div class="password-box">
-                            <i class="fas fa-check-circle input-icon not"></i>
-                            <input type="password" name="confirm_password" class="form-control-custom" id="confirm_password" placeholder="Confirm your password" required onkeyup="validateConfirmPasswordLive()">
-                            <i class="fa-solid fa-eye toggle-password"></i>
-                        </div>
-                        <div id="confirmMessage" class="validation-message"></div>
-                    </div>
-
-                    <!-- Class -->
-                    <div class="form-group">
-                        <label><i class="fas fa-graduation-cap"></i> Class</label>
-                        <div class="input-group-custom">
-                            <i class="fas fa-school input-icon"></i>
-                            <select name="class" id="classSelect" class="form-control-custom" style="padding-left:45px;" required onchange="updateSpecialisationInfo()">
-                                <option value="">-- Select Class --</option>
-                                <option value="Grade 1">Grade 1</option>
-                                <option value="Grade 2">Grade 2</option>
-                                <option value="Grade 3">Grade 3</option>
-                                <option value="Grade 4">Grade 4</option>
-                                <option value="Grade 5">Grade 5</option>
-                                <option value="Grade 6">Grade 6</option>
-                                <option value="Grade 7">Grade 7</option>
-                                <option value="Grade 8">Grade 8</option>
-                                <option value="Grade 9">Grade 9</option>
-                                <option value="Grade 10">Grade 10</option>
-                                <option value="Grade 11">Grade 11</option>
-                                <option value="Grade 12">Grade 12</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <!-- Specialisation -->
-                    <div class="form-group" id="specialisationGroup" style="display: none;">
-                        <label><i class="fas fa-flask"></i> Specialisation</label>
-                        <div class="input-group-custom">
-                            <i class="fas fa-tag input-icon"></i>
-                            <select name="specialisation" id="specialisationSelect" class="form-control-custom" style="padding-left:45px;">
-                                <option value="General">General</option>
-                                <option value="Science">Science</option>
-                                <option value="Art">Art</option>
-                                <option value="Commercial">Commercial</option>
-                            </select>
-                        </div>
-                        <div class="specialisation-info" id="specialisationInfo">
-                            <i class="fas fa-info-circle"></i>
-                            <span id="specialisationMessage">Select a specialisation for senior classes (Grade 10-12)</span>
-                        </div>
-                    </div>
-
-                    <!-- Photo Upload -->
-                    <div class="form-group">
-                        <label><i class="fas fa-camera"></i> Profile Photo</label>
-                        <input type="file" name="photo" id="photo" class="form-control" accept="image/*" required onchange="previewAndValidate(this)">
-                        <img id="preview" class="image-preview" alt="Preview">
-                        <div id="imageStatus" class="image-status"></div>
-                        <small class="text-muted" style="display: block; margin-top: 8px;">
-                            <i class="fas fa-info-circle"></i> Original resolution, full quality (no size limit)
-                        </small>
-                    </div>
-
-                    <button type="submit" class="btn-register" id="submitBtn">
-                        <i class="fas fa-user-plus"></i> Create Account
-                    </button>
-                </form>
-
-                <div class="login-link">
-                    <i class="fas fa-sign-in-alt"></i>
-                    <a href="/login">Already have an account? Login</a>
+              </div>
+              <div class="ed-field">
+                <label class="ed-label" for="username">Username</label>
+                <div class="ed-input-box">
+                  {{ ico('i-grad') }}
+                  <input type="text" id="username" name="username" class="ed-input" placeholder="ada.okafor" required autocomplete="username">
                 </div>
+                <div id="usernameError" class="ed-status" style="display:none"></div>
+              </div>
             </div>
-        </div>
-    </div>
 
-    <script>
-        let imageValid = true;
-        let isPasswordValid = false;
-        let isConfirmValid = false;
-        let isUsernameValid = false;
-        
-        function updateSpecialisationInfo() {
-            const classSelect = document.getElementById('classSelect');
-            const specialisationGroup = document.getElementById('specialisationGroup');
-            const specialisationMessage = document.getElementById('specialisationMessage');
-            const selectedClass = classSelect.value;
-            
-            if (selectedClass.includes('Grade 10') || 
-                selectedClass.includes('Grade 11') || 
-                selectedClass.includes('Grade 12')) {
-                specialisationGroup.style.display = 'block';
-                specialisationMessage.textContent = 'This student is in a senior class. Select their specialisation track.';
-            } else {
-                specialisationGroup.style.display = 'none';
-                document.getElementById('specialisationSelect').value = 'General';
-            }
-        }
-        
-        function validatePasswordLive() {
-            const password = document.getElementById('password').value;
-            const hasMinLength = password.length >= 6;
-            const hasUppercase = /[A-Z]/.test(password);
-            const hasLowercase = /[a-z]/.test(password);
-            const hasNumber = /[0-9]/.test(password);
-            
-            updateRequirement('reqLength', hasMinLength);
-            updateRequirement('reqUppercase', hasUppercase);
-            updateRequirement('reqLowercase', hasLowercase);
-            updateRequirement('reqNumber', hasNumber);
-            
-            isPasswordValid = hasMinLength && hasUppercase && hasLowercase && hasNumber;
-            
-            const passwordInput = document.getElementById('password');
-            const passwordMessage = document.getElementById('passwordMessage');
-            
-            if (password.length > 0) {
-                if (isPasswordValid) {
-                    passwordInput.classList.add('valid');
-                    passwordInput.classList.remove('invalid');
-                    passwordMessage.innerHTML = '<i class="fas fa-check-circle"></i> Strong password!';
-                    passwordMessage.className = 'validation-message valid';
-                } else {
-                    passwordInput.classList.add('invalid');
-                    passwordInput.classList.remove('valid');
-                    passwordMessage.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Please meet all requirements';
-                    passwordMessage.className = 'validation-message invalid';
-                }
-            } else {
-                passwordInput.classList.remove('valid', 'invalid');
-                passwordMessage.innerHTML = '';
-            }
-            
-            validateConfirmPasswordLive();
-            updateSubmitButton();
-        }
-        
-        function updateRequirement(elementId, isValid) {
-            const element = document.getElementById(elementId);
-            if (isValid) {
-                element.classList.add('valid');
-                element.classList.remove('invalid');
-                element.innerHTML = '<i class="fas fa-check-circle"></i> ' + element.innerHTML.split('</i>')[1];
-            } else {
-                element.classList.add('invalid');
-                element.classList.remove('valid');
-                element.innerHTML = '<i class="fas fa-times-circle"></i> ' + element.innerHTML.split('</i>')[1];
-            }
-        }
-        
-        function validateConfirmPasswordLive() {
-            const password = document.getElementById('password').value;
-            const confirmPassword = document.getElementById('confirm_password').value;
-            const confirmInput = document.getElementById('confirm_password');
-            const confirmMessage = document.getElementById('confirmMessage');
-            
-            if (confirmPassword.length > 0) {
-                if (password === confirmPassword && isPasswordValid) {
-                    confirmInput.classList.add('valid');
-                    confirmInput.classList.remove('invalid');
-                    confirmMessage.innerHTML = '<i class="fas fa-check-circle"></i> Passwords match!';
-                    confirmMessage.className = 'validation-message valid';
-                    isConfirmValid = true;
-                } else if (password !== confirmPassword) {
-                    confirmInput.classList.add('invalid');
-                    confirmInput.classList.remove('valid');
-                    confirmMessage.innerHTML = '<i class="fas fa-times-circle"></i> Passwords do not match!';
-                    confirmMessage.className = 'validation-message invalid';
-                    isConfirmValid = false;
-                } else {
-                    confirmInput.classList.add('invalid');
-                    confirmInput.classList.remove('valid');
-                    confirmMessage.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Please meet password requirements first';
-                    confirmMessage.className = 'validation-message invalid';
-                    isConfirmValid = false;
-                }
-            } else {
-                confirmInput.classList.remove('valid', 'invalid');
-                confirmMessage.innerHTML = '';
-                isConfirmValid = false;
-            }
-            
-            updateSubmitButton();
-        }
-        
-        function updateSubmitButton() {
-            const submitBtn = document.getElementById('submitBtn');
-            if (isPasswordValid && isConfirmValid && imageValid && isUsernameValid) {
-                submitBtn.disabled = false;
-            } else {
-                submitBtn.disabled = true;
-            }
-        }
-        
-        function previewAndValidate(input) {
-            const file = input.files[0];
-            const preview = document.getElementById('preview');
-            const statusDiv = document.getElementById('imageStatus');
-            
-            if (!file) {
-                preview.style.display = 'none';
-                statusDiv.style.display = 'none';
-                imageValid = true;
-                updateSubmitButton();
-                return;
-            }
-            
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                preview.src = e.target.result;
-                preview.style.display = 'block';
-            };
-            reader.readAsDataURL(file);
-            
-            if (!file.type.startsWith('image/')) {
-                statusDiv.className = 'image-status error';
-                statusDiv.innerHTML = '<i class="fas fa-times-circle"></i> Only image files are allowed!';
-                statusDiv.style.display = 'block';
-                imageValid = false;
-                input.value = '';
-                preview.style.display = 'none';
-                updateSubmitButton();
-                return;
-            }
-            
-            const sizeKB = file.size / 1024;
-            
-            imageValid = true;
-            statusDiv.className = 'image-status success';
-            statusDiv.innerHTML = `<i class="fas fa-check-circle"></i> Image selected (${sizeKB.toFixed(1)}KB) - Full quality preserved`;
-            statusDiv.style.display = 'block';
-            statusDiv.style.display = 'block';
-            imageValid = true;
-            updateSubmitButton();
-        }
-        
-        function validateForm() {
-            if (!isPasswordValid) {
-                alert('<i class="fas fa-times-circle"></i> Please create a valid password.');
-                return false;
-            }
-            if (!isConfirmValid) {
-                alert('<i class="fas fa-times-circle"></i> Passwords do not match!');
-                return false;
-            }
-            if (!imageValid) {
-                alert('<i class="fas fa-times-circle"></i> Please fix image issues before submitting.');
-                return false;
-            }
-            if (!isUsernameValid) {
-                alert('<i class="fas fa-times-circle"></i> Please choose a valid username.');
-                return false;
-            }
-            return true;
-        }
-        
-        // Username availability check
-        const usernameInput = document.getElementById('username');
-        const usernameError = document.getElementById('usernameError');
-        let checkTimeout;
-        
-        usernameInput.addEventListener('input', function() {
-            clearTimeout(checkTimeout);
-            const username = this.value.trim();
-            
-            if (username.length < 3) {
-                usernameError.style.display = 'none';
-                isUsernameValid = false;
-                updateSubmitButton();
-                return;
-            }
-            
-            usernameError.style.display = 'block';
-            usernameError.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Checking availability...';
-            usernameError.className = 'username-status text-muted';
-            
-            checkTimeout = setTimeout(() => {
-                fetch(`/check_student_username?username=${encodeURIComponent(username)}`)
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.exists) {
-                            usernameError.innerHTML = '<i class="fas fa-times-circle"></i> Username already exists!';
-                            usernameError.className = 'username-status text-danger';
-                            isUsernameValid = false;
-                            usernameInput.classList.add('invalid');
-                            usernameInput.classList.remove('valid');
-                        } else {
-                            usernameError.innerHTML = '<i class="fas fa-check-circle"></i> Username available';
-                            usernameError.className = 'username-status text-success';
-                            isUsernameValid = true;
-                            usernameInput.classList.add('valid');
-                            usernameInput.classList.remove('invalid');
-                        }
-                        updateSubmitButton();
-                    });
-            }, 500);
-        });
+            <div class="ed-field">
+              <label class="ed-label" for="email">Email address</label>
+              <div class="ed-input-box">
+                {{ ico('i-mail') }}
+                <input type="email" id="email" name="email" class="ed-input" placeholder="student@school.edu" required>
+              </div>
+            </div>
 
-        // Password toggle
-        document.querySelectorAll(".toggle-password").forEach(toggle => {
-            toggle.addEventListener("click", function() {
-                const input = this.previousElementSibling;
-                if (input.type === "password") {
-                    input.type = "text";
-                    this.classList.remove("fa-eye");
-                    this.classList.add("fa-eye-slash");
-                } else {
-                    input.type = "password";
-                    this.classList.remove("fa-eye-slash");
-                    this.classList.add("fa-eye");
-                }
-            });
+            <div class="ed-row-2">
+              <div class="ed-field">
+                <label class="ed-label" for="password">Password</label>
+                <div class="ed-input-box">
+                  {{ ico('i-lock') }}
+                  <input type="password" name="password" id="password" class="ed-input ed-input--trail" placeholder="Create password" required oninput="validatePasswordLive()">
+                  <button type="button" class="ed-eye toggle-password" data-target="password" aria-label="Toggle password">{{ ico('i-eye', 'ct-ico--sm') }}</button>
+                </div>
+                <div id="passwordMessage" class="ed-status"></div>
+              </div>
+              <div class="ed-field">
+                <label class="ed-label" for="confirm_password">Confirm password</label>
+                <div class="ed-input-box">
+                  {{ ico('i-check-circle') }}
+                  <input type="password" name="confirm_password" id="confirm_password" class="ed-input ed-input--trail" placeholder="Repeat password" required oninput="validateConfirmPasswordLive()">
+                  <button type="button" class="ed-eye toggle-password" data-target="confirm_password" aria-label="Toggle confirm password">{{ ico('i-eye', 'ct-ico--sm') }}</button>
+                </div>
+                <div id="confirmMessage" class="ed-status"></div>
+              </div>
+            </div>
+
+            <div class="ed-reqs" id="passwordRequirements">
+              <span class="ed-req" id="reqLength">6+ chars</span>
+              <span class="ed-req" id="reqUppercase">Uppercase</span>
+              <span class="ed-req" id="reqLowercase">Lowercase</span>
+              <span class="ed-req" id="reqNumber">Number</span>
+            </div>
+
+            <div class="ed-row-2">
+              <div class="ed-field">
+                <label class="ed-label" for="classSelect">Class</label>
+                <select name="class" id="classSelect" class="ed-select" required onchange="updateSpecialisationInfo()">
+                  <option value="">Select Class</option>
+                  {% for g in range(1, 13) %}
+                  <option value="Grade {{ g }}">Grade {{ g }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+              <div class="ed-field" id="specialisationGroup" style="display:none">
+                <label class="ed-label" for="specialisationSelect">Specialisation</label>
+                <select name="specialisation" id="specialisationSelect" class="ed-select">
+                  <option value="General">General</option>
+                  <option value="Science">Science</option>
+                  <option value="Art">Art</option>
+                  <option value="Commercial">Commercial</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="ed-field">
+              <label class="ed-label" for="photo">Passport photo</label>
+              <label class="ed-drop">
+                <input type="file" name="photo" id="photo" accept="image/*" required onchange="previewAndValidate(this)">
+                <span class="ed-drop__avatar">
+                  <span id="dropIcon">{{ ico('i-upload', 'ct-ico--sm') }}</span>
+                  <img id="preview" alt="Preview">
+                </span>
+                <span class="ed-drop__txt">
+                  <strong>Upload student passport photo</strong>
+                  <span id="imageStatus">PNG, JPG, or WEBP · full quality preserved</span>
+                </span>
+              </label>
+            </div>
+
+            <button type="submit" class="ed-submit" id="submitBtn">
+              <span>Create account</span>
+              {{ ico('i-arrow-right', 'ct-ico--sm') }}
+            </button>
+          </form>
+
+          <div class="ed-card-links" style="justify-content:center">
+            <a href="/login">{{ ico('i-login', 'ct-ico--sm') }}<span>Already have an account? Sign in</span></a>
+          </div>
+        </section>
+      </div>
+
+      <footer class="ed-pane__foot">
+        <span>CogniTara Offline Examination Server</span>
+        <span>Local school network</span>
+      </footer>
+    </main>
+  </div>
+
+  <script src="{{ url_for('static', filename='js/cognitara-web.js') }}"></script>
+  <script>
+    var imageValid = true, isPasswordValid = false, isConfirmValid = false, isUsernameValid = false, usernameTaken = false;
+    function updateSpecialisationInfo() {
+      var sel = document.getElementById("classSelect").value;
+      var grp = document.getElementById("specialisationGroup");
+      if (sel.indexOf("Grade 10") > -1 || sel.indexOf("Grade 11") > -1 || sel.indexOf("Grade 12") > -1) grp.style.display = "grid";
+      else { grp.style.display = "none"; document.getElementById("specialisationSelect").value = "General"; }
+    }
+    function updateReq(id, ok, text) {
+      var el = document.getElementById(id);
+      if (!el) return;
+      el.className = "ed-req " + (ok ? "valid" : "invalid");
+      el.textContent = (ok ? "✓ " : "") + text;
+    }
+    function validatePasswordLive() {
+      var pw = document.getElementById("password").value;
+      var okLen = pw.length >= 6, okUp = /[A-Z]/.test(pw), okLo = /[a-z]/.test(pw), okNum = /[0-9]/.test(pw);
+      updateReq("reqLength", okLen, "6+ chars");
+      updateReq("reqUppercase", okUp, "Uppercase");
+      updateReq("reqLowercase", okLo, "Lowercase");
+      updateReq("reqNumber", okNum, "Number");
+      isPasswordValid = okLen && okUp && okLo && okNum;
+      var msg = document.getElementById("passwordMessage");
+      if (pw.length) { msg.textContent = isPasswordValid ? "Strong password" : "Complete all 4 requirements"; msg.className = "ed-status " + (isPasswordValid ? "valid" : "invalid"); }
+      else msg.textContent = "";
+      validateConfirmPasswordLive();
+      updateSubmitButton();
+    }
+    function validateConfirmPasswordLive() {
+      var pw = document.getElementById("password").value, cf = document.getElementById("confirm_password").value, msg = document.getElementById("confirmMessage");
+      if (cf.length) {
+        isConfirmValid = (pw === cf && isPasswordValid);
+        msg.textContent = pw !== cf ? "Passwords do not match" : (isPasswordValid ? "Passwords match" : "Meet password rules first");
+        msg.className = "ed-status " + (isConfirmValid ? "valid" : "invalid");
+      } else { isConfirmValid = false; msg.textContent = ""; }
+      updateSubmitButton();
+    }
+    function updateSubmitButton() {
+      document.getElementById("submitBtn").disabled = Boolean(usernameTaken || !imageValid);
+    }
+    function previewAndValidate(input) {
+      var file = input.files && input.files[0], preview = document.getElementById("preview"), dropIcon = document.getElementById("dropIcon"), status = document.getElementById("imageStatus");
+      if (!file) { preview.style.display = "none"; if (dropIcon) dropIcon.style.display = ""; imageValid = true; updateSubmitButton(); return; }
+      if (!file.type.startsWith("image/")) { status.textContent = "Only image files are allowed"; imageValid = false; input.value = ""; preview.style.display = "none"; if (dropIcon) dropIcon.style.display = ""; updateSubmitButton(); return; }
+      var r = new FileReader(); r.onload = function (e) { preview.src = e.target.result; preview.style.display = "block"; if (dropIcon) dropIcon.style.display = "none"; }; r.readAsDataURL(file);
+      imageValid = true; status.textContent = file.name + " (" + (file.size / 1024).toFixed(1) + " KB)"; updateSubmitButton();
+    }
+    function validateForm() {
+      if (!isUsernameValid) {
+        var uEl = document.getElementById("username"), err = document.getElementById("usernameError");
+        if (err) { err.style.display = "block"; err.className = "ed-status invalid"; err.textContent = usernameTaken ? "Username already exists" : "Enter an available username (3+ chars)"; }
+        if (uEl) uEl.focus();
+        return false;
+      }
+      if (!isPasswordValid) {
+        validatePasswordLive();
+        document.getElementById("password").focus();
+        return false;
+      }
+      if (!isConfirmValid) {
+        validateConfirmPasswordLive();
+        document.getElementById("confirm_password").focus();
+        return false;
+      }
+      return imageValid;
+    }
+    var uTimer;
+    document.getElementById("username").addEventListener("input", function () {
+      clearTimeout(uTimer);
+      var u = this.value.trim(), err = document.getElementById("usernameError");
+      usernameTaken = false;
+      if (u.length < 3) { err.style.display = "none"; isUsernameValid = false; updateSubmitButton(); return; }
+      err.style.display = "block"; err.className = "ed-status"; err.textContent = "Checking availability…";
+      uTimer = setTimeout(function () {
+        fetch("/check_student_username?username=" + encodeURIComponent(u)).then(function (r) { return r.json(); }).then(function (d) {
+          usernameTaken = Boolean(d.exists);
+          isUsernameValid = !d.exists; err.textContent = d.exists ? "Username already exists" : "Username available"; err.className = "ed-status " + (d.exists ? "invalid" : "valid"); updateSubmitButton();
         });
-        
-        // Initialize
-        document.getElementById('submitBtn').disabled = true;
-    </script>
+      }, 350);
+    });
+    document.querySelectorAll(".toggle-password").forEach(function (btn) {
+      btn.addEventListener("click", function () { var inp = document.getElementById(btn.getAttribute("data-target")); if (inp) inp.type = inp.type === "password" ? "text" : "password"; });
+    });
+  </script>
 </body>
 </html>

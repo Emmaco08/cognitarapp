@@ -1,5 +1,6 @@
+{%- from '_ct_shell.html' import ico, ct_boot_script, admin_shell_start, teacher_shell_start, student_topbar, shell_end -%}
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -9,13 +10,13 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='vendor/sweetalert2/sweetalert2.min.css') }}">
     <style>
         :root {
-            --primary: #4F46E5;
+            --primary: var(--ct-primary);
             --primary-dark: #3730A3;
             --bg-canvas: #F8FAFC;
-            --card-bg: #FFFFFF;
+            --card-bg: var(--ct-surface);
             --text-main: #0F172A;
-            --text-muted: #64748B;
-            --border-color: #E2E8F0;
+            --text-muted: var(--ct-ink-3);
+            --border-color: var(--ct-line-2);
         }
 
         body {
@@ -61,7 +62,7 @@
         .form-label-custom {
             font-size: 13px;
             font-weight: 600;
-            color: #334155;
+            color: var(--ct-ink-2);
             margin-bottom: 6px;
         }
 
@@ -112,17 +113,25 @@
 
         .disclosure-option-card:hover {
             border-color: var(--primary);
-            background: #F5F3FF;
+            background: var(--ct-accent-soft);
         }
 
         .disclosure-option-card.selected {
             border-color: var(--primary);
-            background: #EEF2FF;
+            background: var(--ct-surface);
         }
     </style>
     <meta name="csrf-token" content="{{ csrf_token() }}">
+
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/cognitara-web.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/cognitara-portal-unified.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/cognitara-teacher-studio.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/cognitara-admin-studio.css') }}">
+  {{ ct_boot_script() }}
 </head>
-<body>
+<body class="ct-app ct-bs ad-studio">
+{{ admin_shell_start(active='ce_settings', crumb='CE Settings') }}
+
     <header class="settings-header">
         <div class="container">
             <div class="brand-crumb">
@@ -288,5 +297,7 @@
         });
     }
     </script>
+
+{{ shell_end(role='admin') }}
 </body>
 </html>

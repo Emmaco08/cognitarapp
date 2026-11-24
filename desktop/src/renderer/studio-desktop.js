@@ -976,8 +976,11 @@
   $("#portalStudent").addEventListener("click", function (e) { e.preventDefault(); openPortal("/login"); });
   $("#portalCe").addEventListener("click", function (e) { e.preventDefault(); openPortal("/ce_login"); });
   $("#supportLink").addEventListener("click", function (e) { e.preventDefault(); openExternalUrl("mailto:support@cognitara.net"); });
-  $("#buyLicLink").addEventListener("click", function (e) { e.preventDefault(); openExternalUrl("https://cognitara.net/pricing"); });
-  $("#renewLicBtn").addEventListener("click", function (e) { e.preventDefault(); openExternalUrl("https://cognitara.net/account/licences"); });
+  $("#buyLicLink").addEventListener("click", function (e) { e.preventDefault(); openBillingModal("plans"); });
+  $("#renewLicBtn").addEventListener("click", function (e) { e.preventDefault(); openBillingModal("plans"); });
+  if ($("#onbBuyBtn")) $("#onbBuyBtn").addEventListener("click", function () { openBillingModal("plans"); });
+  if ($("#onbCloudLink")) $("#onbCloudLink").addEventListener("click", function (e) { e.preventDefault(); openCloudModal("signup"); });
+  if ($("#licRedeemBtn")) $("#licRedeemBtn").addEventListener("click", function () { openBillingModal("redeem"); });
 
   /* ---- server lifecycle (real IPC) ---- */
   var core = $("#core");
@@ -1715,6 +1718,40 @@
       $("#cloudSignedInPane").hidden = true;
       $("#cloudAuthPane").hidden = false;
     }
+    renderHqDirectives(s && s.directives ? s.directives : null);
+  }
+
+  function renderHqDirectives(d) {
+    var banner = $("#hqNoticeBanner");
+    if (!banner) return;
+    if (!d) { banner.hidden = true; return; }
+    var text = "";
+    var label = "CogniTara HQ Notice";
+    var level = "info";
+    if (d.maintenance_mode) {
+      label = "Maintenance Notice";
+      text = d.maintenance_message || "CogniTara Cloud is undergoing scheduled maintenance. Offline exams remain unaffected.";
+      level = "warning";
+    } else if (d.school_notice) {
+      label = "Direct Message from CogniTara HQ";
+      text = d.school_notice;
+      level = d.school_notice_level || "info";
+    } else if (d.global_announcement) {
+      label = "CogniTara Announcement";
+      text = d.global_announcement;
+      level = d.global_announcement_level || "info";
+    }
+    if (!text) {
+      banner.hidden = true;
+      return;
+    }
+    banner.dataset.level = level;
+    $("#hqNoticeLabel").textContent = label;
+    $("#hqNoticeText").textContent = text;
+    banner.hidden = false;
+  }
+  if ($("#hqNoticeDismiss")) {
+    $("#hqNoticeDismiss").addEventListener("click", function () { $("#hqNoticeBanner").hidden = true; });
   }
 
   function switchCloudTab(tab) {
@@ -1724,6 +1761,7 @@
     setCloudMsg("", "");
   }
 
+  var reopenBillingAfterAuth = false;
   function openCloudModal(initialTab) {
     setCloudMsg("", "");
     renderCloudAccount(state.cloudAccount);
@@ -1748,6 +1786,7 @@
   });
   document.addEventListener("keydown", function (e) {
     if (e.key === "Escape" && !$("#cloudModal").hidden) closeCloudModal();
+    if (e.key === "Escape" && $("#billingModal") && !$("#billingModal").hidden) closeBillingModal();
   });
 
   $("#cloudSignInForm").addEventListener("submit", async function (e) {
@@ -1765,6 +1804,11 @@
         setCloudMsg("", "Signed in and cached locally for offline exam days.");
         toast("Signed in to CogniTara Cloud");
         logEvent("licence", "ok", "i-shield", "<b>Cloud account synced</b> (" + esc(res.session.user.email) + ")");
+        if (reopenBillingAfterAuth) {
+          reopenBillingAfterAuth = false;
+          closeCloudModal();
+          openBillingModal("plans");
+        }
       } else {
         setCloudMsg((res && res.message) || "Invalid email address or password.", "");
       }
@@ -1796,6 +1840,11 @@
         setCloudMsg("", "School account created on Neon Cloud and cached offline.");
         toast("CogniTara Cloud account created!");
         logEvent("licence", "ok", "i-shield", "<b>Cloud school registered</b> (" + esc(res.session.school ? res.session.school.school_name : res.session.user.email) + ")");
+        if (reopenBillingAfterAuth) {
+          reopenBillingAfterAuth = false;
+          closeCloudModal();
+          openBillingModal("plans");
+        }
       } else {
         setCloudMsg((res && res.message) || "Could not create account.", "");
       }
@@ -1817,6 +1866,9 @@
   }
   $("#cloudSyncBtn").addEventListener("click", runCloudSync);
   $("#cmSyncNowBtn").addEventListener("click", runCloudSync);
+  if ($("#cmUpgradeBtn")) {
+    $("#cmUpgradeBtn").addEventListener("click", function () { closeCloudModal(); openBillingModal("plans"); });
+  }
   $("#cmOpenPortalBtn").addEventListener("click", function () {
     var base = (state.cloudAccount && state.cloudAccount.cloudUrl) || "https://cognitara-cloud.vercel.app";
     openExternalUrl(base + "/dashboard");
@@ -1830,6 +1882,321 @@
     }
     toast("Signed out of CogniTara Cloud");
   });
+
+  /* ------------------------------------------------------------------ Paystack Licence Store & Redeem Modal */
+  var billingState = {
+    plans: [],
+    platform: {},
+    selectedPlanId: null,
+    currency: "NGN",
+    appliedPromo: null,
+    pendingRef: null
+  };
+
+  function fmtMoney(minor, currency) {
+    var val = (Number(minor || 0) / 100);
+    if (currency === "USD") return "$" + val.toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+    return "₦" + val.toLocaleString("en-NG", { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+  }
+
+  function setBillingMsg(errText, okText) {
+    var eEl = $("#billingErr"), oEl = $("#billingOk");
+    if (eEl) { eEl.hidden = !errText; eEl.textContent = errText || ""; }
+    if (oEl) { oEl.hidden = !okText; oEl.textContent = okText || ""; }
+  }
+
+  function switchBillingTab(tab) {
+    $$("#billingTabs button").forEach(function (b) { b.classList.toggle("is-active", b.dataset.btab === tab); });
+    $("#billingPlansPane").hidden = tab !== "plans";
+    $("#billingRedeemPane").hidden = tab !== "redeem";
+    $("#billingCurrencySeg").hidden = tab !== "plans";
+    setBillingMsg("", "");
+  }
+
+  function renderBillingPlans() {
+    var grid = $("#billingPlansGrid");
+    if (!grid) return;
+    if (!billingState.plans.length) {
+      grid.innerHTML = "<div style='grid-column:1/-1;padding:18px;text-align:center;color:var(--ink-3);font-size:13px'>No active plans available right now.</div>";
+      return;
+    }
+    grid.innerHTML = billingState.plans.map(function (p) {
+      var sel = p.id === billingState.selectedPlanId;
+      var priceMinor = billingState.currency === "USD" ? p.price_usd_cents : p.price_ngn_kobo;
+      var dur = p.duration_days ? (p.duration_days + " days · " + p.lease_days + "d offline lease") : ("Perpetual · " + p.lease_days + "d offline lease");
+      var feats = (p.features && Array.isArray(p.features.highlights)) ? p.features.highlights.slice(0, 3) : [];
+      return "<button type='button' class='bplan" + (sel ? " is-selected" : "") + "' data-plan-id='" + esc(p.id) + "'>" +
+        "<div class='bplan__top'><span class='bplan__name'>" + esc(p.display_name) + "</span>" +
+        (p.badge ? "<span class='bplan__badge'>" + esc(p.badge) + "</span>" : "") + "</div>" +
+        "<div class='bplan__price'>" + fmtMoney(priceMinor, billingState.currency) + "</div>" +
+        "<div class='bplan__meta'>" + esc(dur) + "</div>" +
+        (feats.length ? "<ul class='bplan__feats'>" + feats.map(function (f) { return "<li>· " + esc(f) + "</li>"; }).join("") + "</ul>" : "") +
+        "</button>";
+    }).join("");
+
+    $$("#billingPlansGrid .bplan").forEach(function (el) {
+      el.addEventListener("click", function () {
+        billingState.selectedPlanId = el.dataset.planId;
+        billingState.appliedPromo = null;
+        renderBillingPlans();
+        renderBillingSummary();
+      });
+    });
+    renderBillingSummary();
+  }
+
+  function renderBillingSummary() {
+    var plan = billingState.plans.find(function (p) { return p.id === billingState.selectedPlanId; });
+    var signedIn = Boolean(state.cloudAccount && state.cloudAccount.signedIn);
+    if ($("#billingSignInHintBtn")) $("#billingSignInHintBtn").hidden = signedIn;
+    if (!plan) {
+      $("#bsPlanName").textContent = "Select a plan";
+      $("#bsTotalVal").textContent = "—";
+      $("#bsDiscountRow").hidden = true;
+      return;
+    }
+    var origMinor = billingState.currency === "USD" ? plan.price_usd_cents : plan.price_ngn_kobo;
+    var discMinor = billingState.appliedPromo ? Number(billingState.appliedPromo.discount_amount_minor || 0) : 0;
+    var finalMinor = Math.max(0, origMinor - discMinor);
+
+    $("#bsPlanName").textContent = plan.display_name;
+    if (discMinor > 0) {
+      $("#bsDiscountRow").hidden = false;
+      $("#bsDiscountVal").textContent = "-" + fmtMoney(discMinor, billingState.currency) + " (" + billingState.appliedPromo.code + ")";
+      $("#bsTotalVal").innerHTML = "<span class='billing-summary__strike'>" + fmtMoney(origMinor, billingState.currency) + "</span>" + fmtMoney(finalMinor, billingState.currency);
+    } else {
+      $("#bsDiscountRow").hidden = true;
+      $("#bsTotalVal").textContent = fmtMoney(finalMinor, billingState.currency);
+    }
+    var payBtn = $("#billingPayBtn");
+    if (finalMinor === 0 && billingState.appliedPromo) {
+      payBtn.textContent = "Activate Free Order";
+    } else {
+      payBtn.textContent = signedIn
+        ? ("Pay " + fmtMoney(finalMinor, billingState.currency) + " via Paystack")
+        : "Sign in to Pay via Paystack";
+    }
+  }
+
+  async function openBillingModal(initialTab) {
+    if (!$("#billingModal")) return;
+    setBillingMsg("", "");
+    switchBillingTab(initialTab || "plans");
+    $("#billingPendingRefBox").hidden = !billingState.pendingRef;
+    $("#billingModal").hidden = false;
+
+    if (bridge && bridge.getBillingPlans) {
+      var res = await bridge.getBillingPlans().catch(function () { return null; });
+      if (res && res.ok && Array.isArray(res.plans)) {
+        billingState.plans = res.plans;
+        billingState.platform = res.platform || {};
+        if (!billingState.selectedPlanId && res.plans.length) {
+          var preferred = res.plans.find(function (p) { return p.slug === "annual" || p.slug === "termly"; }) || res.plans[0];
+          billingState.selectedPlanId = preferred.id;
+        }
+        renderBillingPlans();
+      } else {
+        setBillingMsg((res && res.message) || "Connect to the internet to load live plans from CogniTara Cloud.", "");
+      }
+    }
+  }
+
+  function closeBillingModal() {
+    if ($("#billingModal")) $("#billingModal").hidden = true;
+  }
+
+  if ($("#billingModalClose")) $("#billingModalClose").addEventListener("click", closeBillingModal);
+  if ($("#billingModal")) {
+    $("#billingModal").addEventListener("mousedown", function (e) { if (e.target.id === "billingModal") closeBillingModal(); });
+  }
+  $$("#billingTabs button").forEach(function (b) {
+    b.addEventListener("click", function () { switchBillingTab(b.dataset.btab); });
+  });
+  $$("#billingCurrencySeg button").forEach(function (b) {
+    b.addEventListener("click", function () {
+      billingState.currency = b.dataset.curr;
+      billingState.appliedPromo = null;
+      $$("#billingCurrencySeg button").forEach(function (x) { x.classList.toggle("is-active", x.dataset.curr === billingState.currency); });
+      renderBillingPlans();
+    });
+  });
+
+  if ($("#billingSignInHintBtn")) {
+    $("#billingSignInHintBtn").addEventListener("click", function () {
+      reopenBillingAfterAuth = true;
+      closeBillingModal();
+      openCloudModal("signup");
+    });
+  }
+
+  if ($("#billingApplyPromoBtn")) {
+    $("#billingApplyPromoBtn").addEventListener("click", async function () {
+      var code = ($("#billingPromoInput").value || "").trim().toUpperCase();
+      if (!code) { setBillingMsg("Enter a promo or redeem code first.", ""); return; }
+      setBillingMsg("", "");
+      var res = bridge && bridge.validatePromoCode
+        ? await bridge.validatePromoCode({ code: code, plan_id: billingState.selectedPlanId, currency: billingState.currency })
+        : { ok: false, message: "Desktop IPC unavailable." };
+      if (!res || !res.ok) {
+        billingState.appliedPromo = null;
+        renderBillingSummary();
+        setBillingMsg((res && res.message) || "Invalid code.", "");
+        return;
+      }
+      if (res.code_type === "redeem") {
+        $("#billingRedeemInput").value = code;
+        switchBillingTab("redeem");
+        setBillingMsg("", res.message || "Valid redeem voucher! Click Redeem & Activate Now.");
+        return;
+      }
+      billingState.appliedPromo = res;
+      renderBillingSummary();
+      setBillingMsg("", res.message || "Discount applied!");
+    });
+  }
+
+  if ($("#billingPayBtn")) {
+    $("#billingPayBtn").addEventListener("click", async function () {
+      setBillingMsg("", "");
+      if (!state.cloudAccount || !state.cloudAccount.signedIn) {
+        reopenBillingAfterAuth = true;
+        closeBillingModal();
+        openCloudModal("signup");
+        toast("Create or sign in to your school Cloud Account first");
+        return;
+      }
+      if (!billingState.selectedPlanId) {
+        setBillingMsg("Please select a subscription plan.", "");
+        return;
+      }
+      // If 100%-off promo code, redeem directly without Paystack
+      if (billingState.appliedPromo && Number(billingState.appliedPromo.final_amount_minor) === 0) {
+        var rFree = await bridge.redeemVoucherCode({
+          code: billingState.appliedPromo.code,
+          plan_id: billingState.selectedPlanId,
+          currency: billingState.currency
+        });
+        if (rFree && rFree.ok) {
+          setBillingMsg("", rFree.message || "Licence activated!");
+          toast("Licence activated!");
+          await refreshLicenceFromEngine();
+        } else {
+          setBillingMsg((rFree && rFree.message) || "Could not activate free order.", "");
+        }
+        return;
+      }
+
+      var btn = $("#billingPayBtn");
+      btn.disabled = true;
+      btn.textContent = "Opening Paystack checkout…";
+      try {
+        var res = await bridge.startPaystackCheckout({
+          plan_id: billingState.selectedPlanId,
+          currency: billingState.currency,
+          promo_code: billingState.appliedPromo ? billingState.appliedPromo.code : undefined
+        });
+        if (!res || !res.ok) {
+          setBillingMsg((res && res.message) || "Could not initialize Paystack checkout.", "");
+          return;
+        }
+        billingState.pendingRef = res.reference;
+        $("#bsPendingRef").textContent = res.reference;
+        $("#billingPendingRefBox").hidden = false;
+        setBillingMsg("", "Paystack secure checkout window opened! Complete payment and your licence activates automatically.");
+      } finally {
+        btn.disabled = false;
+        renderBillingSummary();
+      }
+    });
+  }
+
+  if ($("#billingVerifyRefBtn")) {
+    $("#billingVerifyRefBtn").addEventListener("click", async function () {
+      if (!billingState.pendingRef || !bridge) return;
+      var btn = $("#billingVerifyRefBtn");
+      btn.disabled = true;
+      btn.textContent = "Verifying…";
+      try {
+        var res = await bridge.verifyPaystackReference(billingState.pendingRef);
+        if (res && res.ok) {
+          billingState.pendingRef = null;
+          $("#billingPendingRefBox").hidden = true;
+          setBillingMsg("", res.message || "Payment verified & licence activated!");
+          toast("Paystack payment verified & licence active!");
+          await refreshLicenceFromEngine();
+        } else {
+          setBillingMsg((res && res.message) || "Payment not confirmed yet. Complete checkout and try again.", "");
+        }
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "I completed payment — Verify & Activate";
+      }
+    });
+  }
+
+  if ($("#billingRedeemSubmitBtn")) {
+    $("#billingRedeemSubmitBtn").addEventListener("click", async function () {
+      setBillingMsg("", "");
+      if (!state.cloudAccount || !state.cloudAccount.signedIn) {
+        reopenBillingAfterAuth = true;
+        closeBillingModal();
+        openCloudModal("signup");
+        toast("Sign in or create your Cloud Account first to redeem a voucher");
+        return;
+      }
+      var code = ($("#billingRedeemInput").value || "").trim().toUpperCase();
+      if (!code) { setBillingMsg("Enter a redeem voucher code.", ""); return; }
+      var btn = $("#billingRedeemSubmitBtn");
+      btn.disabled = true;
+      btn.textContent = "Redeeming…";
+      try {
+        var res = await bridge.redeemVoucherCode({ code: code });
+        if (res && res.ok) {
+          $("#billingRedeemInput").value = "";
+          setBillingMsg("", res.message || "Voucher redeemed & licence activated!");
+          toast("Licence activated via redeem code!");
+          await refreshLicenceFromEngine();
+        } else {
+          setBillingMsg((res && res.message) || "Could not redeem code.", "");
+        }
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "Redeem & Activate Now";
+      }
+    });
+  }
+
+  async function refreshLicenceFromEngine() {
+    if (!bridge) return;
+    try {
+      var licRes = await bridge.getLicenseStatus();
+      var lic = (licRes && licRes.license) || licRes;
+      if (lic && lic.lock_state) {
+        state.license = lic;
+        if (typeof renderLicence === "function") renderLicence(lic);
+        if (lic.is_licensed && state.mode === "onboarding") {
+          activated = true;
+          if ($("#onbNext")) $("#onbNext").disabled = false;
+        }
+        if (lic.is_licensed && state.mode === "lock") {
+          setMode("app");
+        }
+      }
+    } catch (_e) {}
+  }
+
+  if (bridge && bridge.onBillingCompleted) {
+    bridge.onBillingCompleted(function (evt) {
+      if (evt && evt.ok) {
+        billingState.pendingRef = null;
+        if ($("#billingPendingRefBox")) $("#billingPendingRefBox").hidden = true;
+        setBillingMsg("", evt.message || "Licence activated!");
+        toast(evt.message || "Licence activated!");
+        logEvent("licence", "ok", "i-key", "<b>Licence activated</b> (" + esc(evt.license_key || evt.source || "cloud") + ")");
+        refreshLicenceFromEngine();
+      }
+    });
+  }
 
   /* ------------------------------------------------------------------ lock screens */
   var drainLeft = 0;

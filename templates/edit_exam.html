@@ -1,5 +1,6 @@
+{%- from '_ct_shell.html' import ico, ct_boot_script, admin_shell_start, teacher_shell_start, student_topbar, shell_end -%}
 <!DOCTYPE html>
-<html>
+<html lang="en" data-theme="dark">
 <head>
     <title>Edit Exam | COGNITARA EXAM SYSTEM</title>
     <link href="{{ url_for('static', filename='vendor/bootstrap/css/bootstrap.min.css') }}" rel="stylesheet">
@@ -79,7 +80,7 @@
         .logo-icon {
             width: 80px;
             height: 80px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: var(--ct-brand-grad);
             border-radius: 50%;
             display: inline-flex;
             align-items: center;
@@ -102,7 +103,7 @@
         .page-header h1 {
             font-size: 36px;
             font-weight: 800;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: var(--ct-brand-grad);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
@@ -111,31 +112,31 @@
 
         .page-header p {
             font-size: 16px;
-            color: #64748b;
+            color: var(--ct-ink-3);
         }
 
         /* Form Container */
         .form-container {
-            background: white;
+            background: var(--ct-surface);
             border-radius: 28px;
             box-shadow: 0 20px 40px rgba(0, 0, 0, 0.05);
             padding: 35px;
-            border: 1px solid #e2e8f0;
+            border: 1px solid var(--ct-line-2);
         }
 
         /* Question Card */
         .question-card {
-            background: #f8fafc;
+            background: var(--ct-surface);
             border-radius: 20px;
             padding: 25px;
             margin-bottom: 25px;
-            border: 1px solid #e2e8f0;
+            border: 1px solid var(--ct-line-2);
             transition: all 0.3s ease;
             position: relative;
         }
 
         .question-card:hover {
-            border-color: #667eea;
+            border-color: var(--ct-primary);
             box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
         }
 
@@ -145,17 +146,17 @@
             align-items: center;
             margin-bottom: 20px;
             padding-bottom: 10px;
-            border-bottom: 2px solid #e2e8f0;
+            border-bottom: 2px solid var(--ct-line-2);
         }
 
         .question-title {
             font-size: 18px;
             font-weight: 700;
-            color: #667eea;
+            color: var(--ct-primary);
         }
 
         .remove-btn {
-            background: #fee2e2;
+            background: var(--ct-bad-soft);
             border: none;
             color: #ef4444;
             padding: 6px 15px;
@@ -177,17 +178,17 @@
             gap: 8px;
             margin-bottom: 15px;
             padding: 10px;
-            background: white;
+            background: var(--ct-surface);
             border-radius: 12px;
-            border: 1px solid #e2e8f0;
+            border: 1px solid var(--ct-line-2);
         }
 
         .toolbar-btn {
             padding: 6px 12px;
             font-size: 13px;
             cursor: pointer;
-            border: 1px solid #e2e8f0;
-            background: white;
+            border: 1px solid var(--ct-line-2);
+            background: var(--ct-surface);
             border-radius: 8px;
             transition: all 0.2s ease;
             display: inline-flex;
@@ -196,21 +197,21 @@
         }
 
         .toolbar-btn:hover {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: var(--ct-brand-grad);
             color: white;
-            border-color: #667eea;
+            border-color: var(--ct-primary);
         }
 
         .toolbar-divider {
             width: 1px;
-            background: #e2e8f0;
+            background: var(--ct-line-2);
             margin: 0 5px;
         }
 
         .question-textarea {
             width: 100%;
             padding: 12px;
-            border: 2px solid #e2e8f0;
+            border: 2px solid var(--ct-line-2);
             border-radius: 12px;
             font-size: 14px;
             font-family: inherit;
@@ -220,18 +221,18 @@
 
         .question-textarea:focus {
             outline: none;
-            border-color: #667eea;
+            border-color: var(--ct-primary);
             box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
         }
 
         /* Live Preview */
         .formatted-preview {
-            background: #f1f5f9;
+            background: var(--ct-surface);
             border-radius: 12px;
             padding: 12px;
             margin-top: 10px;
             display: none;
-            border-left: 4px solid #667eea;
+            border-left: 4px solid var(--ct-primary);
         }
 
         .preview-content {
@@ -267,7 +268,7 @@
             max-height: 120px;
             margin-top: 10px;
             display: none;
-            border: 2px solid #667eea;
+            border: 2px solid var(--ct-primary);
             border-radius: 12px;
             padding: 5px;
         }
@@ -276,7 +277,7 @@
             max-width: 100px;
             margin: 10px 0;
             border-radius: 10px;
-            border: 1px solid #e2e8f0;
+            border: 1px solid var(--ct-line-2);
             padding: 5px;
         }
 
@@ -290,19 +291,19 @@
 
         .image-status.error {
             color: #991b1b;
-            background-color: #fee2e2;
+            background-color: var(--ct-bad-soft);
             border-left: 3px solid #ef4444;
         }
 
         .image-status.success {
             color: #065f46;
-            background-color: #d1fae5;
+            background-color: var(--ct-ok-soft);
             border-left: 3px solid #10b981;
         }
 
         .image-status.warning {
             color: #92400e;
-            background-color: #fef3c7;
+            background-color: var(--ct-warn-soft);
             border-left: 3px solid #f59e0b;
         }
 
@@ -317,7 +318,7 @@
         .option-input {
             width: 100%;
             padding: 10px 12px;
-            border: 2px solid #e2e8f0;
+            border: 2px solid var(--ct-line-2);
             border-radius: 10px;
             font-size: 13px;
             transition: all 0.3s ease;
@@ -325,27 +326,27 @@
 
         .option-input:focus {
             outline: none;
-            border-color: #667eea;
+            border-color: var(--ct-primary);
         }
 
         .answer-select {
             width: 100%;
             padding: 10px;
-            border: 2px solid #e2e8f0;
+            border: 2px solid var(--ct-line-2);
             border-radius: 10px;
             font-size: 13px;
-            background: white;
+            background: var(--ct-surface);
             cursor: pointer;
         }
 
         .answer-select:focus {
             outline: none;
-            border-color: #667eea;
+            border-color: var(--ct-primary);
         }
 
         /* Buttons */
         .btn-add-question {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: var(--ct-brand-grad);
             color: white;
             border: none;
             padding: 12px 25px;
@@ -384,11 +385,11 @@
         }
 
         .btn-back {
-            background: white;
-            border: 2px solid #e2e8f0;
+            background: var(--ct-surface);
+            border: 2px solid var(--ct-line-2);
             padding: 10px 25px;
             border-radius: 14px;
-            color: #64748b;
+            color: var(--ct-ink-3);
             font-weight: 600;
             text-decoration: none;
             display: inline-flex;
@@ -398,9 +399,9 @@
         }
 
         .btn-back:hover {
-            border-color: #667eea;
-            color: #667eea;
-            background: #f5f3ff;
+            border-color: var(--ct-primary);
+            color: var(--ct-primary);
+            background: var(--ct-accent-soft);
         }
 
         .button-group {
@@ -504,8 +505,16 @@
         });
     })();
     </script>
+
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/cognitara-web.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/cognitara-portal-unified.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/cognitara-teacher-studio.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/cognitara-admin-studio.css') }}">
+  {{ ct_boot_script() }}
 </head>
-<body>
+<body class="ct-app ct-bs ad-studio">
+{{ admin_shell_start(active='exams', crumb='Edit Exam') }}
+
 
     <!-- Animated Educational Icons Background -->
     <div class="edu-icon"><i class="fas fa-edit"></i></div>
@@ -956,6 +965,8 @@ function addNewQuestion() {
             }
         });
     </script>
+
+{{ shell_end(role='admin') }}
 </body>
 </html>
 

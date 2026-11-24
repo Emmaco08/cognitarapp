@@ -1,545 +1,126 @@
+{%- from '_ct_shell.html' import ico, ct_boot_script -%}
+{%- set ICONS = url_for('static', filename='icons/cognitara-icons.svg') -%}
+{%- set _school = school_branding if school_branding is defined and school_branding else {'school_name': 'CogniTara School'} -%}
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
-    <meta charset="UTF-8">
-    <title>Exam Completed | {{ ce_settings.portal_title or 'Entrance Examination Portal' }}</title>
-    <link href="{{ url_for('static', filename='vendor/bootstrap/css/bootstrap.min.css') }}" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='vendor/fontawesome/css/all.min.css') }}">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <style>
-        :root {
-            --primary: #4f46e5;
-            --primary-dark: #3730a3;
-            --surface: #ffffff;
-            --text-main: #0f172a;
-            --text-muted: #64748b;
-            --green: #10b981;
-            --green-dark: #047857;
-            --amber: #f59e0b;
-            --red: #ef4444;
-            --border: #e2e8f0;
-        }
-
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-
-        body {
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 24px 16px;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            background: #f8fafc;
-            color: var(--text-main);
-            position: relative;
-        }
-
-        .bg-pattern {
-            position: fixed;
-            inset: 0;
-            pointer-events: none;
-            z-index: 0;
-        }
-        .bg-pattern .shape {
-            position: absolute;
-            border-radius: 50%;
-            opacity: 0.05;
-        }
-        .shape-1 {
-            width: 500px; height: 500px;
-            background: #4f46e5;
-            top: -200px; right: -150px;
-        }
-        .shape-2 {
-            width: 400px; height: 400px;
-            background: #10b981;
-            bottom: -150px; left: -100px;
-        }
-
-        .card-container {
-            background: var(--surface);
-            border-radius: 28px;
-            width: 540px;
-            max-width: 100%;
-            position: relative;
-            z-index: 1;
-            box-shadow: 0 20px 40px -15px rgba(0,0,0,0.07), 0 0 1px 1px rgba(0,0,0,0.04);
-            border: 1px solid #e2e8f0;
-            overflow: hidden;
-            animation: cardAppear 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-
-        @keyframes cardAppear {
-            from { opacity: 0; transform: scale(0.96) translateY(12px); }
-            to { opacity: 1; transform: scale(1) translateY(0); }
-        }
-
-        .card-strip {
-            height: 6px;
-            background: linear-gradient(90deg, #4f46e5, #8b5cf6, #10b981, #4f46e5);
-            background-size: 200% 100%;
-        }
-
-        .card-header-section {
-            padding: 32px 32px 20px;
-            text-align: center;
-            border-bottom: 1px solid #f1f5f9;
-        }
-
-        .student-photo-wrapper {
-            position: relative;
-            width: 104px;
-            height: 104px;
-            margin: 0 auto 16px;
-            border-radius: 50%;
-            padding: 4px;
-            background: linear-gradient(135deg, #4f46e5 0%, #10b981 100%);
-            box-shadow: 0 8px 24px rgba(79, 70, 229, 0.2);
-        }
-
-        .student-photo-img {
-            width: 100%;
-            height: 100%;
-            border-radius: 50%;
-            object-fit: cover;
-            background: #ffffff;
-            border: 3px solid #ffffff;
-            display: block;
-        }
-
-        .student-name-bold {
-            font-size: 22px;
-            font-weight: 800;
-            color: #0f172a;
-            margin-bottom: 4px;
-            line-height: 1.2;
-        }
-
-        .student-sub-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            font-size: 13px;
-            font-weight: 600;
-            color: #64748b;
-            background: #f1f5f9;
-            padding: 4px 14px;
-            border-radius: 20px;
-        }
-
-        .card-body-section {
-            padding: 24px 32px 32px;
-        }
-
-        /* Status Banners */
-        .status-banner {
-            border-radius: 16px;
-            padding: 16px 20px;
-            margin-bottom: 24px;
-            display: flex;
-            align-items: flex-start;
-            gap: 14px;
-        }
-        .status-banner.approved {
-            background: #ecfdf5;
-            border: 1px solid #a7f3d0;
-            color: #065f46;
-        }
-        .status-banner.rejected {
-            background: #fef2f2;
-            border: 1px solid #fecaca;
-            color: #991b1b;
-        }
-        .status-banner.pending {
-            background: #eff6ff;
-            border: 1px solid #bfdbfe;
-            color: #1e40af;
-        }
-
-        .status-icon-circle {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 18px;
-            flex-shrink: 0;
-        }
-        .status-banner.approved .status-icon-circle { background: #d1fae5; color: #10b981; }
-        .status-banner.rejected .status-icon-circle { background: #fee2e2; color: #ef4444; }
-        .status-banner.pending .status-icon-circle { background: #dbeafe; color: #3b82f6; }
-
-        .status-title {
-            font-size: 15px;
-            font-weight: 700;
-            margin-bottom: 2px;
-        }
-        .status-desc {
-            font-size: 13px;
-            line-height: 1.45;
-            margin: 0;
-            opacity: 0.95;
-        }
-
-        /* Performance Score Ring and Metrics */
-        .score-metrics-card {
-            background: #f8fafc;
-            border: 1px solid #e2e8f0;
-            border-radius: 20px;
-            padding: 20px;
-            margin-bottom: 24px;
-            display: flex;
-            align-items: center;
-            gap: 20px;
-        }
-
-        .ring-container {
-            position: relative;
-            width: 90px;
-            height: 90px;
-            flex-shrink: 0;
-        }
-        .ring-container svg {
-            transform: rotate(-90deg);
-        }
-        .ring-center-val {
-            position: absolute;
-            inset: 0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-        }
-        .ring-percent-num {
-            font-size: 20px;
-            font-weight: 800;
-            color: #0f172a;
-            line-height: 1;
-        }
-        .ring-percent-lbl {
-            font-size: 10px;
-            color: #64748b;
-            font-weight: 600;
-            margin-top: 2px;
-        }
-
-        .score-stats-grid {
-            flex: 1;
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 12px;
-        }
-        .score-stat-box {
-            display: flex;
-            flex-direction: column;
-        }
-        .score-stat-label {
-            font-size: 11px;
-            color: #64748b;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-        .score-stat-value {
-            font-size: 16px;
-            font-weight: 700;
-            color: #0f172a;
-            margin-top: 1px;
-        }
-
-        /* Details list */
-        .exam-details-list {
-            background: #ffffff;
-            border: 1px solid #e2e8f0;
-            border-radius: 16px;
-            padding: 14px 18px;
-            margin-bottom: 24px;
-        }
-        .detail-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 8px 0;
-            font-size: 13px;
-        }
-        .detail-row:not(:last-child) {
-            border-bottom: 1px dashed #e2e8f0;
-        }
-        .detail-lbl { color: #64748b; }
-        .detail-val { font-weight: 600; color: #1e293b; }
-
-        /* Timeline steps for hidden review */
-        .review-steps {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            margin-bottom: 24px;
-        }
-        .review-step-item {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 10px 14px;
-            background: #f8fafc;
-            border-radius: 12px;
-            font-size: 13px;
-        }
-        .review-step-item i {
-            font-size: 16px;
-            flex-shrink: 0;
-        }
-
-        /* Buttons */
-        .action-buttons {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-        .btn-action-primary {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            width: 100%;
-            padding: 12px 20px;
-            border-radius: 14px;
-            font-weight: 600;
-            font-size: 14px;
-            text-decoration: none;
-            background: linear-gradient(135deg, #4f46e5 0%, #3730a3 100%);
-            color: #ffffff;
-            border: none;
-            transition: all 0.2s;
-            cursor: pointer;
-        }
-        .btn-action-primary:hover {
-            color: #ffffff;
-            transform: translateY(-1px);
-            box-shadow: 0 6px 16px rgba(79, 70, 229, 0.25);
-        }
-        .btn-action-outline {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            width: 100%;
-            padding: 11px 20px;
-            border-radius: 14px;
-            font-weight: 600;
-            font-size: 13px;
-            text-decoration: none;
-            background: #ffffff;
-            color: #64748b;
-            border: 1.5px solid #e2e8f0;
-            transition: all 0.2s;
-            cursor: pointer;
-        }
-        .btn-action-outline:hover {
-            color: #0f172a;
-            border-color: #cbd5e1;
-            background: #f8fafc;
-        }
-
-        @media (max-width: 480px) {
-            .card-header-section { padding: 24px 20px 16px; }
-            .card-body-section { padding: 20px 20px 24px; }
-            .score-metrics-card { flex-direction: column; text-align: center; }
-            .score-stats-grid { width: 100%; text-align: center; }
-        }
-    </style>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+  <meta name="color-scheme" content="dark light">
+  <title>Exam Completed — {{ ce_settings.portal_title or 'Common Entrance Portal' }}</title>
+  <link rel="icon" href="{{ url_for('static', filename='images/cognitara-favicon.ico') }}">
+  <link rel="preload" href="{{ url_for('static', filename='fonts/ui/PlusJakartaSans-Variable.woff2') }}" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/cognitara-web.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/cognitara-student-studio.css') }}">
+  {{ ct_boot_script() }}
 </head>
-<body>
-    <div class="bg-pattern">
-        <div class="shape shape-1"></div>
-        <div class="shape shape-2"></div>
-    </div>
+<body class="st-body">
+  <div class="st-shell">
+    <header class="st-nav">
+      <a class="st-brand" href="/ce_dashboard">
+        <span class="st-brand__mark"><svg viewBox="0 0 200 200"><use href="{{ ICONS }}#ct-mark"/></svg></span>
+        <span class="st-brand__name">CogniTara</span>
+        <span class="st-brand__sep" aria-hidden="true"></span>
+        <span class="st-brand__meta">{{ ce_settings.portal_title or _school.school_name }}</span>
+      </a>
+      <div class="st-nav__right">
+        <span class="st-term-pill">COMMON ENTRANCE</span>
+        <button type="button" class="st-icon-btn" data-ct-theme-toggle aria-label="Switch theme">
+          <span class="ct-theme-ico">{{ ico('i-moon', 'ct-theme-ico__moon') }}{{ ico('i-sun', 'ct-theme-ico__sun') }}</span>
+        </button>
+      </div>
+    </header>
 
-    <div class="card-container">
-        <div class="card-strip"></div>
+    <main class="st-folio-stage">
+      {% set vis = ce_settings.result_visibility or 'hidden' %}
+      {% set status = attempt.status if attempt else 'pending' %}
+      {% set passed = attempt.passed if attempt else 0 %}
 
-        <!-- Student Identity Header -->
-        <div class="card-header-section">
-            <div class="student-photo-wrapper">
-                <img src="{{ url_for('static', filename='images/' + (student.photo or 'default.png')) if student and student.photo else url_for('static', filename='images/default.png') }}" 
-                     alt="Candidate Photo" 
-                     class="student-photo-img"
-                     onerror="this.src='{{ url_for('static', filename='images/default.png') }}'">
-            </div>
-            <h1 class="student-name-bold">{{ student.full_name if student else 'Examination Candidate' }}</h1>
-            <div class="student-sub-badge">
-                <i class="fas fa-id-badge"></i> {{ student.username if student else 'CE Applicant' }}
-                {% if exam and exam.target_class %}
-                <span>•</span>
-                <i class="fas fa-graduation-cap"></i> Target: {{ exam.target_class }}
-                {% endif %}
-            </div>
-        </div>
-
-        <div class="card-body-section">
-            {% set vis = ce_settings.result_visibility or 'hidden' %}
-            {% set status = attempt.status if attempt else 'pending' %}
-            {% set passed = attempt.passed if attempt else 0 %}
-
-            <!-- MODE 1: IMMEDIATE OR SCORE_AND_DECISION -->
-            {% if vis in ['immediate', 'score_and_decision'] and attempt %}
-                
-                <!-- Decision Banner -->
-                {% if status == 'approved' %}
-                <div class="status-banner approved">
-                    <div class="status-icon-circle"><i class="fas fa-check-circle"></i></div>
-                    <div>
-                        <div class="status-title">Admission Approved</div>
-                        <p class="status-desc">{{ ce_settings.approved_message or 'Congratulations! Your score meets the official admission benchmark.' }}</p>
-                    </div>
-                </div>
-                {% elif status == 'rejected' %}
-                <div class="status-banner rejected">
-                    <div class="status-icon-circle"><i class="fas fa-times-circle"></i></div>
-                    <div>
-                        <div class="status-title">Cut-Off Not Met</div>
-                        <p class="status-desc">{{ ce_settings.rejected_message or 'We regret to inform you that your score did not meet the required benchmark.' }}</p>
-                    </div>
-                </div>
-                {% else %}
-                <div class="status-banner pending">
-                    <div class="status-icon-circle"><i class="fas fa-clock"></i></div>
-                    <div>
-                        <div class="status-title">Under Administrative Review</div>
-                        <p class="status-desc">{{ ce_settings.pending_message or 'Your examination has been completed and is currently under administrative review.' }}</p>
-                    </div>
-                </div>
-                {% endif %}
-
-                <!-- Score Metrics Ring & Cards -->
-                <div class="score-metrics-card">
-                    <div class="ring-container">
-                        {% set pct = attempt.percentage|default(0)|round(1) %}
-                        {% set dash_offset = 251.2 - (251.2 * pct / 100) %}
-                        <svg width="90" height="90" viewBox="0 0 90 90">
-                            <circle cx="45" cy="45" r="38" fill="none" stroke="#e2e8f0" stroke-width="7"/>
-                            <circle cx="45" cy="45" r="38" fill="none" 
-                                    stroke="{% if status == 'rejected' %}#ef4444{% elif status == 'approved' %}#10b981{% else %}#4f46e5{% endif %}" 
-                                    stroke-width="7" 
-                                    stroke-dasharray="238.7" 
-                                    stroke-dashoffset="{{ 238.7 - (238.7 * pct / 100) }}" 
-                                    stroke-linecap="round"/>
-                        </svg>
-                        <div class="ring-center-val">
-                            <span class="ring-percent-num">{{ pct }}%</span>
-                            <span class="ring-percent-lbl">Score</span>
-                        </div>
-                    </div>
-                    <div class="score-stats-grid">
-                        <div class="score-stat-box">
-                            <span class="score-stat-label">Raw Score</span>
-                            <span class="score-stat-value">{{ attempt.score or 0 }} / {{ attempt.total or 0 }}</span>
-                        </div>
-                        <div class="score-stat-box">
-                            <span class="score-stat-label">Cut-Off Required</span>
-                            <span class="score-stat-value">{{ exam.passing_score if exam else 50 }}%</span>
-                        </div>
-                        <div class="score-stat-box">
-                            <span class="score-stat-label">Grade Awarded</span>
-                            <span class="score-stat-value" style="color:#4f46e5;">{{ attempt.grade_label or 'Pass' }}</span>
-                        </div>
-                        <div class="score-stat-box">
-                            <span class="score-stat-label">Performance</span>
-                            <span class="score-stat-value" style="font-size:14px;">{{ attempt.grade_remark or ('Met Cut-Off' if passed else 'Did Not Meet Cut-Off') }}</span>
-                        </div>
-                    </div>
-                </div>
-
-            <!-- MODE 2: DECISION ONLY -->
-            {% elif vis == 'decision_only' and attempt %}
-
-                {% if status == 'approved' %}
-                <div class="status-banner approved">
-                    <div class="status-icon-circle"><i class="fas fa-check-circle"></i></div>
-                    <div>
-                        <div class="status-title">Admission Approved</div>
-                        <p class="status-desc">{{ ce_settings.approved_message or 'Congratulations! Your application has been approved for admission.' }}</p>
-                    </div>
-                </div>
-                {% elif status == 'rejected' %}
-                <div class="status-banner rejected">
-                    <div class="status-icon-circle"><i class="fas fa-times-circle"></i></div>
-                    <div>
-                        <div class="status-title">Cut-Off Not Met</div>
-                        <p class="status-desc">{{ ce_settings.rejected_message or 'We regret to inform you that your application was unsuccessful for this session.' }}</p>
-                    </div>
-                </div>
-                {% else %}
-                <div class="status-banner pending">
-                    <div class="status-icon-circle"><i class="fas fa-clock"></i></div>
-                    <div>
-                        <div class="status-title">Under Administrative Review</div>
-                        <p class="status-desc">{{ ce_settings.pending_message or 'Your examination has been completed and is currently under administrative review.' }}</p>
-                    </div>
-                </div>
-                {% endif %}
-
-            <!-- MODE 3: HIDDEN (ADMINISTRATIVE REVIEW ONLY) -->
+      <section class="st-brief" aria-label="Common Entrance submission report">
+        <div class="st-folio__top">
+          <span class="st-folio__doc-id">{{ student.username if student else 'CE APPLICANT' }}{% if exam and exam.target_class %} · {{ exam.target_class }}{% endif %}</span>
+          {% if vis in ['immediate', 'score_and_decision', 'decision_only'] and attempt %}
+            {% if status == 'approved' %}
+            <span class="st-pill st-pill--ok">Admission Approved</span>
+            {% elif status == 'rejected' %}
+            <span class="st-pill st-pill--bad">Cut-Off Not Met</span>
             {% else %}
-
-                <div class="status-banner pending">
-                    <div class="status-icon-circle"><i class="fas fa-clipboard-check"></i></div>
-                    <div>
-                        <div class="status-title">Exam Submitted Successfully</div>
-                        <p class="status-desc">{{ ce_settings.pending_message or 'Your examination has been completed and is currently under administrative review.' }}</p>
-                    </div>
-                </div>
-
-                <div class="review-steps">
-                    <div class="review-step-item">
-                        <i class="fas fa-check-circle text-success"></i>
-                        <span>All question responses recorded and encrypted.</span>
-                    </div>
-                    <div class="review-step-item">
-                        <i class="fas fa-spinner fa-spin text-primary"></i>
-                        <span>Admissions board evaluating examination papers.</span>
-                    </div>
-                    <div class="review-step-item">
-                        <i class="fas fa-bell text-secondary"></i>
-                        <span>Official decision notification will be published on your portal.</span>
-                    </div>
-                </div>
-
+            <span class="st-pill st-pill--warn">Under Review</span>
             {% endif %}
-
-            <!-- Examination Metadata Card -->
-            <div class="exam-details-list">
-                <div class="detail-row">
-                    <span class="detail-lbl"><i class="fas fa-file-alt me-1"></i> Examination</span>
-                    <span class="detail-val">{{ exam.name if exam else (ce_settings.portal_title or 'Common Entrance') }}</span>
-                </div>
-                {% if exam and exam.target_class %}
-                <div class="detail-row">
-                    <span class="detail-lbl"><i class="fas fa-layer-group me-1"></i> Target Class</span>
-                    <span class="detail-val">{{ exam.target_class }}</span>
-                </div>
-                {% endif %}
-                <div class="detail-row">
-                    <span class="detail-lbl"><i class="fas fa-calendar-alt me-1"></i> Admission Session</span>
-                    <span class="detail-val">{{ ce_settings.admission_session or '2026/2027' }}</span>
-                </div>
-                <div class="detail-row">
-                    <span class="detail-lbl"><i class="fas fa-calendar-check me-1"></i> Submitted At</span>
-                    <span class="detail-val">{{ attempt.completed_at if attempt and attempt.completed_at else 'Just now' }}</span>
-                </div>
-            </div>
-
-            <!-- Actions -->
-            <div class="action-buttons">
-                <a href="/ce_dashboard" class="btn-action-primary">
-                    <i class="fas fa-tachometer-alt"></i> Return to Candidate Dashboard
-                </a>
-                <a href="/ce_login" class="btn-action-outline">
-                    <i class="fas fa-sign-out-alt"></i> Sign Out
-                </a>
-            </div>
+          {% else %}
+            <span class="st-pill st-pill--ok">Submitted</span>
+          {% endif %}
         </div>
-    </div>
+
+        <div class="st-brief__body">
+          <div class="st-folio__headline">
+            <span class="st-eyebrow">{{ exam.name if exam else (ce_settings.portal_title or 'Common Entrance Examination') }}</span>
+            <h1>{{ student.full_name if student else 'Examination Candidate' }}</h1>
+            {% if vis in ['immediate', 'score_and_decision', 'decision_only'] and attempt %}
+              {% if status == 'approved' %}
+              <p>{{ ce_settings.approved_message or 'Congratulations! Your score meets the official admission benchmark.' }}</p>
+              {% elif status == 'rejected' %}
+              <p>{{ ce_settings.rejected_message or 'Thank you for sitting this examination. Your score did not meet the required cut-off benchmark.' }}</p>
+              {% else %}
+              <p>{{ ce_settings.pending_message or 'Your examination has been completed and is currently under administrative review.' }}</p>
+              {% endif %}
+            {% else %}
+              <p>{{ ce_settings.pending_message or 'Your responses have been recorded and locked for official grading by the admissions board.' }}</p>
+            {% endif %}
+          </div>
+
+          {% if vis in ['immediate', 'score_and_decision'] and attempt %}
+          {% set pct = attempt.percentage|default(0)|round(1) %}
+          <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1px;background:var(--st-line);border:1px solid var(--st-line);border-radius:12px;overflow:hidden">
+            <div style="background:var(--st-well);padding:14px 16px">
+              <div style="font-family:var(--ct-mono);font-size:10px;letter-spacing:0.08em;text-transform:uppercase;color:var(--st-ink-3)">Score</div>
+              <div style="font-family:var(--ct-mono);font-size:22px;font-weight:740;color:var(--st-ink);margin-top:4px">{{ pct }}%</div>
+            </div>
+            <div style="background:var(--st-well);padding:14px 16px">
+              <div style="font-family:var(--ct-mono);font-size:10px;letter-spacing:0.08em;text-transform:uppercase;color:var(--st-ink-3)">Correct</div>
+              <div style="font-family:var(--ct-mono);font-size:22px;font-weight:740;color:var(--st-ink);margin-top:4px">{{ attempt.score or 0 }} / {{ attempt.total or 0 }}</div>
+            </div>
+            <div style="background:var(--st-well);padding:14px 16px">
+              <div style="font-family:var(--ct-mono);font-size:10px;letter-spacing:0.08em;text-transform:uppercase;color:var(--st-ink-3)">Grade</div>
+              <div style="font-family:var(--ct-mono);font-size:22px;font-weight:740;color:{% if status == 'rejected' %}var(--st-bad){% elif status == 'approved' or passed %}var(--st-ok){% else %}var(--st-accent){% endif %};margin-top:4px">{{ attempt.grade_label or ('Pass' if passed else 'Review') }}</div>
+            </div>
+          </div>
+          {% endif %}
+
+          <div style="display:grid;border:1px solid var(--st-line);border-radius:12px;overflow:hidden">
+            <div style="display:flex;justify-content:space-between;padding:11px 16px;border-bottom:1px solid var(--st-line);font-size:13px">
+              <span style="color:var(--st-ink-3)">Examination</span>
+              <strong style="color:var(--st-ink);font-weight:600">{{ exam.name if exam else (ce_settings.portal_title or 'Common Entrance') }}</strong>
+            </div>
+            {% if exam and exam.target_class %}
+            <div style="display:flex;justify-content:space-between;padding:11px 16px;border-bottom:1px solid var(--st-line);font-size:13px">
+              <span style="color:var(--st-ink-3)">Target Class</span>
+              <strong style="color:var(--st-ink);font-weight:600">{{ exam.target_class }}</strong>
+            </div>
+            {% endif %}
+            <div style="display:flex;justify-content:space-between;padding:11px 16px;border-bottom:1px solid var(--st-line);font-size:13px">
+              <span style="color:var(--st-ink-3)">Admission Session</span>
+              <strong style="color:var(--st-ink);font-weight:600">{{ ce_settings.admission_session or '2026/2027' }}</strong>
+            </div>
+            <div style="display:flex;justify-content:space-between;padding:11px 16px;font-size:13px">
+              <span style="color:var(--st-ink-3)">Submitted At</span>
+              <strong style="color:var(--st-ink);font-weight:600;font-family:var(--ct-mono);font-size:12px">{{ attempt.completed_at if attempt and attempt.completed_at else 'Just now' }}</strong>
+            </div>
+          </div>
+
+          <div style="display:grid;gap:10px">
+            <a href="/ce_dashboard" class="st-btn st-btn--primary st-btn--lg st-btn--block">
+              <span>Return to Candidate Dashboard</span>
+            </a>
+            <a href="/ce_login" class="st-btn st-btn--secondary st-btn--lg st-btn--block">
+              <span>Sign Out</span>
+            </a>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+  <script src="{{ url_for('static', filename='js/cognitara-web.js') }}"></script>
 </body>
 </html>

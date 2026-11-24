@@ -1,0 +1,417 @@
+/* ==========================================================================
+   CogniTara Web v3 — Unified Portal Subpage Stylesheet
+   Harmonizes all Admin, Teacher, Common Entrance, Analytics, Question Builder,
+   and Settings subpages inside the Opus Studio v3 App Shell (.ct-app.ct-bs).
+   Opus Studio palette ONLY · Zero Tailwind · Full Dark & Light themes.
+   ========================================================================== */
+
+body.ct-app.ct-bs {
+  background: var(--ct-bg) !important;
+  color: var(--ct-ink) !important;
+  font-family: var(--ct-font) !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  overflow-x: hidden;
+}
+
+/* Strip legacy decorative floating icons / blurred blobs / duplicate topbars */
+.ct-app.ct-bs .edu-icon,
+.ct-app.ct-bs .floating-icon,
+.ct-app.ct-bs .bg-shape,
+.ct-app.ct-bs .bg-decorations,
+.ct-app.ct-bs .bg-pattern,
+.ct-app.ct-bs .shape-1,
+.ct-app.ct-bs .shape-2,
+.ct-app.ct-bs .shape-3 {
+  display: none !important;
+}
+.ct-app.ct-bs .ct-main .top-nav,
+.ct-app.ct-bs .ct-main .top-navbar,
+.ct-app.ct-bs .ct-main .nav-bar,
+.ct-app.ct-bs .ct-main .admin-navbar,
+.ct-app.ct-bs .ct-main .teacher-navbar,
+.ct-app.ct-bs .ct-main .navbar-custom {
+  display: none !important;
+}
+
+.ct-app.ct-bs .ct-sidebar a,
+.ct-app.ct-bs .ct-topbar a,
+.ct-app.ct-bs .ct-crumbs a,
+.ct-app.ct-bs .ct-dropdown a,
+.ct-app.ct-bs a.ct-btn {
+  text-decoration: none !important;
+}
+
+/* Edge-to-edge alignment for named legacy containers inside .ct-content (1320px shell column) */
+.ct-app.ct-bs .app,
+.ct-app.ct-bs .analytics-container,
+.ct-app.ct-bs .results-container,
+.ct-app.ct-bs .audit-container,
+.ct-app.ct-bs .add-container,
+.ct-app.ct-bs .pending-container,
+.ct-app.ct-bs .support-container,
+.ct-app.ct-bs .dashboard-container,
+.ct-app.ct-bs .settings-container,
+.ct-app.ct-bs .edit-container,
+.ct-app.ct-bs .exam-container,
+.ct-app.ct-bs .profile-container,
+.ct-app.ct-bs .warning-container,
+.ct-app.ct-bs .attempts-container,
+.ct-app.ct-bs .ce-container,
+.ct-app.ct-bs .import-container,
+.ct-app.ct-bs .progression-container,
+.ct-app.ct-bs .review-container,
+.ct-app.ct-bs .main-content,
+.ct-app.ct-bs .page-wrapper {
+  width: 100% !important;
+  max-width: 100% !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+  margin-top: 0 !important;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+/* Explicit dark/light overrides for subpage filter bars, stats bars, class headers, exam card footers */
+.ct-app.ct-bs .filter-row,
+.ct-app.ct-bs .stats-bar,
+.ct-app.ct-bs .class-header,
+.ct-app.ct-bs .exam-card-footer,
+.ct-app.ct-bs .exam-card-foot,
+.ct-app.ct-bs .exam-card-actions,
+.ct-app.ct-bs .info-banner,
+.ct-app.ct-bs .visibility-banner,
+.ct-app.ct-bs .specialisation-banner {
+  background: var(--ct-surface) !important;
+  border-color: var(--ct-line) !important;
+  color: var(--ct-ink) !important;
+}
+.ct-app.ct-bs .exam-card-footer,
+.ct-app.ct-bs .exam-card-foot,
+.ct-app.ct-bs .exam-card-actions {
+  background: var(--ct-surface-2) !important;
+  border-top: 1px solid var(--ct-line) !important;
+}
+.ct-app.ct-bs .exam-card-title,
+.ct-app.ct-bs .exam-name,
+.ct-app.ct-bs .class-title,
+.ct-app.ct-bs .class-name {
+  color: var(--ct-ink) !important;
+}
+
+/* Harmonized Page Heroes / Headers inside subpages */
+.ct-app.ct-bs .page-header,
+.ct-app.ct-bs .page-hero,
+.ct-app.ct-bs .header-card,
+.ct-app.ct-bs .top-header,
+.ct-app.ct-bs .hero-card,
+.ct-app.ct-bs .profile-header,
+.ct-app.ct-bs .exam-header-card,
+.ct-app.ct-bs .card-header-section {
+  background: var(--ct-surface) !important;
+  background-image: radial-gradient(560px 200px at 94% 0%, rgba(0, 102, 255, 0.14), transparent 72%) !important;
+  border: 1px solid var(--ct-line) !important;
+  border-radius: var(--ct-r-xl) !important;
+  padding: 22px 26px !important;
+  margin-bottom: 20px !important;
+  color: var(--ct-ink) !important;
+  box-shadow: var(--ct-shadow-1) !important;
+}
+[data-theme="light"] .ct-app.ct-bs .page-header,
+[data-theme="light"] .ct-app.ct-bs .page-hero,
+[data-theme="light"] .ct-app.ct-bs .header-card,
+[data-theme="light"] .ct-app.ct-bs .profile-header {
+  background-image: radial-gradient(560px 200px at 94% 0%, rgba(0, 102, 255, 0.06), transparent 72%) !important;
+}
+.ct-app.ct-bs .page-header .logo-icon,
+.ct-app.ct-bs .header-card .logo-icon,
+.ct-app.ct-bs .stat-icon,
+.ct-app.ct-bs .stat-icon-wrap {
+  background: var(--ct-primary-soft) !important;
+  color: var(--ct-accent) !important;
+  border: 1px solid var(--ct-accent-line) !important;
+  border-radius: 12px !important;
+}
+
+/* Universal Surface Elevation & Cards */
+.ct-app.ct-bs .card,
+.ct-app.ct-bs .section-card,
+.ct-app.ct-bs .stat-card,
+.ct-app.ct-bs .chart-card,
+.ct-app.ct-bs .table-card,
+.ct-app.ct-bs .form-card,
+.ct-app.ct-bs .settings-card,
+.ct-app.ct-bs .filter-card,
+.ct-app.ct-bs .filter-bar,
+.ct-app.ct-bs .filter-section,
+.ct-app.ct-bs .search-bar,
+.ct-app.ct-bs .toolbar-card,
+.ct-app.ct-bs .exam-card,
+.ct-app.ct-bs .question-card,
+.ct-app.ct-bs .question-item,
+.ct-app.ct-bs .group-card,
+.ct-app.ct-bs .student-card,
+.ct-app.ct-bs .pending-card,
+.ct-app.ct-bs .analytics-card,
+.ct-app.ct-bs .support-card,
+.ct-app.ct-bs .attempt-card,
+.ct-app.ct-bs .summary-card,
+.ct-app.ct-bs .metric-card,
+.ct-app.ct-bs .kpi-card,
+.ct-app.ct-bs .dashboard-card,
+.ct-app.ct-bs .card-container,
+.ct-app.ct-bs .class-card,
+.ct-app.ct-bs .result-card,
+.ct-app.ct-bs .info-card,
+.ct-app.ct-bs .detail-card,
+.ct-app.ct-bs .panel-card,
+.ct-app.ct-bs .preview-card,
+.ct-app.ct-bs .log-card {
+  background: var(--ct-surface) !important;
+  border: 1px solid var(--ct-line) !important;
+  border-radius: var(--ct-r-lg) !important;
+  color: var(--ct-ink) !important;
+  box-shadow: var(--ct-shadow-1) !important;
+  transition: transform var(--ct-d-3) var(--ct-ease), border-color var(--ct-d-2) var(--ct-ease);
+}
+.ct-app.ct-bs .card-body,
+.ct-app.ct-bs .card-body-section {
+  background: transparent !important;
+  color: var(--ct-ink) !important;
+}
+.ct-app.ct-bs .card-header,
+.ct-app.ct-bs .section-header,
+.ct-app.ct-bs .chart-header,
+.ct-app.ct-bs .table-header,
+.ct-app.ct-bs .card-header-custom {
+  background: var(--ct-surface-2) !important;
+  border-bottom: 1px solid var(--ct-line) !important;
+  color: var(--ct-ink) !important;
+  border-top-left-radius: calc(var(--ct-r-lg) - 1px) !important;
+  border-top-right-radius: calc(var(--ct-r-lg) - 1px) !important;
+}
+
+/* Nested wells / inner boxes */
+.ct-app.ct-bs .info-box,
+.ct-app.ct-bs .note-box,
+.ct-app.ct-bs .detail-row,
+.ct-app.ct-bs .option-box,
+.ct-app.ct-bs .option-item,
+.ct-app.ct-bs .passage-box,
+.ct-app.ct-bs .formula-preview,
+.ct-app.ct-bs .preview-box,
+.ct-app.ct-bs .stat-item,
+.ct-app.ct-bs .mini-stat,
+.ct-app.ct-bs .exam-info,
+.ct-app.ct-bs .upload-zone,
+.ct-app.ct-bs .drop-zone,
+.ct-app.ct-bs .code-block,
+.ct-app.ct-bs pre {
+  background: var(--ct-surface-2) !important;
+  border: 1px solid var(--ct-line) !important;
+  color: var(--ct-ink) !important;
+  border-radius: var(--ct-r-md) !important;
+}
+
+/* Typography contrast enforcement across both Dark & Light */
+.ct-app.ct-bs h1, .ct-app.ct-bs h2, .ct-app.ct-bs h3,
+.ct-app.ct-bs h4, .ct-app.ct-bs h5, .ct-app.ct-bs h6,
+.ct-app.ct-bs strong, .ct-app.ct-bs b {
+  color: var(--ct-ink);
+}
+.ct-app.ct-bs p, .ct-app.ct-bs li, .ct-app.ct-bs dd {
+  color: var(--ct-ink-2);
+}
+.ct-app.ct-bs a:not(.ct-btn):not(.btn):not(.ct-nav__link):not(.ct-menu__item) {
+  color: var(--ct-accent);
+}
+.ct-app.ct-bs .stat-value,
+.ct-app.ct-bs .stat-number,
+.ct-app.ct-bs .kpi-value,
+.ct-app.ct-bs .metric-value {
+  color: var(--ct-ink) !important;
+  font-variant-numeric: tabular-nums;
+}
+.ct-app.ct-bs .stat-label,
+.ct-app.ct-bs .kpi-label,
+.ct-app.ct-bs .metric-label {
+  color: var(--ct-ink-3) !important;
+}
+
+/* Custom Tab Navigation (School Settings, Control Center, Analytics) */
+.ct-app.ct-bs .nav-tabs-custom,
+.ct-app.ct-bs .tabs-bar,
+.ct-app.ct-bs .tab-nav {
+  background: var(--ct-surface) !important;
+  border: 1px solid var(--ct-line) !important;
+  border-radius: var(--ct-r-md) !important;
+  padding: 5px !important;
+  gap: 4px;
+}
+.ct-app.ct-bs .nav-tabs-custom .nav-link,
+.ct-app.ct-bs .tab-btn,
+.ct-app.ct-bs .settings-tab {
+  color: var(--ct-ink-2) !important;
+  background: transparent !important;
+  border: 0 !important;
+  border-radius: var(--ct-r-sm) !important;
+  font-weight: 600 !important;
+  padding: 8px 14px !important;
+  transition: background-color var(--ct-d-2) var(--ct-ease), color var(--ct-d-2) var(--ct-ease) !important;
+}
+.ct-app.ct-bs .nav-tabs-custom .nav-link:hover,
+.ct-app.ct-bs .tab-btn:hover {
+  background: var(--ct-hover) !important;
+  color: var(--ct-ink) !important;
+}
+.ct-app.ct-bs .nav-tabs-custom .nav-link.active,
+.ct-app.ct-bs .tab-btn.active,
+.ct-app.ct-bs .settings-tab.active {
+  background: var(--ct-primary) !important;
+  color: #FFFFFF !important;
+  box-shadow: 0 6px 16px -8px rgba(0, 102, 255, 0.75);
+}
+
+/* Action Buttons & Legacy Custom Button Classes */
+.ct-app.ct-bs .btn-dashboard,
+.ct-app.ct-bs .btn-back,
+.ct-app.ct-bs .back-btn,
+.ct-app.ct-bs .nav-back,
+.ct-app.ct-bs .refresh-btn,
+.ct-app.ct-bs .btn-outline-light {
+  background: var(--ct-surface-2) !important;
+  border: 1px solid var(--ct-line-2) !important;
+  color: var(--ct-ink) !important;
+  border-radius: var(--ct-r-sm) !important;
+  font-weight: 600 !important;
+}
+.ct-app.ct-bs .btn-dashboard:hover,
+.ct-app.ct-bs .btn-back:hover,
+.ct-app.ct-bs .back-btn:hover,
+.ct-app.ct-bs .refresh-btn:hover,
+.ct-app.ct-bs .btn-outline-light:hover {
+  background: var(--ct-surface-3) !important;
+  border-color: var(--ct-line-3) !important;
+  color: var(--ct-ink) !important;
+}
+.ct-app.ct-bs .btn-school-analytics,
+.ct-app.ct-bs .btn-add,
+.ct-app.ct-bs .add-btn,
+.ct-app.ct-bs .btn-create,
+.ct-app.ct-bs .btn-start,
+.ct-app.ct-bs .btn-save,
+.ct-app.ct-bs .btn-approve-all,
+.ct-app.ct-bs .btn-action-primary {
+  background: var(--ct-primary) !important;
+  border: 1px solid var(--ct-primary) !important;
+  color: #FFFFFF !important;
+  border-radius: var(--ct-r-sm) !important;
+  font-weight: 620 !important;
+  box-shadow: 0 8px 20px -10px rgba(0, 102, 255, 0.75);
+}
+.ct-app.ct-bs .btn-add:hover,
+.ct-app.ct-bs .btn-create:hover,
+.ct-app.ct-bs .btn-start:hover,
+.ct-app.ct-bs .btn-save:hover { filter: brightness(1.08); }
+
+.ct-app.ct-bs .btn-approve,
+.ct-app.ct-bs .btn-resume {
+  background: var(--ct-ok-soft) !important;
+  border: 1px solid var(--ct-ok-line) !important;
+  color: var(--ct-ok) !important;
+  border-radius: var(--ct-r-sm) !important;
+  font-weight: 620 !important;
+}
+.ct-app.ct-bs .btn-reject,
+.ct-app.ct-bs .btn-delete,
+.ct-app.ct-bs .clear-btn,
+.ct-app.ct-bs .btn-danger-soft {
+  background: var(--ct-bad-soft) !important;
+  border: 1px solid var(--ct-bad-line) !important;
+  color: var(--ct-bad) !important;
+  border-radius: var(--ct-r-sm) !important;
+  font-weight: 620 !important;
+}
+.ct-app.ct-bs .btn-pause,
+.ct-app.ct-bs .btn-warn-soft {
+  background: var(--ct-warn-soft) !important;
+  border: 1px solid var(--ct-warn-line) !important;
+  color: var(--ct-warn) !important;
+  border-radius: var(--ct-r-sm) !important;
+  font-weight: 620 !important;
+}
+
+/* Search fields & filter dropdowns inside subpages */
+.ct-app.ct-bs .search-field,
+.ct-app.ct-bs .search-wrapper,
+.ct-app.ct-bs .search-box {
+  background: var(--ct-well) !important;
+  border: 1px solid var(--ct-line-2) !important;
+  border-radius: var(--ct-r-sm) !important;
+  color: var(--ct-ink) !important;
+}
+[data-theme="light"] .ct-app.ct-bs .search-field,
+[data-theme="light"] .ct-app.ct-bs .search-wrapper,
+[data-theme="light"] .ct-app.ct-bs .search-box { background: #FFFFFF !important; }
+.ct-app.ct-bs .search-field input,
+.ct-app.ct-bs .search-wrapper input,
+.ct-app.ct-bs .search-box input {
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  color: var(--ct-ink) !important;
+}
+
+/* Tables inside subpages */
+.ct-app.ct-bs .table-responsive,
+.ct-app.ct-bs .table-wrapper {
+  border-radius: var(--ct-r-md);
+  overflow: auto;
+}
+.ct-app.ct-bs .audit-table,
+.ct-app.ct-bs .custom-table,
+.ct-app.ct-bs .results-table,
+.ct-app.ct-bs .data-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+.ct-app.ct-bs .audit-table th,
+.ct-app.ct-bs .custom-table th,
+.ct-app.ct-bs .results-table th,
+.ct-app.ct-bs .data-table th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  padding: 11px 16px !important;
+}
+.ct-app.ct-bs .audit-table td,
+.ct-app.ct-bs .custom-table td,
+.ct-app.ct-bs .results-table td,
+.ct-app.ct-bs .data-table td {
+  padding: 12px 16px !important;
+  border-bottom: 1px solid var(--ct-line) !important;
+}
+
+/* Custom Modals inside legacy subpages */
+.ct-app.ct-bs .custom-modal-overlay,
+.ct-app.ct-bs .modal-overlay {
+  background: var(--ct-scrim) !important;
+}
+.ct-app.ct-bs .custom-modal,
+.ct-app.ct-bs .modal-box,
+.ct-app.ct-bs .modal-custom {
+  background: var(--ct-surface) !important;
+  border: 1px solid var(--ct-line-2) !important;
+  border-radius: var(--ct-r-xl) !important;
+  color: var(--ct-ink) !important;
+  box-shadow: var(--ct-shadow-pop) !important;
+}
+.ct-app.ct-bs .modal-header-custom,
+.ct-app.ct-bs .modal-footer-custom {
+  background: var(--ct-surface-2) !important;
+  border-color: var(--ct-line) !important;
+  color: var(--ct-ink) !important;
+}

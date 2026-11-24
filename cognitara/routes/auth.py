@@ -145,13 +145,18 @@ def logout():
 
 
 @auth_bp.route("/register", methods=["GET", "POST"])
+@limiter.limit(
+    os.environ.get("COGNITARA_RATELIMIT_REGISTER", "15 per minute"),
+    key_func=get_remote_address,
+    methods=["POST"],
+)
 def register():
     if request.method == "POST":
-        full_name = request.form["full_name"]
-        username = request.form["username"]
-        email = request.form["email"]
+        full_name = request.form["full_name"].strip()
+        username = request.form["username"].strip()
+        email = request.form["email"].strip()
         password = request.form["password"]
-        class_name = request.form["class"]
+        class_name = request.form["class"].strip()
         specialisation = request.form.get("specialisation", "General")  # NEW
         file = request.files.get('photo')
         

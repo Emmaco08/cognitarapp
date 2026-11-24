@@ -159,13 +159,29 @@ def create_app(config_class=Config):
         branding["initials"] = "".join(parts[:2]) or "CT"
         return {"school_branding": branding}
 
-    # Serve user-uploaded logos/photos from writable UPLOAD_FOLDER
+    # Serve user-uploaded logos/photos from writable UPLOAD_FOLDER (path-traversal hardened)
     @app.route("/uploads/images/<path:filename>")
     def serve_uploaded_image(filename):
+        from flask import abort
+        norm = str(filename or "").replace("\\", "/")
+        if not norm or "/" in norm or ".." in norm or norm.startswith("."):
+            abort(404)
         upload_dir = app.config.get("UPLOAD_FOLDER") or resolve_upload_dir()
-        if upload_dir and os.path.isfile(os.path.join(upload_dir, filename)):
-            return send_from_directory(upload_dir, filename)
-        return send_from_directory(os.path.join(static_dir, "images"), filename)
+        if upload_dir and os.path.isfile(os.path.join(upload_dir, norm)):
+            return send_from_directory(upload_dir, norm)
+        return send_from_directory(os.path.join(static_dir, "images"), norm)
+
+    @app.after_request
+    def apply_security_headers(response):
+        from flask import request
+        response.headers.setdefault("X-Content-Type-Options", "nosniff")
+        response.headers.setdefault("X-Frame-Options", "SAMEORIGIN")
+        response.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
+        response.headers.setdefault("Permissions-Policy", "camera=(), microphone=(), geolocation=()")
+        if not request.path.startswith("/static/") and not request.path.startswith("/uploads/"):
+            response.headers.setdefault("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0")
+            response.headers.setdefault("Pragma", "no-cache")
+        return response
 
     @app.route("/health")
     def health_check():

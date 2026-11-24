@@ -1,5 +1,6 @@
+{%- from '_ct_shell.html' import ico, ct_boot_script, admin_shell_start, teacher_shell_start, student_topbar, shell_end -%}
 <!DOCTYPE html>
-<html>
+<html lang="en" data-theme="dark">
 <head>
     <title>Edit Group Question | COGNITARA EXAM SYSTEM</title>
     <link href="{{ url_for('static', filename='vendor/bootstrap/css/bootstrap.min.css') }}" rel="stylesheet">
@@ -12,10 +13,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
         :root {
-            --primary: #4f46e5; --primary-dark: #3730a3; --success: #10b981;
-            --warning: #f59e0b; --danger: #ef4444; --purple: #8b5cf6;
-            --bg: #f1f5f9; --card: #ffffff; --border: #e5e7eb;
-            --text: #0f172a; --text-light: #64748b;
+            --primary: var(--ct-primary); --primary-dark: #3730a3; --success: #10b981;
+            --warning: #f59e0b; --danger: #ef4444; --purple: var(--ct-primary);
+            --bg: var(--ct-surface-2); --card: var(--ct-surface); --border: var(--ct-line-2);
+            --text: var(--ct-ink); --text-light: #64748b;
             --shadow-sm: 0 1px 2px rgba(0,0,0,0.04);
             --shadow: 0 4px 6px -1px rgba(0,0,0,0.06);
             --shadow-lg: 0 10px 25px -5px rgba(0,0,0,0.08);
@@ -23,10 +24,10 @@
             --transition: all 0.25s cubic-bezier(0.4,0,0.2,1);
         }
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { background: linear-gradient(135deg, #f8fafc 0%, #eef2ff 40%, #f8fafc 100%); font-family: 'Segoe UI', 'Inter', system-ui, sans-serif; color: var(--text); min-height: 100vh; }
+        body { background: var(--ct-surface-2); font-family: 'Segoe UI', 'Inter', system-ui, sans-serif; color: var(--text); min-height: 100vh; }
 
         .bg-shape { position: fixed; pointer-events: none; z-index: 0; border-radius: 50%; filter: blur(100px); opacity: 0.08; }
-        .bg-shape-1 { top: -5%; right: -5%; width: 400px; height: 400px; background: #a78bfa; animation: floatShape 20s infinite ease-in-out; }
+        .bg-shape-1 { top: -5%; right: -5%; width: 400px; height: 400px; background: var(--ct-accent); animation: floatShape 20s infinite ease-in-out; }
         @keyframes floatShape { 0%,100% { transform: translate(0,0) rotate(0deg) scale(1); } 50% { transform: translate(30px,-20px) rotate(180deg) scale(1.1); } }
 
         .edit-container { max-width: 900px; margin: 0 auto; padding: 32px 22px; position: relative; z-index: 10; }
@@ -37,7 +38,7 @@
         .logo-icon i { font-size: 28px; color: white; }
         .page-header h1 { font-size: 24px; font-weight: 800; color: var(--text); margin-bottom: 4px; }
         .page-header p { font-size: 14px; color: var(--text-light); }
-        .group-badge { display: inline-block; background: #ede9fe; color: #6d28d9; padding: 5px 14px; border-radius: 20px; font-size: 12px; font-weight: 600; margin-top: 6px; }
+        .group-badge { display: inline-block; background: var(--ct-accent-soft); color: var(--ct-primary); padding: 5px 14px; border-radius: 20px; font-size: 12px; font-weight: 600; margin-top: 6px; }
 
         .form-card { background: var(--card); border-radius: var(--radius-xl); padding: 24px 28px; border: 1px solid var(--border); box-shadow: var(--shadow); animation: fadeInUp 0.5s ease 0.1s both; }
         @keyframes fadeInUp { from { opacity:0; transform:translateY(15px); } to { opacity:1; transform:translateY(0); } }
@@ -45,7 +46,7 @@
         /* ============ SHARED TOOLBAR ============ */
         .shared-toolbar {
             display: flex; flex-wrap: wrap; gap: 3px; padding: 7px 10px;
-            background: #f1f5f9; border: 1px solid var(--border); border-radius: 12px;
+            background: var(--ct-surface); border: 1px solid var(--border); border-radius: 12px;
             margin-bottom: 14px;
         }
         .t-group { display: flex; gap: 2px; align-items: center; padding: 0 6px; border-right: 1px solid var(--border); }
@@ -54,25 +55,25 @@
             width: 32px; height: 30px; border: 1px solid transparent; border-radius: 6px;
             background: transparent; cursor: pointer; font-size: 12px; display: flex;
             align-items: center; justify-content: center; transition: 0.12s;
-            color: #475569; position: relative;
+            color: var(--ct-ink-2); position: relative;
         }
-        .t-btn:hover { background: #e2e8f0; }
+        .t-btn:hover { background: var(--ct-line-2); }
         .t-btn.on { background: var(--primary) !important; color: white !important; border-color: var(--primary) !important; box-shadow: 0 0 0 2px rgba(79,70,229,0.2); }
         .t-btn sup, .t-btn sub { font-size: 7px; line-height: 0; vertical-align: super; position: relative; top: -2px; }
 
         .math-drop {
             display: none; flex-wrap: wrap; gap: 3px; padding: 8px 10px;
-            background: #fffbeb; border: 1px solid #fde68a; border-radius: 10px;
+            background: var(--ct-warn-soft); border: 1px solid #fde68a; border-radius: 10px;
             margin-bottom: 12px; max-height: 160px; overflow-y: auto;
         }
         .math-drop.show { display: flex; }
         .math-label { width: 100%; font-size: 9px; color: #92400e; font-weight: 700; margin: 3px 0 1px; text-transform: uppercase; letter-spacing: 0.5px; border-top: 1px solid #fde68a; padding-top: 5px; }
         .math-label:first-child { border-top: none; padding-top: 0; }
         .m-btn {
-            width: 30px; height: 26px; border: 1px solid #e2e8f0; border-radius: 4px;
-            background: white; cursor: pointer; font-size: 12px; font-weight: 600;
+            width: 30px; height: 26px; border: 1px solid var(--ct-line-2); border-radius: 4px;
+            background: var(--ct-surface); cursor: pointer; font-size: 12px; font-weight: 600;
             transition: 0.12s; display: flex; align-items: center; justify-content: center;
-            color: #475569; font-family: 'Times New Roman', serif;
+            color: var(--ct-ink-2); font-family: 'Times New Roman', serif;
         }
         .m-btn:hover { background: var(--primary); color: white; border-color: var(--primary); }
         .m-btn.wide { width: auto; padding: 0 8px; font-size: 10px; font-family: 'Segoe UI', sans-serif; }
@@ -80,7 +81,7 @@
         .editor-area {
             min-height: 80px; max-height: 200px; overflow-y: auto;
             padding: 10px 14px; border: 1.5px solid var(--border); border-radius: 10px;
-            background: white; font-size: 14px; line-height: 1.7; color: var(--text);
+            background: var(--ct-surface); font-size: 14px; line-height: 1.7; color: var(--text);
             outline: none; word-wrap: break-word; overflow-wrap: break-word; white-space: pre-wrap;
             font-family: 'Segoe UI', 'Inter', sans-serif; transition: var(--transition);
         }
@@ -90,7 +91,7 @@
         .editor-area sub { font-size: 0.7em; vertical-align: sub; position: relative; bottom: -0.1em; line-height: 0; }
         .math-fraction { display: inline-flex !important; flex-direction: column !important; align-items: center !important; vertical-align: middle !important; line-height: 1 !important; margin: 0 2px !important; }
         .frac-num, .frac-den { outline: none; min-width: 14px; cursor: text; }
-        .frac-num:focus, .frac-den:focus { background: #eff6ff; border-radius: 2px; }
+        .frac-num:focus, .frac-den:focus { background: var(--ct-surface); border-radius: 2px; }
         .frac-num { border-bottom: 2px solid #1e293b !important; padding: 0 5px !important; font-size: 0.8em !important; text-align: center !important; display: inline-block !important; }
         .frac-den { padding: 0 5px !important; font-size: 0.8em !important; text-align: center !important; display: inline-block !important; }
         .fraction-wrapper { display: inline-flex !important; align-items: center !important; vertical-align: middle !important; }
@@ -103,8 +104,8 @@
         .btn-group-actions { display: flex; gap: 10px; margin-top: 22px; flex-wrap: wrap; }
         .btn-save { background: linear-gradient(135deg, #10b981, #059669); color: white; border: none; padding: 11px 24px; border-radius: 10px; font-weight: 600; font-size: 14px; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; transition: var(--transition); box-shadow: 0 4px 15px rgba(16,185,129,0.2); }
         .btn-save:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(16,185,129,0.3); }
-        .btn-cancel { background: white; border: 1.5px solid var(--border); padding: 10px 22px; border-radius: 10px; color: var(--text-light); text-decoration: none; font-weight: 600; font-size: 14px; display: inline-flex; align-items: center; gap: 8px; transition: var(--transition); }
-        .btn-cancel:hover { border-color: var(--danger); color: var(--danger); background: #fef2f2; }
+        .btn-cancel { background: var(--ct-surface); border: 1.5px solid var(--border); padding: 10px 22px; border-radius: 10px; color: var(--text-light); text-decoration: none; font-weight: 600; font-size: 14px; display: inline-flex; align-items: center; gap: 8px; transition: var(--transition); }
+        .btn-cancel:hover { border-color: var(--danger); color: var(--danger); background: var(--ct-bad-soft); }
 
         @media (max-width: 768px) {
             .edit-container { padding: 16px 10px; }
@@ -176,8 +177,15 @@
         });
     })();
     </script>
+
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/cognitara-web.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/cognitara-portal-unified.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/cognitara-teacher-studio.css') }}">
+  {{ ct_boot_script() }}
 </head>
-<body>
+<body class="ct-app ct-bs tc-studio">
+{{ admin_shell_start(active='exams', crumb='Edit Group Question') }}
+
 
     <div class="bg-shape bg-shape-1"></div>
 
@@ -212,7 +220,7 @@
                         <button type="button" class="f-btn" onclick="CogniTaraKaTeX.openBuilderWithTemplate()" title="Insert Math &amp; Science Formulas"><i class="fas fa-square-root-alt"></i> Formulas</button>
                     </div>
                     <div class="t-group">
-                        <button type="button" class="t-btn" id="editMathToggleBtn" title="More Math Symbols" style="color:#8b5cf6;font-weight:700;"><i class="fas fa-calculator"></i></button>
+                        <button type="button" class="t-btn" id="editMathToggleBtn" title="More Math Symbols" style="color: var(--ct-accent);font-weight:700;"><i class="fas fa-calculator"></i></button>
                     </div>
                 </div>
 
@@ -450,5 +458,7 @@
             }
         });
     </script>
+
+{{ shell_end(role='admin') }}
 </body>
 </html>

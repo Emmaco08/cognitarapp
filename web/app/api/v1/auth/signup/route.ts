@@ -8,51 +8,59 @@ import {
   isValidEmail,
   normalizeEmail,
 } from "@/lib/auth";
+import { getPlatformSettings, toPublicPlatformDirectives } from "@/lib/platform";
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(req: NextRequest) {
   try {
+    const ip = getClientIp(req);
+    const rl = checkRateLimit(`signup-ip:${ip}`, 10, 60_000);
+    if (!rl.allowed) {
+      return NextResponse.json(
+        { ok: false, error: "rate_limited", message: `Too many signup requests. Retry in ${rl.retryAfterSec}s.` },
+        { status: 429 }
+      );
+    }
+
+    const settings = await getPlatformSettings();
+    if (!settings.allow_self_signup) {
+      return NextResponse.json(
+        { ok: false, error: "signup_disabled", message: "New school registrations are temporarily paused by CogniTara HQ." },
+        { status: 403 }
+      );
+    }
+
     const body = (await req.json().catch(() => null)) as Record<string, unknown> | null;
     if (!body) {
       return NextResponse.json({ ok: false, error: "invalid_json", message: "Invalid JSON body." }, { status: 400 });
     }
 
-    const fullName = String(body.full_name || "").trim();
-    const schoolName = String(body.school_name || "").trim();
+    const fullName = String(body.full_name || "").trim().slice(0, 120);
+    const schoolName = String(body.school_name || "").trim().slice(0, 160);
     const email = normalizeEmail(String(body.email || ""));
     const password = String(body.password || "");
-    const phone = String(body.phone || "").trim();
+    const phone = String(body.phone || "").trim().slice(0, 40);
     const countryCode = String(body.country_code || "NG").trim().toUpperCase().slice(0, 2) || "NG";
-    const stateRegion = String(body.state_region || "").trim();
-    const referralCodeUsed = String(body.referral_code || "").trim().toUpperCase() || null;
+    const stateRegion = String(body.state_region || "").trim().slice(0, 80);
+    const referralCodeUsed = String(body.referral_code || "").trim().toUpperCase().slice(0, 32) || null;
     const clientType = body.client_type === "desktop" ? "desktop" : "web";
     const displayHwid = body.display_hwid ? String(body.display_hwid).trim().slice(0, 64) : null;
     const deviceLabel = body.device_label ? String(body.device_label).trim().slice(0, 120) : null;
+    const appVersion = body.app_version ? String(body.app_version).trim().slice(0, 32) : null;
 
     if (fullName.length < 2) {
-      return NextResponse.json(
-        { ok: false, error: "invalid_full_name", message: "Please enter your full name." },
-        { status: 400 }
-      );
+      return NextResponse.json({ ok: false, error: "invalid_full_name", message: "Please enter your full name." }, { status: 400 });
     }
     if (schoolName.length < 2) {
-      return NextResponse.json(
-        { ok: false, error: "invalid_school_name", message: "Please enter your school name." },
-        { status: 400 }
-      );
+      return NextResponse.json({ ok: false, error: "invalid_school_name", message: "Please enter your school name." }, { status: 400 });
     }
     if (!isValidEmail(email)) {
-      return NextResponse.json(
-        { ok: false, error: "invalid_email", message: "Please enter a valid email address." },
-        { status: 400 }
-      );
+      return NextResponse.json({ ok: false, error: "invalid_email", message: "Please enter a valid email address." }, { status: 400 });
     }
     if (password.length < 8) {
-      return NextResponse.json(
-        { ok: false, error: "weak_password", message: "Password must be at least 8 characters long." },
-        { status: 400 }
-      );
+      return NextResponse.json({ ok: false, error: "weak_password", message: "Password must be at least 8 characters long." }, { status: 400 });
     }
 
     const sql = getSql();
@@ -73,7 +81,10 @@ export async function POST(req: NextRequest) {
     const user = createdUsers[0] as Record<string, any>;
 
     const createdSchools = await sql`
-      INSERT INTO schools (owner_user_id, school_name, country_code, state_region, contact_email, contact_phone, referral_code_used, status)
+      INSERT INTO schools (
+        owner_user_id, school_name, country_code, state_region, contact_email, contact_phone,
+        referral_code_used, status, last_seen_at, last_hwid, last_app_version
+      )
       VALUES (
         ${user.id}::uuid,
         ${schoolName},
@@ -82,7 +93,10 @@ export async function POST(req: NextRequest) {
         ${email},
         ${phone || null},
         ${referralCodeUsed},
-        'active'
+        'active',
+        NOW(),
+        ${displayHwid},
+        ${appVersion}
       )
       RETURNING id, school_name, country_code, state_region, contact_email, contact_phone, status, created_at
     `;
@@ -102,6 +116,15 @@ export async function POST(req: NextRequest) {
       deviceLabel,
       displayHwid,
     });
+
+    const directives = {
+      ...toPublicPlatformDirectives(settings),
+      school_status: "active",
+      school_ban_reason: null,
+      school_notice: "",
+      school_notice_level: "info",
+      feature_overrides: {},
+    };
 
     const payload = {
       ok: true,
@@ -127,6 +150,7 @@ export async function POST(req: NextRequest) {
       },
       referral_code: myReferralCode,
       licenses: [],
+      directives,
     };
 
     const res = NextResponse.json(payload, { status: 201 });

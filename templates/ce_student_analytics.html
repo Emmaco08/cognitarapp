@@ -1,5 +1,6 @@
+{%- from '_ct_shell.html' import ico, ct_boot_script, admin_shell_start, teacher_shell_start, student_topbar, shell_end -%}
 <!DOCTYPE html>
-<html>
+<html lang="en" data-theme="dark">
 <head>
     <title>{{ student.full_name }} - Exam Analysis</title>
     <link href="{{ url_for('static', filename='vendor/bootstrap/css/bootstrap.min.css') }}" rel="stylesheet">
@@ -15,30 +16,30 @@
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { background: linear-gradient(135deg, #f5f7fa 0%, #e8edf5 100%); font-family: 'Segoe UI', 'Poppins', sans-serif; }
         .container-custom { max-width: 1200px; margin: 0 auto; padding: 30px; }
-        .header-card { background: linear-gradient(135deg, #1a56db 0%, #0e3b9e 100%); color: white; border-radius: 24px; padding: 30px; margin-bottom: 30px; }
-        .stat-card { background: white; border-radius: 20px; padding: 20px; text-align: center; border: 1px solid #e2e8f0; transition: all 0.3s; }
+        .header-card { background: var(--ct-brand-grad); color: white; border-radius: 24px; padding: 30px; margin-bottom: 30px; }
+        .stat-card { background: var(--ct-surface); border-radius: 20px; padding: 20px; text-align: center; border: 1px solid var(--ct-line-2); transition: all 0.3s; }
         .stat-card:hover { transform: translateY(-3px); box-shadow: 0 10px 20px -10px rgba(0,0,0,0.1); }
-        .question-card { background: white; border-radius: 16px; padding: 20px; margin-bottom: 15px; border: 1px solid #e2e8f0; transition: all 0.3s; }
+        .question-card { background: var(--ct-surface); border-radius: 16px; padding: 20px; margin-bottom: 15px; border: 1px solid var(--ct-line-2); transition: all 0.3s; }
         .question-card.correct { border-left: 4px solid #10b981; }
         .question-card.incorrect { border-left: 4px solid #ef4444; }
-        .badge-correct { background: #d1fae5; color: #065f46; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; }
-        .badge-incorrect { background: #fee2e2; color: #991b1b; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; }
-        .badge-pending { background: #fef3c7; color: #d97706; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; }
-        .badge-approved { background: #d1fae5; color: #065f46; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; }
-        .badge-rejected { background: #fee2e2; color: #991b1b; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; }
-        .badge-not-started { background: #e2e8f0; color: #64748b; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; }
-        .btn-back { background: white; border: 2px solid #e2e8f0; padding: 10px 25px; border-radius: 12px; color: #64748b; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; transition: all 0.3s; }
-        .btn-back:hover { border-color: #8b5cf6; color: #8b5cf6; }
+        .badge-correct { background: var(--ct-ok-soft); color: #065f46; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+        .badge-incorrect { background: var(--ct-bad-soft); color: #991b1b; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+        .badge-pending { background: var(--ct-warn-soft); color: #d97706; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+        .badge-approved { background: var(--ct-ok-soft); color: #065f46; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+        .badge-rejected { background: var(--ct-bad-soft); color: #991b1b; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+        .badge-not-started { background: var(--ct-line-2); color: var(--ct-ink-3); padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+        .btn-back { background: var(--ct-surface); border: 2px solid var(--ct-line-2); padding: 10px 25px; border-radius: 12px; color: var(--ct-ink-3); text-decoration: none; display: inline-flex; align-items: center; gap: 8px; transition: all 0.3s; }
+        .btn-back:hover { border-color: var(--ct-primary); color: var(--ct-primary); }
         .btn-export { background: #10b981; color: white; border: none; padding: 10px 20px; border-radius: 10px; cursor: pointer; transition: all 0.3s; }
         .btn-export:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(16,185,129,0.3); }
         .btn-approve { background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; border: none; padding: 12px 24px; border-radius: 12px; font-weight: 600; cursor: pointer; transition: all 0.3s; }
         .btn-approve:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(16,185,129,0.3); }
-        .btn-reject { background: white; border: 2px solid #ef4444; color: #ef4444; padding: 10px 22px; border-radius: 12px; font-weight: 600; cursor: pointer; transition: all 0.3s; }
+        .btn-reject { background: var(--ct-surface); border: 2px solid #ef4444; color: #ef4444; padding: 10px 22px; border-radius: 12px; font-weight: 600; cursor: pointer; transition: all 0.3s; }
         .btn-reject:hover { background: #ef4444; color: white; transform: translateY(-2px); }
         .filter-buttons { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
-        .filter-btn { padding: 8px 16px; border-radius: 10px; border: 1px solid #e2e8f0; background: white; cursor: pointer; transition: all 0.3s; }
-        .filter-btn.active { background: #1a56db; color: white; border-color: #1a56db; }
-        .time-badge { background: #f1f5f9; padding: 4px 12px; border-radius: 20px; font-size: 12px; display: inline-flex; align-items: center; gap: 6px; }
+        .filter-btn { padding: 8px 16px; border-radius: 10px; border: 1px solid var(--ct-line-2); background: var(--ct-surface); cursor: pointer; transition: all 0.3s; }
+        .filter-btn.active { background: var(--ct-primary); color: white; border-color: var(--ct-primary); }
+        .time-badge { background: var(--ct-surface); padding: 4px 12px; border-radius: 20px; font-size: 12px; display: inline-flex; align-items: center; gap: 6px; }
         @media (max-width: 768px) { .container-custom { padding: 15px; } }
         /* Question Text Wrapping */
 .question-card .mb-3,
@@ -185,8 +186,16 @@
         });
     })();
     </script>
+
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/cognitara-web.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/cognitara-portal-unified.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/cognitara-teacher-studio.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/cognitara-admin-studio.css') }}">
+  {{ ct_boot_script() }}
 </head>
-<body>
+<body class="ct-app ct-bs ad-studio">
+{{ admin_shell_start(active='ce', crumb='Candidate Analytics') }}
+
     <div class="container-custom">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 15px;">
             <a href="/admin/ce_analytics/{{ exam.id }}" class="btn-back"><i class="fas fa-arrow-left"></i> Back to Analytics</a>
@@ -272,13 +281,13 @@
                         <span class="badge-incorrect"><i class="fas fa-times-circle"></i> Incorrect</span>
                     {% endif %}
                 </div>
-                <div class="mb-3">{{ q.question|safe }}</div>
+                <div class="mb-3">{{ q.question|sanitize|safe }}</div>
                 {% if q.image %}
                 <div class="mb-2"><img src="/static/images/{{ q.image }}" style="max-width: 150px; border-radius: 10px;"></div>
                 {% endif %}
                 <div class="row mt-2">
-                    <div class="col-md-6"><strong>Your Answer:</strong> <span class="{% if not q.is_correct %}text-danger{% else %}text-success{% endif %}">{{ q.selected_letter }}. {{ (q.selected or '')|safe }}</span></div>
-                    <div class="col-md-6"><strong>Correct Answer:</strong> <span class="text-success">{{ q.correct_letter }}. {{ (q.correct_answer or '')|safe }}</span></div>
+                    <div class="col-md-6"><strong>Your Answer:</strong> <span class="{% if not q.is_correct %}text-danger{% else %}text-success{% endif %}">{{ q.selected_letter }}. {{ (q.selected or '')|sanitize|safe }}</span></div>
+                    <div class="col-md-6"><strong>Correct Answer:</strong> <span class="text-success">{{ q.correct_letter }}. {{ (q.correct_answer or '')|sanitize|safe }}</span></div>
                 </div>
                 <div class="mt-2">
                     <span class="time-badge"><i class="fas fa-clock"></i> Time spent: {{ q.time_spent }} seconds</span>
@@ -401,6 +410,8 @@
             }
         });
     </script>
+
+{{ shell_end(role='admin') }}
 </body>
 </html>
 

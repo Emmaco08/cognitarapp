@@ -93,12 +93,20 @@
         renderButtons: function() {
             if (!this.buttonsContainer) return;
 
+            const BACKSPACE_SVG = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 4H8l-7 8 7 8h13a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2z"/><line x1="18" y1="9" x2="12" y2="15"/><line x1="12" y1="9" x2="18" y2="15"/></svg>';
+            const COPY_SVG = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
+            const CHECK_SVG = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>';
+
             let html = '';
             if (this.type === 'simple' || this.type === 'basic') {
                 html = `
+                <div class="cogni-calc-sci-topbar">
+                    <span class="calc-sci-hint" style="font-family:var(--ct-mono);font-size:10.5px;letter-spacing:0.06em;text-transform:uppercase">Standard</span>
+                    <button type="button" class="calc-copy-btn" id="calcCopyBtn" title="Copy current answer">${COPY_SVG}<span>Copy</span></button>
+                </div>
                 <div class="cogni-calc-grid simple-grid">
                     <button type="button" class="calc-btn clear" data-val="C">C</button>
-                    <button type="button" class="calc-btn backspace" data-val="back" title="Backspace"><i class="fas fa-delete-left"></i></button>
+                    <button type="button" class="calc-btn backspace" data-val="back" title="Backspace" aria-label="Backspace">${BACKSPACE_SVG}</button>
                     <button type="button" class="calc-btn paren" data-val="(">(</button>
                     <button type="button" class="calc-btn paren" data-val=")">)</button>
                     <button type="button" class="calc-btn operator" data-val="÷">÷</button>
@@ -135,7 +143,7 @@
                     <button type="button" class="calc-deg-badge ${isDeg ? 'deg-active' : 'rad-active'}" id="calcDegToggle" title="Click to toggle Degree / Radian mode">
                         <span class="deg-dot"></span>${isDeg ? 'DEG' : 'RAD'}
                     </button>
-                    <span class="calc-sci-hint"><i class="fas fa-atom"></i> Scientific</span>
+                    <button type="button" class="calc-copy-btn" id="calcCopyBtn" title="Copy current answer">${COPY_SVG}<span>Copy</span></button>
                 </div>
                 <div class="cogni-calc-grid scientific-grid">
                     <button type="button" class="calc-btn scientific" data-val="sin">sin</button>
@@ -157,7 +165,7 @@
                     <button type="button" class="calc-btn scientific" data-val="fact">n!</button>
 
                     <button type="button" class="calc-btn clear" data-val="C">C</button>
-                    <button type="button" class="calc-btn backspace" data-val="back" title="Backspace"><i class="fas fa-delete-left"></i></button>
+                    <button type="button" class="calc-btn backspace" data-val="back" title="Backspace" aria-label="Backspace">${BACKSPACE_SVG}</button>
                     <button type="button" class="calc-btn paren" data-val="(">(</button>
                     <button type="button" class="calc-btn paren" data-val=")">)</button>
                     <button type="button" class="calc-btn operator" data-val="÷">÷</button>
@@ -209,6 +217,24 @@
                 degToggle.addEventListener('click', (e) => {
                     e.preventDefault();
                     this.toggleAngleUnit();
+                });
+            }
+
+            // Wire Copy Answer button
+            const copyBtn = this.buttonsContainer.querySelector('#calcCopyBtn');
+            if (copyBtn) {
+                copyBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const text = this.result || '0';
+                    if (navigator.clipboard && navigator.clipboard.writeText) {
+                        navigator.clipboard.writeText(text).catch(() => {});
+                    }
+                    copyBtn.classList.add('is-copied');
+                    copyBtn.innerHTML = `${CHECK_SVG}<span>Copied</span>`;
+                    setTimeout(() => {
+                        copyBtn.classList.remove('is-copied');
+                        copyBtn.innerHTML = `${COPY_SVG}<span>Copy</span>`;
+                    }, 1200);
                 });
             }
         },
@@ -491,8 +517,9 @@
                 this.modal.style.left = Math.min(Math.max(8, left), maxLeft) + 'px';
                 this.modal.style.top = Math.min(Math.max(8, top), maxTop) + 'px';
             } else {
-                this.modal.style.left = '24px';
-                this.modal.style.top = '85px';
+                const defaultW = this.isCompact ? 304 : 348;
+                this.modal.style.left = Math.max(16, window.innerWidth - defaultW - 28) + 'px';
+                this.modal.style.top = '118px';
             }
         },
 

@@ -1,99 +1,151 @@
+{%- from '_ct_shell.html' import ico, ct_boot_script, teacher_shell_start, shell_end -%}
+{%- set completed = namespace(count=0, sum_pct=0, passed=0) -%}
+{%- for r in results -%}
+  {%- if r.total and r.total > 0 -%}
+    {%- set pct = ((r.score / r.total) * 100) -%}
+    {%- set completed.count = completed.count + 1 -%}
+    {%- set completed.sum_pct = completed.sum_pct + pct -%}
+    {%- if pct >= 50 -%}{%- set completed.passed = completed.passed + 1 -%}{%- endif -%}
+  {%- endif -%}
+{%- endfor -%}
+{%- set avg_pct = (completed.sum_pct / completed.count)|round(1) if completed.count > 0 else 0 -%}
+{%- set pass_rate = ((completed.passed / completed.count) * 100)|round(1) if completed.count > 0 else 0 -%}
 <!DOCTYPE html>
-<html>
+<html lang="en" data-theme="dark">
 <head>
-    <title>Results</title>
-    <link href="{{ url_for('static', filename='vendor/bootstrap/css/bootstrap.min.css') }}" rel="stylesheet">
-    <meta name="viewport" content="width=device-width,initial-scale=1.0">
-    <!-- CSRF Protection Shield -->
-    <meta name="csrf-token" content="{{ csrf_token() }}">
-    <script>
-    window.CSRF_TOKEN = "{{ csrf_token() }}";
-    (function() {
-        if (window.fetch) {
-            const _origFetch = window.fetch;
-            window.fetch = function(url, options) {
-                options = options || {};
-                const method = (options.method || 'GET').toUpperCase();
-                if (!['GET', 'HEAD', 'OPTIONS', 'TRACE'].includes(method)) {
-                    options.headers = options.headers || {};
-                    const token = window.CSRF_TOKEN || (document.querySelector('meta[name="csrf-token"]') && document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
-                    if (token) {
-                        if (typeof Headers !== 'undefined' && options.headers instanceof Headers) {
-                            if (!options.headers.has('X-CSRFToken')) options.headers.set('X-CSRFToken', token);
-                        } else if (Array.isArray(options.headers)) {
-                            options.headers.push(['X-CSRFToken', token]);
-                        } else {
-                            if (!options.headers['X-CSRFToken']) options.headers['X-CSRFToken'] = token;
-                        }
-                    }
-                }
-                return _origFetch(url, options);
-            };
-        }
-        if (window.$ && $.ajaxSetup) {
-            $.ajaxSetup({
-                beforeSend: function(xhr, settings) {
-                    if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type)) {
-                        xhr.setRequestHeader("X-CSRFToken", window.CSRF_TOKEN);
-                    }
-                }
-            });
-        }
-        if (navigator.sendBeacon) {
-            const _origBeacon = navigator.sendBeacon.bind(navigator);
-            navigator.sendBeacon = function(url, data) {
-                if (data instanceof FormData) {
-                    if (!data.has('csrf_token')) data.append('csrf_token', window.CSRF_TOKEN);
-                } else if (typeof data === 'string') {
-                    try {
-                        const obj = JSON.parse(data);
-                        if (typeof obj === 'object' && obj !== null && !obj.csrf_token) {
-                            obj.csrf_token = window.CSRF_TOKEN;
-                            data = JSON.stringify(obj);
-                        }
-                    } catch(e) {}
-                }
-                return _origBeacon(url, data);
-            };
-        }
-        document.addEventListener('DOMContentLoaded', function() {
-            document.querySelectorAll('form[method="POST"], form[method="post"]').forEach(function(form) {
-                if (!form.querySelector('input[name="csrf_token"]')) {
-                    var input = document.createElement('input');
-                    input.type = 'hidden';
-                    input.name = 'csrf_token';
-                    input.value = window.CSRF_TOKEN;
-                    form.appendChild(input);
-                }
-            });
-        });
-    })();
-    </script>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+  <meta name="color-scheme" content="dark light">
+  <title>{{ exam.name }} — Results Ledger</title>
+  <link rel="icon" href="{{ url_for('static', filename='images/cognitara-favicon.ico') }}">
+  <link rel="preload" href="{{ url_for('static', filename='fonts/ui/PlusJakartaSans-Variable.woff2') }}" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="{{ url_for('static', filename='fonts/ui/GeistMono-Variable.woff2') }}" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/cognitara-web.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/cognitara-teacher-studio.css') }}">
+  {{ ct_boot_script() }}
 </head>
+<body class="ct-app tc-studio">
+{{ teacher_shell_start(active='dashboard', crumb='Exam Results') }}
 
-<body class="container mt-4">
+  <header class="tc-head">
+    <div class="tc-head__txt">
+      <span class="tc-eyebrow">Official Score Ledger</span>
+      <h1>{{ exam.name }}</h1>
+      <div class="tc-head__tags">
+        {% if exam.class %}<span class="tc-pill">{{ exam.class }}</span>{% endif %}
+        {% if exam.subject_tag %}<span class="tc-pill">{{ exam.subject_tag }}</span>{% endif %}
+        <span class="tc-pill">{{ results|length }} eligible {{ 'student' if results|length == 1 else 'students' }}</span>
+      </div>
+    </div>
+    <div class="tc-head__actions">
+      <button type="button" class="tc-btn tc-btn--secondary" onclick="window.print()">{{ ico('i-print', 'ct-ico--sm') }}Print Ledger</button>
+      <a href="/teacher/exam/{{ exam.id }}/analytics" class="tc-btn tc-btn--secondary">{{ ico('i-chart', 'ct-ico--sm') }}Exam Analytics</a>
+      <a href="/teacher" class="tc-btn tc-btn--secondary">{{ ico('i-arrow-left', 'ct-ico--sm') }}Dashboard</a>
+    </div>
+  </header>
 
-    <h2>{{ exam.name }} - Results</h2>
+  <section class="tc-kpi-strip" aria-label="Result summary">
+    <div class="tc-kpi">
+      <span class="tc-kpi__label">Eligible Roster</span>
+      <strong class="tc-kpi__val" data-ct-count>{{ results|length }}</strong>
+      <span class="tc-kpi__meta">Assigned to this paper</span>
+    </div>
+    <div class="tc-kpi">
+      <span class="tc-kpi__label">Submitted</span>
+      <strong class="tc-kpi__val" data-ct-count>{{ completed.count }}</strong>
+      <span class="tc-kpi__meta">{{ (results|length) - completed.count }} pending completion</span>
+    </div>
+    <div class="tc-kpi">
+      <span class="tc-kpi__label">Mean Score</span>
+      <strong class="tc-kpi__val" data-ct-count data-ct-decimals="1" data-ct-suffix="%">{{ avg_pct }}%</strong>
+      <span class="tc-kpi__meta">Across graded submissions</span>
+    </div>
+    <div class="tc-kpi">
+      <span class="tc-kpi__label">Pass Rate (≥50%)</span>
+      <strong class="tc-kpi__val" data-ct-count data-ct-decimals="1" data-ct-suffix="%">{{ pass_rate }}%</strong>
+      <span class="tc-kpi__meta">{{ completed.passed }} passed</span>
+    </div>
+  </section>
 
-    <table class="table table-bordered mt-4">
+  <section class="tc-card">
+    <div class="tc-card__head">
+      <div class="tc-card__title">
+        <h2>Student Scores</h2>
+        <p>Raw mark, percentage accuracy, and band status per student</p>
+      </div>
+      <div class="tc-card__tools">
+        <label class="tc-search">
+          {{ ico('i-search', 'ct-ico--sm') }}
+          <input type="search" placeholder="Filter by name…" data-ct-filter="#examResultsTable" aria-label="Search students">
+        </label>
+      </div>
+    </div>
+
+    {% if results %}
+    <div class="tc-table-wrap">
+      <table class="tc-table" id="examResultsTable">
         <thead>
-            <tr>
-                <th>Student</th>
-                <th>Score</th>
-            </tr>
+          <tr>
+            <th style="width:52px">#</th>
+            <th>Student</th>
+            <th>Raw Score</th>
+            <th>Accuracy</th>
+            <th>Status</th>
+          </tr>
         </thead>
-
         <tbody>
-            {% for r in results %}
-            <tr>
-                <td>{{ r.student }}</td>
-                <td>{{ r.score }} / {{ r.total }}</td>
-            </tr>
-            {% endfor %}
+          {% for r in results %}
+          {% set has_attempt = r.total and r.total > 0 %}
+          {% set pct = ((r.score / r.total) * 100)|round(1) if has_attempt else 0 %}
+          <tr>
+            <td class="tc-mono" style="color:var(--tc-ink-3)">{{ loop.index }}</td>
+            <td>
+              <div class="tc-user-cell">
+                <span class="tc-avatar tc-avatar--sm">{{ (r.student[:2] if r.student else 'ST')|upper }}</span>
+                <span><strong>{{ r.student }}</strong></span>
+              </div>
+            </td>
+            <td class="tc-mono" style="font-weight:640">
+              {% if has_attempt %}{{ r.score }} / {{ r.total }}{% else %}—{% endif %}
+            </td>
+            <td>
+              {% if has_attempt %}
+              <div class="tc-bar-cell">
+                <span class="tc-bar {% if pct >= 75 %}{% elif pct >= 60 %}tc-bar--accent{% elif pct >= 50 %}tc-bar--warn{% else %}tc-bar--bad{% endif %}" style="width:92px">
+                  <i style="width:{{ [pct, 100]|min }}%"></i>
+                </span>
+                <span class="tc-mono" style="font-weight:650">{{ "%.1f"|format(pct) }}%</span>
+              </div>
+              {% else %}
+              <span style="color:var(--tc-ink-3);font-size:12.5px">Not taken</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if not has_attempt %}
+              <span class="tc-pill">Pending</span>
+              {% elif pct >= 75 %}
+              <span class="tc-pill tc-pill--ok">Distinction</span>
+              {% elif pct >= 50 %}
+              <span class="tc-pill tc-pill--accent">Pass</span>
+              {% else %}
+              <span class="tc-pill tc-pill--bad">Below Pass</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
         </tbody>
-    </table>
+      </table>
+    </div>
+    {% else %}
+    <div class="tc-empty">
+      <span class="tc-empty__ico">{{ ico('i-doc') }}</span>
+      <strong>No student records found</strong>
+      <p>Eligible students enrolled in this class will appear here as soon as they are approved.</p>
+    </div>
+    {% endif %}
+  </section>
 
-    <a href="/teacher" class="btn btn-secondary">Back</a>
-
+{{ shell_end(role='teacher') }}
 </body>
 </html>

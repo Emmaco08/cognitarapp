@@ -1,5 +1,6 @@
+{%- from '_ct_shell.html' import ico, ct_boot_script, admin_shell_start, teacher_shell_start, student_topbar, shell_end -%}
 <!DOCTYPE html>
-<html>
+<html lang="en" data-theme="dark">
 <head>
     <title>Add Student | COGNITARA EXAM SYSTEM</title>
     <link href="{{ url_for('static', filename='vendor/bootstrap/css/bootstrap.min.css') }}" rel="stylesheet">
@@ -13,7 +14,7 @@
             padding: 12px 15px;
             margin-top: 10px;
             font-size: 13px;
-            color: #1a56db;
+            color: var(--ct-primary);
         }
         * {
             margin: 0;
@@ -72,7 +73,7 @@
         .logo-icon {
             width: 80px;
             height: 80px;
-            background: linear-gradient(135deg, #1a56db 0%, #0e3b9e 100%);
+            background: var(--ct-brand-grad);
             border-radius: 50%;
             display: inline-flex;
             align-items: center;
@@ -95,7 +96,7 @@
         .page-header h1 {
             font-size: 32px;
             font-weight: 800;
-            background: linear-gradient(135deg, #1a56db 0%, #0e3b9e 100%);
+            background: var(--ct-brand-grad);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
@@ -104,15 +105,15 @@
 
         .page-header p {
             font-size: 16px;
-            color: #64748b;
+            color: var(--ct-ink-3);
         }
 
         .form-container {
-            background: white;
+            background: var(--ct-surface);
             border-radius: 28px;
             box-shadow: 0 20px 40px rgba(0, 0, 0, 0.05);
             padding: 35px;
-            border: 1px solid #e2e8f0;
+            border: 1px solid var(--ct-line-2);
         }
 
         .form-group {
@@ -136,33 +137,33 @@
         .form-control-custom {
             width: 100%;
             padding: 13px 15px 13px 45px;
-            border: 2px solid #e2e8f0;
+            border: 2px solid var(--ct-line-2);
             border-radius: 14px;
             font-size: 14px;
             transition: all 0.3s ease;
-            background: #f8fafc;
+            background: var(--ct-surface);
         }
 
         .form-control-custom:focus {
             outline: none;
-            border-color: #1a56db;
-            background: white;
+            border-color: var(--ct-primary);
+            background: var(--ct-surface);
             box-shadow: 0 0 0 3px rgba(26, 86, 219, 0.1);
         }
 
         .form-control-custom.valid {
             border-color: #10b981;
-            background: #f0fdf4;
+            background: var(--ct-ok-soft);
         }
 
         .form-control-custom.invalid {
             border-color: #ef4444;
-            background: #fef2f2;
+            background: var(--ct-bad-soft);
         }
 
         label {
             font-weight: 600;
-            color: #1e293b;
+            color: var(--ct-ink);
             margin-bottom: 8px;
             display: block;
             font-size: 14px;
@@ -170,7 +171,7 @@
 
         label i {
             margin-right: 8px;
-            color: #1a56db;
+            color: var(--ct-primary);
         }
 
         .password-box {
@@ -194,7 +195,7 @@
         }
 
         .toggle-password:hover {
-            color: #1a56db;
+            color: var(--ct-primary);
         }
 
         .validation-message {
@@ -209,23 +210,23 @@
         .validation-message.invalid { color: #ef4444; }
 
         .password-requirements {
-            background: #f8fafc;
+            background: var(--ct-surface);
             border-radius: 12px;
             padding: 12px 15px;
             margin-top: 10px;
-            border: 1px solid #e2e8f0;
+            border: 1px solid var(--ct-line-2);
         }
 
         .password-requirements p {
             font-size: 12px;
             font-weight: 600;
-            color: #1e293b;
+            color: var(--ct-ink);
             margin-bottom: 8px;
         }
 
         .requirement {
             font-size: 11px;
-            color: #64748b;
+            color: var(--ct-ink-3);
             margin-bottom: 5px;
             display: flex;
             align-items: center;
@@ -238,23 +239,23 @@
 
         /* Multi-Class Assignment Section */
         .class-assignments-section {
-            background: #f8fafc;
+            background: var(--ct-surface);
             border-radius: 16px;
             padding: 20px;
             margin: 20px 0;
-            border: 1px solid #e2e8f0;
+            border: 1px solid var(--ct-line-2);
         }
 
         .section-subtitle {
             font-size: 15px;
             font-weight: 600;
-            color: #1e293b;
+            color: var(--ct-ink);
             margin-bottom: 15px;
         }
 
         .section-subtitle i {
             margin-right: 8px;
-            color: #1a56db;
+            color: var(--ct-primary);
         }
 
         .class-assignment-row {
@@ -268,10 +269,10 @@
         .class-select, .specialisation-select {
             width: 100%;
             padding: 10px 12px;
-            border: 2px solid #e2e8f0;
+            border: 2px solid var(--ct-line-2);
             border-radius: 10px;
             font-size: 13px;
-            background: white;
+            background: var(--ct-surface);
         }
 
         .btn-remove-class {
@@ -279,7 +280,7 @@
             height: 36px;
             border-radius: 10px;
             border: none;
-            background: #fee2e2;
+            background: var(--ct-bad-soft);
             color: #ef4444;
             cursor: pointer;
             display: flex;
@@ -294,7 +295,7 @@
         }
 
         .btn-add-class {
-            background: #1a56db;
+            background: var(--ct-primary);
             color: white;
             border: none;
             padding: 10px 18px;
@@ -316,7 +317,7 @@
 
         /* Form Tutor Section */
         .form-tutor-section {
-            background: linear-gradient(135deg, #fef3c7 0%, #fffbeb 100%);
+            background: var(--ct-surface-2);
             border-radius: 16px;
             padding: 20px;
             margin: 20px 0;
@@ -331,7 +332,7 @@
             max-width: 100px;
             max-height: 100px;
             margin-top: 12px;
-            border: 2px solid #1a56db;
+            border: 2px solid var(--ct-primary);
             border-radius: 12px;
             padding: 4px;
             display: none;
@@ -348,19 +349,19 @@
 
         .image-status.error {
             color: #991b1b;
-            background-color: #fee2e2;
+            background-color: var(--ct-bad-soft);
             border-left: 3px solid #ef4444;
         }
 
         .image-status.success {
             color: #065f46;
-            background-color: #d1fae5;
+            background-color: var(--ct-ok-soft);
             border-left: 3px solid #10b981;
         }
 
         .image-status.warning {
             color: #92400e;
-            background-color: #fef3c7;
+            background-color: var(--ct-warn-soft);
             border-left: 3px solid #f59e0b;
         }
 
@@ -401,10 +402,10 @@
         .btn-back {
             flex: 1;
             padding: 14px;
-            background: white;
-            border: 2px solid #e2e8f0;
+            background: var(--ct-surface);
+            border: 2px solid var(--ct-line-2);
             border-radius: 14px;
-            color: #64748b;
+            color: var(--ct-ink-3);
             font-size: 16px;
             font-weight: 600;
             text-decoration: none;
@@ -417,14 +418,14 @@
         }
 
         .btn-back:hover {
-            border-color: #1a56db;
-            color: #1a56db;
-            background: #eff6ff;
+            border-color: var(--ct-primary);
+            color: var(--ct-primary);
+            background: var(--ct-surface);
             transform: translateY(-2px);
         }
 
         .alert-custom {
-            background: #fee2e2;
+            background: var(--ct-bad-soft);
             border-left: 4px solid #ef4444;
             color: #991b1b;
             padding: 12px 18px;
@@ -453,24 +454,24 @@
 
         .text-danger { color: #dc2626 !important; }
         .text-success { color: #10b981 !important; }
-        .text-muted { color: #64748b !important; }
+        .text-muted { color: var(--ct-ink-3) !important; }
 
         input[type="file"] {
             padding: 12px;
-            background: #f8fafc;
-            border: 2px solid #e2e8f0;
+            background: var(--ct-surface);
+            border: 2px solid var(--ct-line-2);
             border-radius: 14px;
             cursor: pointer;
             width: 100%;
         }
 
         input[type="file"]:hover {
-            border-color: #1a56db;
+            border-color: var(--ct-primary);
         }
 
         .info-badge {
             background: #e0e7ff;
-            color: #1a56db;
+            color: var(--ct-primary);
             padding: 2px 10px;
             border-radius: 20px;
             font-size: 11px;
@@ -556,8 +557,16 @@
         });
     })();
     </script>
+
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/cognitara-web.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/cognitara-portal-unified.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/cognitara-teacher-studio.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/cognitara-admin-studio.css') }}">
+  {{ ct_boot_script() }}
 </head>
-<body>
+<body class="ct-app ct-bs ad-studio">
+{{ admin_shell_start(active='students', crumb='Add Student') }}
+
 
     <!-- Animated Educational Icons Background -->
     <div class="edu-icon"><i class="fas fa-graduation-cap"></i></div>
@@ -987,5 +996,7 @@
         // Initialize
         document.getElementById('submitBtn').disabled = true;
     </script>
+
+{{ shell_end(role='admin') }}
 </body>
 </html>

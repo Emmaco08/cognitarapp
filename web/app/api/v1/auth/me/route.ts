@@ -13,7 +13,7 @@ export async function GET(req: NextRequest) {
     const account = await resolveAuthenticatedAccount(token);
     if (!account) {
       return NextResponse.json(
-        { ok: false, error: "session_expired", message: "Your session has expired. Please sign in again." },
+        { ok: false, error: "session_expired", message: "Your session has expired or was signed out by CogniTara HQ." },
         { status: 401 }
       );
     }
@@ -25,6 +25,7 @@ export async function GET(req: NextRequest) {
       school: account.school,
       referral_code: account.referral_code,
       licenses: account.licenses,
+      directives: account.directives,
     });
   } catch (err) {
     console.error("Auth /me error:", err);

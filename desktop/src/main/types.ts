@@ -102,6 +102,24 @@ export interface UpdateStatusState {
   checkedAt: number | null;
 }
 
+export interface CloudDirectives {
+  maintenance_mode?: boolean;
+  maintenance_message?: string;
+  min_desktop_version?: string;
+  global_announcement?: string;
+  global_announcement_level?: string;
+  school_status?: string;
+  school_ban_reason?: string | null;
+  school_notice?: string;
+  school_notice_level?: string;
+  allow_paystack_checkout?: boolean;
+  allow_trial_activation?: boolean;
+  paystack_public_key?: string;
+  paystack_mode?: string;
+  default_currency?: string;
+  feature_overrides?: Record<string, unknown>;
+}
+
 export interface CloudAccountSession {
   signedIn: boolean;
   offline: boolean;
@@ -122,13 +140,18 @@ export interface CloudAccountSession {
     state_region?: string;
     contact_email?: string;
     status: string;
+    ban_reason?: string | null;
   } | null;
   referralCode: string | null;
   licenses: Array<{
     id: string;
     license_key: string;
     plan_tier: string;
+    plan_name?: string;
     status: string;
     expires_at: string | null;
+    signed_lease_json?: Record<string, unknown> | null;
+    revocation_tombstone_json?: Record<string, unknown> | null;
   }>;
+  directives?: CloudDirectives | null;
 }

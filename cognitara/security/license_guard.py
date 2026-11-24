@@ -53,8 +53,8 @@ from cognitara.security.vault_store import (
 logger = logging.getLogger("cognitara.security.license_guard")
 
 # Production Ed25519 public key (32-byte raw public key encoded in base64url).
-# Swapped to the live cognitara.net signing authority public key at Stage 7 release.
-DEFAULT_ED25519_PUBLIC_KEY_B64 = "p9fN2h7Y5c3K8m1Q4v6W0x2Z9b4D7f1H3j5L8n0P2r4"
+# Matches the live CogniTara Cloud Ed25519 signing authority keypair.
+DEFAULT_ED25519_PUBLIC_KEY_B64 = "cUDQSjHQMeXyWg3Ydptk-APs7Pd_lEyIp_XqBErD00g"
 DEFAULT_KEY_ID = "ct-ed25519-2026-01"
 DEFAULT_CLOUD_API_BASE = os.environ.get("COGNITARA_CLOUD_URL", "https://cognitara-cloud.vercel.app")
 
@@ -64,8 +64,10 @@ TRIAL_DURATION_SECONDS = TRIAL_DURATION_DAYS * 86400
 PLAN_LEASE_SECONDS = {
     "trial": TRIAL_DURATION_SECONDS,
     "monthly": 7 * 86400,
+    "termly": 14 * 86400,
     "annual": 30 * 86400,
     "lifetime": 90 * 86400,
+    "custom": 30 * 86400,
 }
 
 GRACEFUL_DRAIN_SECONDS = 900  # 15 minutes
@@ -518,10 +520,10 @@ class LicenseGuard:
             "hw_component_hashes": fp["component_hashes"],
             "machine_hostname": fp["hostname"],
             "os_version": fp["os_version"],
-            "app_version": "2.0.0",
+            "app_version": "2.2.0",
         }).encode("utf-8")
         req = urllib.request.Request(
-            f"{base}/api/v1/license/activate",
+            f"{base}/api/v1/licenses/activate",
             data=req_body,
             headers={"Content-Type": "application/json", "Accept": "application/json"},
             method="POST",
@@ -533,17 +535,18 @@ class LicenseGuard:
             detail = exc.read().decode("utf-8", errors="ignore")
             try:
                 parsed = json.loads(detail)
-                msg = parsed.get("error") or parsed.get("message") or f"HTTP {exc.code}"
+                msg = parsed.get("message") or parsed.get("error") or f"HTTP {exc.code}"
             except Exception:
                 msg = f"HTTP {exc.code}"
             return {"ok": False, "error": "cloud_activation_rejected", "message": msg}
         except Exception as exc:
             return {"ok": False, "error": "cloud_unreachable", "message": str(exc)}
 
-        if data.get("status") == "REVOKED" and data.get("tombstone"):
-            return self.apply_revocation_tombstone(data)
+        if (data.get("status") == "REVOKED" or data.get("revoked")) and data.get("tombstone"):
+            tomb_env = data["tombstone"] if isinstance(data["tombstone"], dict) and "ed25519_sig" in data["tombstone"] else data
+            return self.apply_revocation_tombstone(tomb_env)
 
-        lease = data.get("signed_lease") or data
+        lease = data.get("signed_lease") or data.get("lease") or data
         return self.activate_lease(lease)
 
     def perform_heartbeat(
@@ -551,7 +554,7 @@ class LicenseGuard:
         cloud_base_url: Optional[str] = None,
         timeout: float = 10.0,
     ) -> Dict[str, Any]:
-        """Sync with cognitara.net to refresh the offline lease or receive revocations."""
+        """Sync with CogniTara Cloud to refresh the offline lease or receive revocations."""
         status = self.evaluate(advance_monotonic=False)
         if not status.get("license_id"):
             return {"ok": False, "error": "not_activated", "status": status}
@@ -561,7 +564,7 @@ class LicenseGuard:
         req_body = json.dumps({
             "license_id": status["license_id"],
             "hwid_hash": fp["hwid_hash"],
-            "app_version": "2.0.0",
+            "app_version": "2.2.0",
             "client_utc": datetime.fromtimestamp(self._clock_utc(), tz=timezone.utc).isoformat(),
             "used_seconds": status.get("used_seconds", 0),
             "lock_state": status["lock_state"],
@@ -569,7 +572,7 @@ class LicenseGuard:
             "active_exams_count": status.get("active_exams_count", 0),
         }).encode("utf-8")
         req = urllib.request.Request(
-            f"{base}/api/v1/license/heartbeat",
+            f"{base}/api/v1/licenses/heartbeat",
             data=req_body,
             headers={"Content-Type": "application/json", "Accept": "application/json"},
             method="POST",
@@ -577,18 +580,30 @@ class LicenseGuard:
         try:
             with urllib.request.urlopen(req, timeout=timeout) as resp:
                 data = json.loads(resp.read().decode("utf-8"))
+        except urllib.error.HTTPError as exc:
+            detail = exc.read().decode("utf-8", errors="ignore")
+            try:
+                parsed = json.loads(detail)
+                if (parsed.get("revoked") or parsed.get("status") == "REVOKED") and parsed.get("tombstone"):
+                    tomb_env = parsed["tombstone"] if isinstance(parsed["tombstone"], dict) and "ed25519_sig" in parsed["tombstone"] else parsed
+                    res = self.apply_revocation_tombstone(tomb_env)
+                    return {"ok": False, "revoked": True, "status": res.get("status", self.evaluate(False))}
+            except Exception:
+                pass
+            return {"ok": False, "error": "cloud_unreachable", "message": f"HTTP {exc.code}", "status": status}
         except Exception as exc:
             return {"ok": False, "error": "cloud_unreachable", "message": str(exc), "status": status}
 
-        if data.get("status") == "REVOKED" and data.get("tombstone"):
-            res = self.apply_revocation_tombstone(data)
+        if (data.get("status") == "REVOKED" or data.get("revoked")) and data.get("tombstone"):
+            tomb_env = data["tombstone"] if isinstance(data["tombstone"], dict) and "ed25519_sig" in data["tombstone"] else data
+            res = self.apply_revocation_tombstone(tomb_env)
             return {"ok": False, "revoked": True, "status": res.get("status", self.evaluate(False))}
 
-        refreshed = data.get("signed_lease") or (data if data.get("payload") and data.get("ed25519_sig") else None)
-        if refreshed:
+        refreshed = data.get("signed_lease") or data.get("lease") or (data if data.get("payload") and data.get("ed25519_sig") else None)
+        if refreshed and isinstance(refreshed, dict) and refreshed.get("payload") and refreshed.get("ed25519_sig"):
             return self.activate_lease(refreshed)
 
-        return {"ok": True, "status": self.evaluate(advance_monotonic=False)}
+        return {"ok": True, "status": self.evaluate(advance_monotonic=False), "directives": data.get("directives")}
 
     def evaluate(self, advance_monotonic: bool = True) -> Dict[str, Any]:
         """

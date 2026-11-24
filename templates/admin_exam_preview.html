@@ -1,5 +1,6 @@
+{%- from '_ct_shell.html' import ico, ct_boot_script, admin_shell_start, teacher_shell_start, student_topbar, shell_end -%}
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
     <meta charset="UTF-8">
     <title>Exam Preview | {{ exam.name }}</title>
@@ -12,14 +13,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
         :root {
-            --bg: #f1f5f9;
-            --surface: #ffffff;
-            --border: #e2e8f0;
-            --text: #0f172a;
+            --bg: var(--ct-surface-2);
+            --surface: var(--ct-surface);
+            --border: var(--ct-line-2);
+            --text: var(--ct-ink);
             --text2: #475569;
             --text3: #94a3b8;
-            --primary: #6366f1;
-            --primary2: #8b5cf6;
+            --primary: var(--ct-primary);
+            --primary2: var(--ct-primary);
             --green: #10b981;
             --amber: #f59e0b;
             --red: #ef4444;
@@ -32,7 +33,7 @@
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+            background: var(--ct-surface-2);
             font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
             color: var(--text);
             min-height: 100vh;
@@ -150,10 +151,10 @@
             font-size: 16px;
             flex-shrink: 0;
         }
-        .strip-icon.blue { background: #eff6ff; color: #3b82f6; }
-        .strip-icon.purple { background: #faf5ff; color: #8b5cf6; }
+        .strip-icon.blue { background: var(--ct-surface); color: #3b82f6; }
+        .strip-icon.purple { background: #faf5ff; color: var(--ct-primary); }
         .strip-icon.amber { background: #fff7ed; color: #f97316; }
-        .strip-icon.green { background: #f0fdf4; color: #10b981; }
+        .strip-icon.green { background: var(--ct-ok-soft); color: #10b981; }
         .strip-info small {
             font-size: 10px;
             color: var(--text3);
@@ -185,7 +186,7 @@
         }
         .section-title-bar {
             padding: 16px 24px;
-            background: linear-gradient(135deg, #fafbff, #f8fafc);
+            background: var(--ct-surface-2);
             border-bottom: 1px solid var(--border);
             display: flex;
             align-items: center;
@@ -209,7 +210,7 @@
             font-size: 11px;
             color: var(--text3);
             font-weight: 600;
-            background: #f1f5f9;
+            background: var(--ct-surface);
             padding: 4px 14px;
             border-radius: 50px;
         }
@@ -241,7 +242,7 @@
             font-size: 15px;
             flex-shrink: 0;
             color: white;
-            background: linear-gradient(135deg, var(--primary), #4f46e5);
+            background: linear-gradient(135deg, var(--primary), var(--ct-primary));
             box-shadow: 0 4px 14px rgba(99,102,241,0.2);
         }
         .q-text-box {
@@ -258,8 +259,8 @@
         .q-text-box p { margin: 0 0 10px; }
         .q-text-box ul, .q-text-box ol { margin: 8px 0; padding-left: 24px; }
         .q-text-box li { margin-bottom: 5px; }
-        .q-text-box strong, .q-text-box b { color: #1e293b; font-weight: 700; }
-        .q-text-box em, .q-text-box i { color: #6366f1; }
+        .q-text-box strong, .q-text-box b { color: var(--ct-ink); font-weight: 700; }
+        .q-text-box em, .q-text-box i { color: var(--ct-primary); }
         .q-text-box sup { font-size: 0.7em; vertical-align: super; }
         .q-text-box sub { font-size: 0.7em; vertical-align: sub; }
         .q-text-box table {
@@ -269,7 +270,7 @@
             max-width: 100%;
         }
         .q-text-box td, .q-text-box th {
-            border: 1px solid #e2e8f0;
+            border: 1px solid var(--ct-line-2);
             padding: 6px 12px;
             font-size: 13px;
         }
@@ -302,7 +303,7 @@
             gap: 12px;
             padding: 14px 18px;
             border-radius: 12px;
-            border: 2px solid #e2e8f0;
+            border: 2px solid var(--ct-line-2);
             background: #fafbfc;
             transition: all 0.2s ease;
             cursor: default;
@@ -311,11 +312,11 @@
             min-width: 0;
         }
         .option-cell:hover {
-            border-color: #cbd5e1;
-            background: #f8fafc;
+            border-color: var(--ct-line-2);
+            background: var(--ct-surface);
         }
         .option-cell.correct {
-            background: #f0fdf4;
+            background: var(--ct-ok-soft);
             border-color: #86efac;
             box-shadow: 0 0 0 3px rgba(16,185,129,0.06);
         }
@@ -329,7 +330,7 @@
             font-weight: 700;
             font-size: 13px;
             flex-shrink: 0;
-            background: #e2e8f0;
+            background: var(--ct-line-2);
             color: var(--text2);
             transition: all 0.2s;
         }
@@ -340,7 +341,7 @@
         }
         .option-text-content {
             font-size: 14px;
-            color: #334155;
+            color: var(--ct-ink-2);
             line-height: 1.6;
             word-wrap: break-word;
             overflow-wrap: break-word;
@@ -379,12 +380,12 @@
             align-items: center;
             gap: 7px;
             font-size: 11px;
-            color: #7c3aed;
+            color: var(--ct-primary);
             text-transform: uppercase;
             letter-spacing: 0.5px;
             font-weight: 700;
             margin-bottom: 10px;
-            background: white;
+            background: var(--ct-surface);
             padding: 5px 12px;
             border-radius: 50px;
             border: 1px solid #ede9fe;
@@ -392,9 +393,9 @@
         .group-content-area {
             font-size: 14px;
             line-height: 1.9;
-            color: #334155;
+            color: var(--ct-ink-2);
             padding: 16px;
-            background: white;
+            background: var(--ct-surface);
             border-radius: 10px;
             border: 1px solid #f3f0ff;
             word-wrap: break-word;
@@ -407,7 +408,7 @@
         }
         .group-instruction {
             font-size: 12px;
-            color: #7c3aed;
+            color: var(--ct-primary);
             margin-bottom: 10px;
             display: flex;
             align-items: flex-start;
@@ -417,7 +418,7 @@
         .group-question {
             padding-left: 20px;
             margin-top: 20px;
-            border-left: 4px solid #e2e8f0;
+            border-left: 4px solid var(--ct-line-2);
             padding-left: 24px;
         }
 
@@ -427,11 +428,11 @@
             padding: 80px 40px;
             background: var(--surface);
             border-radius: var(--radius);
-            border: 2px dashed #e2e8f0;
+            border: 2px dashed var(--ct-line-2);
         }
         .empty-block i {
             font-size: 60px;
-            color: #cbd5e1;
+            color: var(--ct-line-2);
             display: block;
             margin-bottom: 16px;
         }
@@ -541,8 +542,16 @@
         });
     })();
     </script>
+
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/cognitara-web.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/cognitara-portal-unified.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/cognitara-teacher-studio.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/cognitara-admin-studio.css') }}">
+  {{ ct_boot_script() }}
 </head>
-<body>
+<body class="ct-app ct-bs ad-studio">
+{{ admin_shell_start(active='exams', crumb='Exam Preview') }}
+
     <div class="preview-container">
         <!-- HEADER -->
         <div class="preview-header">
@@ -601,7 +610,7 @@
                 <div class="question-item">
                     <div class="q-header-row">
                         <div class="q-number-badge">{{ global_q.value }}</div>
-                        <div class="q-text-box">{{ q.question|safe if q.question else '' }}</div>
+                        <div class="q-text-box">{{ q.question|sanitize|safe if q.question else '' }}</div>
                     </div>
                     {% if q.image %}
                     <img src="{{ url_for('static', filename='images/' + q.image) }}" class="q-image" alt="Question image">
@@ -614,7 +623,7 @@
                             {% if opt and opt|string|trim != '' %}
                             <div class="option-cell {% if opt|string == q.answer|string %}correct{% endif %}">
                                 <div class="option-letter-badge">{{ letters[loop.index0] }}</div>
-                                <div class="option-text-content">{{ opt|safe }}</div>
+                                <div class="option-text-content">{{ opt|sanitize|safe }}</div>
                                 <div class="correct-indicator"><i class="fas fa-check-circle"></i></div>
                             </div>
                             {% endif %}
@@ -648,7 +657,7 @@
                         <div class="group-question">
                             <div class="q-header-row" style="margin-bottom:12px;">
                                 <div class="q-number-badge" style="background:linear-gradient(135deg,#7c3aed,#6d28d9);box-shadow:0 4px 14px rgba(124,58,237,0.2);">{{ global_q.value }}</div>
-                                <div class="q-text-box" style="font-size:14px;">{{ gq.question|safe if gq.question else '' }}</div>
+                                <div class="q-text-box" style="font-size:14px;">{{ gq.question|sanitize|safe if gq.question else '' }}</div>
                             </div>
                             <div class="options-wrapper" style="padding-left:56px;">
                                 <div class="options-grid">
@@ -658,7 +667,7 @@
                                     {% if opt and opt|string|trim != '' %}
                                     <div class="option-cell {% if opt|string == gq.answer|string %}correct{% endif %}">
                                         <div class="option-letter-badge">{{ letters[loop.index0] }}</div>
-                                        <div class="option-text-content">{{ opt|safe }}</div>
+                                        <div class="option-text-content">{{ opt|sanitize|safe }}</div>
                                         <div class="correct-indicator"><i class="fas fa-check-circle"></i></div>
                                     </div>
                                     {% endif %}
@@ -702,5 +711,7 @@
             }
         });
     </script>
+
+{{ shell_end(role='admin') }}
 </body>
 </html>

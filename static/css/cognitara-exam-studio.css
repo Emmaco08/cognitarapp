@@ -1,0 +1,1177 @@
+/* ==========================================================================
+   CogniTara Exam Studio v5 — Live CBT Examination & Precision Hardware Calc
+   --------------------------------------------------------------------------
+   True Neutral Carbon Dark (#111111 -> #191919 -> #202020 -> #181818 chassis)
+   and Neutral Paper Light (#F7F7F8 -> #FFFFFF -> #EFEFF1 chassis).
+   Zero blue cast · Zero white outlines · Zero pill clutter · Zero pulses.
+   ========================================================================== */
+
+:root,
+[data-theme="dark"] {
+  --ex-canvas: #111111;
+  --ex-surface: #191919;
+  --ex-surface-2: #202020;
+  --ex-elevated: #282828;
+  --ex-well: #141414;
+  --ex-ink: #ECECEC;
+  --ex-ink-2: #9E9E9E;
+  --ex-ink-3: #6C6C6C;
+  --ex-line: rgba(255, 255, 255, 0.055);
+  --ex-line-2: rgba(255, 255, 255, 0.085);
+  --ex-line-3: rgba(255, 255, 255, 0.14);
+  --ex-specular: 0 0 0 0 transparent;
+  --ex-shadow: 0 12px 32px -18px rgba(0, 0, 0, 0.55);
+  --ex-cta-bg: #3B82F6;
+  --ex-cta-ink: #FFFFFF;
+  --ex-cta-hover: #4F8BFF;
+  --ex-sel: #3B82F6;
+  --ex-sel-soft: rgba(59, 130, 246, 0.08);
+  --ex-ok: #3ECF8E;
+  --ex-ok-soft: rgba(62, 207, 142, 0.09);
+  --ex-ok-line: rgba(62, 207, 142, 0.20);
+  --ex-warn: #D4A14C;
+  --ex-warn-soft: rgba(212, 161, 76, 0.10);
+  --ex-warn-line: rgba(212, 161, 76, 0.22);
+  --ex-bad: #E57373;
+  --ex-bad-soft: rgba(229, 115, 115, 0.10);
+  --ex-bad-line: rgba(229, 115, 115, 0.22);
+
+  /* Hardware Scientific Calculator Tokens — Anodized Neutral Carbon */
+  --calc-chassis: #181818;
+  --calc-chassis-edge: rgba(255, 255, 255, 0.08);
+  --calc-head: #141414;
+  --calc-lcd: #0D0D0D;
+  --calc-lcd-edge: rgba(255, 255, 255, 0.06);
+  --calc-key-sci: #202020;
+  --calc-key-sci-hover: #282828;
+  --calc-key-sci-ink: #A6A6A6;
+  --calc-key-num: #2A2A2A;
+  --calc-key-num-hover: #333333;
+  --calc-key-num-ink: #F2F2F2;
+  --calc-key-op: #21252F;
+  --calc-key-op-hover: #293040;
+  --calc-key-op-ink: #7BA8F8;
+  --calc-key-util: #222222;
+  --calc-key-util-hover: #2B2B2B;
+  --calc-key-clear-ink: #E08269;
+  --calc-key-eq: #C98435;
+  --calc-key-eq-hover: #D69141;
+  --calc-key-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04), 0 1px 2px rgba(0, 0, 0, 0.36);
+  --calc-key-num-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 1px 3px rgba(0, 0, 0, 0.34);
+}
+
+[data-theme="light"] {
+  --ex-canvas: #F7F7F8;
+  --ex-surface: #FFFFFF;
+  --ex-surface-2: #F2F2F4;
+  --ex-elevated: #E8E8EC;
+  --ex-well: #F3F3F5;
+  --ex-ink: #141416;
+  --ex-ink-2: #52525B;
+  --ex-ink-3: #71717A;
+  --ex-line: rgba(20, 20, 22, 0.075);
+  --ex-line-2: rgba(20, 20, 22, 0.12);
+  --ex-line-3: rgba(20, 20, 22, 0.20);
+  --ex-specular: 0 0 0 0 transparent;
+  --ex-shadow: 0 14px 36px -22px rgba(20, 20, 22, 0.10), 0 1px 2px rgba(20, 20, 22, 0.03);
+  --ex-cta-bg: #18181B;
+  --ex-cta-ink: #FFFFFF;
+  --ex-cta-hover: #27272A;
+  --ex-sel: #2563EB;
+  --ex-sel-soft: rgba(37, 99, 235, 0.06);
+  --ex-ok: #0F9D68;
+  --ex-ok-soft: rgba(15, 157, 104, 0.08);
+  --ex-ok-line: rgba(15, 157, 104, 0.20);
+  --ex-warn: #B47A1E;
+  --ex-warn-soft: rgba(180, 122, 30, 0.09);
+  --ex-warn-line: rgba(180, 122, 30, 0.22);
+  --ex-bad: #C83E3E;
+  --ex-bad-soft: rgba(200, 62, 62, 0.08);
+  --ex-bad-line: rgba(200, 62, 62, 0.22);
+
+  /* Hardware Scientific Calculator Tokens — Light Brushed Aluminum */
+  --calc-chassis: #F1F1F3;
+  --calc-chassis-edge: rgba(20, 20, 22, 0.12);
+  --calc-head: #E9E9EC;
+  --calc-lcd: #FFFFFF;
+  --calc-lcd-edge: rgba(20, 20, 22, 0.09);
+  --calc-key-sci: #E6E6EA;
+  --calc-key-sci-hover: #DCDCE1;
+  --calc-key-sci-ink: #3F3F46;
+  --calc-key-num: #FFFFFF;
+  --calc-key-num-hover: #FAFAFB;
+  --calc-key-num-ink: #141416;
+  --calc-key-op: #E4EAF5;
+  --calc-key-op-hover: #D8E2F2;
+  --calc-key-op-ink: #1D4ED8;
+  --calc-key-util: #E4E4E8;
+  --calc-key-util-hover: #D8D8DF;
+  --calc-key-clear-ink: #B45328;
+  --calc-key-eq: #C97D28;
+  --calc-key-eq-hover: #B56E1F;
+  --calc-key-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.65), 0 1px 2px rgba(20, 20, 22, 0.06);
+  --calc-key-num-shadow: inset 0 1px 0 #FFFFFF, 0 1px 2px rgba(20, 20, 22, 0.08);
+}
+
+body.ct-exam-studio {
+  background: var(--ex-canvas) !important;
+  color: var(--ex-ink) !important;
+  font-family: var(--ct-font) !important;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  transition: background-color 260ms var(--ct-ease), color 260ms var(--ct-ease);
+}
+
+/* Fix logo mark contrast across both themes */
+body.ct-exam-studio .ct-appicon {
+  --ct-logo-c: #FFFFFF;
+  --ct-logo-star: #5B95F9;
+  background: #1B1B1B !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+/* ==========================================================================
+   1. CALM ARCHITECTURAL FIXED HEADER
+   ========================================================================== */
+body.ct-exam-studio .fixed-header {
+  position: fixed !important;
+  top: 0; left: 0; right: 0;
+  z-index: 1000;
+  background: var(--ex-canvas) !important;
+  border-bottom: 1px solid var(--ex-line) !important;
+  box-shadow: none !important;
+  padding: 10px 28px !important;
+}
+body.ct-exam-studio .header-top {
+  max-width: 1180px !important;
+  margin: 0 auto !important;
+  display: flex !important;
+  justify-content: space-between;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+body.ct-exam-studio .exam-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 11px;
+  font-size: 15px !important;
+  font-weight: 680 !important;
+  letter-spacing: -0.018em;
+  color: var(--ex-ink) !important;
+}
+body.ct-exam-studio .header-actions {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+}
+
+body.ct-exam-studio .ct-iconbtn {
+  width: 34px !important;
+  height: 34px !important;
+  border-radius: 8px !important;
+  background: transparent !important;
+  border: 1px solid transparent !important;
+  color: var(--ex-ink-2) !important;
+  box-shadow: none !important;
+}
+body.ct-exam-studio .ct-iconbtn:hover {
+  background: var(--ex-surface-2) !important;
+  border-color: transparent !important;
+  color: var(--ex-ink) !important;
+}
+
+/* Quiet Tonal Calculator Toggle */
+body.ct-exam-studio .calculator-btn {
+  height: 34px !important;
+  min-height: 34px !important;
+  width: auto !important;
+  min-width: 34px !important;
+  padding: 0 12px !important;
+  border-radius: 8px !important;
+  border: 1px solid var(--ex-line-2) !important;
+  background: var(--ex-surface-2) !important;
+  color: var(--ex-ink) !important;
+  box-shadow: none !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 7px !important;
+  font-size: 12.5px !important;
+  font-weight: 580 !important;
+  cursor: pointer;
+  transition: background-color 160ms var(--ct-ease), border-color 160ms var(--ct-ease) !important;
+}
+body.ct-exam-studio .calculator-btn:hover {
+  background: var(--ex-elevated) !important;
+  border-color: var(--ex-line-3) !important;
+  color: var(--ex-ink) !important;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+/* Clean Borderless Student Identity */
+body.ct-exam-studio .student-name-badge {
+  height: 34px !important;
+  background: transparent !important;
+  border: 0 !important;
+  padding: 0 8px !important;
+  border-radius: 8px !important;
+  font-size: 12.5px !important;
+  font-weight: 560 !important;
+  color: var(--ex-ink-2) !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+}
+body.ct-exam-studio .student-name-badge span { color: var(--ex-ink-3) !important; }
+
+/* Precision Monochrome Timepiece (Zero Pulse, Quiet Hairline) */
+body.ct-exam-studio .timer-box {
+  height: 34px !important;
+  background: var(--ex-surface) !important;
+  color: var(--ex-ink) !important;
+  padding: 0 12px !important;
+  border-radius: 8px !important;
+  min-width: 118px !important;
+  border: 1px solid var(--ex-line) !important;
+  box-shadow: none !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  animation: none !important;
+}
+body.ct-exam-studio .timer-label {
+  font-family: var(--ct-mono) !important;
+  font-size: 9.5px !important;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--ex-ink-3) !important;
+  opacity: 1 !important;
+  font-weight: 580 !important;
+}
+body.ct-exam-studio .timer-value {
+  font-family: var(--ct-mono) !important;
+  font-size: 15px !important;
+  font-weight: 700 !important;
+  color: var(--ex-ink) !important;
+  font-variant-numeric: tabular-nums;
+  line-height: 1 !important;
+}
+body.ct-exam-studio .timer-box.timer-warning {
+  background: var(--ex-warn-soft) !important;
+  border-color: var(--ex-warn-line) !important;
+  animation: none !important;
+}
+body.ct-exam-studio .timer-box.timer-warning .timer-label,
+body.ct-exam-studio .timer-box.timer-warning .timer-value { color: var(--ex-warn) !important; }
+body.ct-exam-studio .timer-box.timer-danger {
+  background: var(--ex-bad-soft) !important;
+  border-color: var(--ex-bad-line) !important;
+  animation: none !important;
+}
+body.ct-exam-studio .timer-box.timer-danger .timer-label,
+body.ct-exam-studio .timer-box.timer-danger .timer-value { color: var(--ex-bad) !important; }
+
+/* Sub-Row: Section Tabs & Minimalist Progress Bar */
+body.ct-exam-studio .nav-row,
+body.ct-exam-studio .progress-wrapper {
+  max-width: 1180px !important;
+  margin: 8px auto 0 !important;
+  padding-top: 8px !important;
+  border-top: 1px solid var(--ex-line) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between;
+  gap: 12px;
+}
+body.ct-exam-studio .section-tabs { display: flex; gap: 6px; flex-wrap: wrap; flex: 1; }
+body.ct-exam-studio .section-tab {
+  padding: 4px 11px !important;
+  background: transparent !important;
+  border: 1px solid transparent !important;
+  border-radius: 7px !important;
+  color: var(--ex-ink-2) !important;
+  font-size: 12px !important;
+  font-weight: 560 !important;
+  cursor: pointer;
+  transition: background-color 160ms var(--ct-ease), color 160ms var(--ct-ease) !important;
+}
+body.ct-exam-studio .section-tab:hover {
+  background: var(--ex-surface-2) !important;
+  color: var(--ex-ink) !important;
+}
+body.ct-exam-studio .section-tab.active {
+  background: var(--ex-elevated) !important;
+  border-color: var(--ex-line-2) !important;
+  color: var(--ex-ink) !important;
+  font-weight: 620 !important;
+}
+body.ct-exam-studio .mini-progress {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: transparent !important;
+  border: 0 !important;
+  padding: 0 !important;
+}
+body.ct-exam-studio .mini-progress-bar,
+body.ct-exam-studio .progress-bar-custom {
+  width: 128px !important;
+  height: 5px !important;
+  background: var(--ex-elevated) !important;
+  border-radius: 99px !important;
+  overflow: hidden;
+}
+body.ct-exam-studio .mini-progress-fill,
+body.ct-exam-studio .progress-fill {
+  height: 100%;
+  background: var(--ex-ok) !important;
+  border-radius: 99px !important;
+  transition: width 320ms var(--ct-ease);
+}
+body.ct-exam-studio .mini-progress-text,
+body.ct-exam-studio .progress-text {
+  font-family: var(--ct-mono) !important;
+  font-size: 11.5px !important;
+  font-weight: 650 !important;
+  color: var(--ex-ink-2) !important;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ==========================================================================
+   2. TWO-COLUMN BLUEBOOK EXAMINATION WORKSPACE (.main-content Grid)
+   Left: Serene Question Reading Stage + Previous/Next Dock
+   Right: Sticky Question Map Rail + Dignified Submit Exam Action
+   ========================================================================== */
+body.ct-exam-studio .main-content {
+  max-width: 1180px !important;
+  margin: 118px auto 76px !important;
+  padding: 0 28px !important;
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) 288px !important;
+  grid-template-rows: auto 1fr auto;
+  column-gap: 24px !important;
+  row-gap: 14px !important;
+  align-items: start !important;
+}
+body.ct-exam-studio #questionsContainer {
+  grid-column: 1 !important;
+  grid-row: 1 / span 2 !important;
+  min-width: 0;
+}
+body.ct-exam-studio .nav-buttons {
+  grid-column: 1 !important;
+  grid-row: 3 !important;
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  gap: 12px;
+  margin: 2px 0 0 !important;
+}
+body.ct-exam-studio .palette-container {
+  grid-column: 2 !important;
+  grid-row: 1 !important;
+  background: var(--ex-surface) !important;
+  border: 1px solid var(--ex-line) !important;
+  border-radius: 18px !important;
+  padding: 20px !important;
+  margin: 0 !important;
+  box-shadow: var(--ex-shadow), var(--ex-specular) !important;
+}
+body.ct-exam-studio .submit-btn {
+  grid-column: 2 !important;
+  grid-row: 2 !important;
+  align-self: start !important;
+  width: 100% !important;
+  height: 46px !important;
+  border-radius: 12px !important;
+  border: 1px solid var(--ex-line-2) !important;
+  background: var(--ex-surface-2) !important;
+  color: var(--ex-ink) !important;
+  font-family: var(--ct-font) !important;
+  font-size: 14px !important;
+  font-weight: 660 !important;
+  letter-spacing: -0.01em;
+  cursor: pointer;
+  box-shadow: var(--ex-specular) !important;
+  transition: background-color 180ms var(--ct-ease), border-color 180ms var(--ct-ease), color 180ms var(--ct-ease), transform 140ms var(--ct-ease) !important;
+}
+body.ct-exam-studio .submit-btn:hover {
+  background: var(--ex-cta-bg) !important;
+  color: var(--ex-cta-ink) !important;
+  border-color: transparent !important;
+  transform: translateY(-1px);
+  filter: none !important;
+}
+body.ct-exam-studio .submit-btn:active { transform: scale(0.985); }
+
+/* Question Reading Card */
+body.ct-exam-studio .question-card {
+  background: var(--ex-surface) !important;
+  border: 1px solid var(--ex-line) !important;
+  border-radius: 20px !important;
+  padding: 32px 36px 34px !important;
+  margin: 0 !important;
+  box-shadow: var(--ex-shadow), var(--ex-specular) !important;
+  color: var(--ex-ink) !important;
+}
+body.ct-exam-studio .question-card.active {
+  display: block;
+  animation: ct-fade-up 240ms var(--ct-ease) both !important;
+}
+body.ct-exam-studio .question-header {
+  display: flex !important;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 22px !important;
+  padding-bottom: 14px !important;
+  border-bottom: 1px solid var(--ex-line) !important;
+}
+body.ct-exam-studio .question-number {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  color: var(--ex-ink-3) !important;
+  font-family: var(--ct-mono) !important;
+  font-size: 11.5px !important;
+  font-weight: 650 !important;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+}
+body.ct-exam-studio .mandatory-badge {
+  padding: 4px 10px;
+  border-radius: 8px;
+  background: var(--ex-warn-soft) !important;
+  color: var(--ex-warn) !important;
+  border: 1px solid var(--ex-warn-line) !important;
+  font-size: 11px;
+  font-weight: 650;
+}
+
+/* Passage / Group Box */
+body.ct-exam-studio .group-content-box {
+  background: var(--ex-well) !important;
+  border: 1px solid var(--ex-line) !important;
+  border-left: 3px solid var(--ex-sel) !important;
+  border-radius: 14px !important;
+  padding: 18px 20px !important;
+  margin-bottom: 24px !important;
+  color: var(--ex-ink) !important;
+}
+body.ct-exam-studio .group-content-box h4 {
+  color: var(--ex-ink) !important;
+  font-size: 14.5px !important;
+  font-weight: 700 !important;
+}
+body.ct-exam-studio .group-instruction {
+  background: var(--ex-warn-soft) !important;
+  border: 1px solid var(--ex-warn-line) !important;
+  color: var(--ex-warn) !important;
+  border-radius: 9px !important;
+}
+body.ct-exam-studio .passage-text-content,
+body.ct-exam-studio .passage-text {
+  color: var(--ex-ink-2) !important;
+  line-height: 1.68;
+}
+body.ct-exam-studio .passage-fade-overlay {
+  background: linear-gradient(to bottom, transparent 0%, var(--ex-well) 100%) !important;
+}
+body.ct-exam-studio .passage-expand-cta {
+  background: var(--ex-surface-2) !important;
+  color: var(--ex-ink) !important;
+  border: 1px solid var(--ex-line-2) !important;
+}
+
+/* Generous High-Legibility Question Stem */
+body.ct-exam-studio .question-text {
+  font-size: 19px !important;
+  font-weight: 540 !important;
+  line-height: 1.66 !important;
+  letter-spacing: -0.01em;
+  color: var(--ex-ink) !important;
+  margin-bottom: 26px !important;
+}
+body.ct-exam-studio .radio-option label .frac-num,
+body.ct-exam-studio .radio-option label [class*="frac-num"],
+body.ct-exam-studio .question-text .frac-num {
+  border-bottom-color: currentColor !important;
+}
+
+/* Tactile A/B/C/D Keycap MCQ Option Cards */
+body.ct-exam-studio .options-container {
+  display: grid !important;
+  gap: 11px !important;
+  counter-reset: ct-opt;
+}
+body.ct-exam-studio .radio-option {
+  position: relative;
+  counter-increment: ct-opt;
+  display: flex !important;
+  align-items: center !important;
+  gap: 14px !important;
+  padding: 15px 18px !important;
+  border-radius: 12px !important;
+  border: 1px solid var(--ex-line-2) !important;
+  background: var(--ex-well) !important;
+  color: var(--ex-ink) !important;
+  cursor: pointer;
+  margin: 0 !important;
+  transition: transform 150ms var(--ct-ease), border-color 160ms var(--ct-ease), background-color 160ms var(--ct-ease) !important;
+}
+[data-theme="light"] body.ct-exam-studio .radio-option { background: #FAFAFB !important; }
+
+/* Auto-generated crisp A / B / C / D keycap badge */
+body.ct-exam-studio .radio-option::before {
+  content: counter(ct-opt, upper-alpha);
+  flex: none;
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
+  border: 1px solid var(--ex-line);
+  background: var(--ex-surface-2);
+  color: var(--ex-ink-2);
+  font-family: var(--ct-mono);
+  font-size: 12px;
+  font-weight: 660;
+  display: inline-grid;
+  place-items: center;
+  transition: background-color 160ms var(--ct-ease), border-color 160ms var(--ct-ease), color 160ms var(--ct-ease);
+}
+body.ct-exam-studio .radio-option:hover {
+  border-color: var(--ex-line-3) !important;
+  background: var(--ex-surface-2) !important;
+  transform: none;
+}
+body.ct-exam-studio .radio-option.selected,
+body.ct-exam-studio .radio-option:has(input:checked) {
+  border-color: rgba(59, 130, 246, 0.55) !important;
+  background: var(--ex-sel-soft) !important;
+  box-shadow: none !important;
+}
+body.ct-exam-studio .radio-option.selected::before,
+body.ct-exam-studio .radio-option:has(input:checked)::before {
+  background: var(--ex-sel);
+  border-color: var(--ex-sel);
+  color: #FFFFFF;
+}
+/* Keep real native radio accessible while visual keycap leads */
+body.ct-exam-studio .radio-option input[type="radio"] {
+  position: absolute !important;
+  opacity: 0 !important;
+  width: 1px !important;
+  height: 1px !important;
+  margin: 0 !important;
+  pointer-events: none;
+}
+body.ct-exam-studio .radio-option label {
+  flex: 1;
+  font-size: 15.5px !important;
+  line-height: 1.55 !important;
+  color: var(--ex-ink) !important;
+  cursor: pointer;
+  margin: 0 !important;
+}
+
+/* Previous / Next Navigation Buttons */
+body.ct-exam-studio .nav-btn {
+  height: 42px !important;
+  padding: 0 20px !important;
+  border-radius: 10px !important;
+  font-family: var(--ct-font) !important;
+  font-size: 13.5px !important;
+  font-weight: 600 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 8px;
+  cursor: pointer;
+  transition: transform 140ms var(--ct-ease), background-color 160ms var(--ct-ease), border-color 160ms var(--ct-ease) !important;
+}
+body.ct-exam-studio .nav-btn:active { transform: scale(0.98); }
+body.ct-exam-studio .nav-btn-secondary {
+  background: var(--ex-surface-2) !important;
+  border: 1px solid var(--ex-line-2) !important;
+  color: var(--ex-ink) !important;
+  box-shadow: none !important;
+}
+body.ct-exam-studio .nav-btn-secondary:hover {
+  background: var(--ex-elevated) !important;
+  border-color: var(--ex-line-3) !important;
+}
+body.ct-exam-studio .nav-btn-primary {
+  background: var(--ex-cta-bg) !important;
+  border: 1px solid transparent !important;
+  color: var(--ex-cta-ink) !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25) !important;
+}
+body.ct-exam-studio .nav-btn-primary:hover {
+  background: var(--ex-cta-hover) !important;
+  filter: none !important;
+  transform: translateY(-1px);
+}
+
+/* Right Rail: Question Map */
+body.ct-exam-studio .palette-title {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  font-size: 12.5px !important;
+  font-weight: 660 !important;
+  color: var(--ex-ink) !important;
+  margin-bottom: 14px !important;
+  padding-bottom: 12px !important;
+  border-bottom: 1px solid var(--ex-line) !important;
+}
+body.ct-exam-studio .palette-title i { display: none; }
+body.ct-exam-studio #answeredCount {
+  font-family: var(--ct-mono);
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--ex-ink-3);
+  padding: 0;
+  border-radius: 0;
+  background: transparent;
+  border: 0;
+}
+body.ct-exam-studio .palette-buttons {
+  display: grid !important;
+  grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+  gap: 8px !important;
+}
+body.ct-exam-studio .palette-btn {
+  width: 100% !important;
+  min-width: 0 !important;
+  min-height: 38px !important;
+  height: 38px !important;
+  border-radius: 9px !important;
+  font-family: var(--ct-mono) !important;
+  font-size: 12.5px !important;
+  font-weight: 640 !important;
+  border: 1px solid var(--ex-line) !important;
+  cursor: pointer;
+  transition: transform 120ms var(--ct-ease), background-color 150ms var(--ct-ease), border-color 150ms var(--ct-ease), color 150ms var(--ct-ease) !important;
+}
+body.ct-exam-studio .palette-btn:hover { border-color: var(--ex-line-3) !important; }
+body.ct-exam-studio .palette-btn.unanswered {
+  background: var(--ex-well) !important;
+  color: var(--ex-ink-2) !important;
+}
+body.ct-exam-studio .palette-btn.answered {
+  background: var(--ex-ok-soft) !important;
+  border-color: var(--ex-ok-line) !important;
+  color: var(--ex-ok) !important;
+}
+body.ct-exam-studio .palette-btn.current {
+  background: var(--ex-cta-bg) !important;
+  border-color: transparent !important;
+  color: var(--ex-cta-ink) !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+/* Quiet Borderless Bottom Corner Status Indicators (Zero Pill Capsules) */
+body.ct-exam-studio .warning-badge {
+  position: fixed !important;
+  bottom: 16px !important;
+  left: 24px !important;
+  top: auto !important;
+  right: auto !important;
+  z-index: 900 !important;
+  height: 28px;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 7px;
+  padding: 0 !important;
+  border-radius: 0 !important;
+  font-family: var(--ct-mono) !important;
+  font-size: 11.5px !important;
+  font-weight: 560 !important;
+  border: 0 !important;
+  background: transparent !important;
+  color: var(--ex-ink-3) !important;
+  box-shadow: none !important;
+}
+body.ct-exam-studio .warning-badge.stage-clean { color: var(--ex-ok) !important; border: 0 !important; }
+body.ct-exam-studio .warning-badge.stage-warn,
+body.ct-exam-studio .warning-badge.warning { border: 0 !important; color: var(--ex-warn) !important; }
+body.ct-exam-studio .warning-badge.stage-danger,
+body.ct-exam-studio .warning-badge.danger { border: 0 !important; color: var(--ex-bad) !important; }
+
+body.ct-exam-studio #saveStatusIndicator {
+  position: fixed !important;
+  bottom: 16px !important;
+  right: 24px !important;
+  top: auto !important;
+  height: 28px !important;
+  padding: 0 !important;
+  border-radius: 0 !important;
+  font-family: var(--ct-mono) !important;
+  font-size: 11.5px !important;
+  font-weight: 560 !important;
+  background: transparent !important;
+  border: 0 !important;
+  color: var(--ex-ink-3) !important;
+  box-shadow: none !important;
+}
+
+/* ==========================================================================
+   3. HARDWARE-PRECISION SCIENTIFIC CALCULATOR (#calculatorModal)
+      Anodized Neutral Carbon (Dark) & Brushed Aluminum (Light)
+   ========================================================================== */
+#calculatorModal.calculator-modal,
+#calculatorModal.ct-calc-modal,
+.calculator-modal {
+  position: fixed !important;
+  z-index: 10020 !important;
+  width: 348px !important;
+  min-width: 296px !important;
+  max-width: min(440px, calc(100vw - 24px)) !important;
+  min-height: 0 !important;
+  height: auto !important;
+  background: var(--calc-chassis) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  border: 1px solid var(--calc-chassis-edge) !important;
+  border-radius: 20px !important;
+  box-shadow: 0 28px 64px -18px rgba(0, 0, 0, 0.72) !important;
+  color: var(--ex-ink) !important;
+  font-family: var(--ct-font) !important;
+  overflow: hidden !important;
+  resize: none !important;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: translateY(14px) scale(0.96);
+  transition: opacity 220ms var(--ct-ease), transform 280ms var(--ct-ease), visibility 0s linear 220ms !important;
+  user-select: none;
+}
+[data-theme="light"] #calculatorModal.calculator-modal,
+[data-theme="light"] #calculatorModal.ct-calc-modal,
+[data-theme="light"] .calculator-modal {
+  box-shadow: 0 24px 56px -18px rgba(20, 20, 22, 0.20), 0 0 0 1px rgba(20, 20, 22, 0.05) !important;
+}
+#calculatorModal.calculator-modal.show,
+#calculatorModal.ct-calc-modal.show,
+.calculator-modal.show {
+  display: flex !important;
+  flex-direction: column !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  pointer-events: auto !important;
+  transform: translateY(0) scale(1) !important;
+  transition: opacity 220ms var(--ct-ease), transform 280ms var(--ct-ease), visibility 0s !important;
+}
+#calculatorModal.compact,
+.calculator-modal.compact { width: 304px !important; }
+
+/* Anodized Minimal Header Rail */
+#calculatorModal .calculator-header,
+#calculatorHeader {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 8px !important;
+  padding: 12px 14px !important;
+  background: var(--calc-head) !important;
+  border-bottom: 1px solid var(--ex-line) !important;
+  cursor: grab !important;
+  color: var(--ex-ink) !important;
+}
+#calculatorHeader:active { cursor: grabbing !important; }
+
+#calculatorModal .calc-header-title,
+#calculatorModal .calculator-title {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  font-size: 12px !important;
+  font-weight: 680 !important;
+  letter-spacing: 0.04em !important;
+  text-transform: uppercase !important;
+  color: var(--ex-ink-2) !important;
+}
+#calculatorModal .calc-header-title i,
+#calculatorModal .calc-header-title svg {
+  color: var(--ex-ink-3) !important;
+  font-size: 13px !important;
+}
+#calculatorModal .calc-header-actions,
+#calculatorModal .calculator-controls {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 5px !important;
+}
+#calculatorModal .calc-tool-btn,
+#calculatorModal .calculator-close,
+#calculatorModal .calc-close-btn,
+#calculatorModal .calc-size-btn {
+  width: 28px !important;
+  height: 28px !important;
+  border-radius: 8px !important;
+  border: 1px solid transparent !important;
+  background: transparent !important;
+  color: var(--ex-ink-3) !important;
+  font-size: 12px !important;
+  display: inline-grid !important;
+  place-items: center !important;
+  cursor: pointer !important;
+  box-shadow: none !important;
+  transition: background-color 150ms var(--ct-ease), color 150ms var(--ct-ease), border-color 150ms var(--ct-ease) !important;
+}
+#calculatorModal .calc-tool-btn:hover,
+#calculatorModal .calculator-close:hover,
+#calculatorModal .calc-close-btn:hover,
+#calculatorModal .calc-size-btn:hover {
+  background: var(--calc-key-sci) !important;
+  border-color: var(--ex-line) !important;
+  color: var(--ex-ink) !important;
+  transform: none !important;
+}
+#calculatorModal .calculator-close:hover,
+#calculatorModal .calc-close-btn:hover {
+  color: var(--ex-bad) !important;
+  background: var(--ex-bad-soft) !important;
+}
+
+/* Recessed Matte Optical LCD Display Well — STRICT RIGHT ALIGNMENT */
+#calculatorModal .calculator-display {
+  margin: 12px 14px 4px !important;
+  padding: 14px 16px 12px !important;
+  min-height: 92px !important;
+  border-radius: 14px !important;
+  background: var(--calc-lcd) !important;
+  backdrop-filter: none !important;
+  border: 1px solid var(--calc-lcd-edge) !important;
+  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.22) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: flex-end !important;
+  justify-content: flex-end !important;
+  text-align: right !important;
+  gap: 5px !important;
+}
+[data-theme="light"] #calculatorModal .calculator-display {
+  box-shadow: inset 0 1px 3px rgba(17, 20, 28, 0.06) !important;
+}
+
+#calculatorModal .calculator-expression,
+#calculatorModal .calc-expression,
+#calcExpression {
+  width: 100% !important;
+  min-height: 18px !important;
+  font-family: var(--ct-mono) !important;
+  font-size: 12.5px !important;
+  font-weight: 500 !important;
+  letter-spacing: 0.01em !important;
+  color: var(--ex-ink-3) !important;
+  text-align: right !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+#calculatorModal .calculator-preview { display: none !important; }
+#calculatorModal .calculator-result,
+#calculatorModal .calc-result,
+#calcResult {
+  width: 100% !important;
+  font-family: var(--ct-mono) !important;
+  font-size: 32px !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.035em !important;
+  line-height: 1.12 !important;
+  color: var(--ex-ink) !important;
+  text-align: right !important;
+  font-variant-numeric: tabular-nums !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+  margin-top: 0 !important;
+}
+#calculatorModal.compact #calcResult { font-size: 25px !important; }
+
+/* Button Container */
+#calculatorModal #calculatorButtons,
+#calculatorModal .calculator-body {
+  padding: 6px 14px 14px !important;
+  background: transparent !important;
+}
+
+/* Instrument Control Bar (Segmented DEG / RAD + Copy Answer) */
+#calculatorModal .cogni-calc-sci-topbar {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  padding: 4px 0 10px !important;
+  margin: 0 !important;
+  background: transparent !important;
+  border: 0 !important;
+}
+#calculatorModal .calc-deg-badge {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  height: 26px !important;
+  padding: 0 10px !important;
+  border-radius: 8px !important;
+  border: 1px solid var(--ex-line-2) !important;
+  background: var(--calc-key-sci) !important;
+  color: var(--ex-ink) !important;
+  font-family: var(--ct-mono) !important;
+  font-size: 10.5px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.08em !important;
+  box-shadow: none !important;
+  cursor: pointer !important;
+  transition: background-color 150ms var(--ct-ease), border-color 150ms var(--ct-ease) !important;
+}
+#calculatorModal .calc-deg-badge:hover {
+  background: var(--calc-key-sci-hover) !important;
+  border-color: var(--ex-line-3) !important;
+}
+#calculatorModal .calc-deg-badge .deg-dot {
+  width: 6px !important;
+  height: 6px !important;
+  border-radius: 50% !important;
+  background: var(--calc-key-eq) !important;
+}
+#calculatorModal .calc-deg-badge.rad-active .deg-dot {
+  background: var(--ex-sel) !important;
+}
+#calculatorModal .calc-copy-btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 5px !important;
+  height: 26px !important;
+  padding: 0 9px !important;
+  border-radius: 8px !important;
+  border: 1px solid transparent !important;
+  background: transparent !important;
+  color: var(--ex-ink-3) !important;
+  font-family: var(--ct-mono) !important;
+  font-size: 10.5px !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.03em !important;
+  cursor: pointer !important;
+  transition: color 150ms var(--ct-ease), background-color 150ms var(--ct-ease) !important;
+}
+#calculatorModal .calc-copy-btn:hover {
+  background: var(--calc-key-sci) !important;
+  color: var(--ex-ink) !important;
+}
+#calculatorModal .calc-copy-btn.is-copied {
+  color: var(--ex-ok) !important;
+}
+
+/* Precision 5-Column Hardware Keycap Grid (ZERO double borders, ZERO white halos) */
+#calculatorModal .cogni-calc-grid {
+  padding: 0 !important;
+  display: grid !important;
+  grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+  gap: 7px !important;
+  background: transparent !important;
+  overflow: visible !important;
+}
+#calculatorModal .calc-btn {
+  position: relative !important;
+  overflow: hidden !important;
+  min-height: 41px !important;
+  height: 41px !important;
+  padding: 0 !important;
+  border: 1px solid transparent !important;
+  border-radius: 10px !important;
+  background: var(--calc-key-sci) !important;
+  color: var(--calc-key-sci-ink) !important;
+  font-family: var(--ct-font) !important;
+  font-size: 13px !important;
+  font-weight: 620 !important;
+  box-shadow: var(--calc-key-shadow) !important;
+  display: inline-grid !important;
+  place-items: center !important;
+  cursor: pointer !important;
+  transition: transform 80ms var(--ct-ease), background-color 140ms var(--ct-ease), color 140ms var(--ct-ease) !important;
+}
+#calculatorModal.compact .calc-btn {
+  min-height: 35px !important;
+  height: 35px !important;
+  font-size: 12px !important;
+  border-radius: 8px !important;
+}
+#calculatorModal .calc-btn:hover {
+  background: var(--calc-key-sci-hover) !important;
+  color: var(--ex-ink) !important;
+  transform: none !important;
+  box-shadow: var(--calc-key-shadow) !important;
+}
+#calculatorModal .calc-btn:active,
+#calculatorModal .calc-btn.calc-active {
+  transform: translateY(1px) scale(0.97) !important;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.35) !important;
+}
+
+/* Zone A — Scientific & Paren Functions */
+#calculatorModal .calc-btn.scientific,
+#calculatorModal .calc-btn.paren,
+#calculatorModal .calc-btn.sign {
+  background: var(--calc-key-sci) !important;
+  color: var(--calc-key-sci-ink) !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  border-color: transparent !important;
+  box-shadow: var(--calc-key-shadow) !important;
+}
+#calculatorModal .calc-btn.scientific:hover,
+#calculatorModal .calc-btn.paren:hover,
+#calculatorModal .calc-btn.sign:hover {
+  background: var(--calc-key-sci-hover) !important;
+  color: var(--ex-ink) !important;
+}
+
+/* Zone B — Elevated Tactile Number Pad (0–9, .) */
+#calculatorModal .calc-btn.num,
+#calculatorModal .calc-btn.decimal {
+  background: var(--calc-key-num) !important;
+  color: var(--calc-key-num-ink) !important;
+  font-family: var(--ct-mono) !important;
+  font-size: 15.5px !important;
+  font-weight: 660 !important;
+  border-color: transparent !important;
+  box-shadow: var(--calc-key-num-shadow) !important;
+}
+#calculatorModal .calc-btn.num:hover,
+#calculatorModal .calc-btn.decimal:hover {
+  background: var(--calc-key-num-hover) !important;
+  color: var(--calc-key-num-ink) !important;
+  box-shadow: var(--calc-key-num-shadow) !important;
+}
+
+/* Zone C — Clear & Backspace (Refined Braun Terracotta Ink, Zero Muddy Boxes) */
+#calculatorModal .calc-btn.clear,
+#calculatorModal .calc-btn.backspace {
+  background: var(--calc-key-util) !important;
+  color: var(--calc-key-clear-ink) !important;
+  border-color: transparent !important;
+  box-shadow: var(--calc-key-shadow) !important;
+}
+#calculatorModal .calc-btn.clear:hover,
+#calculatorModal .calc-btn.backspace:hover {
+  background: var(--calc-key-util-hover) !important;
+}
+
+/* Zone D — Arithmetic Operators */
+#calculatorModal .calc-btn.operator {
+  background: var(--calc-key-op) !important;
+  color: var(--calc-key-op-ink) !important;
+  font-size: 16.5px !important;
+  font-weight: 650 !important;
+  border-color: transparent !important;
+  box-shadow: var(--calc-key-shadow) !important;
+}
+#calculatorModal .calc-btn.operator:hover {
+  background: var(--calc-key-op-hover) !important;
+  color: var(--calc-key-op-ink) !important;
+}
+
+/* Zone E — Iconic Dieter Rams Warm Amber Equals Key */
+#calculatorModal .calc-btn.equals {
+  background: var(--calc-key-eq) !important;
+  color: #FFFFFF !important;
+  font-size: 18px !important;
+  font-weight: 700 !important;
+  border-color: transparent !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.28), 0 2px 6px rgba(217, 119, 6, 0.30) !important;
+}
+#calculatorModal .calc-btn.equals:hover {
+  background: var(--calc-key-eq-hover) !important;
+  color: #FFFFFF !important;
+}
+#calculatorModal .calc-span-2 { grid-column: span 2 !important; }
+#calculatorModal .calc-ripple { background: rgba(255, 255, 255, 0.16) !important; }
+#calculatorModal .calc-resize-handle { display: none !important; }
+
+/* ==========================================================================
+   4. MODALS INSIDE EXAM STUDIO (Mineral Graphite / Archival Paper)
+   ========================================================================== */
+body.ct-exam-studio .modal-overlay,
+body.ct-exam-studio .submit-premium-modal,
+body.ct-exam-studio .loading-modal,
+body.ct-exam-studio .passage-modal-overlay,
+body.ct-exam-studio .paused-overlay {
+  background: rgba(10, 13, 19, 0.72) !important;
+  backdrop-filter: blur(6px) !important;
+}
+body.ct-exam-studio .modal-container,
+body.ct-exam-studio .submit-premium-content,
+body.ct-exam-studio .loading-content,
+body.ct-exam-studio .passage-modal-dialog,
+body.ct-exam-studio .paused-content {
+  background: var(--ex-surface) !important;
+  border: 1px solid var(--ex-line-2) !important;
+  border-radius: 20px !important;
+  color: var(--ex-ink) !important;
+  box-shadow: var(--ex-shadow), var(--ex-specular) !important;
+}
+body.ct-exam-studio .submit-premium-header,
+body.ct-exam-studio .passage-modal-header {
+  background: var(--ex-surface-2) !important;
+  border-bottom: 1px solid var(--ex-line) !important;
+  color: var(--ex-ink) !important;
+}
+body.ct-exam-studio .submit-premium-footer,
+body.ct-exam-studio .passage-modal-footer {
+  background: var(--ex-surface-2) !important;
+  border-top: 1px solid var(--ex-line) !important;
+}
+body.ct-exam-studio .modal-title,
+body.ct-exam-studio .paused-content h2,
+body.ct-exam-studio .loading-content h3,
+body.ct-exam-studio .passage-modal-title { color: var(--ex-ink) !important; }
+body.ct-exam-studio .modal-message,
+body.ct-exam-studio .paused-content p,
+body.ct-exam-studio .loading-content p,
+body.ct-exam-studio .passage-modal-body { color: var(--ex-ink-2) !important; }
+body.ct-exam-studio .btn-cancel {
+  background: var(--ex-surface) !important;
+  border: 1px solid var(--ex-line-2) !important;
+  color: var(--ex-ink) !important;
+  border-radius: 10px !important;
+}
+body.ct-exam-studio .btn-submit {
+  background: var(--ex-cta-bg) !important;
+  color: var(--ex-cta-ink) !important;
+  border-radius: 10px !important;
+  border: 0 !important;
+}
+body.ct-exam-studio #resultModal .modal-container { background: var(--ex-surface) !important; color: var(--ex-ink) !important; }
+body.ct-exam-studio #resultScoreDisplay,
+body.ct-exam-studio #resultPercentageDisplay { color: var(--ex-ink) !important; }
+body.ct-exam-studio #supersededModal > div {
+  background: var(--ex-surface) !important;
+  border: 1px solid var(--ex-line-2) !important;
+  color: var(--ex-ink) !important;
+}
+body.ct-exam-studio #supersededModal h3 { color: var(--ex-ink) !important; }
+body.ct-exam-studio #supersededModal p { color: var(--ex-ink-2) !important; }
+
+/* Responsive Collapse */
+@media (max-width: 980px) {
+  body.ct-exam-studio .main-content {
+    grid-template-columns: 1fr !important;
+    margin: 126px auto 78px !important;
+    padding: 0 18px !important;
+  }
+  body.ct-exam-studio #questionsContainer { grid-column: 1 !important; grid-row: 1 !important; }
+  body.ct-exam-studio .nav-buttons { grid-column: 1 !important; grid-row: 2 !important; }
+  body.ct-exam-studio .palette-container { grid-column: 1 !important; grid-row: 3 !important; }
+  body.ct-exam-studio .submit-btn { grid-column: 1 !important; grid-row: 4 !important; }
+  body.ct-exam-studio .fixed-header { padding: 10px 16px !important; }
+  body.ct-exam-studio .question-card { padding: 24px 20px !important; }
+}
+@media (max-width: 600px) {
+  body.ct-exam-studio .student-name-badge { display: none !important; }
+  body.ct-exam-studio .timer-label { display: none !important; }
+  body.ct-exam-studio .timer-box { min-width: 82px !important; }
+}

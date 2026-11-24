@@ -1,5 +1,6 @@
+{%- from '_ct_shell.html' import ico, ct_boot_script, admin_shell_start, teacher_shell_start, student_topbar, shell_end -%}
 <!DOCTYPE html>
-<html>
+<html lang="en" data-theme="dark">
 <head>
     <title>Pending Approvals | COGNITARA EXAM SYSTEM</title>
     <link href="{{ url_for('static', filename='vendor/bootstrap/css/bootstrap.min.css') }}" rel="stylesheet">
@@ -107,12 +108,12 @@
 
         .page-header p {
             font-size: 16px;
-            color: #64748b;
+            color: var(--ct-ink-3);
         }
 
         /* Stats Bar */
         .stats-bar {
-            background: white;
+            background: var(--ct-surface);
             border-radius: 20px;
             padding: 20px 30px;
             margin-bottom: 30px;
@@ -121,7 +122,7 @@
             align-items: center;
             flex-wrap: wrap;
             gap: 20px;
-            border: 1px solid #e2e8f0;
+            border: 1px solid var(--ct-line-2);
             box-shadow: 0 5px 15px rgba(0, 0, 0, 0.03);
         }
 
@@ -134,7 +135,7 @@
         .stats-icon {
             width: 50px;
             height: 50px;
-            background: #fef3c7;
+            background: var(--ct-warn-soft);
             border-radius: 15px;
             display: flex;
             align-items: center;
@@ -149,22 +150,22 @@
         .stats-text h3 {
             font-size: 28px;
             font-weight: 800;
-            color: #1e293b;
+            color: var(--ct-ink);
             margin: 0;
         }
 
         .stats-text p {
             margin: 0;
-            color: #64748b;
+            color: var(--ct-ink-3);
             font-size: 13px;
         }
 
         .btn-back {
-            background: white;
-            border: 2px solid #e2e8f0;
+            background: var(--ct-surface);
+            border: 2px solid var(--ct-line-2);
             padding: 10px 25px;
             border-radius: 12px;
-            color: #64748b;
+            color: var(--ct-ink-3);
             font-weight: 600;
             text-decoration: none;
             display: inline-flex;
@@ -174,9 +175,9 @@
         }
 
         .btn-back:hover {
-            border-color: #1a56db;
-            color: #1a56db;
-            background: #eff6ff;
+            border-color: var(--ct-primary);
+            color: var(--ct-primary);
+            background: var(--ct-surface);
             transform: translateY(-2px);
         }
 
@@ -189,11 +190,11 @@
 
         /* Student Card */
         .student-card {
-            background: white;
+            background: var(--ct-surface);
             border-radius: 24px;
             overflow: hidden;
             transition: all 0.3s ease;
-            border: 1px solid #e2e8f0;
+            border: 1px solid var(--ct-line-2);
             position: relative;
         }
 
@@ -205,7 +206,7 @@
 
         /* Card Header */
         .card-header-custom {
-            background: linear-gradient(135deg, #fef3c7 0%, #fffbeb 100%);
+            background: var(--ct-surface-2);
             padding: 18px 20px;
             border-bottom: 1px solid #fde68a;
             display: flex;
@@ -218,7 +219,7 @@
         .student-name {
             font-size: 18px;
             font-weight: 700;
-            color: #1e293b;
+            color: var(--ct-ink);
             display: flex;
             align-items: center;
             gap: 8px;
@@ -230,7 +231,7 @@
         }
 
         .status-badge {
-            background: #fef3c7;
+            background: var(--ct-warn-soft);
             color: #d97706;
             padding: 5px 12px;
             border-radius: 50px;
@@ -260,7 +261,7 @@
             border-radius: 20px;
             object-fit: cover;
             border: 3px solid #fef3c7;
-            background: #f8fafc;
+            background: var(--ct-surface);
         }
 
         .info-details {
@@ -273,7 +274,7 @@
             gap: 10px;
             margin-bottom: 10px;
             padding: 8px 12px;
-            background: #f8fafc;
+            background: var(--ct-surface);
             border-radius: 12px;
         }
 
@@ -284,26 +285,26 @@
         }
 
         .info-item strong {
-            color: #1e293b;
+            color: var(--ct-ink);
             font-size: 13px;
             min-width: 70px;
         }
 
         .info-item span {
-            color: #64748b;
+            color: var(--ct-ink-3);
             font-size: 13px;
         }
 
         .registered-date {
             margin-top: 15px;
             padding: 10px;
-            background: #f8fafc;
+            background: var(--ct-surface);
             border-radius: 12px;
             display: flex;
             align-items: center;
             gap: 10px;
             font-size: 12px;
-            color: #64748b;
+            color: var(--ct-ink-3);
         }
 
         .registered-date i {
@@ -313,8 +314,8 @@
         /* Card Footer */
         .card-footer-custom {
             padding: 15px 20px;
-            background: #f8fafc;
-            border-top: 1px solid #e2e8f0;
+            background: var(--ct-surface);
+            border-top: 1px solid var(--ct-line-2);
             display: flex;
             gap: 12px;
         }
@@ -345,7 +346,7 @@
 
         .btn-reject {
             flex: 1;
-            background: white;
+            background: var(--ct-surface);
             border: 2px solid #fee2e2;
             padding: 8px;
             border-radius: 12px;
@@ -363,7 +364,7 @@
         }
 
         .btn-reject:hover {
-            background: #fef2f2;
+            background: var(--ct-bad-soft);
             border-color: #ef4444;
             transform: translateY(-2px);
         }
@@ -372,15 +373,15 @@
         .empty-state {
             text-align: center;
             padding: 80px 20px;
-            background: white;
+            background: var(--ct-surface);
             border-radius: 28px;
-            border: 1px solid #e2e8f0;
+            border: 1px solid var(--ct-line-2);
         }
 
         .empty-icon {
             width: 100px;
             height: 100px;
-            background: #d1fae5;
+            background: var(--ct-ok-soft);
             border-radius: 50%;
             display: inline-flex;
             align-items: center;
@@ -395,12 +396,12 @@
 
         .empty-state h3 {
             font-size: 24px;
-            color: #1e293b;
+            color: var(--ct-ink);
             margin-bottom: 10px;
         }
 
         .empty-state p {
-            color: #64748b;
+            color: var(--ct-ink-3);
             margin-bottom: 25px;
         }
 
@@ -426,7 +427,7 @@
         }
 
         .modal-container {
-            background: white;
+            background: var(--ct-surface);
             border-radius: 32px;
             max-width: 420px;
             width: 90%;
@@ -492,16 +493,16 @@
         .modal-header h3 {
             font-size: 24px;
             font-weight: 700;
-            color: #1e293b;
+            color: var(--ct-ink);
             margin-bottom: 5px;
         }
 
         .student-details-preview {
-            background: #f8fafc;
+            background: var(--ct-surface);
             margin: 0 25px 20px;
             padding: 20px;
             border-radius: 20px;
-            border: 1px solid #e2e8f0;
+            border: 1px solid var(--ct-line-2);
         }
 
         .detail-row {
@@ -509,7 +510,7 @@
             align-items: center;
             gap: 12px;
             padding: 10px 0;
-            border-bottom: 1px solid #e2e8f0;
+            border-bottom: 1px solid var(--ct-line-2);
         }
 
         .detail-row:last-child {
@@ -524,12 +525,12 @@
 
         .detail-row .label {
             font-weight: 600;
-            color: #1e293b;
+            color: var(--ct-ink);
             width: 80px;
         }
 
         .detail-row .value {
-            color: #64748b;
+            color: var(--ct-ink-3);
             flex: 1;
         }
 
@@ -562,14 +563,14 @@
         }
 
         .modal-btn-cancel {
-            background: white;
-            border: 2px solid #e2e8f0;
-            color: #64748b;
+            background: var(--ct-surface);
+            border: 2px solid var(--ct-line-2);
+            color: var(--ct-ink-3);
         }
 
         .modal-btn-cancel:hover {
-            border-color: #1a56db;
-            color: #1a56db;
+            border-color: var(--ct-primary);
+            color: var(--ct-primary);
         }
 
         .modal-btn-danger {
@@ -676,8 +677,16 @@
         });
     })();
     </script>
+
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/cognitara-web.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/cognitara-portal-unified.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/cognitara-teacher-studio.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/cognitara-admin-studio.css') }}">
+  {{ ct_boot_script() }}
 </head>
-<body>
+<body class="ct-app ct-bs ad-studio">
+{{ admin_shell_start(active='approvals', crumb='Pending Approvals') }}
+
 
     <!-- Animated Educational Icons Background -->
     <div class="edu-icon"><i class="fas fa-user-clock"></i></div>
@@ -922,5 +931,7 @@
             }
         });
     </script>
+
+{{ shell_end(role='admin') }}
 </body>
 </html>

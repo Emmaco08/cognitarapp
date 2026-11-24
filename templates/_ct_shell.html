@@ -1,0 +1,347 @@
+{# ==========================================================================
+   CogniTara Web v3 — Shared Opus Studio Portal Shell Macros
+   Reusable navigation chrome (Admin · Teacher · Student · Common Entrance)
+   keeping 100% consistent Dark & Light themes, Ctrl+K Command Palette,
+   sidebar collapse, mobile drawer, CSRF auto-injection, and toast stack.
+   ========================================================================== #}
+
+{%- macro ico(name, cls='') -%}<svg class="ct-ico{% if cls %} {{ cls }}{% endif %}" aria-hidden="true"><use href="{{ url_for('static', filename='icons/cognitara-icons.svg') }}#{{ name }}"/></svg>{%- endmacro -%}
+
+{%- macro ct_boot_script() -%}
+<script>
+(function () {
+  var d = document.documentElement, saved = null, side = null;
+  try { saved = localStorage.getItem("ct-theme"); side = localStorage.getItem("ct-sidebar"); } catch (e) {}
+  var q = new URLSearchParams(location.search).get("theme");
+  var theme = (q === "light" || q === "dark") ? q : (saved === "light" ? "light" : "dark");
+  d.setAttribute("data-theme", theme);
+  if (side === "collapsed") d.setAttribute("data-ct-sidebar", "collapsed");
+  if (!(window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches)) d.classList.add("ct-motion");
+  setTimeout(function () { if (!window.CT) d.classList.remove("ct-motion"); }, 2500);
+})();
+window.CSRF_TOKEN = "{{ csrf_token() }}";
+(function () {
+  if (window.fetch) {
+    var _origFetch = window.fetch;
+    window.fetch = function (url, options) {
+      options = options || {};
+      var method = (options.method || "GET").toUpperCase();
+      if (["GET", "HEAD", "OPTIONS", "TRACE"].indexOf(method) === -1) {
+        options.headers = options.headers || {};
+        var token = window.CSRF_TOKEN || (document.querySelector('meta[name="csrf-token"]') && document.querySelector('meta[name="csrf-token"]').getAttribute("content"));
+        if (token) {
+          if (typeof Headers !== "undefined" && options.headers instanceof Headers) {
+            if (!options.headers.has("X-CSRFToken")) options.headers.set("X-CSRFToken", token);
+          } else if (Array.isArray(options.headers)) {
+            options.headers.push(["X-CSRFToken", token]);
+          } else if (!options.headers["X-CSRFToken"]) {
+            options.headers["X-CSRFToken"] = token;
+          }
+        }
+      }
+      return _origFetch(url, options);
+    };
+  }
+  if (navigator.sendBeacon) {
+    var _origBeacon = navigator.sendBeacon.bind(navigator);
+    navigator.sendBeacon = function (url, data) {
+      if (data instanceof FormData) {
+        if (!data.has("csrf_token")) data.append("csrf_token", window.CSRF_TOKEN);
+      } else if (typeof data === "string") {
+        try {
+          var obj = JSON.parse(data);
+          if (typeof obj === "object" && obj !== null && !obj.csrf_token) {
+            obj.csrf_token = window.CSRF_TOKEN;
+            data = JSON.stringify(obj);
+          }
+        } catch (e) {}
+      }
+      return _origBeacon(url, data);
+    };
+  }
+  document.addEventListener("DOMContentLoaded", function () {
+    document.querySelectorAll('form[method="POST"], form[method="post"]').forEach(function (form) {
+      if (!form.querySelector('input[name="csrf_token"]')) {
+        var input = document.createElement("input");
+        input.type = "hidden";
+        input.name = "csrf_token";
+        input.value = window.CSRF_TOKEN;
+        form.appendChild(input);
+      }
+    });
+  });
+})();
+</script>
+{%- endmacro -%}
+
+{%- macro admin_shell_start(active='overview', crumb='Dashboard', parent_href='/admin', parent_label='Admin') -%}
+{%- set ICONS = url_for('static', filename='icons/cognitara-icons.svg') -%}
+{%- set _school = school_branding if school_branding is defined and school_branding else {'school_name': 'CogniTara School', 'initials': 'CT', 'current_term': 'Active Term', 'academic_session': '2026/2027', 'school_logo': ''} -%}
+{%- set _user = session.get('user', username if username is defined else 'Administrator') -%}
+<div class="ct-toasts" id="ctToasts" role="status" aria-live="polite"></div>
+<div class="ct-scrim" data-ct-drawer-close></div>
+
+<div class="ct-palette" id="ctShellPalette" hidden>
+  <div class="ct-palette__box" role="dialog" aria-label="Quick command palette">
+    <div class="ct-palette__input">
+      {{ ico('i-search') }}
+      <input id="ctShellPalInput" placeholder="Jump to exams, students, analytics, or settings…" autocomplete="off" spellcheck="false" aria-label="Search commands">
+      <kbd class="ct-kbd">Esc</kbd>
+    </div>
+    <ul class="ct-palette__list" id="ctShellPalList" role="listbox"></ul>
+    <div class="ct-palette__foot">
+      <span><kbd class="ct-kbd">↑</kbd><kbd class="ct-kbd">↓</kbd> Navigate</span>
+      <span><kbd class="ct-kbd">Enter</kbd> Open</span>
+      <span><kbd class="ct-kbd">Ctrl</kbd><kbd class="ct-kbd">K</kbd> Toggle</span>
+    </div>
+  </div>
+</div>
+
+<div class="ct-shell">
+  <aside class="ct-sidebar" aria-label="Admin navigation">
+    <div class="ct-sidebar__brand">
+      <a href="/admin" aria-label="CogniTara admin home">
+        <span class="ct-appicon"><svg viewBox="0 0 200 200"><use href="{{ ICONS }}#ct-mark"/></svg></span>
+        <svg class="ct-wordmark" aria-label="CogniTara"><use href="{{ ICONS }}#ct-word" width="100%" height="100%"/></svg>
+      </a>
+      <span class="ct-brand-tag">Admin</span>
+    </div>
+
+    <div class="ct-sidebar__scroll">
+      <a class="ct-school" href="/admin/school-settings" title="Edit school profile &amp; term">
+        <span class="ct-school__crest"{% if _school.school_logo %} style="background-image:url('{{ url_for('static', filename='images/' + _school.school_logo) }}')"{% endif %}>{% if not _school.school_logo %}{{ _school.initials or 'CT' }}{% endif %}</span>
+        <span class="ct-school__txt">
+          <strong>{{ _school.school_name }}</strong>
+          <em>{{ _school.current_term }}, {{ _school.academic_session }}</em>
+        </span>
+      </a>
+
+      <nav class="ct-nav" aria-label="Workspace">
+        <span class="ct-nav__label">Workspace</span>
+        <a class="ct-nav__link{% if active == 'overview' %} is-active{% endif %}" href="/admin">{{ ico('i-home') }}<span class="ct-nav__text">Overview</span></a>
+        <a class="ct-nav__link{% if active == 'exams' %} is-active{% endif %}" href="/admin#sec-exams">{{ ico('i-doc') }}<span class="ct-nav__text">Exams</span></a>
+        <a class="ct-nav__link{% if active == 'control' %} is-active{% endif %}" href="/admin/exams-management">{{ ico('i-live') }}<span class="ct-nav__text">Exam Control Center</span></a>
+        <a class="ct-nav__link{% if active == 'support' %} is-active{% endif %}" href="/admin/exam_technical_support">{{ ico('i-activity') }}<span class="ct-nav__text">Live Support &amp; Pause</span></a>
+        <a class="ct-nav__link{% if active == 'ce' %} is-active{% endif %}" href="/admin/common-entrance">{{ ico('i-door') }}<span class="ct-nav__text">Common Entrance</span></a>
+      </nav>
+
+      <nav class="ct-nav" aria-label="People">
+        <span class="ct-nav__label">People</span>
+        <a class="ct-nav__link{% if active == 'teachers' %} is-active{% endif %}" href="/admin/add_teacher">{{ ico('i-teacher') }}<span class="ct-nav__text">Teachers</span></a>
+        <a class="ct-nav__link{% if active == 'students' %} is-active{% endif %}" href="/admin/add_student">{{ ico('i-users') }}<span class="ct-nav__text">Students</span></a>
+        <a class="ct-nav__link{% if active == 'approvals' %} is-active{% endif %}" href="/admin/pending_students">{{ ico('i-clock') }}<span class="ct-nav__text">Approvals</span></a>
+        <a class="ct-nav__link{% if active == 'add_admin' %} is-active{% endif %}" href="/admin/add_admin">{{ ico('i-shield') }}<span class="ct-nav__text">Add Admin</span></a>
+      </nav>
+
+      <nav class="ct-nav" aria-label="Reports and settings">
+        <span class="ct-nav__label">Reports &amp; Settings</span>
+        <a class="ct-nav__link{% if active == 'results' %} is-active{% endif %}" href="/admin/results">{{ ico('i-chart') }}<span class="ct-nav__text">Results</span></a>
+        <a class="ct-nav__link{% if active == 'analytics' %} is-active{% endif %}" href="/admin/school-analytics">{{ ico('i-trend') }}<span class="ct-nav__text">School Analytics</span></a>
+        <a class="ct-nav__link{% if active == 'attempts' %} is-active{% endif %}" href="/admin/exam_attempts">{{ ico('i-layers') }}<span class="ct-nav__text">Exam Attempts</span></a>
+        <a class="ct-nav__link{% if active == 'settings' %} is-active{% endif %}" href="/admin/school-settings">{{ ico('i-settings') }}<span class="ct-nav__text">School Settings</span></a>
+        <a class="ct-nav__link{% if active == 'ce_settings' %} is-active{% endif %}" href="/admin/ce-settings">{{ ico('i-sliders') }}<span class="ct-nav__text">CE Settings</span></a>
+        <a class="ct-nav__link{% if active == 'logs' %} is-active{% endif %}" href="/admin/logs">{{ ico('i-book') }}<span class="ct-nav__text">Audit Logs</span></a>
+        <a class="ct-nav__link{% if active == 'warnings' %} is-active{% endif %}" href="/admin/warning_logs">{{ ico('i-alert') }}<span class="ct-nav__text">Warning Logs</span></a>
+      </nav>
+    </div>
+
+    <div class="ct-sidebar__foot">
+      <a class="ct-btn ct-btn--primary ct-btn--sm ct-btn--block" href="/admin/add_exam" data-ct-tip="Create exam" data-ct-tip-pos="right">
+        {{ ico('i-plus') }}<span class="ct-hide-collapsed">Create Exam</span>
+      </a>
+    </div>
+  </aside>
+
+  <div class="ct-main">
+    <header class="ct-topbar">
+      <button type="button" class="ct-iconbtn ct-iconbtn--ghost ct-topbar__menu" data-ct-sidebar-toggle aria-label="Open navigation">{{ ico('i-menu') }}</button>
+      <button type="button" class="ct-iconbtn ct-iconbtn--ghost ct-topbar__collapse" data-ct-sidebar-toggle aria-label="Collapse sidebar" title="Collapse sidebar">{{ ico('i-sidebar') }}</button>
+      <nav class="ct-crumbs" aria-label="Breadcrumb">
+        <a href="{{ parent_href }}">{{ parent_label }}</a>{{ ico('i-chevron-right') }}<strong>{{ crumb }}</strong>
+      </nav>
+
+      <div class="ct-topbar__actions">
+        <button type="button" class="ct-search-trigger" data-ct-palette-open aria-label="Open command palette (Ctrl+K)">
+          {{ ico('i-search', 'ct-ico--sm') }}
+          <span>Jump to page or action…</span>
+          <kbd class="ct-kbd">Ctrl K</kbd>
+        </button>
+        <button type="button" class="ct-iconbtn" data-ct-theme-toggle aria-label="Switch theme" title="Switch light or dark theme">
+          <span class="ct-theme-ico">{{ ico('i-moon', 'ct-theme-ico__moon') }}{{ ico('i-sun', 'ct-theme-ico__sun') }}</span>
+        </button>
+        <div class="ct-dropdown" data-ct-dropdown>
+          <button type="button" class="ct-userpill" data-ct-dropdown-trigger aria-haspopup="menu" aria-expanded="false">
+            <span class="ct-avatar ct-avatar--xs">{{ (_user[:2] if _user else 'AD')|upper }}</span>
+            <span class="ct-userpill__name">{{ _user }}</span>
+            {{ ico('i-chevron-down') }}
+          </button>
+          <div class="ct-menu" role="menu">
+            <div class="ct-menu__head"><strong>{{ _user }}</strong><span>Administrator</span></div>
+            <a class="ct-menu__item" role="menuitem" href="/admin">{{ ico('i-home') }}Admin Dashboard</a>
+            <a class="ct-menu__item" role="menuitem" href="/admin/school-settings">{{ ico('i-settings') }}School Settings</a>
+            <div class="ct-menu__sep"></div>
+            <a class="ct-menu__item ct-menu__item--danger" role="menuitem" href="/logout">{{ ico('i-logout') }}Log out</a>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main class="ct-content ct-enter" id="main">
+{%- endmacro -%}
+
+{%- macro teacher_shell_start(active='dashboard', crumb='Teacher Portal') -%}
+{%- set ICONS = url_for('static', filename='icons/cognitara-icons.svg') -%}
+{%- set _school = school_branding if school_branding is defined and school_branding else {'school_name': 'CogniTara School', 'initials': 'CT', 'current_term': 'Active Term', 'academic_session': '2026/2027', 'school_logo': ''} -%}
+{%- set _user = session.get('username') or session.get('user') or (teacher.username if teacher is defined and teacher and teacher.username is defined else 'Teacher') -%}
+<div class="ct-toasts" id="ctToasts" role="status" aria-live="polite"></div>
+<div class="ct-scrim" data-ct-drawer-close></div>
+
+<div class="ct-palette" id="ctShellPalette" hidden>
+  <div class="ct-palette__box" role="dialog" aria-label="Quick command palette">
+    <div class="ct-palette__input">
+      {{ ico('i-search') }}
+      <input id="ctShellPalInput" placeholder="Jump to exams, analytics, support, or imports…" autocomplete="off" spellcheck="false" aria-label="Search commands">
+      <kbd class="ct-kbd">Esc</kbd>
+    </div>
+    <ul class="ct-palette__list" id="ctShellPalList" role="listbox"></ul>
+    <div class="ct-palette__foot">
+      <span><kbd class="ct-kbd">↑</kbd><kbd class="ct-kbd">↓</kbd> Navigate</span>
+      <span><kbd class="ct-kbd">Enter</kbd> Open</span>
+      <span><kbd class="ct-kbd">Ctrl</kbd><kbd class="ct-kbd">K</kbd> Toggle</span>
+    </div>
+  </div>
+</div>
+
+<div class="ct-shell">
+  <aside class="ct-sidebar" aria-label="Teacher navigation">
+    <div class="ct-sidebar__brand">
+      <a href="/teacher" aria-label="CogniTara teacher home">
+        <span class="ct-appicon"><svg viewBox="0 0 200 200"><use href="{{ ICONS }}#ct-mark"/></svg></span>
+        <svg class="ct-wordmark" aria-label="CogniTara"><use href="{{ ICONS }}#ct-word" width="100%" height="100%"/></svg>
+      </a>
+      <span class="ct-brand-tag">Teacher</span>
+    </div>
+
+    <div class="ct-sidebar__scroll">
+      <div class="ct-school">
+        <span class="ct-school__crest"{% if _school.school_logo %} style="background-image:url('{{ url_for('static', filename='images/' + _school.school_logo) }}')"{% endif %}>{% if not _school.school_logo %}{{ _school.initials or 'CT' }}{% endif %}</span>
+        <span class="ct-school__txt">
+          <strong>{{ _school.school_name }}</strong>
+          <em>{{ _school.current_term }}, {{ _school.academic_session }}</em>
+        </span>
+      </div>
+
+      <nav class="ct-nav" aria-label="Teaching">
+        <span class="ct-nav__label">Teaching</span>
+        <a class="ct-nav__link{% if active == 'dashboard' %} is-active{% endif %}" href="/teacher">{{ ico('i-home') }}<span class="ct-nav__text">Dashboard</span></a>
+        <a class="ct-nav__link{% if active == 'add_exam' %} is-active{% endif %}" href="/teacher/create_exam">{{ ico('i-file-plus') }}<span class="ct-nav__text">Create Exam</span></a>
+        <a class="ct-nav__link{% if active == 'import' %} is-active{% endif %}" href="/teacher/import_exam">{{ ico('i-upload') }}<span class="ct-nav__text">Import Exam</span></a>
+        <a class="ct-nav__link{% if active == 'support' %} is-active{% endif %}" href="/teacher/technical_support">{{ ico('i-activity') }}<span class="ct-nav__text">Live Support</span></a>
+      </nav>
+
+      <nav class="ct-nav" aria-label="Insights">
+        <span class="ct-nav__label">Insights</span>
+        <a class="ct-nav__link{% if active == 'analytics' %} is-active{% endif %}" href="/teacher/analytics">{{ ico('i-chart') }}<span class="ct-nav__text">Class Analytics</span></a>
+        <a class="ct-nav__link{% if active == 'progression' %} is-active{% endif %}" href="/teacher/progression">{{ ico('i-trend') }}<span class="ct-nav__text">Student Progression</span></a>
+      </nav>
+    </div>
+
+    <div class="ct-sidebar__foot">
+      <a class="ct-btn ct-btn--primary ct-btn--sm ct-btn--block" href="/teacher/create_exam" data-ct-tip="New exam" data-ct-tip-pos="right">
+        {{ ico('i-plus') }}<span class="ct-hide-collapsed">New Exam</span>
+      </a>
+    </div>
+  </aside>
+
+  <div class="ct-main">
+    <header class="ct-topbar">
+      <button type="button" class="ct-iconbtn ct-iconbtn--ghost ct-topbar__menu" data-ct-sidebar-toggle aria-label="Open navigation">{{ ico('i-menu') }}</button>
+      <button type="button" class="ct-iconbtn ct-iconbtn--ghost ct-topbar__collapse" data-ct-sidebar-toggle aria-label="Collapse sidebar" title="Collapse sidebar">{{ ico('i-sidebar') }}</button>
+      <nav class="ct-crumbs" aria-label="Breadcrumb">
+        <a href="/teacher">Teacher</a>{{ ico('i-chevron-right') }}<strong>{{ crumb }}</strong>
+      </nav>
+
+      <div class="ct-topbar__actions">
+        <button type="button" class="ct-search-trigger" data-ct-palette-open aria-label="Open command palette (Ctrl+K)">
+          {{ ico('i-search', 'ct-ico--sm') }}
+          <span>Jump to action…</span>
+          <kbd class="ct-kbd">Ctrl K</kbd>
+        </button>
+        <button type="button" class="ct-iconbtn" data-ct-theme-toggle aria-label="Switch theme" title="Switch light or dark theme">
+          <span class="ct-theme-ico">{{ ico('i-moon', 'ct-theme-ico__moon') }}{{ ico('i-sun', 'ct-theme-ico__sun') }}</span>
+        </button>
+        <div class="ct-dropdown" data-ct-dropdown>
+          <button type="button" class="ct-userpill" data-ct-dropdown-trigger aria-haspopup="menu" aria-expanded="false">
+            <span class="ct-avatar ct-avatar--xs">{{ (_user[:2] if _user else 'TC')|upper }}</span>
+            <span class="ct-userpill__name">{{ _user }}</span>
+            {{ ico('i-chevron-down') }}
+          </button>
+          <div class="ct-menu" role="menu">
+            <div class="ct-menu__head"><strong>{{ _user }}</strong><span>Teacher</span></div>
+            <a class="ct-menu__item" role="menuitem" href="/teacher">{{ ico('i-home') }}Dashboard</a>
+            <a class="ct-menu__item" role="menuitem" href="/teacher/analytics">{{ ico('i-chart') }}Analytics</a>
+            <div class="ct-menu__sep"></div>
+            <a class="ct-menu__item ct-menu__item--danger" role="menuitem" href="/logout">{{ ico('i-logout') }}Log out</a>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main class="ct-content ct-enter" id="main">
+{%- endmacro -%}
+
+{%- macro student_topbar(crumb='Student Portal', home_href='/dashboard', badge='Student') -%}
+{%- set ICONS = url_for('static', filename='icons/cognitara-icons.svg') -%}
+{%- set _user = session.get('user', student.full_name if student is defined and student and student.full_name is defined else 'Student') -%}
+<div class="ct-toasts" id="ctToasts" role="status" aria-live="polite"></div>
+<header class="ct-topbar" style="padding:0 28px">
+  <a href="{{ home_href }}" style="display:inline-flex;align-items:center;gap:10px;text-decoration:none">
+    <span class="ct-appicon"><svg viewBox="0 0 200 200"><use href="{{ ICONS }}#ct-mark"/></svg></span>
+    <svg class="ct-wordmark" aria-label="CogniTara"><use href="{{ ICONS }}#ct-word" width="100%" height="100%"/></svg>
+    <span class="ct-brand-tag">{{ badge }}</span>
+  </a>
+  <div class="ct-topbar__actions">
+    <button type="button" class="ct-iconbtn" data-ct-theme-toggle aria-label="Switch theme" title="Switch light or dark theme">
+      <span class="ct-theme-ico">{{ ico('i-moon', 'ct-theme-ico__moon') }}{{ ico('i-sun', 'ct-theme-ico__sun') }}</span>
+    </button>
+    <a class="ct-btn ct-btn--ghost ct-btn--sm" href="/logout">{{ ico('i-logout') }}Log out</a>
+  </div>
+</header>
+{%- endmacro -%}
+
+{%- macro shell_end(role='admin') -%}
+      <footer class="ct-foot">CogniTara Offline Examination Server · {{ school_branding.school_name if school_branding is defined and school_branding else 'CogniTara' }}</footer>
+    </main>
+  </div>
+</div>
+<script src="{{ url_for('static', filename='js/cognitara-web.js') }}"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  if (!window.CT || !document.getElementById("ctShellPalette")) return;
+  var cmds = {% if role == 'teacher' %}[
+    { label: "Teacher Dashboard", hint: "Overview", icon: "i-home", go: "/teacher" },
+    { label: "Create New Exam", hint: "Exam Builder", icon: "i-plus", go: "/teacher/add_exam" },
+    { label: "Import Exam", hint: "Word / CSV", icon: "i-upload", go: "/teacher/import_exam" },
+    { label: "Class Analytics", hint: "Insights", icon: "i-chart", go: "/teacher/analytics" },
+    { label: "Student Progression", hint: "Trends", icon: "i-trend", go: "/teacher/progression" },
+    { label: "Live Support", hint: "Monitoring", icon: "i-activity", go: "/teacher/technical_support" },
+    { label: "Switch Light / Dark Theme", hint: "Appearance", icon: "i-moon", run: function () { CT.theme.toggle(); } }
+  ]{% else %}[
+    { label: "Admin Dashboard", hint: "Overview", icon: "i-home", go: "/admin" },
+    { label: "Exams Management", hint: "Admin #sec-exams", icon: "i-doc", go: "/admin#sec-exams" },
+    { label: "Exam Control Center", hint: "Bulk actions", icon: "i-live", go: "/admin/exams-management" },
+    { label: "Create New Exam", hint: "Exam Builder", icon: "i-plus", go: "/admin/add_exam" },
+    { label: "Live Support & Pause", hint: "Invigilation", icon: "i-activity", go: "/admin/exam_technical_support" },
+    { label: "Common Entrance", hint: "Admissions", icon: "i-door", go: "/admin/common-entrance" },
+    { label: "Results & Grades", hint: "Reports", icon: "i-chart", go: "/admin/results" },
+    { label: "School Analytics", hint: "Insights", icon: "i-trend", go: "/admin/school-analytics" },
+    { label: "Pending Student Approvals", hint: "People", icon: "i-clock", go: "/admin/pending_students" },
+    { label: "School Settings", hint: "Branding & Term", icon: "i-settings", go: "/admin/school-settings" },
+    { label: "Audit Logs", hint: "Security", icon: "i-book", go: "/admin/logs" },
+    { label: "Warning Logs", hint: "Integrity", icon: "i-alert", go: "/admin/warning_logs" },
+    { label: "Switch Light / Dark Theme", hint: "Appearance", icon: "i-moon", run: function () { CT.theme.toggle(); } }
+  ]{% endif %};
+  CT.palette({ root: "#ctShellPalette", input: "#ctShellPalInput", list: "#ctShellPalList", commands: cmds });
+});
+</script>
+{%- endmacro -%}
