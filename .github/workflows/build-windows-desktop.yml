@@ -143,16 +143,16 @@ jobs:
           $blockmap = (Get-ChildItem -Path "desktop/release" -Filter "*.blockmap" | Select-Object -First 1).FullName
           $latestYml = (Resolve-Path "desktop/release/latest.yml").Path
           $sums = (Resolve-Path "desktop/release/SHA256SUMS.txt").Path
-          $notes = @"
-          CogniTara Studio $pkgVer — Windows Desktop App, Modern Showcase Installer & Cloud Sync
+          $notes = @'
+          CogniTara Studio __VER__ — Windows Desktop App, Modern Showcase Installer & Cloud Sync
 
-          What's New in $pkgVer:
+          What's New in __VER__:
           - **Fixed Windows C:\Program Files\ PermissionError:** All engine writes (`logs/`, `static/images/`, `exam.db`, `.secret_key`, backups) now route strictly into `%ProgramData%\CogniTara\data\` (with `%LOCALAPPDATA%` fallback).
           - **Butter-Smooth 60fps Studio UI:** Removed heavy full-window `backdrop-filter: blur(60px)` & blur keyframes, GPU-accelerated transitions (`transform`/`opacity`), and eliminated canvas/DOM layout jank.
           - **Modern Photoshop/CorelDRAW-Style Windows Installer:** Dark Midnight Navy Opus Studio setup with interactive 5-slide feature showcase carousel and animated progress installation.
           - **Direct In-App Auto-Updates (`electron-updater`):** Includes `latest.yml` + `.blockmap` delta updates with live download progress and safe server-stop + active-exam protection before restart.
           - **Neon Postgres + Vercel Cloud Sign-Up & Sign-In:** Real online school account registration & sign-in (`https://cognitara-cloud.vercel.app`) with encrypted offline-ready local caching inside Studio.
-          "@
+          '@.Replace("__VER__", $pkgVer)
           gh release view $tag 2>$null
           if ($LASTEXITCODE -eq 0) {
             gh release upload $tag $exe $blockmap $latestYml $sums --clobber
