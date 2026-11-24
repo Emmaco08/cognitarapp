@@ -130,7 +130,7 @@ jobs:
 
       - name: Sign cognitara-engine.exe (Azure Trusted Signing)
         if: steps.signing.outputs.mode == 'azure'
-        uses: azure/trusted-signing-action@v0.5.5
+        uses: azure/trusted-signing-action@v0.5.11
         with:
           azure-tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           azure-client-id: ${{ secrets.AZURE_CLIENT_ID }}
@@ -235,7 +235,7 @@ jobs:
 
       - name: Sign custom Tauri Setup .exe (Azure Trusted Signing)
         if: steps.signing.outputs.mode == 'azure'
-        uses: azure/trusted-signing-action@v0.5.5
+        uses: azure/trusted-signing-action@v0.5.11
         with:
           azure-tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           azure-client-id: ${{ secrets.AZURE_CLIENT_ID }}
