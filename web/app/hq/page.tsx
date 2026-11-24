@@ -882,8 +882,8 @@ export default function DeveloperHqPage() {
                   </div>
                   <div className="form-row3">
                     <div className="field">
-                      <label>Duration Days (blank=Lifetime)</label>
-                      <input type="number" min="0" className="mono" value={editingPlan.duration_days} onChange={(e) => setEditingPlan({ ...editingPlan, duration_days: e.target.value })} placeholder="365" />
+                      <label>Duration (days)</label>
+                      <input type="number" min="0" className="mono" value={editingPlan.duration_days} onChange={(e) => setEditingPlan({ ...editingPlan, duration_days: e.target.value })} placeholder="Blank = lifetime" />
                     </div>
                     <div className="field">
                       <label>Offline Lease Days</label>
@@ -937,7 +937,7 @@ export default function DeveloperHqPage() {
               <div>
                 <span className="hq-eyebrow">Growth, Vouchers &amp; Offline Sales</span>
                 <h1>Redeem Codes &amp; Discount Codes</h1>
-                <p>Generate single or bulk Paystack discount promo codes (`%` or fixed `₦`/`$`) OR full licence redeem vouchers that activate CogniTara Studio instantly without card payment.</p>
+                <p>Generate single or bulk Paystack discount promo codes (% or fixed ₦/$) or full licence redeem vouchers that activate CogniTara Studio instantly without card payment.</p>
               </div>
             </header>
 
