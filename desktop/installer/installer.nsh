@@ -267,13 +267,18 @@
     DetailPrint "Configuring 5-layer hardware licence vault & ProgramData storage..."
     Call CogniTaraAdvanceInstSlide
 
-    CreateDirectory "$COMMONAPPDATA\CogniTara"
-    CreateDirectory "$COMMONAPPDATA\CogniTara\data"
-    CreateDirectory "$COMMONAPPDATA\CogniTara\data\logs"
-    CreateDirectory "$COMMONAPPDATA\CogniTara\data\static"
-    CreateDirectory "$COMMONAPPDATA\CogniTara\data\static\images"
-    CreateDirectory "$COMMONAPPDATA\CogniTara\Backups"
-    CreateDirectory "$COMMONAPPDATA\CogniTara\vault"
+    ReadEnvStr $R0 "PROGRAMDATA"
+    ${If} $R0 == ""
+      StrCpy $R0 "C:\ProgramData"
+    ${EndIf}
+
+    CreateDirectory "$R0\CogniTara"
+    CreateDirectory "$R0\CogniTara\data"
+    CreateDirectory "$R0\CogniTara\data\logs"
+    CreateDirectory "$R0\CogniTara\data\static"
+    CreateDirectory "$R0\CogniTara\data\static\images"
+    CreateDirectory "$R0\CogniTara\Backups"
+    CreateDirectory "$R0\CogniTara\vault"
 
     ${IfNot} ${Silent}
       Sleep 550
@@ -283,7 +288,7 @@
     Call CogniTaraAdvanceInstSlide
 
     ; Grant local Users modify rights on ProgramData\CogniTara (best-effort; never blocks non-admin installs)
-    nsExec::ExecToStack 'icacls "$COMMONAPPDATA\CogniTara" /grant *S-1-5-32-545:(OI)(CI)M /T /C /Q'
+    nsExec::ExecToStack 'icacls "$R0\CogniTara" /grant *S-1-5-32-545:(OI)(CI)M /T /C /Q'
     Pop $0
     Pop $1
 
