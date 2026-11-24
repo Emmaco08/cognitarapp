@@ -12,6 +12,7 @@ from flask import Blueprint, render_template, request, redirect, session, url_fo
 from werkzeug.utils import secure_filename
 from werkzeug.security import generate_password_hash, check_password_hash
 
+from cognitara.config import get_upload_path
 from cognitara.database.connection import get_db_connection
 from cognitara.security.csrf_ratelimit import validate_csrf, get_csrf_token
 from cognitara.security.passwords import verify_and_upgrade_password
@@ -356,7 +357,7 @@ def admin_ce_register_student():
     if photo_file and photo_file.filename:
         safe_user = secure_filename(username) or "ce_student"
         photo_filename = f"ce_student_{safe_user}_{int(datetime.now().timestamp())}.jpg"
-        save_path = os.path.join("static/images", photo_filename)
+        save_path = get_upload_path(photo_filename)
         compress_image(photo_file, save_path, 50)
     
     hashed_password = generate_password_hash(password) if password else generate_password_hash("student123")
@@ -731,7 +732,7 @@ def add_ce_question(section_id):
     image_filename = None
     if file and file.filename != "":
         image_filename = f"ce_{exam_id}_{section_id}_{int(datetime.now().timestamp())}.jpg"
-        save_path = os.path.join("static/images", image_filename)
+        save_path = get_upload_path(image_filename)
         compress_image(file, save_path, 50)
     
     conn.execute("""
@@ -778,12 +779,12 @@ def edit_ce_question(question_id):
         
         if file and file.filename != "":
             if image_filename:
-                old_path = os.path.join("static/images", image_filename)
+                old_path = get_upload_path(image_filename)
                 if os.path.exists(old_path):
                     os.remove(old_path)
             
             image_filename = f"ce_{question['exam_id']}_{question['section_id']}_{int(datetime.now().timestamp())}.jpg"
-            save_path = os.path.join("static/images", image_filename)
+            save_path = get_upload_path(image_filename)
             compress_image(file, save_path, 50)
         
         conn.execute("""
@@ -810,7 +811,7 @@ def delete_ce_question(question_id):
     section_id = question["section_id"]
     
     if question["image"]:
-        img_path = os.path.join("static/images", question["image"])
+        img_path = get_upload_path(question["image"])
         if os.path.exists(img_path):
             os.remove(img_path)
     
@@ -875,7 +876,7 @@ def add_ce_group(section_id):
     image_filename = None
     if file and file.filename != "":
         image_filename = f"ce_group_{exam_id}_{section_id}_{int(datetime.now().timestamp())}.jpg"
-        save_path = os.path.join("static/images", image_filename)
+        save_path = get_upload_path(image_filename)
         compress_image(file, save_path, 50)
     
     max_order = conn.execute("SELECT COALESCE(MAX(display_order), 0) as max FROM ce_question_groups WHERE section_id=?", (section_id,)).fetchone()["max"]
@@ -910,12 +911,12 @@ def edit_ce_group(group_id):
         
         if file and file.filename != "":
             if image_filename:
-                old_path = os.path.join("static/images", image_filename)
+                old_path = get_upload_path(image_filename)
                 if os.path.exists(old_path):
                     os.remove(old_path)
             
             image_filename = f"ce_group_{group['exam_id']}_{group['section_id']}_{int(datetime.now().timestamp())}.jpg"
-            save_path = os.path.join("static/images", image_filename)
+            save_path = get_upload_path(image_filename)
             compress_image(file, save_path, 50)
         
         conn.execute("""
@@ -942,7 +943,7 @@ def delete_ce_group(group_id):
     section_id = group["section_id"]
     
     if group["group_image"]:
-        img_path = os.path.join("static/images", group["group_image"])
+        img_path = get_upload_path(group["group_image"])
         if os.path.exists(img_path):
             os.remove(img_path)
     
@@ -984,7 +985,7 @@ def add_question_to_group(group_id):
     image_filename = None
     if file and file.filename != "":
         image_filename = f"ce_group_q_{group_id}_{int(datetime.now().timestamp())}.jpg"
-        save_path = os.path.join("static/images", image_filename)
+        save_path = get_upload_path(image_filename)
         compress_image(file, save_path, 50)
     
     max_order = conn.execute("SELECT COALESCE(MAX(display_order), 0) as max FROM ce_questions WHERE group_id=?", (group_id,)).fetchone()["max"]
@@ -2229,12 +2230,12 @@ def edit_ce_group_question(question_id):
         
         if file and file.filename != "":
             if image_filename and image_filename != "default.png":
-                old_path = os.path.join("static/images", image_filename)
+                old_path = get_upload_path(image_filename)
                 if os.path.exists(old_path):
                     os.remove(old_path)
             
             image_filename = f"ce_group_q_{question['group_id']}_{int(datetime.now().timestamp())}.jpg"
-            save_path = os.path.join("static/images", image_filename)
+            save_path = get_upload_path(image_filename)
             compress_image(file, save_path, 50)
         
         conn.execute("""

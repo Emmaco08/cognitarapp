@@ -48,8 +48,14 @@
     writing: 0,
     samples: new Array(120).fill(0),
     stopArmed: false,
-    version: "2.0.0"
+    version: "2.1.0",
+    activeView: "home",
+    cloudAccount: null,
+    updateState: null
   };
+
+  var themeColors = { accent: "#00D2FF", line: "rgba(255, 255, 255, 0.07)", ok: "#34D399" };
+  var pulseDims = { w: 0, h: 0, dpr: 1 };
 
   /* ------------------------------------------------------------------ utils */
   function pad(n) { return String(n).padStart(2, "0"); }
@@ -77,6 +83,11 @@
   function fmtLeft(s) {
     var v = Math.max(0, Math.floor(s || 0));
     return pad(Math.floor(v / 60)) + ":" + pad(v % 60);
+  }
+  function fmtBytes(b) {
+    var v = Math.max(0, Number(b || 0));
+    if (v < 1024 * 1024) return (v / 1024).toFixed(0) + " KB";
+    return (v / (1024 * 1024)).toFixed(1) + " MB";
   }
   function animate(dur, fn, done) {
     if (REDUCED) { fn(1); if (done) done(); return; }
@@ -108,13 +119,21 @@
   }
 
   /* ------------------------------------------------------------------ theme */
+  function refreshThemeColors() {
+    var css = getComputedStyle(document.documentElement);
+    themeColors.accent = css.getPropertyValue("--accent").trim() || "#00D2FF";
+    themeColors.line = css.getPropertyValue("--line").trim() || "rgba(255,255,255,0.07)";
+    themeColors.ok = css.getPropertyValue("--ok").trim() || "#34D399";
+  }
   function applyTheme(t, animated, persist) {
     var run = function () {
       state.theme = t;
       document.documentElement.setAttribute("data-theme", t);
       localStorage.setItem("ct-theme", t);
+      refreshThemeColors();
       $$("#themeSeg button").forEach(function (b) { b.classList.toggle("is-active", b.dataset.t === t); });
-      drawPulse();
+      drawPulse(true);
+      drawSpark(true);
       if (persist && bridge) {
         bridge.updateSettings({ theme: t }).catch(function () {});
       }
@@ -141,15 +160,15 @@
     var bar = $("#tbProgress");
     if (frac == null) {
       bar.classList.remove("is-on");
-      setTimeout(function () { if (!bar.classList.contains("is-on")) bar.style.width = "0"; }, 500);
+      setTimeout(function () { if (!bar.classList.contains("is-on")) bar.style.setProperty("--p", "0"); }, 350);
       return;
     }
     bar.classList.add("is-on");
-    bar.style.width = (Math.max(0, Math.min(1, frac)) * 100) + "%";
+    bar.style.setProperty("--p", String(Math.max(0, Math.min(1, frac))));
   }
   function playHeaderIn() {
     win.classList.remove("is-entering"); void win.offsetWidth; win.classList.add("is-entering");
-    setTimeout(function () { win.classList.remove("is-entering"); }, 1600);
+    setTimeout(function () { win.classList.remove("is-entering"); }, 900);
   }
   var unread = 0;
   function bumpBell() {
@@ -167,15 +186,16 @@
     showView("activity");
   });
   $("#avatarBtn").addEventListener("click", function () {
-    var nm = state.settings.adminFullName || ($("#fName").value || "").trim() || state.settings.adminUsername || "Super admin";
-    toast("Signed in as " + nm);
+    openCloudModal();
   });
   $("#tbSchoolBtn").addEventListener("click", function () {
     if (state.mode === "onboarding") goStep(1);
     else if (state.server === "running") openExternalUrl(localPortalUrl("/admin/settings"));
     else toast("Start the server to edit school settings in the admin portal");
   });
-  function drawSpark() {
+  function drawSpark(force) {
+    if (document.hidden || state.mode !== "app") return;
+    if (!force && state.server !== "running") return;
     var c = $("#tbSpark"); if (!c) return;
     var dpr = window.devicePixelRatio || 1, w = 56, h = 20;
     if (c.width !== w * dpr) { c.width = w * dpr; c.height = h * dpr; }
@@ -183,14 +203,13 @@
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, w, h);
     var data = state.samples.slice(-28), max = Math.max(10, Math.max.apply(null, data) * 1.15);
-    var col = getComputedStyle(document.documentElement).getPropertyValue("--ok").trim() || "#34D399";
     ctx.beginPath();
     data.forEach(function (v, i) {
       var x = i * (w / (data.length - 1));
       var y = h - 2 - (v / max) * (h - 4);
       if (i) ctx.lineTo(x, y); else ctx.moveTo(x, y);
     });
-    ctx.strokeStyle = col; ctx.lineWidth = 1.5; ctx.lineJoin = "round"; ctx.stroke();
+    ctx.strokeStyle = themeColors.ok; ctx.lineWidth = 1.5; ctx.lineJoin = "round"; ctx.stroke();
   }
 
   /* ------------------------------------------------------------------ modes */
@@ -236,16 +255,16 @@
     boot.classList.remove("is-playing"); void boot.offsetWidth; boot.classList.add("is-playing");
 
     var steps = [
-      [200, 12, "Starting CogniTara"],
-      [700, 34, "Checking your licence vault"],
-      [1250, 58, "Opening exam records"],
-      [1800, 80, "Finding your school network"],
-      [2300, 94, "Preparing the control panel"],
-      [2700, 100, "Ready"]
+      [180, 12, "Starting CogniTara"],
+      [600, 34, "Checking your licence vault"],
+      [1050, 58, "Opening exam records"],
+      [1500, 80, "Finding your school network"],
+      [1950, 94, "Preparing the control panel"],
+      [2300, 100, "Ready"]
     ];
     steps.forEach(function (s) {
       bootTimers.push(setTimeout(function () {
-        $("#bootBar").style.width = s[1] + "%";
+        $("#bootBar").style.setProperty("--p", String(s[1] / 100));
         $("#bootPct").textContent = s[1] + "%";
         $("#bootText").textContent = s[2];
       }, REDUCED ? 0 : s[0]));
@@ -256,7 +275,7 @@
       : Promise.resolve(null);
 
     var minDelay = new Promise(function (resolve) {
-      bootTimers.push(setTimeout(resolve, REDUCED ? 150 : 3200));
+      bootTimers.push(setTimeout(resolve, REDUCED ? 150 : 2700));
     });
 
     Promise.all([bootstrapPromise, minDelay]).then(function (results) {
@@ -325,6 +344,8 @@
     state.onboardingComplete = Boolean(data.onboardingComplete);
     if (data.serverStartedAt) state.startedAt = data.serverStartedAt;
     if (data.serverState) state.server = data.serverState;
+    if (data.cloudAccount) state.cloudAccount = data.cloudAccount;
+    if (data.updateState) state.updateState = data.updateState;
 
     syncSchool();
     syncAddr(false);
@@ -333,6 +354,8 @@
     renderLive();
     renderAttention();
     paintStats();
+    renderCloudAccount(state.cloudAccount);
+    if (state.updateState) renderUpdateState(state.updateState);
     if (state.settings.adminFullName) {
       $("#tbAvatar").textContent = initials(state.settings.adminFullName);
     }
@@ -377,10 +400,10 @@
     step = n;
     var items = $$("#onbSteps li"), cur = items[Math.min(n, 4)];
     var fill = n >= 5 ? 1 : n / 4;
-    $("#onbRailFill").style.height = (fill * 100) + "%";
+    $("#onbRailFill").style.setProperty("--p", String(fill));
     var hl = $("#onbHl");
     hl.style.opacity = n >= 5 ? "0" : "1";
-    if (cur) hl.style.transform = "translateY(" + cur.offsetTop + "px)";
+    if (cur) hl.style.transform = "translate3d(0, " + cur.offsetTop + "px, 0)";
     $("#onbEta").style.strokeDashoffset = String(100 - (Math.min(n, 5) / 5) * 100);
     $("#onbEtaText").textContent = etaText[n];
     setProgress(n >= 5 ? 1 : (n + 1) / 6);
@@ -545,13 +568,26 @@
   (function tilt() {
     var stage = $("#tiltStage"), card = $("#tiltCard");
     if (!stage || REDUCED) return;
+    var rect = null, rafId = 0, lastX = 0, lastY = 0;
+    stage.addEventListener("mouseenter", function () { rect = stage.getBoundingClientRect(); });
     stage.addEventListener("mousemove", function (e) {
-      var r = stage.getBoundingClientRect();
-      var x = (e.clientX - r.left) / r.width - 0.5, y = (e.clientY - r.top) / r.height - 0.5;
-      card.style.setProperty("--ry", (x * 14).toFixed(2) + "deg");
-      card.style.setProperty("--rx", (-y * 10).toFixed(2) + "deg");
+      if (!rect) rect = stage.getBoundingClientRect();
+      lastX = (e.clientX - rect.left) / rect.width - 0.5;
+      lastY = (e.clientY - rect.top) / rect.height - 0.5;
+      if (!rafId) {
+        rafId = requestAnimationFrame(function () {
+          rafId = 0;
+          card.style.setProperty("--ry", (lastX * 14).toFixed(2) + "deg");
+          card.style.setProperty("--rx", (-lastY * 10).toFixed(2) + "deg");
+        });
+      }
+    }, { passive: true });
+    stage.addEventListener("mouseleave", function () {
+      rect = null;
+      if (rafId) { cancelAnimationFrame(rafId); rafId = 0; }
+      card.style.setProperty("--rx", "0deg");
+      card.style.setProperty("--ry", "0deg");
     });
-    stage.addEventListener("mouseleave", function () { card.style.setProperty("--rx", "0deg"); card.style.setProperty("--ry", "0deg"); });
   })();
 
   // Step 3: real licence activation (key or signed .cgnlic file)
@@ -855,9 +891,11 @@
     startTelemetryPolling();
   }
   function showView(name) {
+    state.activeView = name;
     $$(".view").forEach(function (v) { v.classList.toggle("is-active", v.dataset.view === name); });
     $$("#railNav button").forEach(function (b) { b.classList.toggle("is-active", b.dataset.view === name); });
     moveIndicator();
+    if (name === "home") { measurePulseCanvas(); drawPulse(true); }
     if (name === "licence") paintLicence();
     if (name === "backups") refreshBackups();
   }
@@ -866,7 +904,7 @@
     if (!act || !ind) return;
     var rail = act.closest(".rail").getBoundingClientRect(), r = act.getBoundingClientRect();
     if (!r.height) return;
-    ind.style.transform = "translateY(" + (r.top - rail.top + (r.height - 16) / 2) + "px)";
+    ind.style.transform = "translate3d(0, " + (r.top - rail.top + (r.height - 16) / 2) + "px, 0)";
   }
   window.addEventListener("resize", moveIndicator);
   $$("[data-view]").forEach(function (b) {
@@ -882,6 +920,8 @@
     { label: "Back up now", icon: "i-backup", hint: "Backups", run: function () { enterAppIfNeeded(); showView("backups"); setTimeout(function () { $("#backupBtn").click(); }, 250); } },
     { label: "Go to Activity", icon: "i-activity", hint: "Page", run: function () { enterAppIfNeeded(); showView("activity"); } },
     { label: "Go to Settings", icon: "i-settings", hint: "Page", run: function () { enterAppIfNeeded(); showView("settings"); } },
+    { label: "Sign in or manage CogniTara Cloud account", icon: "i-users", hint: "Cloud", run: function () { openCloudModal(); } },
+    { label: "Check for CogniTara Studio updates", icon: "i-restore", hint: "Update", run: function () { enterAppIfNeeded(); showView("settings"); $("#setCheckUpdateBtn").click(); } },
     { label: "Copy student address", icon: "i-copy", hint: "Network", run: function () { if (navigator.clipboard) navigator.clipboard.writeText(addr()).catch(function () {}); toast("Copied " + addr()); } },
     { label: "Open admin portal in browser", icon: "i-external", hint: "Portal", run: function () { openPortal("/login"); } },
     { label: "Switch light or dark theme", icon: "i-sun", hint: "Appearance", run: function () { applyTheme(state.theme === "dark" ? "light" : "dark", true, true); } },
@@ -1203,19 +1243,30 @@
     }
   });
 
-  /* ---- pulse canvas ---- */
-  function drawPulse() {
+  /* ---- pulse canvas (60fps: cached dimensions & colors, painted only when visible) ---- */
+  function measurePulseCanvas() {
     var c = $("#pulseCanvas"); if (!c) return;
-    var dpr = window.devicePixelRatio || 1, w = c.clientWidth, h = c.clientHeight;
-    if (!w) return;
-    if (c.width !== w * dpr) { c.width = w * dpr; c.height = h * dpr; }
+    var w = c.clientWidth, h = c.clientHeight, dpr = window.devicePixelRatio || 1;
+    if (w > 0 && h > 0) {
+      pulseDims.w = w; pulseDims.h = h; pulseDims.dpr = dpr;
+      if (c.width !== Math.round(w * dpr) || c.height !== Math.round(h * dpr)) {
+        c.width = Math.round(w * dpr);
+        c.height = Math.round(h * dpr);
+      }
+    }
+  }
+  function drawPulse(force) {
+    if (document.hidden) return;
+    if (!force && (state.mode !== "app" || state.activeView !== "home")) return;
+    var c = $("#pulseCanvas"); if (!c) return;
+    if (!pulseDims.w) measurePulseCanvas();
+    var w = pulseDims.w, h = pulseDims.h, dpr = pulseDims.dpr;
+    if (!w || !h) return;
     var ctx = c.getContext("2d");
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, w, h);
-    var css = getComputedStyle(document.documentElement);
-    var line = css.getPropertyValue("--accent").trim() || "#00D2FF";
-    var grid = css.getPropertyValue("--line").trim();
-    ctx.strokeStyle = grid; ctx.lineWidth = 1;
+    var line = themeColors.accent;
+    ctx.strokeStyle = themeColors.line; ctx.lineWidth = 1;
     for (var g = 1; g < 3; g++) {
       ctx.beginPath(); ctx.moveTo(0, Math.round(h * g / 3) + 0.5); ctx.lineTo(w, Math.round(h * g / 3) + 0.5); ctx.stroke();
     }
@@ -1232,7 +1283,10 @@
     grad.addColorStop(0, line + "33"); grad.addColorStop(1, line + "00");
     ctx.fillStyle = grad; ctx.fill();
   }
-  window.addEventListener("resize", drawPulse);
+  window.addEventListener("resize", function () { measurePulseCanvas(); drawPulse(true); });
+  document.addEventListener("visibilitychange", function () {
+    if (!document.hidden && state.mode === "app") { drawPulse(true); drawSpark(true); }
+  });
 
   /* ---- events ---- */
   var events = [];
@@ -1386,16 +1440,16 @@
     var prog = $("#backupProg"), bar = prog.querySelector("i"), label = prog.querySelector("span");
     var btn = this;
     prog.hidden = false; btn.disabled = true;
-    bar.style.width = "35%";
+    bar.style.setProperty("--p", "0.35");
     label.textContent = "Copying exam records…";
 
     var res = bridge
       ? await bridge.createHotBackup("manual").catch(function (err) { return { ok: false, error: String(err) }; })
       : { ok: true, backup: { filename: "exam_manual_now.db", type: "Manual", size_label: "744 KB", created_label: "Today, " + nowHM(), verified: true } };
 
-    bar.style.width = "100%";
+    bar.style.setProperty("--p", "1");
     label.textContent = res && res.ok ? "Verified" : "Failed";
-    setTimeout(function () { prog.hidden = true; bar.style.width = "0"; btn.disabled = false; }, 550);
+    setTimeout(function () { prog.hidden = true; bar.style.setProperty("--p", "0"); btn.disabled = false; }, 550);
 
     if (res && res.ok) {
       if (res.backup) state.backups.unshift(res.backup);
@@ -1488,8 +1542,293 @@
     if (bridge) bridge.updateSettings({ port: v }).catch(function () {});
     toast("Port updated to " + v + ". Restart the server to apply.");
   });
-  $("#setCheckUpdateBtn").addEventListener("click", function () {
-    openExternalUrl("https://cognitara.net/download");
+  /* ------------------------------------------------------------------ direct in-app auto-updater */
+  function renderUpdateState(upd) {
+    if (!upd) return;
+    state.updateState = upd;
+    var sub = $("#updSubtitle");
+    var box = $("#updBox");
+    var title = $("#updStateTitle");
+    var meta = $("#updProgressMeta");
+    var bar = $("#updBar");
+    var dlBtn = $("#updDownloadBtn");
+    var instBtn = $("#updInstallBtn");
+    var notes = $("#updReleaseNotes");
+    var checkBtn = $("#setCheckUpdateBtn");
+    var tbBtn = $("#tbUpdateBtn");
+    var tbLbl = $("#tbUpdateLabel");
+
+    if (upd.currentVersion) {
+      $("#aboutVersion").textContent = "CogniTara Studio " + upd.currentVersion;
+    }
+
+    checkBtn.disabled = upd.status === "checking" || upd.status === "downloading";
+
+    if (upd.status === "checking") {
+      sub.textContent = "Checking GitHub Releases for CogniTara Studio updates…";
+      box.hidden = true;
+      tbBtn.hidden = true;
+    } else if (upd.status === "available") {
+      sub.textContent = "Version " + (upd.availableVersion || "") + " is ready to download directly inside Studio.";
+      box.hidden = false;
+      title.textContent = "CogniTara Studio " + (upd.availableVersion || "") + " available";
+      meta.textContent = "Ready";
+      bar.style.setProperty("--p", "0");
+      dlBtn.hidden = false;
+      dlBtn.disabled = false;
+      instBtn.hidden = true;
+      notes.textContent = upd.releaseNotes ? upd.releaseNotes.split("\n")[0].slice(0, 90) : "Includes latest Windows fixes & improvements.";
+      tbBtn.hidden = false;
+      tbBtn.dataset.ready = "0";
+      tbLbl.textContent = "Update v" + (upd.availableVersion || "");
+    } else if (upd.status === "downloading") {
+      var pct = Math.max(0, Math.min(100, Number(upd.percent || 0)));
+      sub.textContent = "Downloading CogniTara Studio " + (upd.availableVersion || "") + "…";
+      box.hidden = false;
+      title.textContent = "Downloading v" + (upd.availableVersion || "");
+      var speed = upd.bytesPerSecond ? (" · " + fmtBytes(upd.bytesPerSecond) + "/s") : "";
+      var totals = upd.total ? (" (" + fmtBytes(upd.transferred) + " / " + fmtBytes(upd.total) + ")") : "";
+      meta.textContent = pct.toFixed(1) + "%" + totals + speed;
+      bar.style.setProperty("--p", String(pct / 100));
+      dlBtn.hidden = true;
+      instBtn.hidden = true;
+      notes.textContent = "You can keep using Studio while the update downloads.";
+      tbBtn.hidden = false;
+      tbBtn.dataset.ready = "0";
+      tbLbl.textContent = "Downloading " + Math.round(pct) + "%";
+    } else if (upd.status === "downloaded") {
+      sub.textContent = "Version " + (upd.availableVersion || "") + " downloaded and verified. Safe server-stop runs before restart.";
+      box.hidden = false;
+      title.textContent = "Ready to install v" + (upd.availableVersion || "");
+      meta.textContent = "100% · Verified";
+      bar.style.setProperty("--p", "1");
+      dlBtn.hidden = true;
+      instBtn.hidden = false;
+      instBtn.disabled = false;
+      notes.textContent = "Safely stops LAN exam server first and restarts Studio.";
+      tbBtn.hidden = false;
+      tbBtn.dataset.ready = "1";
+      tbLbl.textContent = "Restart to update";
+    } else if (upd.status === "not-available") {
+      sub.textContent = "You're up to date (v" + (upd.currentVersion || state.version) + "). 5-layer licence vault active.";
+      box.hidden = true;
+      tbBtn.hidden = true;
+    } else if (upd.status === "offline") {
+      sub.textContent = upd.error || "Offline — will check automatically when internet returns.";
+      box.hidden = true;
+      tbBtn.hidden = true;
+    } else if (upd.status === "error") {
+      sub.textContent = "Update check note: " + (upd.error || "Unable to reach release feed.");
+      box.hidden = true;
+      tbBtn.hidden = true;
+    }
+  }
+
+  $("#setCheckUpdateBtn").addEventListener("click", async function () {
+    if (!bridge) {
+      renderUpdateState({
+        status: "not-available",
+        currentVersion: state.version,
+        availableVersion: state.version,
+        percent: 0
+      });
+      toast("You are running the latest version (" + state.version + ")");
+      return;
+    }
+    var st = await bridge.checkForUpdates().catch(function () { return null; });
+    if (st) renderUpdateState(st);
+    if (st && st.status === "not-available") toast("CogniTara Studio is up to date");
+    else if (st && st.status === "available") toast("Update v" + st.availableVersion + " is available");
+    else if (st && st.status === "offline") toast("You are offline. Connect to check for updates.");
+  });
+
+  $("#updDownloadBtn").addEventListener("click", async function () {
+    this.disabled = true;
+    if (!bridge) return;
+    var res = await bridge.downloadUpdate().catch(function () { return null; });
+    if (res && res.state) renderUpdateState(res.state);
+  });
+
+  $("#updInstallBtn").addEventListener("click", async function () {
+    this.disabled = true;
+    if (!bridge) { toast("Safe server-stop + restart triggered"); return; }
+    var res = await bridge.installUpdateNow().catch(function () { return null; });
+    if (res && res.canceled) {
+      this.disabled = false;
+      toast("Update postponed while exams are running");
+    } else if (!res || !res.ok) {
+      this.disabled = false;
+      toast("Could not start installer yet");
+    }
+  });
+
+  $("#tbUpdateBtn").addEventListener("click", function () {
+    enterAppIfNeeded();
+    showView("settings");
+  });
+
+  /* ------------------------------------------------------------------ CogniTara Cloud Account */
+  function setCloudMsg(errText, okText) {
+    var errEl = $("#cloudErr"), okEl = $("#cloudOk");
+    errEl.hidden = !errText;
+    errEl.textContent = errText || "";
+    okEl.hidden = !okText;
+    okEl.textContent = okText || "";
+  }
+
+  function renderCloudAccount(session) {
+    state.cloudAccount = session || { signedIn: false, offline: false, cloudUrl: "https://cognitara-cloud.vercel.app" };
+    var s = state.cloudAccount;
+    var title = $("#cloudStatusTitle");
+    var sub = $("#cloudStatusSub");
+    var openBtn = $("#cloudOpenBtn");
+    var syncBtn = $("#cloudSyncBtn");
+
+    if (s.signedIn && s.user) {
+      var pillClass = s.offline ? "cloud-pill cloud-pill--offline" : "cloud-pill cloud-pill--online";
+      var pillText = s.offline ? "Offline · Cached" : "Online · Synced";
+      var schoolLabel = (s.school && s.school.school_name) || state.school.school_name;
+      title.innerHTML = esc(schoolLabel) + " <span class='" + pillClass + "' id='cloudStatusPill'>" + pillText + "</span>";
+      sub.textContent = s.user.full_name + " (" + s.user.email + ")" + (s.referralCode ? " · Ref " + s.referralCode : "");
+      openBtn.textContent = "Manage account";
+      openBtn.className = "btn btn--ghost btn--sm";
+      syncBtn.hidden = false;
+      $("#tbAvatar").textContent = initials(s.user.full_name || schoolLabel);
+
+      // Update modal signed-in pane
+      $("#cloudSignedInPane").hidden = false;
+      $("#cloudAuthPane").hidden = true;
+      $("#cmSchool").textContent = schoolLabel;
+      $("#cmUser").textContent = s.user.full_name;
+      $("#cmEmail").textContent = s.user.email;
+      $("#cmRef").textContent = s.referralCode || "—";
+      $("#cmSync").textContent = s.offline
+        ? "Offline · Using local encrypted cache"
+        : ("Synced " + (s.lastSyncedAt ? fmtDateTime(Math.floor(s.lastSyncedAt / 1000)) : "just now"));
+    } else {
+      title.innerHTML = "Not signed in <span class='cloud-pill cloud-pill--guest' id='cloudStatusPill'>Offline only</span>";
+      sub.textContent = "Sign up or sign in to sync your school profile & licences with Neon Cloud (caches locally for offline exams).";
+      openBtn.textContent = "Sign in / Sign up";
+      openBtn.className = "btn btn--primary btn--sm";
+      syncBtn.hidden = true;
+
+      $("#cloudSignedInPane").hidden = true;
+      $("#cloudAuthPane").hidden = false;
+    }
+  }
+
+  function switchCloudTab(tab) {
+    $$("#cloudTabs button").forEach(function (b) { b.classList.toggle("is-active", b.dataset.ctab === tab); });
+    $("#cloudSignInForm").hidden = tab !== "signin";
+    $("#cloudSignUpForm").hidden = tab !== "signup";
+    setCloudMsg("", "");
+  }
+
+  function openCloudModal(initialTab) {
+    setCloudMsg("", "");
+    renderCloudAccount(state.cloudAccount);
+    if (!state.cloudAccount || !state.cloudAccount.signedIn) {
+      switchCloudTab(initialTab || "signin");
+      if (!$("#cuSchool").value && state.school.school_name && state.school.school_name !== "CogniTara School") {
+        $("#cuSchool").value = state.school.school_name;
+      }
+    }
+    $("#cloudModal").hidden = false;
+  }
+
+  function closeCloudModal() {
+    $("#cloudModal").hidden = true;
+  }
+
+  $("#cloudOpenBtn").addEventListener("click", function () { openCloudModal(); });
+  $("#cloudModalClose").addEventListener("click", closeCloudModal);
+  $("#cloudModal").addEventListener("mousedown", function (e) { if (e.target.id === "cloudModal") closeCloudModal(); });
+  $$("#cloudTabs button").forEach(function (b) {
+    b.addEventListener("click", function () { switchCloudTab(b.dataset.ctab); });
+  });
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape" && !$("#cloudModal").hidden) closeCloudModal();
+  });
+
+  $("#cloudSignInForm").addEventListener("submit", async function (e) {
+    e.preventDefault();
+    setCloudMsg("", "");
+    var btn = $("#ciSubmitBtn");
+    btn.disabled = true;
+    btn.textContent = "Signing in…";
+    try {
+      var res = bridge
+        ? await bridge.cloudSignIn({ email: $("#ciEmail").value.trim(), password: $("#ciPass").value })
+        : { ok: false, message: "Cloud IPC requires CogniTara Studio desktop." };
+      if (res && res.ok && res.session) {
+        renderCloudAccount(res.session);
+        setCloudMsg("", "Signed in and cached locally for offline exam days.");
+        toast("Signed in to CogniTara Cloud");
+        logEvent("licence", "ok", "i-shield", "<b>Cloud account synced</b> (" + esc(res.session.user.email) + ")");
+      } else {
+        setCloudMsg((res && res.message) || "Invalid email address or password.", "");
+      }
+    } finally {
+      btn.disabled = false;
+      btn.textContent = "Sign in & cache offline";
+    }
+  });
+
+  $("#cloudSignUpForm").addEventListener("submit", async function (e) {
+    e.preventDefault();
+    setCloudMsg("", "");
+    var btn = $("#cuSubmitBtn");
+    btn.disabled = true;
+    btn.textContent = "Creating account…";
+    try {
+      var res = bridge
+        ? await bridge.cloudSignUp({
+            full_name: $("#cuName").value.trim(),
+            school_name: $("#cuSchool").value.trim(),
+            email: $("#cuEmail").value.trim(),
+            phone: $("#cuPhone").value.trim(),
+            password: $("#cuPass").value,
+            referral_code: $("#cuRef").value.trim() || undefined
+          })
+        : { ok: false, message: "Cloud IPC requires CogniTara Studio desktop." };
+      if (res && res.ok && res.session) {
+        renderCloudAccount(res.session);
+        setCloudMsg("", "School account created on Neon Cloud and cached offline.");
+        toast("CogniTara Cloud account created!");
+        logEvent("licence", "ok", "i-shield", "<b>Cloud school registered</b> (" + esc(res.session.school ? res.session.school.school_name : res.session.user.email) + ")");
+      } else {
+        setCloudMsg((res && res.message) || "Could not create account.", "");
+      }
+    } finally {
+      btn.disabled = false;
+      btn.textContent = "Create account & sync";
+    }
+  });
+
+  async function runCloudSync() {
+    if (!bridge) { toast("Cloud profile is up to date"); return; }
+    var res = await bridge.cloudSync().catch(function () { return null; });
+    if (res && res.session) renderCloudAccount(res.session);
+    if (res && res.ok) {
+      toast(res.offline ? "Offline — using cached profile" : "CogniTara Cloud profile synced");
+    } else {
+      toast((res && res.message) || "Could not sync cloud profile");
+    }
+  }
+  $("#cloudSyncBtn").addEventListener("click", runCloudSync);
+  $("#cmSyncNowBtn").addEventListener("click", runCloudSync);
+  $("#cmOpenPortalBtn").addEventListener("click", function () {
+    var base = (state.cloudAccount && state.cloudAccount.cloudUrl) || "https://cognitara-cloud.vercel.app";
+    openExternalUrl(base + "/dashboard");
+  });
+  $("#cmSignOutBtn").addEventListener("click", async function () {
+    if (bridge) {
+      var res = await bridge.cloudSignOut().catch(function () { return null; });
+      if (res && res.session) renderCloudAccount(res.session);
+    } else {
+      renderCloudAccount({ signedIn: false, offline: false });
+    }
+    toast("Signed out of CogniTara Cloud");
   });
 
   /* ------------------------------------------------------------------ lock screens */
@@ -1564,7 +1903,7 @@
   $("#lockActions").addEventListener("click", async function (e) {
     var b = e.target.closest("[data-lock-act]"); if (!b) return;
     var act = b.dataset.lockAct;
-    if (act === "renew") openExternalUrl("https://cognitara.net/account/licences");
+    if (act === "renew") openExternalUrl("https://cognitara-cloud.vercel.app/dashboard");
     if (act === "support") openExternalUrl("mailto:support@cognitara.net?subject=CogniTara%20Licence%20Support");
     if (act === "datesettings" && bridge) bridge.openWindowsDateSettings().catch(function () {});
     if (act === "export" && bridge) {
@@ -1612,7 +1951,7 @@
 
   /* ------------------------------------------------------------------ native window chrome */
   $("#minBtn").addEventListener("click", function () { if (bridge) bridge.windowAction("minimize"); });
-  $("#maxBtn").addEventListener("click", function () { if (bridge) bridge.windowAction("maximize"); setTimeout(drawPulse, 250); });
+  $("#maxBtn").addEventListener("click", function () { if (bridge) bridge.windowAction("maximize"); setTimeout(function () { measurePulseCanvas(); drawPulse(true); }, 250); });
   $("#closeBtn").addEventListener("click", function () { if (bridge) bridge.windowAction("close"); });
 
   /* ------------------------------------------------------------------ main-process push events */
@@ -1628,6 +1967,20 @@
       var kind = mapLockKind(lic);
       if (kind) showLock(kind, lic);
     });
+    if (bridge.onUpdateStatusChanged) {
+      bridge.onUpdateStatusChanged(function (upd) {
+        renderUpdateState(upd);
+        if (upd && upd.status === "downloaded") {
+          toast("CogniTara Studio v" + upd.availableVersion + " is ready to install");
+          logEvent("server", "accent", "i-restore", "<b>Update v" + esc(upd.availableVersion) + "</b> downloaded and ready");
+        }
+      });
+    }
+    if (bridge.onCloudSessionChanged) {
+      bridge.onCloudSessionChanged(function (session) {
+        renderCloudAccount(session);
+      });
+    }
   }
 
   /* ------------------------------------------------------------------ init */
@@ -1641,11 +1994,11 @@
   paintLicence();
   renderLive();
   renderBackups();
+  renderCloudAccount(state.cloudAccount);
 
   // Direct screen jump for Playwright visual QA when running without Electron bridge
   var screenParam = params.get("screen");
   if (!bridge && screenParam) {
-    // Seed realistic display state for visual QA screenshots
     state.school = {
       school_name: "Cedar Hills International Academy",
       school_motto: "Knowledge, Discipline, Excellence",
@@ -1673,6 +2026,16 @@
       is_draining: true,
       tombstone: { tombstone_id: "TMB-01JXZ99887766" }
     };
+    state.cloudAccount = {
+      signedIn: true,
+      offline: false,
+      cloudUrl: "https://cognitara-cloud.vercel.app",
+      lastSyncedAt: Date.now() - 120000,
+      user: { id: "u1", email: "principal@cedarhills.edu.ng", full_name: "Adaeze Okafor", role: "school_owner", status: "active" },
+      school: { id: "s1", school_name: "Cedar Hills International Academy", country_code: "NG", status: "active" },
+      referralCode: "CT-CEDA-8F2A1C",
+      licenses: []
+    };
     state.telemetry = { counts: { exams: 14, ce_exams: 3, approved_students: 486 } };
     state.backups = [
       { filename: "exam_auto_20261119_084000.db", type: "Automatic", size_label: "742 KB", created_label: "19 Nov 2026, 08:40", verified: true },
@@ -1696,6 +2059,26 @@
     renderLive();
     renderAttention();
     paintStats();
+    renderCloudAccount(state.cloudAccount);
+
+    if (params.get("update") === "downloading") {
+      renderUpdateState({
+        status: "downloading",
+        currentVersion: "2.1.0",
+        availableVersion: "2.1.1",
+        percent: 68.4,
+        bytesPerSecond: 4.2 * 1024 * 1024,
+        transferred: 58.2 * 1024 * 1024,
+        total: 85.1 * 1024 * 1024
+      });
+    } else if (params.get("update") === "downloaded") {
+      renderUpdateState({
+        status: "downloaded",
+        currentVersion: "2.1.0",
+        availableVersion: "2.1.1",
+        percent: 100
+      });
+    }
 
     if (screenParam === "boot") {
       playBoot(function () {});
@@ -1710,8 +2093,13 @@
       setMode("app");
       setServer(state.server);
       showView(params.get("view") || "home");
-      drawPulse();
-      drawSpark();
+      measurePulseCanvas();
+      drawPulse(true);
+      drawSpark(true);
+      if (params.get("modal") === "cloud") {
+        if (params.get("guest") === "1") renderCloudAccount({ signedIn: false, offline: false });
+        openCloudModal(params.get("tab") || "signin");
+      }
     } else if (screenParam === "expired") {
       state.license.lock_state = "DRAINING";
       showLock("expired", state.license);

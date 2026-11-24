@@ -13,6 +13,7 @@
 import fs from "fs";
 import path from "path";
 import { app, BrowserWindow, dialog, ipcMain, shell } from "electron";
+import { CloudAuthManager } from "./cloud-auth";
 import { EngineManager } from "./engine";
 import {
   isLockStateBlockingStart,
@@ -21,11 +22,14 @@ import {
 } from "./license-bridge";
 import { listNetworkAdapters, loadSettings, saveSettings } from "./settings";
 import { StudioTray } from "./tray";
-import { LicenseStatus, ServerLifecycleState, StudioSettings } from "./types";
+import { LicenseStatus, ServerLifecycleState, StudioSettings, UpdateStatusState } from "./types";
+import { StudioUpdater } from "./updater";
 
 let mainWindow: BrowserWindow | null = null;
 let tray: StudioTray | null = null;
 let engine: EngineManager | null = null;
+let updater: StudioUpdater | null = null;
+let cloudAuth: CloudAuthManager | null = null;
 let settings: StudioSettings;
 let isQuitting = false;
 let currentWindowMode: "boot" | "studio" = "boot";
@@ -329,6 +333,8 @@ function registerIpcHandlers(): void {
       license,
       backups: bkRes.data?.backups || [],
       backupDir: bkRes.data?.backup_dir || settings.backupDir,
+      cloudAccount: cloudAuth ? cloudAuth.getSession() : null,
+      updateState: updater ? updater.getState() : null,
     };
   });
 
@@ -571,14 +577,128 @@ function registerIpcHandlers(): void {
     }
     return Promise.resolve();
   });
+
+  // ---- Direct In-App Auto-Updater (electron-updater) ----
+  ipcMain.handle("updater:getState", () => {
+    return updater ? updater.getState() : null;
+  });
+
+  ipcMain.handle("updater:check", async () => {
+    return updater ? updater.checkForUpdates() : null;
+  });
+
+  ipcMain.handle("updater:download", async () => {
+    return updater ? updater.downloadUpdate() : { ok: false };
+  });
+
+  ipcMain.handle("updater:install", async () => {
+    return updater ? updater.installUpdateNow() : { ok: false };
+  });
+
+  // ---- CogniTara Cloud Account (Neon Postgres + Vercel + Offline Cache) ----
+  ipcMain.handle("cloud:getSession", () => {
+    return cloudAuth ? cloudAuth.getSession() : null;
+  });
+
+  ipcMain.handle("cloud:signUp", async (_evt, payload) => {
+    if (!cloudAuth) return { ok: false, error: "cloud_unavailable" };
+    const lic = await engine?.getLicenseStatus().catch(() => null);
+    const res = await cloudAuth.signUp({
+      ...payload,
+      display_hwid: lic?.display_hwid || undefined,
+    });
+    if (res.ok && res.session && mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send("cloud:sessionChanged", res.session);
+    }
+    return res;
+  });
+
+  ipcMain.handle("cloud:signIn", async (_evt, payload) => {
+    if (!cloudAuth) return { ok: false, error: "cloud_unavailable" };
+    const lic = await engine?.getLicenseStatus().catch(() => null);
+    const res = await cloudAuth.signIn({
+      ...payload,
+      display_hwid: lic?.display_hwid || undefined,
+    });
+    if (res.ok && res.session && mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send("cloud:sessionChanged", res.session);
+    }
+    return res;
+  });
+
+  ipcMain.handle("cloud:sync", async () => {
+    if (!cloudAuth) return { ok: false, error: "cloud_unavailable" };
+    const res = await cloudAuth.syncProfile();
+    if (res.session && mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send("cloud:sessionChanged", res.session);
+    }
+    return res;
+  });
+
+  ipcMain.handle("cloud:signOut", async () => {
+    if (!cloudAuth) return { ok: false };
+    const res = await cloudAuth.signOut();
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send("cloud:sessionChanged", res.session);
+    }
+    return res;
+  });
+}
+
+function broadcastUpdateState(nextState: UpdateStatusState): void {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.webContents.send("updater:statusChanged", nextState);
+  }
+}
+
+async function prepareSafeRestartForUpdate(): Promise<boolean> {
+  if (engine && engine.getLanState() === "running") {
+    try {
+      const tel = await engine.callInternal<{ ok: boolean; live?: { total_writing?: number } }>(
+        "GET",
+        "/telemetry"
+      );
+      const writing = tel.data?.live?.total_writing || 0;
+      if (writing > 0 && mainWindow) {
+        const res = await dialog.showMessageBox(mainWindow, {
+          type: "warning",
+          buttons: ["Wait until exams finish", "Stop server and install update"],
+          defaultId: 0,
+          cancelId: 0,
+          title: "Students are currently writing",
+          message: `${writing} student${writing === 1 ? " is" : "s are"} currently writing an exam.`,
+          detail:
+            "Installing the CogniTara Studio update will safely stop the exam server first (every answer is saved) and restart CogniTara Studio.",
+        });
+        if (res.response !== 1) return false;
+      }
+    } catch {
+      // Proceed cleanly
+    }
+  }
+
+  isQuitting = true;
+  if (licenseWatchdogTimer) clearInterval(licenseWatchdogTimer);
+  if (autoBackupTimer) clearInterval(autoBackupTimer);
+  updater?.dispose();
+  if (engine) {
+    await engine.shutdownAll();
+  }
+  tray?.destroy();
+  return true;
 }
 
 app.whenReady().then(async () => {
   settings = loadSettings();
   applyStartupLoginItem();
 
+  cloudAuth = new CloudAuthManager();
   engine = new EngineManager(settings, (nextState) => {
     broadcastServerState(nextState);
+  });
+  updater = new StudioUpdater({
+    onStatusChanged: (st) => broadcastUpdateState(st),
+    onBeforeQuitAndInstall: () => prepareSafeRestartForUpdate(),
   });
 
   registerIpcHandlers();
@@ -602,12 +722,26 @@ app.whenReady().then(async () => {
   });
   tray.init();
 
+  updater.init();
   configureAutoBackupTimer();
   startLicenseWatchdog();
+
+  // Opportunistic silent cloud sync in background (never blocks offline launch)
+  if (cloudAuth.getSession().signedIn) {
+    cloudAuth
+      .syncProfile()
+      .then((res) => {
+        if (res.session && mainWindow && !mainWindow.isDestroyed()) {
+          mainWindow.webContents.send("cloud:sessionChanged", res.session);
+        }
+      })
+      .catch(() => {});
+  }
 });
 
 app.on("before-quit", () => {
   isQuitting = true;
+  updater?.dispose();
 });
 
 app.on("window-all-closed", () => {

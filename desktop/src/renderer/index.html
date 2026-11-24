@@ -96,6 +96,9 @@
         <canvas class="tb-status__spark" id="tbSpark" width="56" height="20" aria-hidden="true"></canvas>
       </div>
       <div class="tb-actions tb-in" style="--n:4">
+        <button class="tb-update" id="tbUpdateBtn" hidden title="Software update available">
+          <i></i><span id="tbUpdateLabel">Update available</span>
+        </button>
         <button class="tb-icon" id="themeBtn" aria-label="Switch theme" title="Switch theme">
           <svg class="themeicon" viewBox="0 0 24 24">
             <mask id="moonMask"><rect x="0" y="0" width="24" height="24" fill="#fff"/><circle class="themeicon__bite" cx="24" cy="4" r="7" fill="#000"/></mask>
@@ -107,7 +110,7 @@
           <svg viewBox="0 0 24 24"><path d="M6 9a6 6 0 1 1 12 0c0 5 2 6.5 2 6.5H4S6 14 6 9"/><path d="M10 19a2 2 0 0 0 4 0"/></svg>
           <b class="tb-badge" id="bellBadge" hidden>0</b>
         </button>
-        <button class="tb-avatar" id="avatarBtn" title="Super admin"><span id="tbAvatar">SA</span></button>
+        <button class="tb-avatar" id="avatarBtn" title="CogniTara Cloud Account"><span id="tbAvatar">SA</span></button>
       </div>
       <span class="tb-sep" aria-hidden="true"></span>
       <div class="titlebar__ctrls">
@@ -521,8 +524,39 @@
               <div class="set-row"><span><strong>Allow access only from the school network</strong><em>Blocks connections from outside your local network.</em></span><label class="toggle"><input type="checkbox" id="setLanOnly" checked><i></i></label></div>
             </section>
             <section>
-              <h2>About</h2>
-              <div class="set-row"><span><strong id="aboutVersion">CogniTara Studio 2.0.0</strong><em>5-layer licence vault active.</em></span><button class="btn btn--ghost btn--sm" id="setCheckUpdateBtn">Check for updates</button></div>
+              <h2>CogniTara Cloud Account</h2>
+              <div class="set-row">
+                <span>
+                  <strong id="cloudStatusTitle">Not signed in <span class="cloud-pill cloud-pill--guest" id="cloudStatusPill">Offline only</span></strong>
+                  <em id="cloudStatusSub">Sign up or sign in to sync your school profile & licences with Neon Cloud (caches locally for offline exams).</em>
+                </span>
+                <div style="display:flex;gap:8px;flex-wrap:wrap">
+                  <button class="btn btn--primary btn--sm" id="cloudOpenBtn">Sign in / Sign up</button>
+                  <button class="btn btn--ghost btn--sm" id="cloudSyncBtn" hidden>Sync now</button>
+                </div>
+              </div>
+            </section>
+            <section>
+              <h2>Software Updates & About</h2>
+              <div class="set-row">
+                <span>
+                  <strong id="aboutVersion">CogniTara Studio 2.1.0</strong>
+                  <em id="updSubtitle">5-layer licence vault active · Direct GitHub Releases auto-updater ready.</em>
+                </span>
+                <button class="btn btn--ghost btn--sm" id="setCheckUpdateBtn">Check for updates</button>
+              </div>
+              <div class="upd-box" id="updBox" hidden>
+                <div class="upd-box__meta">
+                  <strong id="updStateTitle">Update available</strong>
+                  <span class="mono" id="updProgressMeta">0%</span>
+                </div>
+                <div class="upd-box__track"><i id="updBar" style="--p:0"></i></div>
+                <div class="upd-box__actions">
+                  <button class="btn btn--primary btn--sm" id="updDownloadBtn" hidden>Download update</button>
+                  <button class="btn btn--primary btn--sm" id="updInstallBtn" hidden>Stop server &amp; restart to install</button>
+                  <span class="hint" id="updReleaseNotes"></span>
+                </div>
+              </div>
             </section>
           </div>
         </div>
@@ -553,6 +587,74 @@
           <kbd>Esc</kbd>
         </div>
         <ul class="palette__list" id="palList" role="listbox"></ul>
+      </div>
+    </div>
+
+    <!-- CogniTara Cloud Account Modal (Neon Postgres + Vercel + Offline Cache) -->
+    <div class="cloud-modal" id="cloudModal" hidden>
+      <div class="cloud-modal__box" role="dialog" aria-label="CogniTara Cloud Account">
+        <div class="cloud-modal__head">
+          <div>
+            <h2 id="cloudModalTitle">CogniTara Cloud Account</h2>
+            <p id="cloudModalSub">Online school sync powered by Neon Postgres with automatic offline caching.</p>
+          </div>
+          <button class="cloud-modal__close" id="cloudModalClose" aria-label="Close">
+            <svg viewBox="0 0 24 24"><path d="m7 7 10 10M17 7 7 17"/></svg>
+          </button>
+        </div>
+
+        <div class="cloud-modal__err" id="cloudErr" hidden></div>
+        <div class="cloud-modal__ok" id="cloudOk" hidden></div>
+
+        <!-- Signed-in view -->
+        <div id="cloudSignedInPane" hidden>
+          <div class="cloud-profile">
+            <div class="cloud-profile__row"><span>School</span><strong id="cmSchool">—</strong></div>
+            <div class="cloud-profile__row"><span>Account</span><strong id="cmUser">—</strong></div>
+            <div class="cloud-profile__row"><span>Email</span><code id="cmEmail">—</code></div>
+            <div class="cloud-profile__row"><span>Referral Code</span><code id="cmRef">—</code></div>
+            <div class="cloud-profile__row"><span>Sync Status</span><strong id="cmSync">Synced</strong></div>
+          </div>
+          <div class="cloud-modal__actions" style="margin-top:16px">
+            <button class="btn btn--ghost btn--sm" id="cmOpenPortalBtn"><svg><use href="#i-external"/></svg>Web Dashboard</button>
+            <button class="btn btn--ghost btn--sm" id="cmSyncNowBtn"><svg><use href="#i-restore"/></svg>Sync now</button>
+            <button class="btn btn--ghost btn--sm" id="cmSignOutBtn">Sign out</button>
+          </div>
+        </div>
+
+        <!-- Signed-out view (Sign In / Sign Up tabs) -->
+        <div id="cloudAuthPane">
+          <div class="seg seg--sm" id="cloudTabs" style="margin-bottom:14px">
+            <button type="button" class="is-active" data-ctab="signin">Sign in</button>
+            <button type="button" data-ctab="signup">Create school account</button>
+          </div>
+
+          <form class="form" id="cloudSignInForm">
+            <label class="field"><span>School email</span><input id="ciEmail" type="email" required placeholder="principal@school.edu.ng" autocomplete="email"></label>
+            <label class="field"><span>Password</span><input id="ciPass" type="password" required placeholder="Your password" autocomplete="current-password"></label>
+            <div class="cloud-modal__actions">
+              <button type="submit" class="btn btn--primary" id="ciSubmitBtn">Sign in &amp; cache offline</button>
+            </div>
+          </form>
+
+          <form class="form" id="cloudSignUpForm" hidden>
+            <div class="field-row">
+              <label class="field"><span>Full name</span><input id="cuName" required placeholder="Adaeze Okafor"></label>
+              <label class="field"><span>School name</span><input id="cuSchool" required placeholder="Cedar Hills Academy"></label>
+            </div>
+            <div class="field-row">
+              <label class="field"><span>School email</span><input id="cuEmail" type="email" required placeholder="principal@school.edu.ng"></label>
+              <label class="field"><span>Phone <i>optional</i></span><input id="cuPhone" type="tel" placeholder="+234 800 000 0000"></label>
+            </div>
+            <div class="field-row">
+              <label class="field"><span>Password</span><input id="cuPass" type="password" required minlength="8" placeholder="At least 8 characters"></label>
+              <label class="field"><span>Referral code <i>optional</i></span><input id="cuRef" class="mono" placeholder="CT-XXXX-XXXXXX"></label>
+            </div>
+            <div class="cloud-modal__actions">
+              <button type="submit" class="btn btn--primary" id="cuSubmitBtn">Create account &amp; sync</button>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
 

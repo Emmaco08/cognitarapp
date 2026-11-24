@@ -12,6 +12,7 @@ from flask import Blueprint, render_template, request, redirect, session, url_fo
 from werkzeug.utils import secure_filename
 from werkzeug.security import generate_password_hash, check_password_hash
 
+from cognitara.config import get_upload_path
 from cognitara.database.connection import get_db_connection
 from cognitara.security.csrf_ratelimit import validate_csrf, get_csrf_token
 from cognitara.security.passwords import verify_and_upgrade_password
@@ -726,7 +727,7 @@ def delete_exam_section(section_id):
             questions = conn.execute("SELECT image FROM questions WHERE section_id=?", (section_id,)).fetchall()
             for q in questions:
                 if q["image"] and q["image"] != "default.png":
-                    img_path = os.path.join("static/images", q["image"])
+                    img_path = get_upload_path(q["image"])
                     if os.path.exists(img_path):
                         try:
                             os.remove(img_path)
@@ -738,7 +739,7 @@ def delete_exam_section(section_id):
             groups = conn.execute("SELECT group_image FROM exam_question_groups WHERE section_id=?", (section_id,)).fetchall()
             for g in groups:
                 if g["group_image"] and g["group_image"] != "default.png":
-                    img_path = os.path.join("static/images", g["group_image"])
+                    img_path = get_upload_path(g["group_image"])
                     if os.path.exists(img_path):
                         try:
                             os.remove(img_path)
@@ -823,7 +824,7 @@ def add_exam_question(section_id):
     image_filename = None
     if file and file.filename != "":
         image_filename = f"exam_{exam_id}_{section_id}_{int(datetime.now().timestamp())}.jpg"
-        save_path = os.path.join("static/images", image_filename)
+        save_path = get_upload_path(image_filename)
         compress_image(file, save_path, 50)
     
     # Get max display order
@@ -1000,12 +1001,12 @@ def edit_exam_question(question_id):
         
         if file and file.filename != "":
             if image_filename:
-                old_path = os.path.join("static/images", image_filename)
+                old_path = get_upload_path(image_filename)
                 if os.path.exists(old_path):
                     os.remove(old_path)
             
             image_filename = f"exam_q_{question_id}_{int(datetime.now().timestamp())}.jpg"
-            save_path = os.path.join("static/images", image_filename)
+            save_path = get_upload_path(image_filename)
             compress_image(file, save_path, 50)
         
         conn.execute("""
@@ -1037,7 +1038,7 @@ def delete_exam_question(question_id):
             conn.execute("DELETE FROM exam_question_responses WHERE question_id=?", (question_id,))
             
             if question["image"] and question["image"] != "default.png":
-                img_path = os.path.join("static/images", question["image"])
+                img_path = get_upload_path(question["image"])
                 if os.path.exists(img_path):
                     try:
                         os.remove(img_path)
@@ -1150,7 +1151,7 @@ def add_exam_group(section_id):
     image_filename = None
     if file and file.filename != "":
         image_filename = f"exam_group_{exam_id}_{section_id}_{int(datetime.now().timestamp())}.jpg"
-        save_path = os.path.join("static/images", image_filename)
+        save_path = get_upload_path(image_filename)
         compress_image(file, save_path, 50)
     
     max_order = conn.execute(
@@ -1193,12 +1194,12 @@ def edit_exam_group(group_id):
         
         if file and file.filename != "":
             if image_filename:
-                old_path = os.path.join("static/images", image_filename)
+                old_path = get_upload_path(image_filename)
                 if os.path.exists(old_path):
                     os.remove(old_path)
             
             image_filename = f"exam_group_{group_id}_{int(datetime.now().timestamp())}.jpg"
-            save_path = os.path.join("static/images", image_filename)
+            save_path = get_upload_path(image_filename)
             compress_image(file, save_path, 50)
         
         conn.execute("""
@@ -1226,7 +1227,7 @@ def delete_exam_group(group_id):
     
     if group:
         if group["group_image"]:
-            img_path = os.path.join("static/images", group["group_image"])
+            img_path = get_upload_path(group["group_image"])
             if os.path.exists(img_path):
                 os.remove(img_path)
         
@@ -1278,7 +1279,7 @@ def add_question_to_exam_group(group_id):
     image_filename = None
     if file and file.filename != "":
         image_filename = f"exam_group_q_{group_id}_{int(datetime.now().timestamp())}.jpg"
-        save_path = os.path.join("static/images", image_filename)
+        save_path = get_upload_path(image_filename)
         compress_image(file, save_path, 50)
     
     max_order = conn.execute(
@@ -1358,12 +1359,12 @@ def edit_exam_group_question(question_id):
         
         if file and file.filename != "":
             if image_filename and image_filename != "default.png":
-                old_path = os.path.join("static/images", image_filename)
+                old_path = get_upload_path(image_filename)
                 if os.path.exists(old_path):
                     os.remove(old_path)
             
             image_filename = f"exam_group_q_{question_id}_{int(datetime.now().timestamp())}.jpg"
-            save_path = os.path.join("static/images", image_filename)
+            save_path = get_upload_path(image_filename)
             compress_image(file, save_path, 50)
         
         conn.execute("""
@@ -2247,7 +2248,7 @@ def teacher_delete_exam(exam_id):
         questions = conn.execute("SELECT image FROM questions WHERE exam_id=?", (exam_id,)).fetchall()
         for q in questions:
             if q["image"] and q["image"] != "default.png":
-                img_path = os.path.join("static/images", q["image"])
+                img_path = get_upload_path(q["image"])
                 if os.path.exists(img_path):
                     try:
                         os.remove(img_path)
@@ -2371,7 +2372,7 @@ def teacher_add_exam():
             image_filename = None
             if file and file.filename != "":
                 image_filename = f"q_{exam_id}_{question_num}_{int(datetime.now().timestamp())}.jpg"
-                save_path = os.path.join("static/images", image_filename)
+                save_path = get_upload_path(image_filename)
                 compress_image(file, save_path, 50)
             
             ans_index = int(request.form[f"answer{question_num}"])
@@ -2635,7 +2636,7 @@ def import_exam():
                 image_filename = None
                 if q.get("img"):
                     image_filename = f"exam_{exam_id}_{section_id}_{q_order}_{int(datetime.now().timestamp())}.jpg"
-                    save_path = os.path.join("static/images", image_filename)
+                    save_path = get_upload_path(image_filename)
                     try:
                         import base64
                         img_data = q["img"]
@@ -2663,7 +2664,7 @@ def import_exam():
                 group_image = None
                 if group.get("img"):
                     group_image = f"exam_grp_{exam_id}_{section_id}_{grp_order}_{int(datetime.now().timestamp())}.jpg"
-                    save_path = os.path.join("static/images", group_image)
+                    save_path = get_upload_path(group_image)
                     try:
                         import base64
                         img_data = group["img"]

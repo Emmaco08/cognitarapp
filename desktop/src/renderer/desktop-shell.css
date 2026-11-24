@@ -1,14 +1,13 @@
 /* ==========================================================================
-   CogniTara Studio — Native Electron Frameless Window Overrides
-   Layered directly over the approved studio.css without altering colors,
-   typography, or component geometry.
+   CogniTara Studio — Native Electron Frameless Window Overrides & v2.1 Modules
+   Layered over studio.css with strict 60fps GPU compositing (zero backdrop-filter).
    ========================================================================== */
 
 html, body {
   width: 100%;
   height: 100%;
   overflow: hidden;
-  background: transparent;
+  background: var(--win-solid);
 }
 
 .desk {
@@ -23,7 +22,10 @@ html, body {
   border-radius: 0 !important;
   border: 0 !important;
   box-shadow: none !important;
-  transition: opacity 260ms var(--ease) !important;
+  background: var(--win-solid) !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+  transition: opacity 220ms var(--ease) !important;
 }
 
 .win[data-mode="boot"] {
@@ -44,6 +46,7 @@ html, body {
 .titlebar .tb-school,
 .titlebar .search,
 .titlebar .tb-actions,
+.titlebar .tb-update,
 .titlebar .titlebar__ctrls {
   -webkit-app-region: no-drag;
 }
@@ -53,7 +56,6 @@ html, body {
   user-select: none;
 }
 
-/* Preview-only dock and simulated tray popover are absent in the real desktop build */
 .dock,
 .tray {
   display: none !important;
@@ -79,4 +81,182 @@ html, body {
 .connect__addr {
   white-space: nowrap;
   font-size: clamp(12.5px, 1.05vw, 14px);
+}
+
+/* ---------- Titlebar Update Pill ---------- */
+.tb-update {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 30px;
+  padding: 0 11px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  border: 1px solid rgba(0, 210, 255, 0.35);
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 600;
+  transition: background-color 140ms var(--ease), transform 120ms var(--ease);
+}
+.tb-update[hidden] { display: none; }
+.tb-update:hover { background: var(--cobalt-soft); transform: translate3d(0, -1px, 0); }
+.tb-update i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+.tb-update[data-ready="1"] {
+  background: var(--ok-soft);
+  border-color: rgba(52, 211, 153, 0.4);
+  color: var(--ok);
+}
+.tb-update[data-ready="1"] i { background: var(--ok); }
+
+/* ---------- In-App Auto-Updater Card (Settings) ---------- */
+.upd-box {
+  padding: 12px 0 14px;
+  display: grid;
+  gap: 10px;
+  border-top: 1px solid var(--line);
+}
+.upd-box[hidden] { display: none; }
+.upd-box__meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  font-size: 12.5px;
+  color: var(--ink-2);
+}
+.upd-box__track {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--line-2);
+  overflow: hidden;
+}
+.upd-box__track i {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--cobalt), var(--cyan));
+  transform-origin: left;
+  transform: scaleX(var(--p, 0));
+  transition: transform 220ms linear;
+  will-change: transform;
+}
+.upd-box__actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+/* ---------- Cloud Account Row & Modal ---------- */
+.cloud-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 9px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 600;
+  margin-left: 8px;
+  vertical-align: middle;
+}
+.cloud-pill--online { background: var(--ok-soft); color: var(--ok); }
+.cloud-pill--offline { background: var(--warn-soft); color: var(--warn); }
+.cloud-pill--guest { background: var(--slate-soft); color: var(--ink-3); }
+
+.cloud-modal {
+  position: absolute;
+  inset: 0;
+  z-index: 28;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(3, 6, 12, 0.56);
+  animation: win-in 160ms var(--ease) both;
+}
+.cloud-modal[hidden] { display: none; }
+.cloud-modal__box {
+  width: min(500px, 94%);
+  max-height: calc(100vh - 80px);
+  overflow-y: auto;
+  border-radius: 16px;
+  background: var(--card-solid);
+  border: 1px solid var(--card-border);
+  box-shadow: var(--shadow-pop);
+  padding: 24px 26px;
+  display: grid;
+  gap: 16px;
+  animation: pal-in 200ms var(--ease) both;
+}
+.cloud-modal__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+.cloud-modal__head h2 {
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+.cloud-modal__head p {
+  color: var(--ink-2);
+  font-size: 13px;
+  margin-top: 3px;
+}
+.cloud-modal__close {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  color: var(--ink-2);
+}
+.cloud-modal__close:hover { background: var(--nav-hover); color: var(--ink); }
+.cloud-modal__err {
+  padding: 10px 12px;
+  border-radius: 9px;
+  background: var(--bad-soft);
+  color: var(--bad);
+  font-size: 12.5px;
+}
+.cloud-modal__err[hidden] { display: none; }
+.cloud-modal__ok {
+  padding: 10px 12px;
+  border-radius: 9px;
+  background: var(--ok-soft);
+  color: var(--ok);
+  font-size: 12.5px;
+}
+.cloud-modal__ok[hidden] { display: none; }
+.cloud-profile {
+  display: grid;
+  gap: 10px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: var(--field);
+  border: 1px solid var(--line);
+}
+.cloud-profile__row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  font-size: 13px;
+}
+.cloud-profile__row span { color: var(--ink-3); }
+.cloud-profile__row strong { font-weight: 600; }
+.cloud-modal__actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+[hidden] {
+  display: none !important;
 }

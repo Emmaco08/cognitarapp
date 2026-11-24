@@ -1,9 +1,9 @@
 import os
 import sys
-from flask import Flask, url_for
+from flask import Flask, send_from_directory, url_for
 from flask_wtf.csrf import generate_csrf, CSRFError
 
-from cognitara.config import Config
+from cognitara.config import Config, resolve_data_dir, resolve_upload_dir
 from cognitara.extensions import csrf, limiter
 from cognitara.security.csrf_ratelimit import (
     inject_csrf_from_body, handle_csrf_error, ratelimit_handler
@@ -11,6 +11,22 @@ from cognitara.security.csrf_ratelimit import (
 from cognitara.utils.helpers import sanitize_html, to_nigeria_time
 from cognitara.database.connection import get_db_connection
 from cognitara.routes import ALL_BLUEPRINTS
+
+
+class CogniTaraFlask(Flask):
+    """Serves uploaded images from writable UPLOAD_FOLDER first when /static/images/* is requested."""
+
+    def send_static_file(self, filename):
+        norm = str(filename or "").replace("\\", "/")
+        if norm.startswith("images/"):
+            rel = norm[len("images/"):]
+            upload_dir = self.config.get("UPLOAD_FOLDER") or resolve_upload_dir()
+            if upload_dir and rel and "/" not in rel and ".." not in rel:
+                candidate = os.path.join(upload_dir, rel)
+                if os.path.isfile(candidate):
+                    return send_from_directory(upload_dir, rel)
+        return super().send_static_file(filename)
+
 
 def create_app(config_class=Config):
     if getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"):
@@ -20,18 +36,23 @@ def create_app(config_class=Config):
     template_dir = os.path.join(asset_root, "templates")
     static_dir = os.path.join(asset_root, "static")
 
-    app = Flask(
+    app = CogniTaraFlask(
         "cognitara",
         template_folder=template_dir,
         static_folder=static_dir
     )
-    
+
     if isinstance(config_class, dict):
         app.config.update(config_class)
         app.secret_key = config_class.get("SECRET_KEY", "default-secret")
     else:
         app.config.from_object(config_class)
         app.secret_key = getattr(config_class, "SECRET_KEY", "default-secret")
+
+    if not app.config.get("UPLOAD_FOLDER") or os.environ.get("COGNITARA_DATA_DIR") or getattr(sys, "frozen", False):
+        if not (isinstance(config_class, dict) and config_class.get("UPLOAD_FOLDER")):
+            app.config["UPLOAD_FOLDER"] = resolve_upload_dir()
+            app.config["ROOT_DIR"] = resolve_data_dir()
     
     # Jinja globals & filters
     from cognitara.database.repositories.results import (
@@ -138,16 +159,13 @@ def create_app(config_class=Config):
         branding["initials"] = "".join(parts[:2]) or "CT"
         return {"school_branding": branding}
 
-    # Serve user-uploaded logos/photos from writable UPLOAD_FOLDER when frozen
-    if getattr(sys, "frozen", False):
-        from flask import send_from_directory
-
-        @app.route("/uploads/images/<path:filename>")
-        def serve_uploaded_image(filename):
-            upload_dir = app.config.get("UPLOAD_FOLDER") or Config.UPLOAD_FOLDER
-            if upload_dir and os.path.isfile(os.path.join(upload_dir, filename)):
-                return send_from_directory(upload_dir, filename)
-            return send_from_directory(os.path.join(static_dir, "images"), filename)
+    # Serve user-uploaded logos/photos from writable UPLOAD_FOLDER
+    @app.route("/uploads/images/<path:filename>")
+    def serve_uploaded_image(filename):
+        upload_dir = app.config.get("UPLOAD_FOLDER") or resolve_upload_dir()
+        if upload_dir and os.path.isfile(os.path.join(upload_dir, filename)):
+            return send_from_directory(upload_dir, filename)
+        return send_from_directory(os.path.join(static_dir, "images"), filename)
 
     @app.route("/health")
     def health_check():
@@ -160,12 +178,13 @@ def create_app(config_class=Config):
     # Safe startup non-destructive schema bootstrap & validation
     try:
         from cognitara.database.bootstrap import ensure_core_database_initialized
-        db_target = os.environ.get("COGNITARA_DB_NAME") or app.config.get("DATABASE_NAME") or Config.DATABASE_NAME
+        root_dir = app.config.get("ROOT_DIR") or resolve_data_dir()
+        db_target = os.environ.get("COGNITARA_DB_NAME") or app.config.get("DATABASE_NAME") or os.path.join(root_dir, "exam.db")
         if not os.path.isabs(db_target):
-            db_target = os.path.abspath(os.path.join(Config.ROOT_DIR, db_target))
+            db_target = os.path.abspath(os.path.join(root_dir, db_target))
         ensure_core_database_initialized(
             db_target,
-            upload_folder=app.config.get("UPLOAD_FOLDER") or Config.UPLOAD_FOLDER,
+            upload_folder=app.config.get("UPLOAD_FOLDER") or resolve_upload_dir(),
             seed_sample_users=False,
         )
     except Exception as e:

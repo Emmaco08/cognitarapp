@@ -192,6 +192,7 @@ export class EngineManager {
       COGNITARA_DESKTOP_TOKEN: this.desktopToken,
       COGNITARA_DESKTOP_MANAGED: "1",
       COGNITARA_ENFORCE_LICENSE: "1",
+      COGNITARA_CLOUD_URL: process.env.COGNITARA_CLOUD_URL || "https://cognitara-cloud.vercel.app",
       PYTHONUNBUFFERED: "1",
       ...extraEnv,
     };

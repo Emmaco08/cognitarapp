@@ -78,3 +78,57 @@ export interface NetworkAdapterInfo {
   muted: boolean;
   note: string;
 }
+
+export type UpdateLifecycleStatus =
+  | "idle"
+  | "checking"
+  | "available"
+  | "not-available"
+  | "downloading"
+  | "downloaded"
+  | "offline"
+  | "error";
+
+export interface UpdateStatusState {
+  status: UpdateLifecycleStatus;
+  currentVersion: string;
+  availableVersion: string | null;
+  releaseNotes: string | null;
+  percent: number;
+  bytesPerSecond: number;
+  transferred: number;
+  total: number;
+  error: string | null;
+  checkedAt: number | null;
+}
+
+export interface CloudAccountSession {
+  signedIn: boolean;
+  offline: boolean;
+  cloudUrl: string;
+  lastSyncedAt: number | null;
+  user: {
+    id: string;
+    email: string;
+    full_name: string;
+    phone?: string;
+    role: string;
+    status: string;
+  } | null;
+  school: {
+    id: string;
+    school_name: string;
+    country_code?: string;
+    state_region?: string;
+    contact_email?: string;
+    status: string;
+  } | null;
+  referralCode: string | null;
+  licenses: Array<{
+    id: string;
+    license_key: string;
+    plan_tier: string;
+    status: string;
+    expires_at: string | null;
+  }>;
+}

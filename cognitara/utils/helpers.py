@@ -253,7 +253,10 @@ def compress_image(file, output_path, max_size_kb=None, **kwargs):
         # Convert RGBA/P to RGB if saving to JPEG
         if output_path.lower().endswith(('.jpg', '.jpeg')) and img.mode in ('RGBA', 'P'):
             img = img.convert('RGB')
-            
+
+        parent_dir = os.path.dirname(os.path.abspath(output_path))
+        if parent_dir:
+            os.makedirs(parent_dir, exist_ok=True)
         img.save(output_path)
         return True
     except Exception:

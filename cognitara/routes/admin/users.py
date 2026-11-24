@@ -12,6 +12,7 @@ from flask import Blueprint, render_template, request, redirect, session, url_fo
 from werkzeug.utils import secure_filename
 from werkzeug.security import generate_password_hash, check_password_hash
 
+from cognitara.config import get_upload_path
 from cognitara.database.connection import get_db_connection
 from cognitara.security.csrf_ratelimit import validate_csrf, get_csrf_token
 from cognitara.security.passwords import verify_and_upgrade_password
@@ -101,7 +102,7 @@ def reject_student(student_id):
     pending = conn.execute("SELECT * FROM pending_registrations WHERE id=?", (student_id,)).fetchone()
     
     if pending:
-        photo_path = os.path.join("static/images", pending['photo'])
+        photo_path = get_upload_path(pending['photo'])
         if os.path.exists(photo_path):
             os.remove(photo_path)
         
@@ -176,7 +177,7 @@ def edit_teacher(teacher_id):
             # Handle photo upload
             if file and file.filename != "":
                 if teacher_dict.get('photo') and teacher_dict['photo'] != "default.png":
-                    old_path = os.path.join("static/images", teacher_dict['photo'])
+                    old_path = get_upload_path(teacher_dict['photo'])
                     if os.path.exists(old_path):
                         try:
                             os.remove(old_path)
@@ -185,7 +186,7 @@ def edit_teacher(teacher_id):
                 
                 safe_user = secure_filename(username) or f"user_{teacher_id}"
                 filename = f"teacher_{safe_user}_{int(datetime.now().timestamp())}.jpg"
-                save_path = os.path.join("static/images", filename)
+                save_path = get_upload_path(filename)
                 success = compress_image(file, save_path, 50)
                 if success:
                     conn.execute("UPDATE teachers SET photo=? WHERE id=?", (filename, teacher_id))
@@ -270,7 +271,7 @@ def edit_student(student_id):
             # Handle photo upload
             if file and file.filename != "":
                 if student_dict.get('photo') and student_dict['photo'] != "default.png":
-                    old_path = os.path.join("static/images", student_dict['photo'])
+                    old_path = get_upload_path(student_dict['photo'])
                     if os.path.exists(old_path):
                         try:
                             os.remove(old_path)
@@ -279,7 +280,7 @@ def edit_student(student_id):
                 
                 safe_user = secure_filename(username) or f"user_{student_id}"
                 filename = f"student_{safe_user}_{int(datetime.now().timestamp())}.jpg"
-                save_path = os.path.join("static/images", filename)
+                save_path = get_upload_path(filename)
                 success = compress_image(file, save_path, 50)
                 if success:
                     conn.execute("UPDATE students SET photo=? WHERE id=?", (filename, student_id))
@@ -319,7 +320,7 @@ def add_student():
         if file and file.filename != "":
             safe_user = secure_filename(username) or "new_student"
             cand_name = f"student_{safe_user}_{int(datetime.now().timestamp())}.jpg"
-            save_path = os.path.join("static/images", cand_name)
+            save_path = get_upload_path(cand_name)
             if compress_image(file, save_path, 50):
                 filename = cand_name
         
@@ -371,7 +372,7 @@ def add_teacher():
         if file and file.filename != "":
             safe_user = secure_filename(username) or "new_teacher"
             cand_name = f"teacher_{safe_user}_{int(datetime.now().timestamp())}.jpg"
-            save_path = os.path.join("static/images", cand_name)
+            save_path = get_upload_path(cand_name)
             if compress_image(file, save_path, 50):
                 filename = cand_name
         
@@ -499,7 +500,7 @@ def delete_teacher(teacher_id):
         
         # Clean up photo
         if teacher["photo"] and teacher["photo"] != "default.png":
-            photo_path = os.path.join("static/images", teacher["photo"])
+            photo_path = get_upload_path(teacher["photo"])
             if os.path.exists(photo_path):
                 try:
                     os.remove(photo_path)
@@ -550,7 +551,7 @@ def delete_student(student_id):
         
         # Clean up photo
         if student["photo"] and student["photo"] != "default.png":
-            photo_path = os.path.join("static/images", student["photo"])
+            photo_path = get_upload_path(student["photo"])
             if os.path.exists(photo_path):
                 try:
                     os.remove(photo_path)

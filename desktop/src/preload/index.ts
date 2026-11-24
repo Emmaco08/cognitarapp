@@ -39,8 +39,29 @@ export interface CogniTaraDesktopBridge {
   openExternal: (url: string) => Promise<void>;
   openWindowsDateSettings: () => Promise<void>;
   exportDataBackup: () => Promise<any>;
+  // Direct In-App Auto-Updates (electron-updater)
+  getUpdateState: () => Promise<any>;
+  checkForUpdates: () => Promise<any>;
+  downloadUpdate: () => Promise<any>;
+  installUpdateNow: () => Promise<any>;
+  // CogniTara Cloud Auth (Neon + Vercel + Offline Cache)
+  getCloudSession: () => Promise<any>;
+  cloudSignUp: (payload: {
+    full_name: string;
+    school_name: string;
+    email: string;
+    password: string;
+    phone?: string;
+    referral_code?: string;
+  }) => Promise<any>;
+  cloudSignIn: (payload: { email: string; password: string }) => Promise<any>;
+  cloudSync: () => Promise<any>;
+  cloudSignOut: () => Promise<any>;
+  // Main-to-renderer push subscriptions
   onServerStateChanged: (cb: (state: string) => void) => () => void;
   onLicenseLockTriggered: (cb: (license: any) => void) => () => void;
+  onUpdateStatusChanged: (cb: (status: any) => void) => () => void;
+  onCloudSessionChanged: (cb: (session: any) => void) => () => void;
 }
 
 const api: CogniTaraDesktopBridge = {
@@ -73,6 +94,15 @@ const api: CogniTaraDesktopBridge = {
   openExternal: (url) => ipcRenderer.invoke("shell:openExternal", url),
   openWindowsDateSettings: () => ipcRenderer.invoke("shell:dateSettings"),
   exportDataBackup: () => ipcRenderer.invoke("backups:exportAndOpen"),
+  getUpdateState: () => ipcRenderer.invoke("updater:getState"),
+  checkForUpdates: () => ipcRenderer.invoke("updater:check"),
+  downloadUpdate: () => ipcRenderer.invoke("updater:download"),
+  installUpdateNow: () => ipcRenderer.invoke("updater:install"),
+  getCloudSession: () => ipcRenderer.invoke("cloud:getSession"),
+  cloudSignUp: (payload) => ipcRenderer.invoke("cloud:signUp", payload),
+  cloudSignIn: (payload) => ipcRenderer.invoke("cloud:signIn", payload),
+  cloudSync: () => ipcRenderer.invoke("cloud:sync"),
+  cloudSignOut: () => ipcRenderer.invoke("cloud:signOut"),
   onServerStateChanged: (cb) => {
     const listener = (_evt: Electron.IpcRendererEvent, state: string) => cb(state);
     ipcRenderer.on("server:stateChanged", listener);
@@ -82,6 +112,16 @@ const api: CogniTaraDesktopBridge = {
     const listener = (_evt: Electron.IpcRendererEvent, lic: any) => cb(lic);
     ipcRenderer.on("license:locked", listener);
     return () => ipcRenderer.removeListener("license:locked", listener);
+  },
+  onUpdateStatusChanged: (cb) => {
+    const listener = (_evt: Electron.IpcRendererEvent, status: any) => cb(status);
+    ipcRenderer.on("updater:statusChanged", listener);
+    return () => ipcRenderer.removeListener("updater:statusChanged", listener);
+  },
+  onCloudSessionChanged: (cb) => {
+    const listener = (_evt: Electron.IpcRendererEvent, session: any) => cb(session);
+    ipcRenderer.on("cloud:sessionChanged", listener);
+    return () => ipcRenderer.removeListener("cloud:sessionChanged", listener);
   },
 };
 

@@ -56,7 +56,7 @@ logger = logging.getLogger("cognitara.security.license_guard")
 # Swapped to the live cognitara.net signing authority public key at Stage 7 release.
 DEFAULT_ED25519_PUBLIC_KEY_B64 = "p9fN2h7Y5c3K8m1Q4v6W0x2Z9b4D7f1H3j5L8n0P2r4"
 DEFAULT_KEY_ID = "ct-ed25519-2026-01"
-DEFAULT_CLOUD_API_BASE = "https://cognitara.net"
+DEFAULT_CLOUD_API_BASE = os.environ.get("COGNITARA_CLOUD_URL", "https://cognitara-cloud.vercel.app")
 
 TRIAL_DURATION_DAYS = 14
 TRIAL_DURATION_SECONDS = TRIAL_DURATION_DAYS * 86400

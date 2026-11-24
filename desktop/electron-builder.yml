@@ -13,6 +13,11 @@ extraResources:
     to: engine
     filter:
       - "**/*"
+publish:
+  - provider: github
+    owner: Emmaco08
+    repo: cognitarapp
+    releaseType: release
 win:
   target:
     - target: nsis
@@ -31,4 +36,9 @@ nsis:
   installerIcon: assets/cognitara-favicon.ico
   uninstallerIcon: assets/cognitara-favicon.ico
   installerHeaderIcon: assets/cognitara-favicon.ico
+  installerHeader: installer/assets/header.bmp
+  installerSidebar: installer/assets/sidebar.bmp
+  uninstallerSidebar: installer/assets/sidebar.bmp
+  include: installer/installer.nsh
   deleteAppDataOnUninstall: false
+  differentialPackage: true

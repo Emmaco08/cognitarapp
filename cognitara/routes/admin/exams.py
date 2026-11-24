@@ -12,6 +12,7 @@ from flask import Blueprint, render_template, request, redirect, session, url_fo
 from werkzeug.utils import secure_filename
 from werkzeug.security import generate_password_hash, check_password_hash
 
+from cognitara.config import get_upload_path
 from cognitara.database.connection import get_db_connection
 from cognitara.security.csrf_ratelimit import validate_csrf, get_csrf_token
 from cognitara.security.passwords import verify_and_upgrade_password
@@ -153,7 +154,7 @@ def add_exam():
             file = request.files.get(f"image{question_num}")
             if file and file.filename != "":
                 image_filename = secure_filename(file.filename)
-                save_path = os.path.join("static/images", image_filename)
+                save_path = get_upload_path(image_filename)
                 success = compress_image(file, save_path, 50)
                 if not success:
                     conn.close()
@@ -281,7 +282,7 @@ def delete_exam(exam_id):
         questions = conn.execute("SELECT image FROM questions WHERE exam_id=?", (exam_id,)).fetchall()
         for q in questions:
             if q["image"] and q["image"] != "default.png":
-                img_path = os.path.join("static/images", q["image"])
+                img_path = get_upload_path(q["image"])
                 if os.path.exists(img_path):
                     try:
                         os.remove(img_path)
@@ -365,11 +366,11 @@ def edit_exam(exam_id):
             # If new image uploaded
             if file and file.filename != "":
                 image_filename = f"q{exam_id}_{i}_{int(datetime.now().timestamp())}.jpg"
-                save_path = os.path.join("static/images", image_filename)
+                save_path = get_upload_path(image_filename)
                 compress_image(file, save_path, 50)
                 
                 if old_image and old_image != "default.png":
-                    old_path = os.path.join("static/images", old_image)
+                    old_path = get_upload_path(old_image)
                     if os.path.exists(old_path):
                         os.remove(old_path)
             
@@ -421,7 +422,7 @@ def edit_exam(exam_id):
                 
                 if file and file.filename != "":
                     image_filename = f"new_{exam_id}_{new_id}_{int(datetime.now().timestamp())}.jpg"
-                    save_path = os.path.join("static/images", image_filename)
+                    save_path = get_upload_path(image_filename)
                     compress_image(file, save_path, 50)
                     print(f"Saved image: {image_filename}")
                 
@@ -455,7 +456,7 @@ def edit_exam(exam_id):
             cursor.execute("SELECT image FROM questions WHERE id=?", (removed_id,))
             img_row = cursor.fetchone()
             if img_row and img_row["image"] and img_row["image"] != "default.png":
-                img_path = os.path.join("static/images", img_row["image"])
+                img_path = get_upload_path(img_row["image"])
                 if os.path.exists(img_path):
                     os.remove(img_path)
                     print(f"Deleted image: {img_path}")

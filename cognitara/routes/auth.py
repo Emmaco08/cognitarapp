@@ -12,6 +12,7 @@ from flask import Blueprint, render_template, request, redirect, session, url_fo
 from werkzeug.utils import secure_filename
 from werkzeug.security import generate_password_hash, check_password_hash
 
+from cognitara.config import get_upload_path
 from cognitara.database.connection import get_db_connection
 from cognitara.security.csrf_ratelimit import validate_csrf, get_csrf_token
 from cognitara.security.passwords import verify_and_upgrade_password
@@ -169,7 +170,7 @@ def register():
         
         safe_user = secure_filename(username) or f"user_{int(datetime.now().timestamp())}"
         filename = f"student_{safe_user}_{int(datetime.now().timestamp())}.jpg"
-        save_path = os.path.join("static/images", filename)
+        save_path = get_upload_path(filename)
         success = compress_image(file, save_path, 50)
         if not success:
             conn.close()

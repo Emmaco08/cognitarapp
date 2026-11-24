@@ -19,12 +19,15 @@ if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
 os.environ.setdefault("FLASK_ENV", "production")
-default_db_path = os.path.join(PROJECT_ROOT, "exam.db")
+from cognitara.config import resolve_data_dir
+
+DATA_ROOT = resolve_data_dir()
+default_db_path = os.path.join(DATA_ROOT, "exam.db")
 raw_db_env = os.environ.get("COGNITARA_DB_NAME")
 if not raw_db_env:
     os.environ["COGNITARA_DB_NAME"] = default_db_path
 elif not os.path.isabs(raw_db_env):
-    os.environ["COGNITARA_DB_NAME"] = os.path.abspath(os.path.join(PROJECT_ROOT, raw_db_env))
+    os.environ["COGNITARA_DB_NAME"] = os.path.abspath(os.path.join(DATA_ROOT, raw_db_env))
 
 from app import app
 from cognitara.security.license_guard import get_license_guard, should_enforce_license

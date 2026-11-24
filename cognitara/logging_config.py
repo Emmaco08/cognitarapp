@@ -20,33 +20,42 @@ class SensitiveDataFilter(logging.Filter):
 def setup_logging(app=None):
     """
     Configures structured logging with size-based rotation (5 files x 10MB = 50MB max).
-    Safe for local, offline deployment on Windows.
+    Safe for local, offline deployment on Windows — writes exclusively into the
+    writable CogniTara data directory (%ProgramData%\\CogniTara\\data\\logs with
+    %LOCALAPPDATA% fallback), never inside C:\\Program Files\\.
     """
-    root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-    log_dir = os.path.join(root_dir, "logs")
-    os.makedirs(log_dir, exist_ok=True)
-    
+    from cognitara.config import resolve_logs_dir
+
+    log_dir = resolve_logs_dir()
     log_file = os.path.join(log_dir, "cognitara.log")
-    
-    # Configure root logger
+
+    formatter = logging.Formatter(
+        "[%(asctime)s] [%(levelname)s] [%(name)s]: %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S"
+    )
+
     root_logger = logging.getLogger()
-    if not any(isinstance(h, RotatingFileHandler) for h in root_logger.handlers):
-        handler = RotatingFileHandler(
-            log_file,
-            maxBytes=10 * 1024 * 1024, # 10MB
-            backupCount=5,
-            encoding="utf-8"
-        )
-        formatter = logging.Formatter(
-            "[%(asctime)s] [%(levelname)s] [%(name)s]: %(message)s",
-            datefmt="%Y-%m-%d %H:%M:%S"
-        )
+    existing_rotating = [h for h in root_logger.handlers if isinstance(h, RotatingFileHandler)]
+    if not existing_rotating:
+        handler = None
+        try:
+            handler = RotatingFileHandler(
+                log_file,
+                maxBytes=10 * 1024 * 1024,  # 10MB
+                backupCount=5,
+                encoding="utf-8"
+            )
+        except OSError:
+            # Ultimate resilience: never crash the exam engine if a filesystem policy blocks log creation
+            handler = logging.StreamHandler()
+
         handler.setFormatter(formatter)
         handler.addFilter(SensitiveDataFilter())
         root_logger.addHandler(handler)
         root_logger.setLevel(logging.INFO)
-    
+
     if app:
         app.logger.setLevel(logging.INFO)
-    
+        app.config["LOGS_DIR"] = log_dir
+
     return logging.getLogger("cognitara")
