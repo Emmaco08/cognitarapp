@@ -77,12 +77,12 @@ export class StudioTray {
       {
         label: "Open Admin & Teacher Portal",
         enabled: isRunning,
-        click: () => shell.openExternal(`http://127.0.0.1:${port}/login`),
+        click: () => shell.openExternal(`http://127.0.0.1:${port}/login?role=Admin`),
       },
       {
         label: "Open Student Login",
         enabled: isRunning,
-        click: () => shell.openExternal(`http://127.0.0.1:${port}/login`),
+        click: () => shell.openExternal(`http://127.0.0.1:${port}/login?role=student`),
       },
       {
         label: "Open Common Entrance Portal",

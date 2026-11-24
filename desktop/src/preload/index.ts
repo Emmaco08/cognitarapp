@@ -6,6 +6,7 @@ export interface CogniTaraDesktopBridge {
   getLicenseStatus: () => Promise<any>;
   activateLicenseKey: (licenseKey: string) => Promise<any>;
   importLicenseFile: () => Promise<any>;
+  startTrialLicense: (schoolName?: string) => Promise<any>;
   checkInLicense: () => Promise<any>;
   recheckLicense: () => Promise<any>;
   startServer: () => Promise<any>;
@@ -48,6 +49,7 @@ const api: CogniTaraDesktopBridge = {
   getLicenseStatus: () => ipcRenderer.invoke("license:status"),
   activateLicenseKey: (licenseKey) => ipcRenderer.invoke("license:activateKey", licenseKey),
   importLicenseFile: () => ipcRenderer.invoke("license:importFile"),
+  startTrialLicense: (schoolName) => ipcRenderer.invoke("license:startTrial", schoolName),
   checkInLicense: () => ipcRenderer.invoke("license:checkIn"),
   recheckLicense: () => ipcRenderer.invoke("license:recheck"),
   startServer: () => ipcRenderer.invoke("server:start"),

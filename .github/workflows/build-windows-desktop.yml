@@ -15,7 +15,7 @@ on:
         type: boolean
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: build-windows-desktop-${{ github.ref }}
@@ -58,13 +58,14 @@ jobs:
         shell: pwsh
         run: python scripts/validate_architecture.py
 
-      - name: Run Python test suite (5-Layer Vault, Persistence, Phase 4.6, Security, DR)
+      - name: Run Python test suite (5-Layer Vault, E2E Live Exam, Persistence, Phase 4.6, Security, DR)
         shell: pwsh
         env:
           COGNITARA_TESTING_BYPASS_LICENSE: "1"
         run: |
           pytest `
             tests/test_license_vault.py `
+            tests/test_end_to_end_desktop_exam_flow.py `
             tests/test_modular_architecture_and_persistence.py `
             tests/test_phase4_6_master.py `
             tests/test_security_audit_phase4_4.py `
@@ -119,3 +120,29 @@ jobs:
             desktop/release/SHA256SUMS.txt
           if-no-files-found: error
           retention-days: 30
+
+      - name: Publish direct-download Windows Installer Release (v2.0.0-preview)
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $tag = if ("${{ github.ref_type }}" -eq "tag") { "${{ github.ref_name }}" } else { "v2.0.0-preview" }
+          $exe = (Get-ChildItem -Path "desktop/release" -Filter "*.exe" | Select-Object -First 1).FullName
+          $sums = "desktop/release/SHA256SUMS.txt"
+          $notes = @"
+          CogniTara Studio 2.0.0 — Windows Desktop App & Studio v2 Admin Portal
+
+          Includes:
+          - Frameless CogniTara Studio desktop launcher (zero console windows, Windows System Tray)
+          - Embedded cognitara-engine.exe (Flask + Waitress + self-healing SQLite WAL bootstrap)
+          - 5-Layer Windows Licence & Anti-Clock-Tamper Vault with one-click 14-day hardware-bound evaluation trial
+          - Studio v2 Login & Admin Console (Obsidian Dark & Daylight Ceramic Light)
+          - Verified end-to-end live CBT exam execution, instant answer persistence, and hot SQLite backups
+          "@
+          gh release view $tag 2>$null
+          if ($LASTEXITCODE -eq 0) {
+            gh release upload $tag $exe $sums --clobber
+            gh release edit $tag --title "CogniTara Studio 2.0.0 (Windows Installer)" --notes $notes
+          } else {
+            gh release create $tag $exe $sums --title "CogniTara Studio 2.0.0 (Windows Installer)" --notes $notes --prerelease
+          }

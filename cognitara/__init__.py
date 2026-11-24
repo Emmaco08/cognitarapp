@@ -97,6 +97,58 @@ def create_app(config_class=Config):
 
     app.url_build_error_handlers.append(handle_build_error)
 
+    @app.context_processor
+    def inject_school_branding():
+        branding = {
+            "school_name": "CogniTara School",
+            "school_motto": "Knowledge, Discipline, Excellence",
+            "academic_session": "2026/2027",
+            "current_term": "First Term",
+            "school_logo": None,
+            "initials": "CT",
+        }
+        try:
+            conn = get_db_connection()
+            try:
+                row = conn.execute(
+                    "SELECT school_name, school_motto, academic_session, current_term, school_logo "
+                    "FROM school_settings WHERE id = 1"
+                ).fetchone()
+                if row:
+                    if row["school_name"]:
+                        branding["school_name"] = row["school_name"]
+                    if row["school_motto"]:
+                        branding["school_motto"] = row["school_motto"]
+                    if row["academic_session"]:
+                        branding["academic_session"] = row["academic_session"]
+                    if row["current_term"]:
+                        branding["current_term"] = row["current_term"]
+                    if row["school_logo"]:
+                        logo_name = str(row["school_logo"]).strip()
+                        upload_dir = app.config.get("UPLOAD_FOLDER") or Config.UPLOAD_FOLDER
+                        has_upload = bool(upload_dir and os.path.isfile(os.path.join(upload_dir, logo_name)))
+                        has_static = os.path.isfile(os.path.join(static_dir, "images", logo_name))
+                        if has_upload or has_static:
+                            branding["school_logo"] = logo_name
+            finally:
+                conn.close()
+        except Exception:
+            pass
+        parts = [w[0].upper() for w in str(branding["school_name"]).split() if w]
+        branding["initials"] = "".join(parts[:2]) or "CT"
+        return {"school_branding": branding}
+
+    # Serve user-uploaded logos/photos from writable UPLOAD_FOLDER when frozen
+    if getattr(sys, "frozen", False):
+        from flask import send_from_directory
+
+        @app.route("/uploads/images/<path:filename>")
+        def serve_uploaded_image(filename):
+            upload_dir = app.config.get("UPLOAD_FOLDER") or Config.UPLOAD_FOLDER
+            if upload_dir and os.path.isfile(os.path.join(upload_dir, filename)):
+                return send_from_directory(upload_dir, filename)
+            return send_from_directory(os.path.join(static_dir, "images"), filename)
+
     @app.route("/health")
     def health_check():
         return {"status": "ok", "service": "CogniTara Offline Examination Portal"}, 200
@@ -105,18 +157,17 @@ def create_app(config_class=Config):
     for bp in ALL_BLUEPRINTS:
         app.register_blueprint(bp)
 
-    # Safe startup non-destructive schema validation & table initialization
+    # Safe startup non-destructive schema bootstrap & validation
     try:
-        from cognitara.database.initialization import (
-            init_analytics_tables,
-            init_exam_management_tables,
-            init_license_tables,
+        from cognitara.database.bootstrap import ensure_core_database_initialized
+        db_target = os.environ.get("COGNITARA_DB_NAME") or app.config.get("DATABASE_NAME") or Config.DATABASE_NAME
+        if not os.path.isabs(db_target):
+            db_target = os.path.abspath(os.path.join(Config.ROOT_DIR, db_target))
+        ensure_core_database_initialized(
+            db_target,
+            upload_folder=app.config.get("UPLOAD_FOLDER") or Config.UPLOAD_FOLDER,
+            seed_sample_users=False,
         )
-        conn = get_db_connection()
-        init_analytics_tables(conn)
-        init_exam_management_tables(conn)
-        init_license_tables(conn)
-        conn.close()
     except Exception as e:
         app.logger.warning(f"Startup database initialization note: {e}")
 
@@ -126,7 +177,8 @@ def create_app(config_class=Config):
         app.extensions["license_guard"] = guard
         if should_enforce_license(app):
             guard.evaluate(advance_monotonic=False)
-            guard.start_watchdog()
+            if os.environ.get("COGNITARA_VAULT_READONLY_WATCHDOG", "").strip() != "1":
+                guard.start_watchdog()
     except Exception as e:
         app.logger.warning(f"License watchdog startup note: {e}")
 

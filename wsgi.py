@@ -41,7 +41,8 @@ if __name__ == "__main__":
     guard = get_license_guard()
     if should_enforce_license(app):
         lic_status = guard.evaluate(advance_monotonic=False)
-        guard.start_watchdog()
+        if os.environ.get("COGNITARA_VAULT_READONLY_WATCHDOG", "").strip() != "1":
+            guard.start_watchdog()
         lock_state = lic_status.get("lock_state", "UNACTIVATED")
     else:
         lock_state = "BYPASS_DEV"

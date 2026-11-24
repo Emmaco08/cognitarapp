@@ -44,7 +44,7 @@ export interface LicenseStatus {
   license_id: string | null;
   license_key: string | null;
   school_name: string | null;
-  plan_tier: "monthly" | "annual" | "lifetime" | null;
+  plan_tier: "trial" | "monthly" | "annual" | "lifetime" | null;
   expires_at: string | null;
   days_remaining: number | null;
   total_days: number | null;

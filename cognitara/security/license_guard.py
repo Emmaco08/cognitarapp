@@ -19,6 +19,8 @@ Responsibilities:
 from __future__ import annotations
 
 import base64
+import hashlib
+import hmac
 import json
 import logging
 import os
@@ -28,7 +30,7 @@ import threading
 import time
 import urllib.error
 import urllib.request
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Any, Callable, Dict, Optional, Tuple
 
 from cryptography.exceptions import InvalidSignature
@@ -56,7 +58,11 @@ DEFAULT_ED25519_PUBLIC_KEY_B64 = "p9fN2h7Y5c3K8m1Q4v6W0x2Z9b4D7f1H3j5L8n0P2r4"
 DEFAULT_KEY_ID = "ct-ed25519-2026-01"
 DEFAULT_CLOUD_API_BASE = "https://cognitara.net"
 
+TRIAL_DURATION_DAYS = 14
+TRIAL_DURATION_SECONDS = TRIAL_DURATION_DAYS * 86400
+
 PLAN_LEASE_SECONDS = {
+    "trial": TRIAL_DURATION_SECONDS,
     "monthly": 7 * 86400,
     "annual": 30 * 86400,
     "lifetime": 90 * 86400,
@@ -85,8 +91,16 @@ EXEMPT_PATH_PREFIXES = (
 
 # Paths permitted during the 15-minute active-exam drain window so in-progress students can finish
 DRAIN_ALLOWED_PREFIXES = (
+    "/exam/",
     "/exam_heartbeat",
     "/exam_save_single_answer",
+    "/exam_auto_save",
+    "/exam_auto_submit_close",
+    "/exam_check_pause",
+    "/exam_get_state",
+    "/exam_check_active_session",
+    "/exam_check_resume_approved",
+    "/exam_request_resume",
     "/save_answer",
     "/submit_exam",
     "/auto_submit_exam",
@@ -94,8 +108,17 @@ DRAIN_ALLOWED_PREFIXES = (
     "/api/calculate",
     "/exam_page",
     "/take_exam",
+    "/ce_exam/",
     "/ce_heartbeat",
     "/ce_save_single_answer",
+    "/ce_auto_save",
+    "/ce_auto_submit_close",
+    "/ce_check_pause",
+    "/ce_get_exam_state",
+    "/ce_get_saved_state",
+    "/ce_check_active_session",
+    "/ce_check_resume_approved",
+    "/ce_request_resume",
     "/submit_ce_exam",
     "/ce_log_warning",
     "/ce_exam_page",
@@ -237,25 +260,42 @@ class LicenseGuard:
                 except Exception:
                     pass
 
+    @staticmethod
+    def _compute_local_trial_mac(payload: Dict[str, Any], hwid_hash: str) -> str:
+        key = hashlib.sha256(f"CogniTara-LocalTrial-v2|{hwid_hash}".encode("utf-8")).digest()
+        return hmac.new(key, canonical_json_bytes(payload), hashlib.sha256).hexdigest()
+
     def verify_lease_envelope(self, lease_envelope: Dict[str, Any]) -> Tuple[bool, str, Optional[Dict[str, Any]]]:
-        """Verify Ed25519 signature, schema fields, and hardware binding on a `.cgnlic` lease."""
+        """Verify Ed25519 signature (or machine-bound local trial MAC), schema fields, and hardware binding."""
         if not isinstance(lease_envelope, dict):
             return False, "invalid_lease_format", None
         payload = lease_envelope.get("payload")
-        sig = lease_envelope.get("ed25519_sig")
-        if not isinstance(payload, dict) or not sig:
+        if not isinstance(payload, dict):
             return False, "missing_lease_payload_or_signature", None
 
-        if not verify_canonical_ed25519(payload, sig, public_key_b64=self._public_key_b64):
-            return False, "invalid_ed25519_signature", None
+        plan_tier = str(payload.get("plan_tier") or "").lower()
+        if plan_tier not in PLAN_LEASE_SECONDS:
+            return False, "unsupported_plan_tier", None
+
+        if plan_tier == "trial" and lease_envelope.get("trial_mac") and not lease_envelope.get("ed25519_sig"):
+            # Local 14-day hardware-bound evaluation trial: strictly capped at 14 days
+            expected_mac = self._compute_local_trial_mac(payload, str(payload.get("hwid_hash") or ""))
+            provided_mac = str(lease_envelope.get("trial_mac") or "")
+            if not hmac.compare_digest(expected_mac, provided_mac):
+                return False, "invalid_trial_mac", None
+            paid_dur = int(payload.get("paid_duration_seconds") or 0)
+            if paid_dur <= 0 or paid_dur > TRIAL_DURATION_SECONDS:
+                return False, "invalid_trial_duration", None
+        else:
+            sig = lease_envelope.get("ed25519_sig")
+            if not sig:
+                return False, "missing_lease_payload_or_signature", None
+            if not verify_canonical_ed25519(payload, sig, public_key_b64=self._public_key_b64):
+                return False, "invalid_ed25519_signature", None
 
         for req in ("license_id", "plan_tier", "hwid_hash", "issued_at"):
             if not payload.get(req):
                 return False, f"missing_required_field:{req}", None
-
-        plan_tier = str(payload.get("plan_tier")).lower()
-        if plan_tier not in PLAN_LEASE_SECONDS:
-            return False, "unsupported_plan_tier", None
 
         fp = self.get_fingerprint()
         matched, match_count, match_reason = match_hardware_fingerprint(
@@ -348,6 +388,83 @@ class LicenseGuard:
             self._last_monotonic = self._clock_monotonic()
             status = self.evaluate(advance_monotonic=False)
             return {"ok": True, "status": status}
+
+    def activate_trial(self, school_name: Optional[str] = None) -> Dict[str, Any]:
+        """
+        Activate a one-time 14-day hardware-bound evaluation trial sealed across all
+        3 anchors (DPAPI, Registry + AnchorMac, SQLite). Enforces the exact same
+        anti-clock-tamper, monotonic usage, and 15-minute drain rules as paid plans.
+        """
+        with self._lock:
+            now_ts = int(self._clock_utc())
+            fp = self.get_fingerprint()
+            hwid_hash = fp["hwid_hash"]
+
+            existing = self.vault.load_and_reconcile(hwid_hash, now_utc=now_ts)
+            if existing["status"] == "REVOKED":
+                return {
+                    "ok": False,
+                    "error": "license_revoked_by_hq",
+                    "message": "This device has a revoked licence and cannot start a trial.",
+                    "status": self.evaluate(advance_monotonic=False),
+                }
+            if existing["status"] in ("TAMPERED", "CLOCK_TAMPER"):
+                return {
+                    "ok": False,
+                    "error": "clock_tamper_detected",
+                    "message": "System clock tampering was detected. Fix your Windows date & time first.",
+                    "status": self.evaluate(advance_monotonic=False),
+                }
+
+            prior_state = existing.get("state")
+            if prior_state:
+                prior_lic = str(prior_state.get("license_id") or "")
+                if prior_lic.startswith("TRIAL-"):
+                    cur = self.evaluate(advance_monotonic=False)
+                    if cur.get("is_licensed"):
+                        return {"ok": True, "already_active": True, "status": cur}
+                    return {
+                        "ok": False,
+                        "error": "trial_already_used",
+                        "message": "The 14-day evaluation trial on this computer has already ended. Please activate a licence key.",
+                        "status": cur,
+                    }
+
+            resolved_school = (school_name or "").strip()
+            if not resolved_school:
+                try:
+                    conn = self._db_conn_factory()
+                    try:
+                        row = conn.execute("SELECT school_name FROM school_settings WHERE id = 1").fetchone()
+                        if row and row["school_name"]:
+                            resolved_school = str(row["school_name"]).strip()
+                    finally:
+                        conn.close()
+                except Exception:
+                    pass
+            resolved_school = resolved_school or "CogniTara Evaluation School"
+
+            issued_dt = datetime.fromtimestamp(now_ts, tz=timezone.utc)
+            expires_dt = issued_dt + timedelta(days=TRIAL_DURATION_DAYS)
+            payload = {
+                "schema_version": 2,
+                "license_id": f"TRIAL-{hwid_hash[:10].upper()}",
+                "license_key": f"TRIAL-{hwid_hash[:4].upper()}-{hwid_hash[4:8].upper()}",
+                "school_name": resolved_school,
+                "plan_tier": "trial",
+                "hwid_hash": hwid_hash,
+                "hw_component_hashes": fp["component_hashes"],
+                "issued_at": issued_dt.isoformat().replace("+00:00", "Z"),
+                "expires_at": expires_dt.isoformat().replace("+00:00", "Z"),
+                "paid_duration_seconds": TRIAL_DURATION_SECONDS,
+                "lease_seconds": TRIAL_DURATION_SECONDS,
+                "key_id": "local-trial-v2",
+            }
+            trial_envelope = {
+                "payload": payload,
+                "trial_mac": self._compute_local_trial_mac(payload, hwid_hash),
+            }
+            return self.activate_lease(trial_envelope)
 
     def apply_revocation_tombstone(self, tombstone_envelope: Dict[str, Any]) -> Dict[str, Any]:
         """Verify and permanently burn an HQ RevocationTombstone into all 3 anchors."""
@@ -630,13 +747,17 @@ class LicenseGuard:
                 state["active_exam_drain_until"] = None
                 target_lock = "ACTIVE"
 
+            prev_lock = state.get("lock_state")
             state["lock_state"] = target_lock
 
             # Persist updated monotonic counters / state atomically across all 3 anchors
-            try:
-                self.vault.seal_all(state, hwid_hash)
-            except Exception as exc:
-                logger.warning("Triple-anchor seal update error: %s", exc)
+            readonly_worker = os.environ.get("COGNITARA_VAULT_READONLY_WATCHDOG", "").strip() == "1"
+            should_seal = advance_monotonic or (prev_lock != target_lock) or not readonly_worker
+            if should_seal:
+                try:
+                    self.vault.seal_all(state, hwid_hash)
+                except Exception as exc:
+                    logger.warning("Triple-anchor seal update error: %s", exc)
 
             # Compute friendly remaining days / lease metadata
             days_remaining: Optional[int] = None

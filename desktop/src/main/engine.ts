@@ -175,7 +175,12 @@ export class EngineManager {
     };
   }
 
-  private buildEnv(host: string, port: number, threads: number): NodeJS.ProcessEnv {
+  private buildEnv(
+    host: string,
+    port: number,
+    threads: number,
+    extraEnv: Record<string, string> = {}
+  ): NodeJS.ProcessEnv {
     return {
       ...process.env,
       COGNITARA_HOST: host,
@@ -188,6 +193,7 @@ export class EngineManager {
       COGNITARA_DESKTOP_MANAGED: "1",
       COGNITARA_ENFORCE_LICENSE: "1",
       PYTHONUNBUFFERED: "1",
+      ...extraEnv,
     };
   }
 
@@ -256,13 +262,13 @@ export class EngineManager {
     }
 
     this.setLanState("starting");
-    const host = this.settings.lanOnly ? "0.0.0.0" : "0.0.0.0";
+    const host = "0.0.0.0";
     const port = this.settings.port || 5000;
     const { command, args, cwd } = this.resolveEngineCommand();
 
     const child = spawn(command, args, {
       cwd,
-      env: this.buildEnv(host, port, 24),
+      env: this.buildEnv(host, port, 24, { COGNITARA_VAULT_READONLY_WATCHDOG: "1" }),
       windowsHide: true,
       stdio: ["ignore", "pipe", "pipe"],
     });

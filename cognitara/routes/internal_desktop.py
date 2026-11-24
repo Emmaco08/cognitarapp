@@ -181,6 +181,15 @@ def api_internal_license_recheck():
     return jsonify({"ok": True, "license": status}), 200
 
 
+@internal_desktop_bp.route("/license/start-trial", methods=["POST"])
+def api_internal_license_start_trial():
+    data = request.get_json(silent=True) or {}
+    guard = _get_guard()
+    res = guard.activate_trial(school_name=data.get("school_name"))
+    code = 200 if res.get("ok") else 400
+    return jsonify(res), code
+
+
 # =============================================================================
 # Live Telemetry & Active Exam Proctor Controls
 # =============================================================================

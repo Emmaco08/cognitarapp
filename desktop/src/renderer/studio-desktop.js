@@ -590,12 +590,14 @@
   }
 
   function planDisplayName(tier) {
+    if (tier === "trial") return "14-Day Trial";
     if (tier === "monthly") return "Monthly";
     if (tier === "lifetime") return "Lifetime";
     return "Annual";
   }
 
   function planActivatedLine(tier) {
+    if (tier === "trial") return "14-day local evaluation bound to this PC. Protected by the 5-layer vault.";
     if (tier === "monthly") return "Renews monthly. Works offline for up to 7 days at a time.";
     if (tier === "lifetime") return "Never expires. Checks in with cognitara.net every 90 days.";
     return "Valid for 12 months. Works offline for up to 30 days at a time.";
@@ -608,22 +610,31 @@
     items.forEach(function (li) { li.className = "is-ok"; });
     $("#segkey").classList.add("is-done");
     var tier = (state.license && state.license.plan_tier) || "annual";
-    setVerifyResult("<strong>" + esc(planDisplayName(tier)) + " plan activated</strong><span>" + esc(planActivatedLine(tier)) + "</span>");
+    setVerifyResult("<strong>" + esc(planDisplayName(tier)) + " active</strong><span>" + esc(planActivatedLine(tier)) + "</span>");
   }
 
   async function runRealActivation(mode) {
     var v = $("#verify"), arc = $("#verifyArc"), items = $$(".verify__list li", v);
     $("#activateBtn").disabled = true;
+    if ($("#licTrialBtn")) $("#licTrialBtn").disabled = true;
     v.dataset.state = "run";
     items.forEach(function (li) { li.className = ""; });
     items[0].className = "is-run";
     arc.style.strokeDashoffset = "66";
-    setVerifyResult(mode === "file" ? "<span>Verifying signed licence file…</span>" : "<span>Contacting cognitara.net…</span>");
+    setVerifyResult(
+      mode === "file"
+        ? "<span>Verifying signed licence file…</span>"
+        : mode === "trial"
+        ? "<span>Sealing 14-day hardware-bound trial vault…</span>"
+        : "<span>Contacting cognitara.net…</span>"
+    );
 
     var result;
     if (bridge) {
       if (mode === "file") {
         result = await bridge.importLicenseFile();
+      } else if (mode === "trial") {
+        result = await bridge.startTrialLicense($("#fSchool").value.trim());
       } else {
         var fullKey = "CGNT-" + keyInput.value.trim();
         result = await bridge.activateLicenseKey(fullKey);
@@ -638,6 +649,7 @@
       arc.style.strokeDashoffset = "100";
       setVerifyResult("<span>Waiting for your key</span>");
       $("#activateBtn").disabled = paintKey().length !== 16;
+      if ($("#licTrialBtn")) $("#licTrialBtn").disabled = false;
       return;
     }
 
@@ -647,16 +659,17 @@
       paintActivatedVerify();
       paintLicence();
       updateNext();
-      logEvent("licence", "ok", "i-shield", "<b>Licence activated</b> (" + esc(planDisplayName(state.license.plan_tier)) + " plan)");
+      logEvent("licence", "ok", "i-shield", "<b>Licence activated</b> (" + esc(planDisplayName(state.license.plan_tier)) + ")");
       return;
     }
 
     v.dataset.state = "idle";
     items.forEach(function (li) { li.className = ""; });
     arc.style.strokeDashoffset = "100";
-    var errMsg = (result && (result.message || result.error)) || "Activation failed. Check your key or import an offline .cgnlic file.";
+    var errMsg = (result && (result.message || result.error)) || "Activation failed. Check your key, import a .cgnlic file, or start a 14-day trial.";
     setVerifyResult("<strong style='color:var(--bad)'>Activation failed</strong><span>" + esc(errMsg) + "</span>");
     $("#activateBtn").disabled = paintKey().length !== 16;
+    if ($("#licTrialBtn")) $("#licTrialBtn").disabled = false;
     toast(errMsg);
   }
 
@@ -664,6 +677,11 @@
   $("#licFileBtn").addEventListener("click", function () {
     if (!activated) runRealActivation("file");
   });
+  if ($("#licTrialBtn")) {
+    $("#licTrialBtn").addEventListener("click", function () {
+      if (!activated) runRealActivation("trial");
+    });
+  }
 
   $$("[data-copy]").forEach(function (b) {
     b.addEventListener("click", function () {
@@ -1261,7 +1279,7 @@
     var planName = planDisplayName(tier);
     var isLifetime = tier === "lifetime";
     var days = lic.days_remaining;
-    var total = lic.total_days || (tier === "monthly" ? 30 : 365);
+    var total = lic.total_days || (tier === "trial" ? 14 : tier === "monthly" ? 30 : 365);
     var frac = isLifetime ? 1 : (days != null && total > 0 ? Math.max(0, Math.min(1, days / total)) : 0);
 
     $("#licPlan").textContent = lic.is_licensed ? planName : "Not activated";
@@ -1275,7 +1293,8 @@
 
     if (lic.lease_remaining_seconds != null && lic.now_utc) {
       var leaseDue = lic.now_utc + Math.max(0, lic.lease_remaining_seconds);
-      var leaseNote = tier === "monthly" ? "works offline for 7 days at a time"
+      var leaseNote = tier === "trial" ? "14-day local evaluation bound to this PC"
+        : tier === "monthly" ? "works offline for 7 days at a time"
         : tier === "lifetime" ? "check in every 90 days to stay active"
         : "works offline for 30 days at a time";
       $("#licLease").innerHTML = esc(fmtDateShort(leaseDue)) + " <em>" + esc(leaseNote) + "</em>";
@@ -1290,7 +1309,7 @@
     arc.style.transition = "none"; arc.style.strokeDashoffset = "100"; void arc.getBoundingClientRect();
     arc.style.transition = ""; arc.style.strokeDashoffset = String(100 - frac * 100);
 
-    $("#railPlan").textContent = lic.is_licensed ? planName + " plan" : "Unactivated";
+    $("#railPlan").textContent = lic.is_licensed ? (tier === "trial" ? "14-Day Trial" : planName + " plan") : "Unactivated";
     $("#railDays").textContent = isLifetime ? "Never expires" : (days != null ? days + " days left" : "Activate now");
     $("#railRing").style.strokeDashoffset = String(100 - frac * 100);
 

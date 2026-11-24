@@ -406,6 +406,13 @@ function registerIpcHandlers(): void {
     return res.data;
   });
 
+  ipcMain.handle("license:startTrial", async (_evt, schoolName?: string) => {
+    const res = await engine!.callInternal("POST", "/license/start-trial", {
+      school_name: schoolName || undefined,
+    });
+    return res.data;
+  });
+
   ipcMain.handle("server:start", async () => {
     return engine!.startLanServer();
   });
