@@ -139,15 +139,64 @@ def test_fresh_install_onboarding_admin_and_full_live_exam(tmp_path, monkeypatch
     assert r_admin_login.status_code == 200
     admin_html = r_admin_login.get_data(as_text=True)
     assert "Cedar Hills Test Academy" in admin_html
-    assert "Exams Management" in admin_html
+    assert "Examinations Directory" in admin_html
     assert "Students Management" in admin_html
+    assert "/admin/add_exam" not in admin_html
 
-    # 6. Admin creates an Exam with 2 MCQ questions, activates it, and adds an approved Student
-    r_add_exam = client.post(
+    # 6. Verify v2.2.6 RBAC: Admin cannot create regular exams (GET redirects, POST 403 Forbidden)
+    r_blocked_get = client.get("/admin/add_exam", follow_redirects=False)
+    assert r_blocked_get.status_code == 302
+    assert "/admin/exams-management" in (r_blocked_get.headers.get("Location") or "")
+    r_blocked_exam = client.post(
         "/admin/add_exam",
+        data={"exam_name": "Should Not Exist", "class": "JSS 1", "duration": "30"},
+        follow_redirects=False,
+    )
+    assert r_blocked_exam.status_code == 403
+
+    # Admin provisions a Teacher and an approved Student
+    r_add_teacher = client.post(
+        "/admin/add_teacher",
+        data={
+            "username": "teacher_e2e",
+            "password": "TeacherPass123",
+            "class_name": "JSS 1",
+            "specialisation": "General",
+            "class_teacher_of": "JSS 1",
+        },
+        follow_redirects=False,
+    )
+    assert r_add_teacher.status_code in (302, 200)
+
+    r_add_stud = client.post(
+        "/admin/add_student",
+        data={
+            "username": "student_e2e",
+            "full_name": "Chinedu Obi",
+            "password": "StudentPass123",
+            "class": "JSS 1",
+            "specialisation": "General",
+        },
+        follow_redirects=False,
+    )
+    assert r_add_stud.status_code in (302, 200)
+
+    # Admin logs out; Teacher signs in and authors the Exam with 2 MCQ questions
+    client.get("/logout")
+    r_teach_login = client.post(
+        "/login",
+        data={"username": "teacher_e2e", "password": "TeacherPass123", "role": "Teacher"},
+        follow_redirects=True,
+    )
+    assert r_teach_login.status_code == 200
+
+    r_add_exam = client.post(
+        "/teacher/add_exam",
         data={
             "exam_name": "First Term Mathematics CBT",
-            "class": "JSS 1",
+            "target_class": "JSS 1",
+            "subject_tag": "Mathematics",
+            "specialisation_tag": "General",
             "duration": "30",
             "question1": "What is 7 + 8?",
             "option1_1": "12",
@@ -171,25 +220,11 @@ def test_fresh_install_onboarding_admin_and_full_live_exam(tmp_path, monkeypatch
         assert exam_row is not None
         exam_id = int(exam_row["id"])
 
-    # Activate exam via inline admin toggle
-    r_toggle = client.get(f"/admin/toggle_exam/{exam_id}", follow_redirects=False)
+    # Activate exam via teacher toggle
+    r_toggle = client.get(f"/teacher/toggle_exam/{exam_id}", follow_redirects=False)
     assert r_toggle.status_code in (302, 200)
 
-    # Add student via admin
-    r_add_stud = client.post(
-        "/admin/add_student",
-        data={
-            "username": "student_e2e",
-            "full_name": "Chinedu Obi",
-            "password": "StudentPass123",
-            "class": "JSS 1",
-            "specialisation": "General",
-        },
-        follow_redirects=False,
-    )
-    assert r_add_stud.status_code in (302, 200)
-
-    # Admin logout
+    # Teacher logout
     client.get("/logout")
 
     # 7. Student logs in, views /dashboard, starts exam, saves answers, heartbeats, submits, views result!
