@@ -984,6 +984,137 @@ html, body {
   box-shadow: 0 0 0 3px var(--accent-soft);
 }
 
+/* ---- Legacy Database (exam.db) Migration Card inside Settings ---- */
+.legacy-card {
+  margin-top: 12px;
+  padding: 16px;
+  border-radius: 12px;
+  background: var(--well);
+  border: 1px solid var(--line-2);
+  display: grid;
+  gap: 14px;
+  animation: bstageIn 220ms var(--ease) both;
+}
+.legacy-card__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.legacy-kicker {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--accent);
+  margin-bottom: 2px;
+}
+.legacy-card__head strong {
+  display: block;
+  font-size: 15px;
+  font-weight: 680;
+  color: var(--ink);
+}
+.legacy-meta {
+  font-size: 12px;
+  color: var(--ink-3);
+  margin-top: 2px;
+}
+.legacy-stats {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 8px;
+}
+.legacy-stat {
+  padding: 10px 8px;
+  border-radius: 10px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  text-align: center;
+}
+.legacy-stat b {
+  display: block;
+  font-size: 17px;
+  font-weight: 720;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
+}
+.legacy-stat span {
+  display: block;
+  font-size: 11px;
+  color: var(--ink-3);
+  margin-top: 2px;
+}
+.legacy-notes {
+  margin: 0;
+  padding: 10px 12px 10px 28px;
+  border-radius: 10px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  display: grid;
+  gap: 5px;
+  font-size: 12.5px;
+  color: var(--ink-2);
+  line-height: 1.45;
+}
+.legacy-opt-row {
+  padding-top: 6px;
+  border-top: 1px solid var(--line);
+}
+.legacy-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.legacy-done {
+  margin-top: 12px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: var(--ok-soft);
+  border: 1px solid var(--ok-line);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  animation: bstageIn 240ms var(--ease) both;
+}
+.legacy-done__ico {
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--ok);
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+.legacy-done__ico svg { width: 20px; height: 20px; }
+.legacy-done__body { flex: 1 1 240px; min-width: 0; }
+.legacy-done__body strong {
+  display: block;
+  font-size: 14px;
+  font-weight: 680;
+  color: var(--ink);
+}
+.legacy-done__body p {
+  margin: 2px 0 0;
+  font-size: 12.5px;
+  color: var(--ink-2);
+  line-height: 1.45;
+}
+.legacy-done__actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+@media (max-width: 780px) {
+  .legacy-stats { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .bstage,
   .cloud-id-card,

@@ -127,6 +127,13 @@ export default function DeveloperHqPage() {
   }, [cmdOpen]);
 
   async function loadAllData() {
+    const sessRes = await fetch("/api/v1/hq/session", { credentials: "include" }).catch(() => null);
+    const sessJson = sessRes ? await sessRes.json().catch(() => null) : null;
+    if (!sessJson?.authenticated) {
+      setAuthState("login");
+      return;
+    }
+
     const ovRes = await fetch("/api/v1/hq/overview", { credentials: "include" });
     if (ovRes.status === 401 || ovRes.status === 403) {
       setAuthState("login");

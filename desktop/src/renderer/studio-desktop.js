@@ -51,7 +51,7 @@
     writing: 0,
     samples: new Array(120).fill(0),
     stopArmed: false,
-    version: "2.2.4",
+    version: "2.2.5",
     activeView: "home",
     cloudAccount: null,
     updateState: null
@@ -1285,6 +1285,7 @@
     { label: "Cloud account & rate CogniTara Studio", icon: "i-star", hint: "Cloud", run: function () { openCloudModal(); } },
     { label: "Go to Activity", icon: "i-activity", hint: "Page", run: function () { enterAppIfNeeded(); showView("activity"); } },
     { label: "Go to Settings", icon: "i-settings", hint: "Page", run: function () { enterAppIfNeeded(); showView("settings"); } },
+    { label: "Import former school database (exam.db)", icon: "i-backup", hint: "Migration", run: function () { enterAppIfNeeded(); showView("settings"); var s = $("#legacyMigrationSection"); if (s) s.scrollIntoView({ behavior: "smooth", block: "center" }); } },
     { label: "Check for CogniTara Studio updates", icon: "i-restore", hint: "Update", run: function () { enterAppIfNeeded(); showView("settings"); $("#setCheckUpdateBtn").click(); } },
     { label: "Copy student address", icon: "i-copy", hint: "Network", run: function () { if (navigator.clipboard) navigator.clipboard.writeText(addr()).catch(function () {}); toast("Copied " + addr()); } },
     { label: "Open admin portal in browser", icon: "i-external", hint: "Portal", run: function () { openPortal("/login"); } },
@@ -2155,6 +2156,184 @@
     if (bridge) bridge.updateSettings({ port: v }).catch(function () {});
     toast("Port updated to " + v + ". Restart the server to apply.");
   });
+
+  /* ---- Legacy Database (exam.db) Migration Import ---- */
+  var pendingLegacyFilePath = "";
+
+  function fmtBytesCompact(bytes) {
+    var b = Number(bytes || 0);
+    if (b >= 1048576) return (b / 1048576).toFixed(2) + " MB";
+    if (b >= 1024) return Math.round(b / 1024) + " KB";
+    return b + " B";
+  }
+
+  function showLegacyError(msg) {
+    var el = $("#legacyErr");
+    if (!el) return;
+    if (!msg) {
+      el.hidden = true;
+      el.textContent = "";
+      return;
+    }
+    el.textContent = msg;
+    el.hidden = false;
+  }
+
+  function renderLegacyInspection(info) {
+    pendingLegacyFilePath = info.file_path || "";
+    showLegacyError("");
+    if ($("#legacyDone")) $("#legacyDone").hidden = true;
+    var preview = $("#legacyPreview");
+    if (!preview) return;
+    $("#legacySchoolName").textContent = info.school_name || "Legacy CogniTara School";
+    $("#legacyFileMeta").textContent =
+      (info.file_name || "exam.db") +
+      " · " +
+      fmtBytesCompact(info.file_size_bytes) +
+      " · " +
+      (info.table_count || 0) +
+      " tables · " +
+      (info.academic_session || "2026/2027");
+    var c = info.counts || {};
+    $("#legCntStudents").textContent = String(c.students || 0);
+    $("#legCntTeachers").textContent = String(c.teachers || 0);
+    $("#legCntExams").textContent = String(c.exams || 0);
+    $("#legCntQuestions").textContent = String(c.questions || 0);
+    $("#legCntScores").textContent = String(c.scores || 0);
+    $("#legCntCe").textContent = String((c.ce_exams || 0) + (c.ce_students || 0) + (c.ce_attempts || 0));
+
+    var notesEl = $("#legacyNotes");
+    if (notesEl) {
+      notesEl.innerHTML = "";
+      var notes = Array.isArray(info.notes) && info.notes.length
+        ? info.notes
+        : ["SQLite integrity passed. Your current database will be backed up automatically first."];
+      notes.forEach(function (line) {
+        var li = document.createElement("li");
+        li.textContent = String(line);
+        notesEl.appendChild(li);
+      });
+    }
+    preview.hidden = false;
+    setTimeout(function () {
+      try { preview.scrollIntoView({ behavior: "smooth", block: "nearest" }); } catch (_) {}
+    }, 40);
+  }
+
+  function pluralize(n, singular, plural) {
+    var v = Number(n || 0);
+    return v + " " + (v === 1 ? singular : plural);
+  }
+
+  if ($("#legacyPickBtn")) {
+    $("#legacyPickBtn").addEventListener("click", async function () {
+      var btn = this;
+      showLegacyError("");
+      if (!bridge || !bridge.pickAndInspectLegacyDb) {
+        showLegacyError("Database import is available inside the installed CogniTara Studio desktop app.");
+        return;
+      }
+      var prev = btn.textContent;
+      btn.disabled = true;
+      btn.textContent = "Inspecting…";
+      try {
+        var res = await bridge.pickAndInspectLegacyDb();
+        if (res && res.canceled) return;
+        if (!res || !res.ok) {
+          if ($("#legacyPreview")) $("#legacyPreview").hidden = true;
+          showLegacyError((res && res.message) || "Selected file is not a valid CogniTara database.");
+          return;
+        }
+        renderLegacyInspection(res);
+      } catch (err) {
+        showLegacyError((err && err.message) || "Could not inspect selected file.");
+      } finally {
+        btn.disabled = false;
+        btn.textContent = prev;
+      }
+    });
+  }
+
+  if ($("#legacyCancelBtn")) {
+    $("#legacyCancelBtn").addEventListener("click", function () {
+      pendingLegacyFilePath = "";
+      showLegacyError("");
+      if ($("#legacyPreview")) $("#legacyPreview").hidden = true;
+    });
+  }
+
+  if ($("#legacyImportBtn")) {
+    $("#legacyImportBtn").addEventListener("click", async function () {
+      var btn = this;
+      if (!pendingLegacyFilePath) {
+        showLegacyError("Please select an exam.db file first.");
+        return;
+      }
+      if (!bridge || !bridge.importLegacyDb) return;
+      showLegacyError("");
+      var prev = btn.textContent;
+      btn.disabled = true;
+      btn.textContent = "Importing & upgrading…";
+      try {
+        var preserveAdmin = $("#legacyPreserveAdmin") ? Boolean($("#legacyPreserveAdmin").checked) : true;
+        var res = await bridge.importLegacyDb({
+          file_path: pendingLegacyFilePath,
+          preserve_current_admin: preserveAdmin,
+        });
+        if (!res || !res.ok) {
+          showLegacyError((res && res.message) || "Could not import database.");
+          return;
+        }
+        if ($("#legacyPreview")) $("#legacyPreview").hidden = true;
+        pendingLegacyFilePath = "";
+        var cnt = res.counts || {};
+        var doneTitle = $("#legacyDoneTitle");
+        var doneMeta = $("#legacyDoneMeta");
+        if (doneTitle) doneTitle.textContent = (res.school_name || "Former school database") + " imported";
+        if (doneMeta) {
+          var parts = [
+            pluralize(cnt.students || 0, "student", "students"),
+            pluralize(cnt.teachers || 0, "teacher", "teachers"),
+            pluralize(cnt.exams || 0, "exam", "exams"),
+            pluralize(cnt.questions || 0, "question", "questions"),
+          ];
+          if (res.passwords_upgraded > 0) {
+            parts.push(pluralize(res.passwords_upgraded, "password secured", "passwords secured"));
+          }
+          if (res.safety_snapshot) {
+            parts.push("safety backup saved as " + res.safety_snapshot);
+          }
+          doneMeta.textContent = parts.join(" · ") + ".";
+        }
+        var doneEl = $("#legacyDone");
+        if (doneEl) {
+          doneEl.hidden = false;
+          setTimeout(function () {
+            try { doneEl.scrollIntoView({ behavior: "smooth", block: "nearest" }); } catch (_) {}
+          }, 40);
+        }
+        toast("Former database imported and upgraded cleanly");
+        if (typeof refreshBackups === "function") refreshBackups();
+        if (typeof pollTelemetry === "function") pollTelemetry();
+      } catch (err) {
+        showLegacyError((err && err.message) || "Unexpected error while importing database.");
+      } finally {
+        btn.disabled = false;
+        btn.textContent = prev;
+      }
+    });
+  }
+
+  if ($("#legacyDoneBackupsBtn")) {
+    $("#legacyDoneBackupsBtn").addEventListener("click", function () {
+      showView("backups");
+    });
+  }
+  if ($("#legacyDoneAdminBtn")) {
+    $("#legacyDoneAdminBtn").addEventListener("click", function () {
+      if ($("#portalAdmin")) $("#portalAdmin").click();
+    });
+  }
   /* ------------------------------------------------------------------ direct in-app auto-updater */
   function renderUpdateState(upd) {
     if (!upd) return;
@@ -3702,7 +3881,7 @@
       renderUpdateState({
         status: "downloading",
         currentVersion: "2.2.3",
-        availableVersion: "2.2.4",
+        availableVersion: "2.2.5",
         percent: 68.4,
         bytesPerSecond: 4.2 * 1024 * 1024,
         transferred: 58.2 * 1024 * 1024,
@@ -3712,7 +3891,7 @@
       renderUpdateState({
         status: "downloaded",
         currentVersion: "2.2.3",
-        availableVersion: "2.2.4",
+        availableVersion: "2.2.5",
         percent: 100
       });
     }

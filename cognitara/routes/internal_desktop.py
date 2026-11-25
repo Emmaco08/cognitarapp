@@ -33,6 +33,11 @@ from cognitara.database.initialization import init_license_tables
 from cognitara.extensions import csrf
 from cognitara.routes.preview import _collect_live_telemetry
 from cognitara.security.license_guard import get_license_guard
+from cognitara.services.legacy_db_import import (
+    import_legacy_database,
+    inspect_legacy_database,
+    restore_database_with_vault_preservation,
+)
 
 logger = logging.getLogger("cognitara.routes.internal_desktop")
 
@@ -500,7 +505,9 @@ def api_internal_list_backups():
             lower = name.lower()
             if "auto" in lower:
                 kind = "Automatic"
-            elif "pre_restore" in lower:
+            elif "pre_legacy_import" in lower:
+                kind = "Pre-import"
+            elif "pre_restore" in lower or "pre_cloud_restore" in lower:
                 kind = "Pre-restore"
             elif "pre_exam" in lower:
                 kind = "Before exam"
@@ -692,49 +699,29 @@ def api_internal_restore_cloud_snapshot():
 
     backup_dir = _resolve_backup_dir()
     active_db = _resolve_active_db_path()
-    safety_name = f"exam_pre_cloud_restore_{datetime.now().strftime('%Y%m%d_%H%M%S')}.db"
-    safety_path = os.path.join(backup_dir, safety_name)
 
     with tempfile.TemporaryDirectory() as tmpdir:
         tmp_db = os.path.join(tmpdir, "cloud_restore.db")
         with open(tmp_db, "wb") as fh:
             fh.write(raw_db)
 
-        if not _verify_sqlite_integrity(tmp_db):
-            return jsonify({"ok": False, "error": "backup_corrupt", "message": "Downloaded backup failed SQLite integrity check."}), 400
+        res = restore_database_with_vault_preservation(
+            source_path=tmp_db,
+            active_db_path=active_db,
+            backup_dir=backup_dir,
+            safety_prefix="exam_pre_cloud_restore",
+            preserve_current_admin=False,
+            hash_legacy_passwords=False,
+            allow_during_active_exam=True,
+        )
 
-        # Safety snapshot of current database before restoring
-        src_cur = None
-        dst_safe = None
-        try:
-            src_cur = sqlite3.connect(active_db, timeout=30.0)
-            dst_safe = sqlite3.connect(safety_path, timeout=30.0)
-            src_cur.backup(dst_safe)
-            dst_safe.commit()
-        finally:
-            if dst_safe:
-                dst_safe.close()
-            if src_cur:
-                src_cur.close()
-
-        # Atomic restore into active exam.db
-        b_src = None
-        b_dst = None
-        try:
-            b_src = sqlite3.connect(tmp_db, timeout=30.0)
-            b_dst = sqlite3.connect(active_db, timeout=30.0)
-            b_src.backup(b_dst)
-            b_dst.commit()
-        except Exception as exc:
-            logger.error("Cloud restore failed: %s", exc)
-            return jsonify({"ok": False, "error": "restore_failed", "message": str(exc)}), 500
-        finally:
-            if b_dst:
-                b_dst.close()
-            if b_src:
-                b_src.close()
-
-    return jsonify({"ok": True, "safety_snapshot": safety_name}), 200
+    if not res.get("ok"):
+        return jsonify(res), 400
+    return jsonify({
+        "ok": True,
+        "safety_snapshot": res.get("safety_snapshot"),
+        "counts": res.get("counts"),
+    }), 200
 
 
 @internal_desktop_bp.route("/backups/restore", methods=["POST"])
@@ -749,48 +736,63 @@ def api_internal_restore_backup():
     if not candidate.startswith(os.path.abspath(backup_dir) + os.sep) or not os.path.isfile(candidate):
         return jsonify({"ok": False, "error": "backup_not_found"}), 404
 
-    if not _verify_sqlite_integrity(candidate):
-        return jsonify({"ok": False, "error": "backup_corrupt"}), 400
-
     active_db = _resolve_active_db_path()
-
-    # Safety pre-restore snapshot before overwriting exam.db
-    safety_name = f"exam_pre_restore_{datetime.now().strftime('%Y%m%d_%H%M%S')}.db"
-    safety_path = os.path.join(backup_dir, safety_name)
-    src_cur = None
-    dst_safe = None
-    try:
-        src_cur = sqlite3.connect(active_db, timeout=30.0)
-        dst_safe = sqlite3.connect(safety_path, timeout=30.0)
-        src_cur.backup(dst_safe)
-    finally:
-        if dst_safe:
-            dst_safe.close()
-        if src_cur:
-            src_cur.close()
-
-    # Online restore via sqlite3.backup
-    b_src = None
-    b_dst = None
-    try:
-        b_src = sqlite3.connect(candidate, timeout=30.0)
-        b_dst = sqlite3.connect(active_db, timeout=30.0)
-        b_src.backup(b_dst)
-        b_dst.commit()
-    except Exception as exc:
-        logger.error("Restore failed: %s", exc)
-        return jsonify({"ok": False, "error": "restore_failed", "message": str(exc)}), 500
-    finally:
-        if b_dst:
-            b_dst.close()
-        if b_src:
-            b_src.close()
+    res = restore_database_with_vault_preservation(
+        source_path=candidate,
+        active_db_path=active_db,
+        backup_dir=backup_dir,
+        safety_prefix="exam_pre_restore",
+        preserve_current_admin=False,
+        hash_legacy_passwords=False,
+        allow_during_active_exam=True,
+    )
+    if not res.get("ok"):
+        return jsonify(res), 400
 
     return jsonify({
         "ok": True,
         "restored_from": filename,
-        "safety_snapshot": safety_name,
+        "safety_snapshot": res.get("safety_snapshot"),
+        "counts": res.get("counts"),
     }), 200
+
+
+@internal_desktop_bp.route("/backups/inspect-legacy", methods=["POST"])
+def api_internal_inspect_legacy():
+    """Inspect a school's former exam.db file from disk before importing."""
+    data = request.get_json(silent=True) or {}
+    file_path = str(data.get("file_path") or "").strip()
+    if not file_path:
+        return jsonify({"ok": False, "error": "missing_file_path", "message": "No database file was selected."}), 400
+    res = inspect_legacy_database(file_path)
+    return jsonify(res), (200 if res.get("ok") else 400)
+
+
+@internal_desktop_bp.route("/backups/import-legacy", methods=["POST"])
+def api_internal_import_legacy():
+    """Import & automatically migrate a former CogniTara exam.db into the active school server."""
+    data = request.get_json(silent=True) or {}
+    file_path = str(data.get("file_path") or "").strip()
+    if not file_path:
+        return jsonify({"ok": False, "error": "missing_file_path", "message": "No database file was selected."}), 400
+
+    preserve_current_admin = bool(data.get("preserve_current_admin", True))
+    allow_during_active = bool(data.get("force", False))
+
+    active_db = _resolve_active_db_path()
+    backup_dir = _resolve_backup_dir()
+    res = import_legacy_database(
+        source_path=file_path,
+        active_db_path=active_db,
+        backup_dir=backup_dir,
+        preserve_current_admin=preserve_current_admin,
+        allow_during_active_exam=allow_during_active,
+    )
+    if not res.get("ok"):
+        code = 409 if res.get("error") == "active_exams_in_progress" else 400
+        return jsonify(res), code
+
+    return jsonify(res), 200
 
 
 # =============================================================================

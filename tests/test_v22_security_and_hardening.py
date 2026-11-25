@@ -15,12 +15,39 @@ from cognitara.utils.helpers import compress_image, sanitize_html
 
 
 @pytest.fixture
-def app_client():
-    os.environ["COGNITARA_TESTING_BYPASS_LICENSE"] = "1"
+def app_client(tmp_path, monkeypatch):
+    import sqlite3
+    from cognitara.database.bootstrap import ensure_core_database_initialized
+
+    db_path = str(tmp_path / "test_v22.db")
+    ensure_core_database_initialized(db_path, seed_sample_users=True)
+    conn = sqlite3.connect(db_path)
+    try:
+        conn.execute(
+            "INSERT OR IGNORE INTO admin (id, username, password) VALUES (1, 'admin', ?)",
+            (generate_password_hash("Admin#2026"),),
+        )
+        conn.execute(
+            "INSERT OR IGNORE INTO teachers (id, username, password, class, teaching_classes) VALUES (1, 'teacher1', ?, 'SSS 1', '[\"SSS 1\"]')",
+            (generate_password_hash("Teach#2026"),),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+    monkeypatch.setenv("COGNITARA_TESTING_BYPASS_LICENSE", "1")
+    monkeypatch.setenv("COGNITARA_BYPASS_LICENSE", "1")
+    monkeypatch.setenv("COGNITARA_DATA_DIR", str(tmp_path))
+    monkeypatch.setenv("COGNITARA_DB_NAME", db_path)
+
+    from cognitara.config import Config
+    monkeypatch.setattr(Config, "DATABASE_NAME", db_path)
+
     app = create_app({
         "TESTING": True,
         "SECRET_KEY": "test-secret-v22-hardening",
         "WTF_CSRF_ENABLED": False,
+        "DATABASE_NAME": db_path,
     })
     with app.test_client() as client:
         yield app, client
@@ -28,7 +55,8 @@ def app_client():
 
 def test_password_hash_as_password_bypass_blocked():
     """Submitting a leaked Werkzeug hash string as the password MUST fail."""
-    conn = get_db_connection()
+    import sqlite3
+    conn = sqlite3.connect(":memory:")
     try:
         hashed = generate_password_hash("SuperSecret#2026")
         assert verify_and_upgrade_password(conn, "admin", "id", 999999, hashed, "SuperSecret#2026") is True

@@ -448,3 +448,118 @@ def admin_update_ce_settings():
         "success": True,
         "message": "Common Entrance settings saved successfully."
     }
+
+
+def _resolve_active_db_path_for_admin() -> str:
+    from flask import current_app
+    from cognitara.config import Config
+    db_name = current_app.config.get("DATABASE_NAME") or os.environ.get("COGNITARA_DB_NAME") or Config.DATABASE_NAME
+    if os.path.isabs(db_name):
+        return os.path.abspath(db_name)
+    return os.path.abspath(os.path.join(Config.ROOT_DIR, db_name))
+
+
+def _resolve_backup_dir_for_admin() -> str:
+    from flask import current_app
+    from cognitara.config import Config
+    env_dir = current_app.config.get("BACKUP_DIR") or os.environ.get("COGNITARA_BACKUP_DIR")
+    if env_dir:
+        os.makedirs(env_dir, exist_ok=True)
+        return os.path.abspath(env_dir)
+    fallback = os.path.join(Config.ROOT_DIR, "backups")
+    os.makedirs(fallback, exist_ok=True)
+    return os.path.abspath(fallback)
+
+
+@admin_settings_bp.route("/admin/school-settings/inspect-legacy-db", methods=["POST"])
+def admin_inspect_legacy_db():
+    """Inspect an uploaded former CogniTara exam.db file without altering the active database."""
+    if "admin_id" not in session:
+        return jsonify({"ok": False, "error": "Unauthorized"}), 401
+
+    uploaded = request.files.get("db_file")
+    if not uploaded or not uploaded.filename:
+        return jsonify({"ok": False, "error": "missing_file", "message": "Please select an exam.db file to inspect."}), 400
+
+    ext = os.path.splitext(uploaded.filename)[1].lower()
+    if ext not in (".db", ".sqlite", ".sqlite3"):
+        return jsonify({"ok": False, "error": "invalid_extension", "message": "Please choose a valid SQLite database file (.db, .sqlite, or .sqlite3)."}), 400
+
+    import tempfile
+    from cognitara.services.legacy_db_import import inspect_legacy_database
+
+    with tempfile.TemporaryDirectory(prefix="ct_admin_inspect_") as tmpdir:
+        safe_name = secure_filename(uploaded.filename) or "legacy_exam.db"
+        tmp_path = os.path.join(tmpdir, safe_name)
+        uploaded.save(tmp_path)
+        res = inspect_legacy_database(tmp_path)
+        res.pop("file_path", None)
+        res["file_name"] = uploaded.filename
+
+    return jsonify(res), (200 if res.get("ok") else 400)
+
+
+@admin_settings_bp.route("/admin/school-settings/import-legacy-db", methods=["POST"])
+def admin_import_legacy_db():
+    """Atomically import & upgrade an uploaded former CogniTara exam.db into the active school server."""
+    if "admin_id" not in session:
+        return jsonify({"ok": False, "error": "Unauthorized"}), 401
+
+    uploaded = request.files.get("db_file")
+    if not uploaded or not uploaded.filename:
+        return jsonify({"ok": False, "error": "missing_file", "message": "Please select an exam.db file to import."}), 400
+
+    ext = os.path.splitext(uploaded.filename)[1].lower()
+    if ext not in (".db", ".sqlite", ".sqlite3"):
+        return jsonify({"ok": False, "error": "invalid_extension", "message": "Please choose a valid SQLite database file (.db, .sqlite, or .sqlite3)."}), 400
+
+    preserve_admin = str(request.form.get("preserve_current_admin", "true")).lower() in ("1", "true", "yes", "on")
+
+    import tempfile
+    from cognitara.services.legacy_db_import import import_legacy_database
+
+    active_db = _resolve_active_db_path_for_admin()
+    backup_dir = _resolve_backup_dir_for_admin()
+
+    with tempfile.TemporaryDirectory(prefix="ct_admin_import_") as tmpdir:
+        safe_name = secure_filename(uploaded.filename) or "legacy_exam.db"
+        tmp_path = os.path.join(tmpdir, safe_name)
+        uploaded.save(tmp_path)
+        res = import_legacy_database(
+            source_path=tmp_path,
+            active_db_path=active_db,
+            backup_dir=backup_dir,
+            preserve_current_admin=preserve_admin,
+            allow_during_active_exam=False,
+        )
+
+    if not res.get("ok"):
+        status_code = 409 if res.get("error") == "active_exams_in_progress" else 400
+        return jsonify(res), status_code
+
+    # Keep the currently signed-in admin's session admin_id aligned with the imported DB
+    try:
+        conn = get_db_connection()
+        try:
+            cur_uname = session.get("username", "")
+            row = conn.execute(
+                "SELECT id, username FROM admin WHERE LOWER(username) = LOWER(?) LIMIT 1",
+                (cur_uname,),
+            ).fetchone()
+            if row:
+                session["admin_id"] = row["id"]
+                session["username"] = row["username"]
+            log_action(
+                "Admin",
+                session.get("username", "admin"),
+                f"Imported legacy database '{uploaded.filename}' (safety backup: {res.get('safety_snapshot')})",
+                conn=conn,
+            )
+            conn.commit()
+        finally:
+            conn.close()
+    except Exception as exc:
+        logger.warning("Post-legacy-import session sync note: %s", exc)
+
+    return jsonify(res), 200
+

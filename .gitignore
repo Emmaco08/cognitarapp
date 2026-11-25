@@ -41,7 +41,7 @@ warning_logs/
 
 # Session storage
 flask_session/
-session/
+/session/
 
 # IDE
 .vscode/

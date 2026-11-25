@@ -198,10 +198,72 @@
 
         .live-calc-box {
             background: var(--ct-surface-2);
-            border: 1.5px solid #BAE6FD;
+            border: 1.5px solid var(--ct-line-2);
             border-radius: 16px;
             padding: 20px;
             margin-top: 20px;
+        }
+
+        .legacy-dropzone {
+            border: 1.5px dashed var(--ct-line-2);
+            border-radius: 14px;
+            padding: 28px 20px;
+            text-align: center;
+            background: var(--ct-surface-2);
+            cursor: pointer;
+            transition: border-color 160ms ease, background-color 160ms ease;
+        }
+        .legacy-dropzone:hover, .legacy-dropzone.is-drag {
+            border-color: var(--ct-primary);
+            background: color-mix(in srgb, var(--ct-primary) 7%, var(--ct-surface-2));
+        }
+        .legacy-stat-grid {
+            display: grid;
+            grid-template-columns: repeat(6, minmax(0, 1fr));
+            gap: 10px;
+        }
+        .legacy-stat-box {
+            padding: 12px 10px;
+            border-radius: 10px;
+            background: var(--ct-surface-2);
+            border: 1px solid var(--ct-line);
+            text-align: center;
+        }
+        .legacy-stat-box b {
+            display: block;
+            font-size: 20px;
+            font-weight: 720;
+            color: var(--ct-ink);
+            font-variant-numeric: tabular-nums;
+        }
+        .legacy-stat-box span {
+            display: block;
+            font-size: 11.5px;
+            color: var(--ct-ink-3);
+            margin-top: 2px;
+        }
+        @media (max-width: 768px) {
+            .legacy-stat-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+        }
+        #tab-migration code {
+            color: var(--ct-ink) !important;
+            background: var(--ct-surface-3, rgba(148, 163, 184, 0.14));
+            border: 1px solid var(--ct-line);
+            padding: 1px 6px;
+            border-radius: 6px;
+            font-size: 0.88em;
+        }
+        .legacy-ready-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 5px 12px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 600;
+            background: rgba(16, 185, 129, 0.14);
+            color: #10b981;
+            border: 1px solid rgba(16, 185, 129, 0.32);
         }
     </style>
     <meta name="csrf-token" content="{{ csrf_token() }}">
@@ -246,6 +308,11 @@
             <li class="nav-item flex-fill" role="presentation">
                 <button class="nav-link" id="results-tab" data-bs-toggle="tab" data-bs-target="#tab-results" type="button" role="tab">
                     <i class="fas fa-eye-slash me-2"></i> Result Release Policies
+                </button>
+            </li>
+            <li class="nav-item flex-fill" role="presentation">
+                <button class="nav-link" id="migration-tab" data-bs-toggle="tab" data-bs-target="#tab-migration" type="button" role="tab">
+                    <i class="fas fa-database me-2"></i> Import Former Database
                 </button>
             </li>
         </ul>
@@ -535,6 +602,67 @@
                                 {% endfor %}
                             </tbody>
                         </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 5: IMPORT FORMER DATABASE (LEGACY EXAM.DB MIGRATION) -->
+            <div class="tab-pane fade" id="tab-migration" role="tabpanel">
+                <div class="settings-card p-4">
+                    <h4 class="fw-bold mb-2"><i class="fas fa-database text-primary me-2"></i> Import Former School Database (exam.db)</h4>
+                    <p class="text-muted small mb-4">Upgrading from an older CogniTara installation? Select your former <code>exam.db</code> file to inspect its contents and migrate all students, teachers, exams, questions, scores, and Common Entrance records automatically. A verified safety backup of your current database is saved first, and your Desktop licence remains intact.</p>
+
+                    <div id="adminLegacyDropzone" class="legacy-dropzone" role="button" tabindex="0">
+                        <input type="file" id="adminLegacyFileInput" accept=".db,.sqlite,.sqlite3" style="display:none">
+                        <div class="mb-2" style="font-size:28px;color:var(--ct-primary)"><i class="fas fa-cloud-upload-alt"></i></div>
+                        <div class="fw-bold mb-1" style="color:var(--ct-ink)">Select or drop your former <code>exam.db</code> file</div>
+                        <div class="small" style="color:var(--ct-ink-3)">Supports SQLite database files (.db, .sqlite, .sqlite3). Nothing is modified until you review and confirm.</div>
+                        <button type="button" class="btn btn-primary btn-sm mt-3" id="adminLegacyBrowseBtn">Choose exam.db…</button>
+                    </div>
+
+                    <div id="adminLegacyError" class="alert alert-danger mt-3 mb-0 d-none" role="alert"></div>
+
+                    <div id="adminLegacyPreview" class="mt-4 p-3 rounded-3 d-none" style="background:var(--ct-surface-2);border:1px solid var(--ct-line-2)">
+                        <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-3">
+                            <div>
+                                <div class="text-uppercase fw-bold" style="font-size:11px;letter-spacing:.06em;color:var(--ct-primary)">SQLite Integrity Verified</div>
+                                <h5 class="fw-bold mb-0 mt-1" id="adminLegSchoolName" style="color:var(--ct-ink)">Legacy CogniTara School</h5>
+                                <div class="small text-muted" id="adminLegFileMeta">exam.db</div>
+                            </div>
+                            <span class="legacy-ready-badge"><i class="fas fa-check-circle"></i> Ready to migrate</span>
+                        </div>
+
+                        <div class="legacy-stat-grid mb-3">
+                            <div class="legacy-stat-box"><b id="adminLegStudents">0</b><span>Students</span></div>
+                            <div class="legacy-stat-box"><b id="adminLegTeachers">0</b><span>Teachers</span></div>
+                            <div class="legacy-stat-box"><b id="adminLegExams">0</b><span>Exams</span></div>
+                            <div class="legacy-stat-box"><b id="adminLegQuestions">0</b><span>Questions</span></div>
+                            <div class="legacy-stat-box"><b id="adminLegScores">0</b><span>Results</span></div>
+                            <div class="legacy-stat-box"><b id="adminLegCe">0</b><span>CE Records</span></div>
+                        </div>
+
+                        <ul id="adminLegNotes" class="small mb-3 ps-3" style="color:var(--ct-ink-2);line-height:1.55"></ul>
+
+                        <div class="form-check form-switch mb-3 pt-2" style="border-top:1px solid var(--ct-line)">
+                            <input class="form-check-input" type="checkbox" id="adminLegacyPreserveAdmin" checked>
+                            <label class="form-check-label fw-semibold" for="adminLegacyPreserveAdmin" style="color:var(--ct-ink)">
+                                Keep my current Admin login &amp; Desktop recovery codes
+                            </label>
+                            <div class="small text-muted">Recommended so your current session and recovery codes remain active alongside imported accounts.</div>
+                        </div>
+
+                        <div class="d-flex justify-content-end gap-2">
+                            <button type="button" class="btn btn-outline-secondary btn-sm" id="adminLegacyCancelBtn">Cancel</button>
+                            <button type="button" class="btn btn-primary btn-sm" id="adminLegacyImportBtn">
+                                <i class="fas fa-file-import me-1"></i> Import &amp; Upgrade Database
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="adminLegacySuccess" class="alert alert-success mt-3 mb-0 d-none" role="status">
+                        <div class="fw-bold mb-1" id="adminLegDoneTitle">Former database imported successfully!</div>
+                        <div class="small mb-2" id="adminLegDoneMeta"></div>
+                        <a href="/admin" class="btn btn-success btn-sm">Open Admin Dashboard</a>
                     </div>
                 </div>
             </div>
@@ -891,6 +1019,148 @@
             cb.checked = masterCb.checked;
         });
     }
+
+    // ---- Legacy School Database (exam.db) Inspection & Import ----
+    (function initAdminLegacyImport() {
+        const dropzone = document.getElementById('adminLegacyDropzone');
+        const input = document.getElementById('adminLegacyFileInput');
+        const browseBtn = document.getElementById('adminLegacyBrowseBtn');
+        const errBox = document.getElementById('adminLegacyError');
+        const previewBox = document.getElementById('adminLegacyPreview');
+        const doneBox = document.getElementById('adminLegacySuccess');
+        const cancelBtn = document.getElementById('adminLegacyCancelBtn');
+        const importBtn = document.getElementById('adminLegacyImportBtn');
+        if (!dropzone || !input) return;
+
+        let selectedFile = null;
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+
+        function showErr(msg) {
+            if (!msg) {
+                errBox.classList.add('d-none');
+                errBox.textContent = '';
+                return;
+            }
+            errBox.textContent = msg;
+            errBox.classList.remove('d-none');
+        }
+
+        function fmtSize(bytes) {
+            const b = Number(bytes || 0);
+            if (b >= 1048576) return (b / 1048576).toFixed(2) + ' MB';
+            if (b >= 1024) return Math.round(b / 1024) + ' KB';
+            return b + ' B';
+        }
+
+        async function inspectFile(file) {
+            if (!file) return;
+            selectedFile = file;
+            showErr('');
+            doneBox.classList.add('d-none');
+            browseBtn.disabled = true;
+            browseBtn.textContent = 'Inspecting…';
+            try {
+                const fd = new FormData();
+                fd.append('db_file', file);
+                const res = await fetch('/admin/school-settings/inspect-legacy-db', {
+                    method: 'POST',
+                    headers: { 'X-CSRFToken': csrfToken },
+                    body: fd
+                });
+                const data = await res.json();
+                if (!res.ok || !data.ok) {
+                    previewBox.classList.add('d-none');
+                    selectedFile = null;
+                    showErr(data.message || 'Selected file is not a valid CogniTara SQLite database.');
+                    return;
+                }
+                document.getElementById('adminLegSchoolName').textContent = data.school_name || 'Legacy CogniTara School';
+                document.getElementById('adminLegFileMeta').textContent =
+                    `${data.file_name || file.name} · ${fmtSize(data.file_size_bytes)} · ${data.table_count || 0} tables · ${data.academic_session || '2026/2027'}`;
+                const c = data.counts || {};
+                document.getElementById('adminLegStudents').textContent = String(c.students || 0);
+                document.getElementById('adminLegTeachers').textContent = String(c.teachers || 0);
+                document.getElementById('adminLegExams').textContent = String(c.exams || 0);
+                document.getElementById('adminLegQuestions').textContent = String(c.questions || 0);
+                document.getElementById('adminLegScores').textContent = String(c.scores || 0);
+                document.getElementById('adminLegCe').textContent = String((c.ce_exams || 0) + (c.ce_students || 0) + (c.ce_attempts || 0));
+
+                const ul = document.getElementById('adminLegNotes');
+                ul.innerHTML = '';
+                (data.notes || []).forEach(line => {
+                    const li = document.createElement('li');
+                    li.textContent = line;
+                    ul.appendChild(li);
+                });
+                previewBox.classList.remove('d-none');
+            } catch (e) {
+                showErr('Could not inspect selected file: ' + (e.message || 'Network error'));
+            } finally {
+                browseBtn.disabled = false;
+                browseBtn.textContent = 'Choose exam.db…';
+            }
+        }
+
+        browseBtn.addEventListener('click', (e) => { e.stopPropagation(); input.click(); });
+        dropzone.addEventListener('click', () => input.click());
+        dropzone.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); input.click(); } });
+        dropzone.addEventListener('dragover', (e) => { e.preventDefault(); dropzone.classList.add('is-drag'); });
+        dropzone.addEventListener('dragleave', () => dropzone.classList.remove('is-drag'));
+        dropzone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropzone.classList.remove('is-drag');
+            if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]) {
+                inspectFile(e.dataTransfer.files[0]);
+            }
+        });
+        input.addEventListener('change', () => {
+            if (input.files && input.files[0]) inspectFile(input.files[0]);
+        });
+        cancelBtn.addEventListener('click', () => {
+            selectedFile = null;
+            input.value = '';
+            showErr('');
+            previewBox.classList.add('d-none');
+        });
+        importBtn.addEventListener('click', async () => {
+            if (!selectedFile) { showErr('Please select an exam.db file first.'); return; }
+            showErr('');
+            importBtn.disabled = true;
+            importBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Importing &amp; Upgrading…';
+            try {
+                const fd = new FormData();
+                fd.append('db_file', selectedFile);
+                fd.append('preserve_current_admin', document.getElementById('adminLegacyPreserveAdmin').checked ? 'true' : 'false');
+                const res = await fetch('/admin/school-settings/import-legacy-db', {
+                    method: 'POST',
+                    headers: { 'X-CSRFToken': csrfToken },
+                    body: fd
+                });
+                const data = await res.json();
+                if (!res.ok || !data.ok) {
+                    showErr(data.message || 'Database import failed.');
+                    return;
+                }
+                previewBox.classList.add('d-none');
+                selectedFile = null;
+                input.value = '';
+                const cnt = data.counts || {};
+                const pl = (n, s, p) => `${Number(n || 0)} ${Number(n || 0) === 1 ? s : p}`;
+                document.getElementById('adminLegDoneTitle').textContent = `${data.school_name || 'Former school database'} imported cleanly!`;
+                document.getElementById('adminLegDoneMeta').textContent =
+                    `${pl(cnt.students, 'student', 'students')} · ${pl(cnt.teachers, 'teacher', 'teachers')} · ${pl(cnt.exams, 'exam', 'exams')} · ${pl(cnt.questions, 'question', 'questions')}` +
+                    (data.passwords_upgraded ? ` · ${pl(data.passwords_upgraded, 'legacy password secured', 'legacy passwords secured')}` : '') +
+                    (data.safety_snapshot ? ` · Safety backup: ${data.safety_snapshot}` : '');
+                doneBox.classList.remove('d-none');
+                if (window.CogniTaraActions) CogniTaraActions.toast('Legacy database imported successfully!', 'success');
+            } catch (e) {
+                showErr('Import failed: ' + (e.message || 'Network error'));
+            } finally {
+                importBtn.disabled = false;
+                importBtn.innerHTML = '<i class="fas fa-file-import me-1"></i> Import &amp; Upgrade Database';
+            }
+        });
+    })();
     </script>
 
 {{ shell_end(role='admin') }}

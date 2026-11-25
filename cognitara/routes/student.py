@@ -148,6 +148,10 @@ def ce_dashboard_page():
     
     conn = get_db_connection()
     exam = conn.execute("SELECT * FROM ce_exams WHERE id=?", (session["ce_exam_id"],)).fetchone()
+    if not exam:
+        conn.close()
+        session.clear()
+        return redirect("/ce_login")
     
     existing_attempt = conn.execute("""
         SELECT * FROM ce_attempts WHERE student_id=? AND exam_id=?

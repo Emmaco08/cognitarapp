@@ -26,6 +26,9 @@ export interface CogniTaraDesktopBridge {
   backupToCloudNow: (label?: string) => Promise<any>;
   restoreCloudBackup: (backupId: string) => Promise<any>;
   deleteCloudBackup: (backupId: string) => Promise<any>;
+  // Legacy School Database (exam.db) Migration Import
+  pickAndInspectLegacyDb: () => Promise<any>;
+  importLegacyDb: (payload: { file_path: string; preserve_current_admin?: boolean; force?: boolean }) => Promise<any>;
   saveSchoolProfile: (payload: {
     school_name: string;
     school_motto: string;
@@ -119,6 +122,8 @@ const api: CogniTaraDesktopBridge = {
   backupToCloudNow: (label) => ipcRenderer.invoke("cloudBackups:uploadNow", label),
   restoreCloudBackup: (backupId) => ipcRenderer.invoke("cloudBackups:restore", backupId),
   deleteCloudBackup: (backupId) => ipcRenderer.invoke("cloudBackups:delete", backupId),
+  pickAndInspectLegacyDb: () => ipcRenderer.invoke("legacyDb:pickAndInspect"),
+  importLegacyDb: (payload) => ipcRenderer.invoke("legacyDb:import", payload),
   saveSchoolProfile: (payload) => ipcRenderer.invoke("setup:school", payload),
   saveSuperAdmin: (payload) => ipcRenderer.invoke("setup:superadmin", payload),
   completeOnboarding: (payload) => ipcRenderer.invoke("setup:complete", payload),

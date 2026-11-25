@@ -164,7 +164,7 @@
           <article class="pane" data-pane="0">
             <div class="welcome">
               <div class="welcome__copy">
-                <p class="onb-version-note rv">CogniTara Studio 2.2.4</p>
+                <p class="onb-version-note rv">CogniTara Studio 2.2.5</p>
                 <h1 class="kinetic">Your exam hall, running from one computer</h1>
                 <p class="lede rv">This PC becomes your school's exam server. Students write on any laptop, desktop or tablet on the school Wi‑Fi or network cable. No internet needed during exams.</p>
                 <ul class="welcome__facts">
@@ -666,6 +666,65 @@
               <div class="set-row"><span><strong>Port</strong><em id="setPortHint">Change only if another program uses 5000.</em></span><input class="input-sm mono" id="setPort" value="5000" inputmode="numeric" aria-label="Port"></div>
               <div class="set-row"><span><strong>Allow access only from the school network</strong><em>Blocks connections from outside your local network.</em></span><label class="toggle"><input type="checkbox" id="setLanOnly" checked><i></i></label></div>
             </section>
+            <section id="legacyMigrationSection">
+              <h2>Data Migration</h2>
+              <div class="set-row">
+                <span>
+                  <strong>Import former database (exam.db)</strong>
+                  <em>Upgrading from an older CogniTara installation? Import students, teachers, exams, questions, results, and Common Entrance data safely. Your current database is backed up first and your licence stays intact.</em>
+                </span>
+                <button type="button" class="btn btn--primary btn--sm" id="legacyPickBtn">Choose exam.db…</button>
+              </div>
+
+              <div class="cloud-modal__err" id="legacyErr" hidden></div>
+
+              <div class="legacy-card" id="legacyPreview" hidden>
+                <div class="legacy-card__head">
+                  <div>
+                    <span class="legacy-kicker">Ready to migrate</span>
+                    <strong id="legacySchoolName">Legacy CogniTara School</strong>
+                    <div class="legacy-meta mono" id="legacyFileMeta">exam.db · 0 KB</div>
+                  </div>
+                  <span class="cloud-pill cloud-pill--ok">SQLite verified</span>
+                </div>
+
+                <div class="legacy-stats" id="legacyStats">
+                  <div class="legacy-stat"><b id="legCntStudents">0</b><span>Students</span></div>
+                  <div class="legacy-stat"><b id="legCntTeachers">0</b><span>Teachers</span></div>
+                  <div class="legacy-stat"><b id="legCntExams">0</b><span>Exams</span></div>
+                  <div class="legacy-stat"><b id="legCntQuestions">0</b><span>Questions</span></div>
+                  <div class="legacy-stat"><b id="legCntScores">0</b><span>Results</span></div>
+                  <div class="legacy-stat"><b id="legCntCe">0</b><span>CE Records</span></div>
+                </div>
+
+                <ul class="legacy-notes" id="legacyNotes"></ul>
+
+                <div class="set-row legacy-opt-row">
+                  <span>
+                    <strong>Keep my current Super Admin login &amp; recovery codes</strong>
+                    <em>Recommended so you stay signed in with your current password alongside imported accounts.</em>
+                  </span>
+                  <label class="toggle"><input type="checkbox" id="legacyPreserveAdmin" checked><i></i></label>
+                </div>
+
+                <div class="legacy-actions">
+                  <button type="button" class="btn btn--ghost btn--sm" id="legacyCancelBtn">Cancel</button>
+                  <button type="button" class="btn btn--primary btn--sm" id="legacyImportBtn">Import &amp; upgrade database</button>
+                </div>
+              </div>
+
+              <div class="legacy-done" id="legacyDone" hidden>
+                <div class="legacy-done__ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="m8.5 12.5 2.4 2.4 4.8-5.2"/></svg></div>
+                <div class="legacy-done__body">
+                  <strong id="legacyDoneTitle">Former database imported</strong>
+                  <p id="legacyDoneMeta">All records were migrated cleanly and your previous database was saved to Backups.</p>
+                </div>
+                <div class="legacy-done__actions">
+                  <button type="button" class="btn btn--ghost btn--sm" id="legacyDoneBackupsBtn">View backups</button>
+                  <button type="button" class="btn btn--primary btn--sm" id="legacyDoneAdminBtn">Open Admin Portal</button>
+                </div>
+              </div>
+            </section>
             <section>
               <h2>CogniTara Cloud Account</h2>
               <div class="set-row">
@@ -683,7 +742,7 @@
               <h2>Software Updates & About</h2>
               <div class="set-row">
                 <span>
-                  <strong id="aboutVersion">CogniTara Studio 2.2.4</strong>
+                  <strong id="aboutVersion">CogniTara Studio 2.2.5</strong>
                   <em id="updSubtitle">5-layer licence vault active · Direct GitHub Releases auto-updater ready.</em>
                 </span>
                 <button class="btn btn--ghost btn--sm" id="setCheckUpdateBtn">Check for updates</button>

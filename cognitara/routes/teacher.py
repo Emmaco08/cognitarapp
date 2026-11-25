@@ -1499,6 +1499,10 @@ def teacher_dashboard():
             SELECT username, class, photo, '' as class_teacher_of 
             FROM teachers WHERE id=?
         """, (teacher_id,)).fetchone()
+    if not teacher:
+        conn.close()
+        session.clear()
+        return redirect("/login")
     
     # FIXED: Build teaching classes from assignments ONLY
     teaching_classes = []
@@ -1531,7 +1535,7 @@ def teacher_dashboard():
             teaching_classes = [teacher["class"]]
             specialisations_by_class[teacher["class"]] = ["General"]
     
-    is_form_tutor = teacher["class_teacher_of"] and teacher["class_teacher_of"] != ""
+    is_form_tutor = bool(teacher and teacher["class_teacher_of"])
     
     # Get exams created by this teacher
     try:

@@ -693,6 +693,63 @@ function registerIpcHandlers(): void {
     return cloudAuth.deleteCloudBackup(String(backupId || "").trim());
   });
 
+  // ---- Legacy School Database (exam.db) Inspection & Atomic Migration ----
+  ipcMain.handle("legacyDb:pickAndInspect", async () => {
+    if (!mainWindow) return { ok: false, message: "Window not ready." };
+    const picked = await dialog.showOpenDialog(mainWindow, {
+      title: "Select former CogniTara database (exam.db)",
+      buttonLabel: "Inspect Database",
+      properties: ["openFile"],
+      filters: [
+        { name: "CogniTara SQLite Database", extensions: ["db", "sqlite", "sqlite3"] },
+        { name: "All Files", extensions: ["*"] },
+      ],
+    });
+    if (picked.canceled || !picked.filePaths[0]) {
+      return { ok: false, canceled: true };
+    }
+    const filePath = picked.filePaths[0];
+    const res = await engine!.callInternal<any>("POST", "/backups/inspect-legacy", {
+      file_path: filePath,
+    });
+    if (!res.data?.ok) {
+      return {
+        ok: false,
+        file_path: filePath,
+        error: res.data?.error || "inspection_failed",
+        message: res.data?.message || "Selected file is not a valid CogniTara database.",
+      };
+    }
+    return { ...res.data, file_path: filePath };
+  });
+
+  ipcMain.handle("legacyDb:import", async (_evt, payload: { file_path: string; preserve_current_admin?: boolean; force?: boolean }) => {
+    const filePath = String(payload?.file_path || "").trim();
+    if (!filePath) {
+      return { ok: false, error: "missing_file_path", message: "No database file selected." };
+    }
+    const wasRunning = engine!.getLanState() === "running";
+    if (wasRunning) {
+      await engine!.stopLanServer();
+    }
+    try {
+      const res = await engine!.callInternal<any>("POST", "/backups/import-legacy", {
+        file_path: filePath,
+        preserve_current_admin: payload?.preserve_current_admin !== false,
+        force: Boolean(payload?.force),
+      });
+      if (wasRunning) {
+        await engine!.startLanServer().catch(() => {});
+      }
+      return res.data || { ok: false, message: "Legacy database import did not return a response." };
+    } catch (err: any) {
+      if (wasRunning) {
+        await engine!.startLanServer().catch(() => {});
+      }
+      return { ok: false, error: "import_exception", message: err?.message || "Unexpected error during database import." };
+    }
+  });
+
   ipcMain.handle("setup:school", async (_evt, payload) => {
     const res = await engine!.callInternal("POST", "/setup/school", payload);
     return res.data;
