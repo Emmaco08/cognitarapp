@@ -281,7 +281,7 @@ function createWindow(): void {
       contextIsolation: true,
       nodeIntegration: false,
       sandbox: true,
-      webviewTag: false,
+      webviewTag: true,
       webSecurity: true,
       devTools: !app.isPackaged,
       spellcheck: false,
@@ -297,6 +297,26 @@ function createWindow(): void {
   }
 
   mainWindow = new BrowserWindow(winOptions);
+
+  // Strict webview allowlist: ONLY CogniTara embedded Paystack Inline SDK & Paystack Checkout origins
+  mainWindow.webContents.on("will-attach-webview", (event, webPreferences, params) => {
+    delete webPreferences.preload;
+    webPreferences.nodeIntegration = false;
+    webPreferences.contextIsolation = true;
+    webPreferences.sandbox = true;
+    webPreferences.webSecurity = true;
+
+    const src = String(params.src || "");
+    const allowed =
+      src === "" ||
+      src === "about:blank" ||
+      src.startsWith("https://cognitara-cloud.vercel.app/pay/embed") ||
+      src.startsWith("https://checkout.paystack.com/") ||
+      src.startsWith("https://standard.paystack.co/");
+    if (!allowed) {
+      event.preventDefault();
+    }
+  });
 
   // Anti-tamper & reverse-engineering hardening in packaged builds
   if (app.isPackaged) {
@@ -986,7 +1006,9 @@ function registerIpcHandlers(): void {
     if (!cloudAuth) return { ok: false, message: "Cloud service unavailable." };
     const lic = await engine?.getLicenseStatus().catch(() => null);
     const initRes = await cloudAuth.initializePaystack({
-      ...payload,
+      plan_id: payload?.plan_id,
+      currency: payload?.currency,
+      promo_code: payload?.promo_code,
       hwid_hash: lic?.hwid_hash || undefined,
       display_hwid: lic?.display_hwid || undefined,
     });
@@ -1000,81 +1022,45 @@ function registerIpcHandlers(): void {
       return { ok: false, message: "Unsafe checkout URL returned by gateway." };
     }
 
-    // Open a clean, sandboxed Paystack Checkout Window right inside CogniTara Studio
-    const payWin = new BrowserWindow({
-      parent: mainWindow || undefined,
-      modal: false,
-      width: 520,
-      height: 700,
-      title: "CogniTara — Paystack Secure Checkout",
-      autoHideMenuBar: true,
-      backgroundColor: "#111111",
-      webPreferences: {
-        contextIsolation: true,
-        nodeIntegration: false,
-        sandbox: true,
-        webSecurity: true,
-        devTools: !app.isPackaged,
-      },
-    });
+    // Build borderless Paystack Inline SDK v2 embed URL (renders directly inside Studio's full-screen Billing stage — zero popup windows)
+    const cloudBase = (cloudAuth.getCloudUrl() || "https://cognitara-cloud.vercel.app").replace(/\/$/, "");
+    const embedParams = new URLSearchParams();
+    if (initRes.access_code) embedParams.set("access_code", String(initRes.access_code));
+    if (reference) embedParams.set("reference", reference);
+    if (initRes.plan_name) embedParams.set("plan", String(initRes.plan_name));
+    if (payload?.amount_label) embedParams.set("amount", String(payload.amount_label));
+    embedParams.set("theme", settings.theme === "light" ? "light" : "dark");
+    embedParams.set("fallback_url", checkoutUrl);
 
-    let verifiedOnce = false;
-    const tryAutoVerify = async () => {
-      if (verifiedOnce || !reference || !cloudAuth) return;
-      verifiedOnce = true;
-      const curLic = await engine?.getLicenseStatus().catch(() => null);
-      const vRes = await cloudAuth.verifyPaystack({
-        reference,
-        hwid_hash: curLic?.hwid_hash || undefined,
-        display_hwid: curLic?.display_hwid || undefined,
-        hw_component_hashes: (curLic as any)?.component_hashes || undefined,
-      });
-      if (vRes.ok) {
-        const localAct = await activateSignedLeaseLocally(vRes.signed_lease, vRes.license?.license_key);
-        await cloudAuth.syncProfile().catch(() => {});
-        if (!payWin.isDestroyed()) payWin.close();
-        if (mainWindow && !mainWindow.isDestroyed()) {
-          mainWindow.webContents.send("cloud:sessionChanged", cloudAuth.getSession());
-          mainWindow.webContents.send("billing:completed", {
-            ok: true,
-            source: "paystack",
-            reference,
-            receipt: vRes.receipt || null,
-            license: localAct?.status || vRes.license,
-            license_key: vRes.license?.license_key,
-            message: "Payment confirmed! Your school licence is now active on this PC.",
-          });
-        }
-      } else {
-        verifiedOnce = false;
-      }
-    };
-
-    const handlePotentialCallback = (url: string) => {
-      if (url.includes("/pay/done") || url.includes("paystack_ref=") || url.includes("/dashboard")) {
-        void tryAutoVerify();
-      }
-    };
-
-    payWin.webContents.on("will-redirect", (_e, url) => handlePotentialCallback(url));
-    payWin.webContents.on("did-navigate", (_e, url) => handlePotentialCallback(url));
-    payWin.on("closed", () => {
-      void tryAutoVerify();
-    });
-
-    payWin.loadURL(checkoutUrl).catch(() => {
-      shell.openExternal(checkoutUrl).catch(() => {});
-    });
+    const embedUrl = initRes.access_code
+      ? `${cloudBase}/pay/embed?${embedParams.toString()}`
+      : checkoutUrl;
 
     return {
       ok: true,
       reference,
+      access_code: initRes.access_code || null,
       authorization_url: checkoutUrl,
+      embed_url: embedUrl,
+      plan_name: initRes.plan_name || "CogniTara Studio Licence",
       amount_minor: initRes.amount_minor,
       charge_minor: initRes.charge_minor,
       added_fee_minor: initRes.added_fee_minor,
       currency: initRes.currency,
+      is_test: Boolean(initRes.is_test),
+      fee_note: initRes.fee_note || null,
     };
+  });
+
+  // ---- In-App School Reviews & Ratings (Desktop App -> HQ Moderation -> Website) ----
+  ipcMain.handle("reviews:mine", async () => {
+    if (!cloudAuth) return { ok: false, message: "Cloud service unavailable." };
+    return cloudAuth.getMySchoolReview();
+  });
+
+  ipcMain.handle("reviews:submit", async (_evt, payload) => {
+    if (!cloudAuth) return { ok: false, message: "Cloud service unavailable." };
+    return cloudAuth.submitSchoolReview(payload);
   });
 }
 

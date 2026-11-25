@@ -10,7 +10,7 @@ const nextConfig: NextConfig = {
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
       "font-src 'self' https://fonts.gstatic.com data:",
       "img-src 'self' data: blob: https://api.qrserver.com https://*.paystack.co",
-      "connect-src 'self' https://api.paystack.co https://standard.paystack.co https://api.github.com",
+      "connect-src 'self' https://api.paystack.co https://standard.paystack.co https://checkout.paystack.com https://api.github.com",
       "frame-src 'self' https://checkout.paystack.com https://standard.paystack.co",
       "frame-ancestors 'none'",
       "base-uri 'self'",

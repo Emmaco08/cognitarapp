@@ -70,11 +70,17 @@ export function BrandHeader({
         <nav className="ct-nav__links" aria-label="Primary navigation">
           {variant === "hero" ? (
             <>
-              <a href="#workflow" className="ct-nav__link">
+              <a href="#architecture" className="ct-nav__link">
                 How it works
+              </a>
+              <a href="#reviews" className="ct-nav__link">
+                Reviews
               </a>
               <a href="#pricing" className="ct-nav__link">
                 Pricing
+              </a>
+              <a href="#team" className="ct-nav__link">
+                Team
               </a>
             </>
           ) : null}

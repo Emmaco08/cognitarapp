@@ -51,7 +51,7 @@
     writing: 0,
     samples: new Array(120).fill(0),
     stopArmed: false,
-    version: "2.2.3",
+    version: "2.2.4",
     activeView: "home",
     cloudAccount: null,
     updateState: null
@@ -1189,6 +1189,61 @@
     checkBackupReminder();
     refreshCloudBackups();
   }
+  var returnFlow = null;
+  function clearSubflow() {
+    returnFlow = null;
+    win.classList.remove("is-subflow");
+    if ($("#billingReturnBtn")) $("#billingReturnBtn").hidden = true;
+    if ($("#cloudReturnBtn")) $("#cloudReturnBtn").hidden = true;
+  }
+  function exitSubflow(fallbackView) {
+    var rf = returnFlow;
+    clearSubflow();
+    if (rf) {
+      if (rf.mode === "onboarding") {
+        startOnboarding(typeof rf.step === "number" ? rf.step : 3);
+        return;
+      }
+      if (rf.mode === "lock") {
+        if (state.license && state.license.is_licensed) {
+          if (state.onboardingComplete) enterApp();
+          else startOnboarding(state.cloudAccount && state.cloudAccount.signedIn ? 2 : 1);
+        } else {
+          showLock(rf.lockKind || "expired", state.license);
+        }
+        return;
+      }
+    }
+    showView(fallbackView || "licence");
+  }
+  function openFullScreenFlow(viewName) {
+    if (state.mode !== "app") {
+      if (!returnFlow) {
+        returnFlow = {
+          mode: state.mode,
+          step: step,
+          lockKind: ($("#lock") && $("#lock").dataset.kind) || "expired"
+        };
+      }
+      win.classList.add("is-subflow");
+      var backLabel = returnFlow.mode === "onboarding" ? "Back to setup" : "Back";
+      if ($("#billingReturnBtn")) {
+        $("#billingReturnBtn").hidden = false;
+        if ($("#billingReturnLabel")) $("#billingReturnLabel").textContent = backLabel;
+      }
+      if ($("#cloudReturnBtn")) {
+        $("#cloudReturnBtn").hidden = false;
+        if ($("#cloudReturnLabel")) $("#cloudReturnLabel").textContent = backLabel;
+      }
+      setMode("app");
+    } else {
+      clearSubflow();
+    }
+    showView(viewName);
+  }
+  if ($("#billingReturnBtn")) $("#billingReturnBtn").addEventListener("click", function () { exitSubflow("licence"); });
+  if ($("#cloudReturnBtn")) $("#cloudReturnBtn").addEventListener("click", function () { exitSubflow("home"); });
+
   function showView(name) {
     state.activeView = name;
     $$(".view").forEach(function (v) { v.classList.toggle("is-active", v.dataset.view === name); });
@@ -1197,6 +1252,14 @@
     if (name === "home") { measurePulseCanvas(); drawPulse(true); }
     if (name === "licence") paintLicence();
     if (name === "backups") refreshBackups();
+    if (name === "billing") {
+      loadBillingPlansIfNeeded();
+      renderBillingSummary();
+    }
+    if (name === "cloud") {
+      renderCloudAccount(state.cloudAccount);
+      loadMySchoolReview();
+    }
   }
   function moveIndicator() {
     var act = $("#railNav button.is-active"), ind = $("#railInd");
@@ -1207,7 +1270,7 @@
   }
   window.addEventListener("resize", moveIndicator);
   $$("[data-view]").forEach(function (b) {
-    if (b.tagName === "BUTTON") b.addEventListener("click", function () { showView(b.dataset.view); });
+    if (b.tagName === "BUTTON") b.addEventListener("click", function () { clearSubflow(); showView(b.dataset.view); });
   });
 
   /* ---- command palette ---- */
@@ -1216,11 +1279,12 @@
     { label: "Go to Server", icon: "i-home", hint: "Page", run: function () { enterAppIfNeeded(); showView("home"); } },
     { label: "Go to Live exams", icon: "i-live", hint: "Page", run: function () { enterAppIfNeeded(); showView("live"); } },
     { label: "Go to Licence", icon: "i-key", hint: "Page", run: function () { enterAppIfNeeded(); showView("licence"); } },
+    { label: "Buy or upgrade licence (Paystack / Voucher)", icon: "i-card", hint: "Billing", run: function () { openBillingModal("plans"); } },
     { label: "Back up locally now", icon: "i-backup", hint: "Backups", run: function () { if (state.mode !== "app") return; showView("backups"); setTimeout(function () { $("#backupBtn").click(); }, 250); } },
     { label: "Back up exam database to Cloud", icon: "i-backup", hint: "Cloud", run: function () { if (state.mode !== "app") return; showView("backups"); setTimeout(function () { if ($("#cloudBackupBtn")) $("#cloudBackupBtn").click(); }, 250); } },
+    { label: "Cloud account & rate CogniTara Studio", icon: "i-star", hint: "Cloud", run: function () { openCloudModal(); } },
     { label: "Go to Activity", icon: "i-activity", hint: "Page", run: function () { enterAppIfNeeded(); showView("activity"); } },
     { label: "Go to Settings", icon: "i-settings", hint: "Page", run: function () { enterAppIfNeeded(); showView("settings"); } },
-    { label: "Sign in or manage CogniTara Cloud account", icon: "i-users", hint: "Cloud", run: function () { openCloudModal(); } },
     { label: "Check for CogniTara Studio updates", icon: "i-restore", hint: "Update", run: function () { enterAppIfNeeded(); showView("settings"); $("#setCheckUpdateBtn").click(); } },
     { label: "Copy student address", icon: "i-copy", hint: "Network", run: function () { if (navigator.clipboard) navigator.clipboard.writeText(addr()).catch(function () {}); toast("Copied " + addr()); } },
     { label: "Open admin portal in browser", icon: "i-external", hint: "Portal", run: function () { openPortal("/login"); } },
@@ -1229,6 +1293,7 @@
   ];
   function enterAppIfNeeded() {
     if (state.mode === "onboarding" || state.mode === "lock" || state.mode === "boot") return;
+    clearSubflow();
     if (state.mode !== "app") enterApp();
   }
   var palSel = 0, palItems = [];
@@ -2215,13 +2280,11 @@
     showView("settings");
   });
 
-  /* ------------------------------------------------------------------ CogniTara Cloud Account */
+  /* ------------------------------------------------------------------ CogniTara Cloud Account & 5-Star Rating Studio */
   function setCloudMsg(errText, okText) {
     var errEl = $("#cloudErr"), okEl = $("#cloudOk");
-    errEl.hidden = !errText;
-    errEl.textContent = errText || "";
-    okEl.hidden = !okText;
-    okEl.textContent = okText || "";
+    if (errEl) { errEl.hidden = !errText; errEl.textContent = errText || ""; }
+    if (okEl) { okEl.hidden = !okText; okEl.textContent = okText || ""; }
   }
 
   function renderCloudAccount(session) {
@@ -2236,37 +2299,46 @@
       var pillClass = s.offline ? "cloud-pill cloud-pill--offline" : "cloud-pill cloud-pill--online";
       var pillText = s.offline ? "Offline · Cached" : "Online · Synced";
       var schoolLabel = (s.school && s.school.school_name) || state.school.school_name;
-      title.innerHTML = esc(schoolLabel) + " <span class='" + pillClass + "' id='cloudStatusPill'>" + pillText + "</span>";
-      sub.textContent = s.user.full_name + " (" + s.user.email + ")" + (s.referralCode ? " · Ref " + s.referralCode : "");
-      openBtn.textContent = "Manage account";
-      openBtn.className = "btn btn--ghost btn--sm";
-      syncBtn.hidden = false;
+      if (title) title.innerHTML = esc(schoolLabel) + " <span class='" + pillClass + "' id='cloudStatusPill'>" + pillText + "</span>";
+      if (sub) sub.textContent = s.user.full_name + " (" + s.user.email + ")" + (s.referralCode ? " · Ref " + s.referralCode : "");
+      if (openBtn) { openBtn.textContent = "Manage account"; openBtn.className = "btn btn--ghost btn--sm"; }
+      if (syncBtn) syncBtn.hidden = false;
       $("#tbAvatar").textContent = initials(s.user.full_name || schoolLabel);
 
-      // Update modal signed-in pane
-      $("#cloudSignedInPane").hidden = false;
-      $("#cloudAuthPane").hidden = true;
-      $("#cmSchool").textContent = schoolLabel;
-      $("#cmUser").textContent = s.user.full_name;
-      $("#cmEmail").textContent = s.user.email;
+      if ($("#cloudSignedInPane")) $("#cloudSignedInPane").hidden = false;
+      if ($("#cloudAuthPane")) $("#cloudAuthPane").hidden = true;
+      if ($("#cmCrest")) $("#cmCrest").textContent = initials(schoolLabel);
+      if ($("#cmSchool")) $("#cmSchool").textContent = schoolLabel;
+      if ($("#cmUser")) $("#cmUser").textContent = s.user.full_name;
+      if ($("#cmEmail")) $("#cmEmail").textContent = s.user.email;
       if ($("#cmVerified")) {
         var ver = s.user.email_verified !== false;
         $("#cmVerified").textContent = ver ? "Email OTP verified" : "Pending verification";
         $("#cmVerified").style.color = ver ? "var(--ok)" : "var(--warn)";
       }
-      $("#cmRef").textContent = s.referralCode || "—";
-      $("#cmSync").textContent = s.offline
-        ? "Offline · Using local encrypted cache"
-        : ("Synced " + (s.lastSyncedAt ? fmtDateTime(Math.floor(s.lastSyncedAt / 1000)) : "just now"));
+      if ($("#cmRef")) $("#cmRef").textContent = s.referralCode || "—";
+      if ($("#cmLicCount")) {
+        var activeCount = Array.isArray(s.licenses)
+          ? s.licenses.filter(function (l) { return String(l.status || "").toLowerCase() === "active"; }).length
+          : 0;
+        $("#cmLicCount").textContent = activeCount + " active";
+      }
+      if ($("#cmSync")) {
+        $("#cmSync").textContent = s.offline
+          ? "Offline · Using local encrypted cache"
+          : ("Synced " + (s.lastSyncedAt ? fmtDateTime(Math.floor(s.lastSyncedAt / 1000)) : "just now"));
+      }
+      if ($("#revName") && !$("#revName").value.trim() && s.user.full_name) {
+        $("#revName").value = s.user.full_name;
+      }
     } else {
-      title.innerHTML = "Not signed in <span class='cloud-pill cloud-pill--guest' id='cloudStatusPill'>Offline only</span>";
-      sub.textContent = "Sign up or sign in to sync your school profile & licences with Neon Cloud (caches locally for offline exams).";
-      openBtn.textContent = "Sign in / Sign up";
-      openBtn.className = "btn btn--primary btn--sm";
-      syncBtn.hidden = true;
+      if (title) title.innerHTML = "Not signed in <span class='cloud-pill cloud-pill--guest' id='cloudStatusPill'>Offline only</span>";
+      if (sub) sub.textContent = "Sign up or sign in to sync your school profile & licences with Neon Cloud (caches locally for offline exams).";
+      if (openBtn) { openBtn.textContent = "Sign in / Sign up"; openBtn.className = "btn btn--primary btn--sm"; }
+      if (syncBtn) syncBtn.hidden = true;
 
-      $("#cloudSignedInPane").hidden = true;
-      $("#cloudAuthPane").hidden = false;
+      if ($("#cloudSignedInPane")) $("#cloudSignedInPane").hidden = true;
+      if ($("#cloudAuthPane")) $("#cloudAuthPane").hidden = false;
     }
     renderHqDirectives(s && s.directives ? s.directives : null);
     syncOnboardingCloudUi();
@@ -2315,27 +2387,27 @@
   var modalOtpResendTimer = null;
   function showCloudOtpStep(email, purpose, msg, challengeToken) {
     pendingCloudOtp = { email: email, purpose: purpose || "signup_verify", challenge_token: challengeToken || "" };
-    $("#cloudTabs").hidden = true;
-    $("#cloudSignInForm").hidden = true;
-    $("#cloudSignUpForm").hidden = true;
-    $("#cloudOtpForm").hidden = false;
-    $("#coEmailLabel").textContent = email;
-    $("#coCode").value = "";
+    if ($("#cloudTabs")) $("#cloudTabs").hidden = true;
+    if ($("#cloudSignInForm")) $("#cloudSignInForm").hidden = true;
+    if ($("#cloudSignUpForm")) $("#cloudSignUpForm").hidden = true;
+    if ($("#cloudOtpForm")) $("#cloudOtpForm").hidden = false;
+    if ($("#coEmailLabel")) $("#coEmailLabel").textContent = email;
+    if ($("#coCode")) $("#coCode").value = "";
     setCloudMsg("", msg || ("Enter the 6-digit code sent to " + email + "."));
     if (modalOtpResendTimer) clearInterval(modalOtpResendTimer);
     startOtpCountdown($("#coResendBtn"), 45, function (id) { modalOtpResendTimer = id; });
-    setTimeout(function () { $("#coCode").focus(); }, 60);
+    setTimeout(function () { if ($("#coCode")) $("#coCode").focus(); }, 60);
   }
 
   function switchCloudTab(tab) {
     pendingCloudOtp = null;
     if (modalOtpResendTimer) { clearInterval(modalOtpResendTimer); modalOtpResendTimer = null; }
     if ($("#coResendBtn")) { $("#coResendBtn").disabled = false; $("#coResendBtn").textContent = "Resend code"; }
-    $("#cloudTabs").hidden = false;
-    $("#cloudOtpForm").hidden = true;
+    if ($("#cloudTabs")) $("#cloudTabs").hidden = false;
+    if ($("#cloudOtpForm")) $("#cloudOtpForm").hidden = true;
     $$("#cloudTabs button").forEach(function (b) { b.classList.toggle("is-active", b.dataset.ctab === tab); });
-    $("#cloudSignInForm").hidden = tab !== "signin";
-    $("#cloudSignUpForm").hidden = tab !== "signup";
+    if ($("#cloudSignInForm")) $("#cloudSignInForm").hidden = tab !== "signin";
+    if ($("#cloudSignUpForm")) $("#cloudSignUpForm").hidden = tab !== "signup";
     setCloudMsg("", "");
   }
 
@@ -2345,26 +2417,20 @@
     renderCloudAccount(state.cloudAccount);
     if (!state.cloudAccount || !state.cloudAccount.signedIn) {
       switchCloudTab(initialTab || "signin");
-      if (!$("#cuSchool").value && state.school.school_name && state.school.school_name !== "CogniTara School") {
+      if ($("#cuSchool") && !$("#cuSchool").value && state.school.school_name && state.school.school_name !== "CogniTara School") {
         $("#cuSchool").value = state.school.school_name;
       }
     }
-    $("#cloudModal").hidden = false;
+    openFullScreenFlow("cloud");
   }
 
   function closeCloudModal() {
-    $("#cloudModal").hidden = true;
+    exitSubflow("home");
   }
 
-  $("#cloudOpenBtn").addEventListener("click", function () { openCloudModal(); });
-  $("#cloudModalClose").addEventListener("click", closeCloudModal);
-  $("#cloudModal").addEventListener("mousedown", function (e) { if (e.target.id === "cloudModal") closeCloudModal(); });
+  if ($("#cloudOpenBtn")) $("#cloudOpenBtn").addEventListener("click", function () { openCloudModal(); });
   $$("#cloudTabs button").forEach(function (b) {
     b.addEventListener("click", function () { switchCloudTab(b.dataset.ctab); });
-  });
-  document.addEventListener("keydown", function (e) {
-    if (e.key === "Escape" && !$("#cloudModal").hidden) closeCloudModal();
-    if (e.key === "Escape" && $("#billingModal") && !$("#billingModal").hidden) closeBillingModal();
   });
 
   if ($("#coCode")) {
@@ -2373,74 +2439,78 @@
     });
   }
 
-  $("#cloudSignInForm").addEventListener("submit", async function (e) {
-    e.preventDefault();
-    setCloudMsg("", "");
-    var btn = $("#ciSubmitBtn");
-    btn.disabled = true;
-    btn.textContent = "Signing in…";
-    try {
-      var res = bridge
-        ? await bridge.cloudSignIn({ email: $("#ciEmail").value.trim(), password: $("#ciPass").value })
-        : { ok: false, message: "Cloud IPC requires CogniTara Studio desktop." };
-      if (res && res.ok && res.otp_required) {
-        showCloudOtpStep(res.email || $("#ciEmail").value.trim(), res.purpose || "signin_otp", res.message, res.challenge_token);
-      } else if (res && res.ok && res.session) {
-        renderCloudAccount(res.session);
-        setCloudMsg("", "Signed in and cached locally for offline exam days.");
-        toast("Signed in to CogniTara Cloud");
-        logEvent("licence", "ok", "i-shield", "<b>Cloud account synced</b> (" + esc(res.session.user.email) + ")");
-        if (reopenBillingAfterAuth) {
-          reopenBillingAfterAuth = false;
-          closeCloudModal();
-          openBillingModal("plans");
+  if ($("#cloudSignInForm")) {
+    $("#cloudSignInForm").addEventListener("submit", async function (e) {
+      e.preventDefault();
+      setCloudMsg("", "");
+      var btn = $("#ciSubmitBtn");
+      btn.disabled = true;
+      btn.textContent = "Signing in…";
+      try {
+        var res = bridge
+          ? await bridge.cloudSignIn({ email: $("#ciEmail").value.trim(), password: $("#ciPass").value })
+          : { ok: false, message: "Cloud IPC requires CogniTara Studio desktop." };
+        if (res && res.ok && res.otp_required) {
+          showCloudOtpStep(res.email || $("#ciEmail").value.trim(), res.purpose || "signin_otp", res.message, res.challenge_token);
+        } else if (res && res.ok && res.session) {
+          renderCloudAccount(res.session);
+          setCloudMsg("", "Signed in and cached locally for offline exam days.");
+          toast("Signed in to CogniTara Cloud");
+          logEvent("licence", "ok", "i-shield", "<b>Cloud account synced</b> (" + esc(res.session.user.email) + ")");
+          loadMySchoolReview();
+          if (reopenBillingAfterAuth) {
+            reopenBillingAfterAuth = false;
+            openBillingModal("plans");
+          }
+        } else {
+          setCloudMsg((res && res.message) || "Invalid email address or password.", "");
         }
-      } else {
-        setCloudMsg((res && res.message) || "Invalid email address or password.", "");
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "Sign in & cache offline";
       }
-    } finally {
-      btn.disabled = false;
-      btn.textContent = "Sign in & cache offline";
-    }
-  });
+    });
+  }
 
-  $("#cloudSignUpForm").addEventListener("submit", async function (e) {
-    e.preventDefault();
-    setCloudMsg("", "");
-    var btn = $("#cuSubmitBtn");
-    btn.disabled = true;
-    btn.textContent = "Creating account…";
-    try {
-      var res = bridge
-        ? await bridge.cloudSignUp({
-            full_name: $("#cuName").value.trim(),
-            school_name: $("#cuSchool").value.trim(),
-            email: $("#cuEmail").value.trim(),
-            phone: $("#cuPhone").value.trim(),
-            password: $("#cuPass").value,
-            referral_code: $("#cuRef").value.trim() || undefined
-          })
-        : { ok: false, message: "Cloud IPC requires CogniTara Studio desktop." };
-      if (res && res.ok && res.otp_required) {
-        showCloudOtpStep(res.email || $("#cuEmail").value.trim(), res.purpose || "signup_verify", res.message, res.challenge_token);
-      } else if (res && res.ok && res.session) {
-        renderCloudAccount(res.session);
-        setCloudMsg("", "School account created on Neon Cloud and cached offline.");
-        toast("CogniTara Cloud account created!");
-        logEvent("licence", "ok", "i-shield", "<b>Cloud school registered</b> (" + esc(res.session.school ? res.session.school.school_name : res.session.user.email) + ")");
-        if (reopenBillingAfterAuth) {
-          reopenBillingAfterAuth = false;
-          closeCloudModal();
-          openBillingModal("plans");
+  if ($("#cloudSignUpForm")) {
+    $("#cloudSignUpForm").addEventListener("submit", async function (e) {
+      e.preventDefault();
+      setCloudMsg("", "");
+      var btn = $("#cuSubmitBtn");
+      btn.disabled = true;
+      btn.textContent = "Creating account…";
+      try {
+        var res = bridge
+          ? await bridge.cloudSignUp({
+              full_name: $("#cuName").value.trim(),
+              school_name: $("#cuSchool").value.trim(),
+              email: $("#cuEmail").value.trim(),
+              phone: $("#cuPhone").value.trim(),
+              password: $("#cuPass").value,
+              referral_code: $("#cuRef").value.trim() || undefined
+            })
+          : { ok: false, message: "Cloud IPC requires CogniTara Studio desktop." };
+        if (res && res.ok && res.otp_required) {
+          showCloudOtpStep(res.email || $("#cuEmail").value.trim(), res.purpose || "signup_verify", res.message, res.challenge_token);
+        } else if (res && res.ok && res.session) {
+          renderCloudAccount(res.session);
+          setCloudMsg("", "School account created on Neon Cloud and cached offline.");
+          toast("CogniTara Cloud account created!");
+          logEvent("licence", "ok", "i-shield", "<b>Cloud school registered</b> (" + esc(res.session.school ? res.session.school.school_name : res.session.user.email) + ")");
+          loadMySchoolReview();
+          if (reopenBillingAfterAuth) {
+            reopenBillingAfterAuth = false;
+            openBillingModal("plans");
+          }
+        } else {
+          setCloudMsg((res && res.message) || "Could not create account.", "");
         }
-      } else {
-        setCloudMsg((res && res.message) || "Could not create account.", "");
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "Create account & send OTP";
       }
-    } finally {
-      btn.disabled = false;
-      btn.textContent = "Create account & sync";
-    }
-  });
+    });
+  }
 
   if ($("#coBackBtn")) {
     $("#coBackBtn").addEventListener("click", function () {
@@ -2489,15 +2559,15 @@
         if (res && res.ok && res.session) {
           pendingCloudOtp = null;
           if (modalOtpResendTimer) { clearInterval(modalOtpResendTimer); modalOtpResendTimer = null; }
-          $("#cloudTabs").hidden = false;
-          $("#cloudOtpForm").hidden = true;
+          if ($("#cloudTabs")) $("#cloudTabs").hidden = false;
+          if ($("#cloudOtpForm")) $("#cloudOtpForm").hidden = true;
           renderCloudAccount(res.session);
           setCloudMsg("", "Email verified & cached locally for offline exam days.");
           toast("Email verified — signed in to CogniTara Cloud");
           logEvent("licence", "ok", "i-shield", "<b>Cloud account verified via OTP</b> (" + esc(res.session.user.email) + ")");
+          loadMySchoolReview();
           if (reopenBillingAfterAuth) {
             reopenBillingAfterAuth = false;
-            closeCloudModal();
             openBillingModal("plans");
           }
         } else {
@@ -2520,33 +2590,166 @@
       toast((res && res.message) || "Could not sync cloud profile");
     }
   }
-  $("#cloudSyncBtn").addEventListener("click", runCloudSync);
-  $("#cmSyncNowBtn").addEventListener("click", runCloudSync);
+  if ($("#cloudSyncBtn")) $("#cloudSyncBtn").addEventListener("click", runCloudSync);
+  if ($("#cmSyncNowBtn")) $("#cmSyncNowBtn").addEventListener("click", runCloudSync);
   if ($("#cmUpgradeBtn")) {
-    $("#cmUpgradeBtn").addEventListener("click", function () { closeCloudModal(); openBillingModal("plans"); });
+    $("#cmUpgradeBtn").addEventListener("click", function () { openBillingModal("plans"); });
   }
-  $("#cmOpenPortalBtn").addEventListener("click", function () {
-    var base = (state.cloudAccount && state.cloudAccount.cloudUrl) || "https://cognitara-cloud.vercel.app";
-    openExternalUrl(base + "/dashboard");
-  });
-  $("#cmSignOutBtn").addEventListener("click", async function () {
-    if (bridge) {
-      var res = await bridge.cloudSignOut().catch(function () { return null; });
-      if (res && res.session) renderCloudAccount(res.session);
-    } else {
-      renderCloudAccount({ signedIn: false, offline: false });
-    }
-    toast("Signed out of CogniTara Cloud");
-  });
+  if ($("#cmOpenPortalBtn")) {
+    $("#cmOpenPortalBtn").addEventListener("click", function () {
+      var base = (state.cloudAccount && state.cloudAccount.cloudUrl) || "https://cognitara-cloud.vercel.app";
+      openExternalUrl(base + "/dashboard");
+    });
+  }
+  if ($("#cmSignOutBtn")) {
+    $("#cmSignOutBtn").addEventListener("click", async function () {
+      if (bridge) {
+        var res = await bridge.cloudSignOut().catch(function () { return null; });
+        if (res && res.session) renderCloudAccount(res.session);
+      } else {
+        renderCloudAccount({ signedIn: false, offline: false });
+      }
+      toast("Signed out of CogniTara Cloud");
+    });
+  }
 
-  /* ------------------------------------------------------------------ Paystack Licence Store & Redeem Modal */
+  /* ---- 5-Star In-App Rating Studio (Reports Directly to CogniTara HQ) ---- */
+  var selectedReviewStars = 5;
+  var RATING_LABELS = {
+    1: "1 / 5 — Needs work",
+    2: "2 / 5 — Fair",
+    3: "3 / 5 — Good",
+    4: "4 / 5 — Very good",
+    5: "5 / 5 — Outstanding"
+  };
+
+  function paintReviewStars(activeVal) {
+    var v = Math.max(1, Math.min(5, Number(activeVal || selectedReviewStars || 5)));
+    $$("#reviewStars .star-btn").forEach(function (btn) {
+      var n = Number(btn.dataset.star || 0);
+      btn.classList.toggle("is-lit", n <= v);
+      btn.setAttribute("aria-checked", n === selectedReviewStars ? "true" : "false");
+    });
+    if ($("#reviewRatingLabel")) $("#reviewRatingLabel").textContent = RATING_LABELS[v] || (v + " / 5");
+  }
+
+  function renderReviewStatusBanner(rev) {
+    var banner = $("#reviewStatusBanner");
+    if (!banner) return;
+    if (!rev) {
+      banner.hidden = true;
+      if ($("#revSubmitBtn")) $("#revSubmitBtn").textContent = "Send rating to CogniTara HQ";
+      return;
+    }
+    var st = String(rev.status || "pending").toLowerCase();
+    banner.dataset.status = st;
+    if (st === "approved") {
+      $("#reviewStatusTitle").textContent = "Live on cognitara.net";
+      $("#reviewStatusSub").textContent = "Approved by CogniTara HQ! Your school's rating is now featured on the website. Editing resubmits for review.";
+    } else if (st === "rejected") {
+      $("#reviewStatusTitle").textContent = "Not published yet";
+      $("#reviewStatusSub").textContent = "Update your review details below and resubmit to CogniTara HQ anytime.";
+    } else {
+      $("#reviewStatusTitle").textContent = "Pending HQ approval";
+      $("#reviewStatusSub").textContent = "Sent to CogniTara HQ! Once approved, it will appear in the testimonials section on cognitara.net.";
+    }
+    banner.hidden = false;
+    if ($("#revSubmitBtn")) $("#revSubmitBtn").textContent = "Update & resubmit rating";
+  }
+
+  async function loadMySchoolReview() {
+    if (!state.cloudAccount || !state.cloudAccount.signedIn) return;
+    if ($("#revName") && !$("#revName").value.trim() && state.cloudAccount.user && state.cloudAccount.user.full_name) {
+      $("#revName").value = state.cloudAccount.user.full_name;
+    }
+    paintReviewStars(selectedReviewStars);
+    if (!bridge || !bridge.getMySchoolReview) return;
+    var res = await bridge.getMySchoolReview().catch(function () { return null; });
+    if (res && res.ok && res.review) {
+      var r = res.review;
+      selectedReviewStars = Math.max(1, Math.min(5, Number(r.rating || 5)));
+      paintReviewStars(selectedReviewStars);
+      if ($("#revName") && r.author_name) $("#revName").value = r.author_name;
+      if ($("#revRole") && r.author_role) $("#revRole").value = r.author_role;
+      if ($("#revCity") && r.city_state) $("#revCity").value = r.city_state;
+      if ($("#revHeadline") && r.headline) $("#revHeadline").value = r.headline;
+      if ($("#revBody") && r.body) {
+        $("#revBody").value = r.body;
+        if ($("#revCharCount")) $("#revCharCount").textContent = r.body.length + " / 600";
+      }
+      renderReviewStatusBanner(r);
+    } else {
+      renderReviewStatusBanner(null);
+    }
+  }
+
+  $$("#reviewStars .star-btn").forEach(function (btn) {
+    btn.addEventListener("mouseenter", function () { paintReviewStars(Number(btn.dataset.star)); });
+    btn.addEventListener("click", function () {
+      selectedReviewStars = Number(btn.dataset.star || 5);
+      paintReviewStars(selectedReviewStars);
+    });
+  });
+  if ($("#reviewStars")) {
+    $("#reviewStars").addEventListener("mouseleave", function () { paintReviewStars(selectedReviewStars); });
+  }
+  if ($("#revBody")) {
+    $("#revBody").addEventListener("input", function () {
+      if ($("#revCharCount")) $("#revCharCount").textContent = this.value.length + " / 600";
+    });
+  }
+  if ($("#schoolReviewForm")) {
+    $("#schoolReviewForm").addEventListener("submit", async function (e) {
+      e.preventDefault();
+      setCloudMsg("", "");
+      var body = ($("#revBody").value || "").trim();
+      if (body.length < 12) {
+        setCloudMsg("Please write at least 12 characters about your experience with CogniTara Studio.", "");
+        return;
+      }
+      var btn = $("#revSubmitBtn");
+      var origLabel = btn.textContent;
+      btn.disabled = true;
+      btn.textContent = "Sending to CogniTara HQ…";
+      try {
+        var payload = {
+          rating: selectedReviewStars,
+          author_name: ($("#revName").value || "").trim(),
+          author_role: ($("#revRole").value || "").trim(),
+          city_state: ($("#revCity").value || "").trim(),
+          headline: ($("#revHeadline").value || "").trim(),
+          body: body
+        };
+        var res = bridge && bridge.submitSchoolReview
+          ? await bridge.submitSchoolReview(payload).catch(function () { return null; })
+          : { ok: true, review: Object.assign({ status: "pending" }, payload), message: "Thank you! Your review has been sent to CogniTara HQ for approval." };
+        if (res && res.ok) {
+          renderReviewStatusBanner(res.review || { status: "pending" });
+          setCloudMsg("", res.message || "Thank you! Your review has been sent to CogniTara HQ for approval.");
+          toast("Rating sent to CogniTara HQ!");
+          logEvent("licence", "ok", "i-star", "<b>School rating submitted</b> (" + selectedReviewStars + "/5 stars sent to HQ)");
+        } else {
+          setCloudMsg((res && res.message) || "Could not submit review right now. Check your internet connection.", "");
+        }
+      } finally {
+        btn.disabled = false;
+        if (btn.textContent === "Sending to CogniTara HQ…") btn.textContent = origLabel;
+      }
+    });
+  }
+
+  /* ------------------------------------------------------------------ Full-Screen Billing & Embedded Paystack Inline SDK */
   var billingState = {
+    stage: "select",
     plans: [],
+    plansLoaded: false,
     platform: {},
     selectedPlanId: null,
     currency: "NGN",
     appliedPromo: null,
-    pendingRef: null
+    pendingRef: null,
+    fallbackUrl: null,
+    verifying: false
   };
 
   function fmtMoney(minor, currency) {
@@ -2561,20 +2764,137 @@
     if (oEl) { oEl.hidden = !okText; oEl.textContent = okText || ""; }
   }
 
+  function setBillingStage(nextStage) {
+    billingState.stage = nextStage;
+    var view = $("#billingView");
+    if (view) view.dataset.bstage = nextStage;
+    var map = {
+      select: $("#billingStageSelect"),
+      checkout: $("#billingStageCheckout"),
+      receipt: $("#billingStageReceipt")
+    };
+    Object.keys(map).forEach(function (k) {
+      if (map[k]) {
+        map[k].hidden = k !== nextStage;
+        map[k].classList.toggle("is-active", k === nextStage);
+      }
+    });
+    var order = ["select", "checkout", "receipt"];
+    var idx = order.indexOf(nextStage);
+    $$("#billingFlowSteps li").forEach(function (li, i) {
+      li.classList.toggle("is-active", i === idx);
+      li.classList.toggle("is-done", i < idx);
+    });
+    if (nextStage !== "checkout") {
+      resetPaystackWebview();
+    }
+  }
+
   function switchBillingTab(tab) {
-    if ($("#billingTabBar")) $("#billingTabBar").hidden = false;
-    if ($("#billingReceiptPane")) $("#billingReceiptPane").hidden = true;
+    setBillingStage("select");
     $$("#billingTabs button").forEach(function (b) { b.classList.toggle("is-active", b.dataset.btab === tab); });
-    $("#billingPlansPane").hidden = tab !== "plans";
-    $("#billingRedeemPane").hidden = tab !== "redeem";
-    $("#billingCurrencySeg").hidden = tab !== "plans";
+    if ($("#billingPlansPane")) $("#billingPlansPane").hidden = tab !== "plans";
+    if ($("#billingRedeemPane")) $("#billingRedeemPane").hidden = tab !== "redeem";
+    if ($("#billingCurrencySeg")) $("#billingCurrencySeg").hidden = tab !== "plans";
     setBillingMsg("", "");
+  }
+
+  function resetPaystackWebview() {
+    var wv = $("#paystackEmbedWebview");
+    if (wv && typeof wv.loadURL === "function") {
+      try { wv.loadURL("about:blank"); } catch (_e) {}
+    }
+    if ($("#psStagePreview")) $("#psStagePreview").hidden = true;
+    if ($("#psStageLoader")) $("#psStageLoader").hidden = false;
+  }
+
+  var webviewBound = false;
+  function bindPaystackWebviewOnce() {
+    var wv = $("#paystackEmbedWebview");
+    if (!wv || webviewBound) return;
+    webviewBound = true;
+
+    function inspectPaystackUrl(url) {
+      var u = String(url || "");
+      if (!u || u === "about:blank") return;
+      if (u.indexOf("#ct_pay_success=") > -1 || u.indexOf("/pay/done") > -1 || u.indexOf("paystack_ref=") > -1) {
+        var ref = billingState.pendingRef || "";
+        var mHash = u.match(/#ct_pay_success=([^&]+)/);
+        if (mHash && mHash[1]) ref = decodeURIComponent(mHash[1]);
+        var mQuery = u.match(/[?&](?:reference|trxref|paystack_ref)=([^&#]+)/);
+        if (!ref && mQuery && mQuery[1]) ref = decodeURIComponent(mQuery[1]);
+        if (ref) {
+          if ($("#psStageLoader")) {
+            $("#psStageLoader").hidden = false;
+            if ($("#psLoaderTitle")) $("#psLoaderTitle").textContent = "Confirming payment with Paystack…";
+            if ($("#psLoaderSub")) $("#psLoaderSub").textContent = "Verifying signature and binding your Ed25519 school licence to this computer.";
+          }
+          void verifyPendingPaystackRef(ref);
+        }
+        return;
+      }
+      if (u.indexOf("#ct_pay_cancel=") > -1) {
+        setBillingStage("select");
+        setBillingMsg("", "Checkout closed before payment completed. Select a plan or try again anytime.");
+      }
+    }
+
+    wv.addEventListener("dom-ready", function () {
+      if (billingState.stage === "checkout" && $("#psStageLoader")) {
+        $("#psStageLoader").hidden = true;
+      }
+    });
+    wv.addEventListener("did-stop-loading", function () {
+      if (billingState.stage === "checkout" && $("#psStageLoader") && !billingState.verifying) {
+        $("#psStageLoader").hidden = true;
+      }
+    });
+    wv.addEventListener("did-navigate-in-page", function (e) { inspectPaystackUrl(e && e.url); });
+    wv.addEventListener("did-navigate", function (e) { inspectPaystackUrl(e && e.url); });
+    wv.addEventListener("did-redirect-navigation", function (e) { inspectPaystackUrl(e && e.url); });
+    wv.addEventListener("did-fail-load", function (e) {
+      if (!e || e.errorCode === -3) return; // ignore ERR_ABORTED on intentional resets
+      if (billingState.stage !== "checkout") return;
+      if ($("#psStageLoader")) $("#psStageLoader").hidden = true;
+      setBillingMsg("Could not load embedded Paystack checkout over this network. Click 'Browser fallback' above or retry.", "");
+    });
+  }
+
+  function launchEmbeddedPaystackStage(initRes, planLabel, amountLabel) {
+    billingState.pendingRef = initRes.reference || billingState.pendingRef;
+    billingState.fallbackUrl = initRes.authorization_url || null;
+    if ($("#bsPendingRef")) $("#bsPendingRef").textContent = billingState.pendingRef || "—";
+    if ($("#billingPendingRefBox")) $("#billingPendingRefBox").hidden = !billingState.pendingRef;
+    if ($("#psStagePlan")) $("#psStagePlan").textContent = planLabel || initRes.plan_name || "CogniTara Licence";
+    if ($("#psStageAmount")) $("#psStageAmount").textContent = amountLabel || "";
+    if ($("#psStageRef")) $("#psStageRef").textContent = billingState.pendingRef || "—";
+    if ($("#psLoaderTitle")) $("#psLoaderTitle").textContent = "Loading Paystack Inline SDK…";
+    if ($("#psLoaderSub")) $("#psLoaderSub").textContent = "Connecting securely to Paystack inside CogniTara Studio.";
+
+    setBillingMsg("", "");
+    setBillingStage("checkout");
+
+    var wv = $("#paystackEmbedWebview");
+    if (bridge && wv && initRes.embed_url) {
+      bindPaystackWebviewOnce();
+      if ($("#psStagePreview")) $("#psStagePreview").hidden = true;
+      if ($("#psStageLoader")) $("#psStageLoader").hidden = false;
+      try {
+        wv.src = initRes.embed_url;
+      } catch (_e) {
+        if (typeof wv.loadURL === "function") wv.loadURL(initRes.embed_url);
+      }
+    } else {
+      // Headless visual preview fallback
+      if ($("#psStageLoader")) $("#psStageLoader").hidden = true;
+      if ($("#psMockAmount")) $("#psMockAmount").textContent = amountLabel || "₦75,000";
+      if ($("#psStagePreview")) $("#psStagePreview").hidden = false;
+    }
   }
 
   var activeReceiptRef = null;
   var activeReceiptKey = null;
   function showBillingReceipt(evt) {
-    if (!$("#billingModal") || !$("#billingReceiptPane")) return;
     var receipt = (evt && evt.receipt) || {};
     var lic = (evt && evt.license) || {};
     var planObj = billingState.plans.find(function (p) { return p.id === billingState.selectedPlanId; });
@@ -2591,28 +2911,32 @@
     activeReceiptRef = ref || null;
     activeReceiptKey = licKey || null;
 
-    if ($("#billingTabBar")) $("#billingTabBar").hidden = true;
-    if ($("#billingPlansPane")) $("#billingPlansPane").hidden = true;
-    if ($("#billingRedeemPane")) $("#billingRedeemPane").hidden = true;
     setBillingMsg("", "");
-
-    $("#brTitle").textContent = evt && evt.source === "redeem"
-      ? "Voucher redeemed & licence activated"
-      : "Payment confirmed & licence activated";
-    $("#brSub").textContent = (evt && evt.message) ||
-      "Your signed Ed25519 licence is now active on this computer and a payment receipt has been sent to your school email.";
-    $("#brPlan").textContent = planLabel;
-    $("#brAmount").textContent = amountText + (receipt.is_test ? " (Test Mode)" : "");
-
+    if ($("#brTitle")) {
+      $("#brTitle").textContent = evt && evt.source === "redeem"
+        ? "Voucher redeemed & licence activated"
+        : "Payment confirmed & licence activated";
+    }
+    if ($("#brSub")) {
+      $("#brSub").textContent = (evt && evt.message) ||
+        "Your signed Ed25519 licence is now active on this computer and a payment receipt has been sent to your school email.";
+    }
+    if ($("#brPlan")) $("#brPlan").textContent = planLabel;
+    if ($("#brAmount")) $("#brAmount").textContent = amountText + (receipt.is_test ? " (Test Mode)" : "");
     if ($("#brRefRow")) $("#brRefRow").hidden = !ref;
     if ($("#brRef")) $("#brRef").textContent = ref || "—";
     if ($("#brKeyRow")) $("#brKeyRow").hidden = !licKey;
     if ($("#brKey")) $("#brKey").textContent = licKey || "—";
     if ($("#brStatus")) $("#brStatus").textContent = expText;
     if ($("#brOpenWebReceiptBtn")) $("#brOpenWebReceiptBtn").hidden = !ref;
+    if ($("#brDoneBtn")) {
+      $("#brDoneBtn").textContent = returnFlow && returnFlow.mode === "onboarding"
+        ? "Continue setup"
+        : "Continue to Studio";
+    }
 
-    $("#billingReceiptPane").hidden = false;
-    $("#billingModal").hidden = false;
+    openFullScreenFlow("billing");
+    setBillingStage("receipt");
   }
 
   if ($("#brCopyKeyBtn")) {
@@ -2631,8 +2955,38 @@
   }
   if ($("#brDoneBtn")) {
     $("#brDoneBtn").addEventListener("click", function () {
-      closeBillingModal();
-      if (state.mode === "app") showView("licence");
+      setBillingStage("select");
+      exitSubflow("licence");
+    });
+  }
+  if ($("#billingBackToPlansBtn")) {
+    $("#billingBackToPlansBtn").addEventListener("click", function () {
+      setBillingStage("select");
+    });
+  }
+  if ($("#billingOpenFallbackBtn")) {
+    $("#billingOpenFallbackBtn").addEventListener("click", function () {
+      if (billingState.fallbackUrl) {
+        openExternalUrl(billingState.fallbackUrl);
+        toast("Opened Paystack checkout in your browser — click Verify payment once finished.");
+      }
+    });
+  }
+  if ($("#psMockCompleteBtn")) {
+    $("#psMockCompleteBtn").addEventListener("click", function () {
+      showBillingReceipt({
+        ok: true,
+        source: "paystack",
+        reference: billingState.pendingRef || "CTPAY_2026_DEMO88",
+        license_key: "CGNT-8F4B-7E2C-91A0-55D2",
+        receipt: {
+          plan_name: ($("#psStagePlan") && $("#psStagePlan").textContent) || "Annual School Plan",
+          currency: billingState.currency,
+          amount_minor: 7500000,
+          customer_paid_minor: 7500000,
+          expires_at: "2027-11-25T00:00:00Z"
+        }
+      });
     });
   }
 
@@ -2640,7 +2994,7 @@
     var grid = $("#billingPlansGrid");
     if (!grid) return;
     if (!billingState.plans.length) {
-      grid.innerHTML = "<div style='grid-column:1/-1;padding:18px;text-align:center;color:var(--ink-3);font-size:13px'>No active plans available right now.</div>";
+      grid.innerHTML = "<div class='billing-loading'>No active plans available right now.</div>";
       return;
     }
     grid.innerHTML = billingState.plans.map(function (p) {
@@ -2673,9 +3027,9 @@
     var signedIn = Boolean(state.cloudAccount && state.cloudAccount.signedIn);
     if ($("#billingSignInHintBtn")) $("#billingSignInHintBtn").hidden = signedIn;
     if (!plan) {
-      $("#bsPlanName").textContent = "Select a plan";
-      $("#bsTotalVal").textContent = "—";
-      $("#bsDiscountRow").hidden = true;
+      if ($("#bsPlanName")) $("#bsPlanName").textContent = "Select a plan";
+      if ($("#bsTotalVal")) $("#bsTotalVal").textContent = "—";
+      if ($("#bsDiscountRow")) $("#bsDiscountRow").hidden = true;
       return;
     }
     var origMinor = billingState.currency === "USD" ? plan.price_usd_cents : plan.price_ngn_kobo;
@@ -2692,46 +3046,54 @@
       $("#bsTotalVal").textContent = fmtMoney(finalMinor, billingState.currency);
     }
     var payBtn = $("#billingPayBtn");
-    if (finalMinor === 0 && billingState.appliedPromo) {
-      payBtn.textContent = "Activate Free Order";
-    } else {
-      payBtn.textContent = signedIn
-        ? ("Pay " + fmtMoney(finalMinor, billingState.currency) + " via Paystack")
-        : "Sign in to Pay via Paystack";
-    }
-  }
-
-  async function openBillingModal(initialTab) {
-    if (!$("#billingModal")) return;
-    setBillingMsg("", "");
-    switchBillingTab(initialTab || "plans");
-    $("#billingPendingRefBox").hidden = !billingState.pendingRef;
-    $("#billingModal").hidden = false;
-
-    if (bridge && bridge.getBillingPlans) {
-      var res = await bridge.getBillingPlans().catch(function () { return null; });
-      if (res && res.ok && Array.isArray(res.plans)) {
-        billingState.plans = res.plans;
-        billingState.platform = res.platform || {};
-        if (!billingState.selectedPlanId && res.plans.length) {
-          var preferred = res.plans.find(function (p) { return p.slug === "annual" || p.slug === "termly"; }) || res.plans[0];
-          billingState.selectedPlanId = preferred.id;
-        }
-        renderBillingPlans();
+    if (payBtn) {
+      if (finalMinor === 0 && billingState.appliedPromo) {
+        payBtn.textContent = "Activate free order";
       } else {
-        setBillingMsg((res && res.message) || "Connect to the internet to load live plans from CogniTara Cloud.", "");
+        payBtn.textContent = signedIn
+          ? ("Pay " + fmtMoney(finalMinor, billingState.currency) + " with Paystack")
+          : "Sign in to pay with Paystack";
       }
     }
   }
 
-  function closeBillingModal() {
-    if ($("#billingModal")) $("#billingModal").hidden = true;
+  async function loadBillingPlansIfNeeded(force) {
+    if (!bridge || !bridge.getBillingPlans) {
+      if (!billingState.plans.length) renderBillingPlans();
+      return;
+    }
+    if (billingState.plansLoaded && !force && billingState.plans.length) {
+      renderBillingPlans();
+      return;
+    }
+    var res = await bridge.getBillingPlans().catch(function () { return null; });
+    if (res && res.ok && Array.isArray(res.plans)) {
+      billingState.plans = res.plans;
+      billingState.plansLoaded = true;
+      billingState.platform = res.platform || {};
+      if (!billingState.selectedPlanId && res.plans.length) {
+        var preferred = res.plans.find(function (p) { return p.slug === "annual" || p.slug === "termly"; }) || res.plans[0];
+        billingState.selectedPlanId = preferred.id;
+      }
+      renderBillingPlans();
+    } else {
+      setBillingMsg((res && res.message) || "Connect to the internet to load live plans from CogniTara Cloud.", "");
+    }
   }
 
-  if ($("#billingModalClose")) $("#billingModalClose").addEventListener("click", closeBillingModal);
-  if ($("#billingModal")) {
-    $("#billingModal").addEventListener("mousedown", function (e) { if (e.target.id === "billingModal") closeBillingModal(); });
+  async function openBillingModal(initialTab) {
+    setBillingMsg("", "");
+    switchBillingTab(initialTab || "plans");
+    if ($("#billingPendingRefBox")) $("#billingPendingRefBox").hidden = !billingState.pendingRef;
+    openFullScreenFlow("billing");
+    await loadBillingPlansIfNeeded(true);
   }
+
+  function closeBillingModal() {
+    setBillingStage("select");
+    exitSubflow("licence");
+  }
+
   $$("#billingTabs button").forEach(function (b) {
     b.addEventListener("click", function () { switchBillingTab(b.dataset.btab); });
   });
@@ -2747,7 +3109,6 @@
   if ($("#billingSignInHintBtn")) {
     $("#billingSignInHintBtn").addEventListener("click", function () {
       reopenBillingAfterAuth = true;
-      closeBillingModal();
       openCloudModal("signup");
     });
   }
@@ -2769,7 +3130,7 @@
       if (res.code_type === "redeem") {
         $("#billingRedeemInput").value = code;
         switchBillingTab("redeem");
-        setBillingMsg("", res.message || "Valid redeem voucher! Click Redeem & Activate Now.");
+        setBillingMsg("", res.message || "Valid redeem voucher! Click Redeem & activate now.");
         return;
       }
       billingState.appliedPromo = res;
@@ -2778,12 +3139,43 @@
     });
   }
 
+  async function verifyPendingPaystackRef(refToVerify) {
+    if (!refToVerify || !bridge || billingState.verifying) return;
+    billingState.verifying = true;
+    var btn = $("#billingVerifyRefBtn");
+    if (btn) { btn.disabled = true; btn.textContent = "Verifying…"; }
+    try {
+      var res = await bridge.verifyPaystackReference(refToVerify);
+      if (res && res.ok) {
+        billingState.pendingRef = null;
+        billingState.fallbackUrl = null;
+        if ($("#billingPendingRefBox")) $("#billingPendingRefBox").hidden = true;
+        toast("Paystack payment verified & licence active!");
+        await refreshLicenceFromEngine();
+        showBillingReceipt({
+          ok: true,
+          source: "paystack",
+          reference: refToVerify,
+          receipt: res.receipt || null,
+          license: res.license,
+          license_key: res.license_key,
+          message: res.message || "Payment confirmed and licence activated!"
+        });
+      } else {
+        if ($("#psStageLoader")) $("#psStageLoader").hidden = true;
+        setBillingMsg((res && res.message) || "Payment not confirmed yet. Complete checkout and click Verify payment now.", "");
+      }
+    } finally {
+      billingState.verifying = false;
+      if (btn) { btn.disabled = false; btn.textContent = "Verify payment now"; }
+    }
+  }
+
   if ($("#billingPayBtn")) {
     $("#billingPayBtn").addEventListener("click", async function () {
       setBillingMsg("", "");
       if (!state.cloudAccount || !state.cloudAccount.signedIn) {
         reopenBillingAfterAuth = true;
-        closeBillingModal();
         openCloudModal("signup");
         toast("Create or sign in to your school Cloud Account first");
         return;
@@ -2792,8 +3184,13 @@
         setBillingMsg("Please select a subscription plan.", "");
         return;
       }
-      // If 100%-off promo code, redeem directly without Paystack
-      if (billingState.appliedPromo && Number(billingState.appliedPromo.final_amount_minor) === 0) {
+      var plan = billingState.plans.find(function (p) { return p.id === billingState.selectedPlanId; });
+      var origMinor = plan ? (billingState.currency === "USD" ? plan.price_usd_cents : plan.price_ngn_kobo) : 0;
+      var discMinor = billingState.appliedPromo ? Number(billingState.appliedPromo.discount_amount_minor || 0) : 0;
+      var finalMinor = Math.max(0, origMinor - discMinor);
+      var amountLabel = fmtMoney(finalMinor, billingState.currency);
+
+      if (billingState.appliedPromo && Number(billingState.appliedPromo.final_amount_minor) === 0 && bridge) {
         var rFree = await bridge.redeemVoucherCode({
           code: billingState.appliedPromo.code,
           plan_id: billingState.selectedPlanId,
@@ -2815,23 +3212,27 @@
         return;
       }
 
+      if (!bridge) {
+        launchEmbeddedPaystackStage({ reference: "CTPAY_2026_DEMO88", plan_name: plan ? plan.display_name : "Annual School Plan" }, plan ? plan.display_name : "Annual School Plan", amountLabel);
+        return;
+      }
+
       var btn = $("#billingPayBtn");
       btn.disabled = true;
-      btn.textContent = "Opening Paystack checkout…";
+      btn.textContent = "Preparing Paystack checkout…";
       try {
         var res = await bridge.startPaystackCheckout({
           plan_id: billingState.selectedPlanId,
           currency: billingState.currency,
-          promo_code: billingState.appliedPromo ? billingState.appliedPromo.code : undefined
+          promo_code: billingState.appliedPromo ? billingState.appliedPromo.code : undefined,
+          amount_label: amountLabel
         });
         if (!res || !res.ok) {
           setBillingMsg((res && res.message) || "Could not initialize Paystack checkout.", "");
           return;
         }
-        billingState.pendingRef = res.reference;
-        $("#bsPendingRef").textContent = res.reference;
-        $("#billingPendingRefBox").hidden = false;
-        setBillingMsg("", "Paystack secure checkout window opened! Complete payment and your licence activates automatically.");
+        var finalChargeLabel = res.charge_minor != null ? fmtMoney(res.charge_minor, res.currency || billingState.currency) : amountLabel;
+        launchEmbeddedPaystackStage(res, res.plan_name || (plan && plan.display_name), finalChargeLabel);
       } finally {
         btn.disabled = false;
         renderBillingSummary();
@@ -2840,35 +3241,13 @@
   }
 
   if ($("#billingVerifyRefBtn")) {
-    $("#billingVerifyRefBtn").addEventListener("click", async function () {
-      if (!billingState.pendingRef || !bridge) return;
-      var btn = $("#billingVerifyRefBtn");
-      btn.disabled = true;
-      btn.textContent = "Verifying…";
-      try {
-        var refToVerify = billingState.pendingRef;
-        var res = await bridge.verifyPaystackReference(refToVerify);
-        if (res && res.ok) {
-          billingState.pendingRef = null;
-          $("#billingPendingRefBox").hidden = true;
-          toast("Paystack payment verified & licence active!");
-          await refreshLicenceFromEngine();
-          showBillingReceipt({
-            ok: true,
-            source: "paystack",
-            reference: refToVerify,
-            receipt: res.receipt || null,
-            license: res.license,
-            license_key: res.license_key,
-            message: res.message || "Payment confirmed and licence activated!"
-          });
-        } else {
-          setBillingMsg((res && res.message) || "Payment not confirmed yet. Complete checkout and try again.", "");
-        }
-      } finally {
-        btn.disabled = false;
-        btn.textContent = "I completed payment — Verify & Activate";
-      }
+    $("#billingVerifyRefBtn").addEventListener("click", function () {
+      if (billingState.pendingRef) void verifyPendingPaystackRef(billingState.pendingRef);
+    });
+  }
+  if ($("#billingResumeVerifyBtn")) {
+    $("#billingResumeVerifyBtn").addEventListener("click", function () {
+      if (billingState.pendingRef) void verifyPendingPaystackRef(billingState.pendingRef);
     });
   }
 
@@ -2877,7 +3256,6 @@
       setBillingMsg("", "");
       if (!state.cloudAccount || !state.cloudAccount.signedIn) {
         reopenBillingAfterAuth = true;
-        closeBillingModal();
         openCloudModal("signup");
         toast("Sign in or create your Cloud Account first to redeem a voucher");
         return;
@@ -2905,7 +3283,7 @@
         }
       } finally {
         btn.disabled = false;
-        btn.textContent = "Redeem & Activate Now";
+        btn.textContent = "Redeem & activate now";
       }
     });
   }
@@ -2918,7 +3296,7 @@
       if (lic && lic.lock_state) {
         state.license = lic;
         paintLicence();
-        if (lic.is_licensed && state.mode === "onboarding") {
+        if (lic.is_licensed) {
           activated = true;
           paintActivatedVerify();
           syncOnboardingCloudUi();
@@ -3281,11 +3659,50 @@
     paintStats();
     renderCloudAccount(state.cloudAccount);
 
+    billingState.plans = [
+      {
+        id: "demo-monthly",
+        slug: "monthly",
+        display_name: "Monthly School",
+        badge: null,
+        price_ngn_kobo: 1200000,
+        price_usd_cents: 1200,
+        duration_days: 30,
+        lease_days: 7,
+        features: { highlights: ["Up to 300 concurrent students", "Offline LAN exam server", "Encrypted cloud backups"] }
+      },
+      {
+        id: "demo-annual",
+        slug: "annual",
+        display_name: "Annual School",
+        badge: "Most popular",
+        price_ngn_kobo: 7500000,
+        price_usd_cents: 6900,
+        duration_days: 365,
+        lease_days: 30,
+        features: { highlights: ["All 3 academic terms covered", "30-day offline lease window", "Priority exam-day support"] }
+      },
+      {
+        id: "demo-lifetime",
+        slug: "lifetime",
+        display_name: "Lifetime Campus",
+        badge: "Best value",
+        price_ngn_kobo: 22000000,
+        price_usd_cents: 19900,
+        duration_days: null,
+        lease_days: 90,
+        features: { highlights: ["Pay once, own forever", "90-day offline lease window", "All future v2.x updates"] }
+      }
+    ];
+    billingState.selectedPlanId = "demo-annual";
+    billingState.plansLoaded = true;
+    renderBillingPlans();
+
     if (params.get("update") === "downloading") {
       renderUpdateState({
         status: "downloading",
-        currentVersion: "2.2.2",
-        availableVersion: "2.2.3",
+        currentVersion: "2.2.3",
+        availableVersion: "2.2.4",
         percent: 68.4,
         bytesPerSecond: 4.2 * 1024 * 1024,
         transferred: 58.2 * 1024 * 1024,
@@ -3294,8 +3711,8 @@
     } else if (params.get("update") === "downloaded") {
       renderUpdateState({
         status: "downloaded",
-        currentVersion: "2.2.2",
-        availableVersion: "2.2.3",
+        currentVersion: "2.2.3",
+        availableVersion: "2.2.4",
         percent: 100
       });
     }
@@ -3313,13 +3730,34 @@
       }
       setMode("app");
       setServer(state.server);
-      showView(params.get("view") || "home");
+      var targetView = params.get("view") || "home";
+      if (params.get("guest") === "1") renderCloudAccount({ signedIn: false, offline: false });
+      showView(targetView);
       measurePulseCanvas();
       drawPulse(true);
       drawSpark(true);
-      if (params.get("modal") === "cloud") {
-        if (params.get("guest") === "1") renderCloudAccount({ signedIn: false, offline: false });
-        openCloudModal(params.get("tab") || "signin");
+      if (targetView === "cloud" && params.get("guest") === "1") {
+        switchCloudTab(params.get("tab") || "signup");
+      }
+      if (targetView === "billing") {
+        var bstage = params.get("bstage");
+        if (bstage === "checkout") {
+          launchEmbeddedPaystackStage({ reference: "CTPAY_2026_8F4B9A", plan_name: "Annual School" }, "Annual School", "₦75,000");
+        } else if (bstage === "receipt") {
+          showBillingReceipt({
+            ok: true,
+            source: "paystack",
+            reference: "CTPAY_2026_8F4B9A",
+            license_key: "CGNT-8F4B-7E2C-91A0-55D2",
+            receipt: {
+              plan_name: "Annual School",
+              currency: "NGN",
+              amount_minor: 7500000,
+              customer_paid_minor: 7500000,
+              expires_at: "2027-11-25T00:00:00Z"
+            }
+          });
+        }
       }
     } else if (screenParam === "expired") {
       state.license.lock_state = "DRAINING";

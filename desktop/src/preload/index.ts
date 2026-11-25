@@ -71,8 +71,18 @@ export interface CogniTaraDesktopBridge {
   getBillingPlans: () => Promise<any>;
   validatePromoCode: (payload: { code: string; plan_id?: string | null; currency?: string }) => Promise<any>;
   redeemVoucherCode: (payload: { code: string; plan_id?: string | null; currency?: string }) => Promise<any>;
-  startPaystackCheckout: (payload: { plan_id: string; currency?: string; promo_code?: string }) => Promise<any>;
+  startPaystackCheckout: (payload: { plan_id: string; currency?: string; promo_code?: string; amount_label?: string }) => Promise<any>;
   verifyPaystackReference: (reference: string) => Promise<any>;
+  // In-App School Reviews & Ratings (reports to CogniTara HQ)
+  getMySchoolReview: () => Promise<any>;
+  submitSchoolReview: (payload: {
+    rating: number;
+    headline?: string;
+    body: string;
+    author_name?: string;
+    author_role?: string;
+    city_state?: string;
+  }) => Promise<any>;
   // Main-to-renderer push subscriptions
   onServerStateChanged: (cb: (state: string) => void) => () => void;
   onLicenseLockTriggered: (cb: (license: any) => void) => () => void;
@@ -135,6 +145,8 @@ const api: CogniTaraDesktopBridge = {
   redeemVoucherCode: (payload) => ipcRenderer.invoke("billing:redeemCode", payload),
   startPaystackCheckout: (payload) => ipcRenderer.invoke("billing:startPaystack", payload),
   verifyPaystackReference: (reference) => ipcRenderer.invoke("billing:verifyPaystack", reference),
+  getMySchoolReview: () => ipcRenderer.invoke("reviews:mine"),
+  submitSchoolReview: (payload) => ipcRenderer.invoke("reviews:submit", payload),
   onServerStateChanged: (cb) => {
     const listener = (_evt: Electron.IpcRendererEvent, state: string) => cb(state);
     ipcRenderer.on("server:stateChanged", listener);

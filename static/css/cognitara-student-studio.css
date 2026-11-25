@@ -1004,14 +1004,160 @@ body.st-body .ct-menu__head span { color: var(--st-ink-3); }
 
 #confetti-canvas { position: fixed; inset: 0; pointer-events: none; z-index: 30; }
 
-/* ---------- Motion & Responsive ---------- */
+/* ---------- Motion-Graphics Card Choreography & CE Seal ---------- */
 @keyframes st-up {
-  from { opacity: 0; transform: translate3d(0, 12px, 0); }
+  from { opacity: 0; transform: translate3d(0, 14px, 0); }
   to { opacity: 1; transform: translate3d(0, 0, 0); }
 }
 @keyframes st-folio-in {
-  from { opacity: 0; transform: translate3d(0, 16px, 0) scale(0.985); }
+  from { opacity: 0; transform: translate3d(0, 18px, 0) scale(0.98); }
   to { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
+}
+@keyframes st-draw {
+  from { stroke-dashoffset: 120; }
+  to { stroke-dashoffset: 0; }
+}
+@keyframes st-orbit {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+@keyframes st-ring-expand {
+  0% { transform: scale(0.84); opacity: 0; }
+  55% { opacity: 0.4; }
+  100% { transform: scale(1.18); opacity: 0; }
+}
+
+.st-col > .st-card:nth-child(1) { animation-delay: 40ms; }
+.st-col > .st-card:nth-child(2) { animation-delay: 110ms; }
+.st-col > .st-card:nth-child(3) { animation-delay: 180ms; }
+.st-kpi-rail .st-kpi { animation: st-up 440ms cubic-bezier(0.22, 1, 0.36, 1) both; }
+.st-kpi-rail .st-kpi:nth-child(1) { animation-delay: 40ms; }
+.st-kpi-rail .st-kpi:nth-child(2) { animation-delay: 90ms; }
+.st-kpi-rail .st-kpi:nth-child(3) { animation-delay: 140ms; }
+.st-kpi-rail .st-kpi:nth-child(4) { animation-delay: 190ms; }
+
+.st-exam-row {
+  animation: st-up 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.st-exam-row:nth-child(1) { animation-delay: 80ms; }
+.st-exam-row:nth-child(2) { animation-delay: 130ms; }
+.st-exam-row:nth-child(3) { animation-delay: 180ms; }
+.st-exam-row:nth-child(4) { animation-delay: 230ms; }
+
+.st-ledger__cell {
+  animation: st-up 400ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.st-ledger__cell:nth-child(1) { animation-delay: 110ms; }
+.st-ledger__cell:nth-child(2) { animation-delay: 160ms; }
+.st-ledger__cell:nth-child(3) { animation-delay: 210ms; }
+.st-ledger__cell:nth-child(4) { animation-delay: 260ms; }
+
+/* Animated Verification Seal for Post-CE Exam & Withheld Receipts */
+.st-seal-stage {
+  position: relative;
+  width: 172px;
+  height: 172px;
+  display: grid;
+  place-items: center;
+  --seal-color: var(--st-ok);
+  --seal-soft: var(--st-ok-soft);
+  --seal-line: var(--st-ok-line);
+}
+.st-seal-stage--warn {
+  --seal-color: var(--st-warn);
+  --seal-soft: var(--st-warn-soft);
+  --seal-line: var(--st-warn-line);
+}
+.st-seal-stage--bad {
+  --seal-color: var(--st-bad);
+  --seal-soft: var(--st-bad-soft);
+  --seal-line: var(--st-bad-line);
+}
+.st-seal-stage--accent {
+  --seal-color: var(--st-accent);
+  --seal-soft: var(--st-accent-soft);
+  --seal-line: var(--st-accent-line);
+}
+.st-seal-pulse {
+  position: absolute;
+  inset: 14px;
+  border-radius: 50%;
+  border: 1px solid var(--seal-line);
+  animation: st-ring-expand 2.6s cubic-bezier(0.22, 1, 0.36, 1) 1 both;
+}
+.st-seal-svg {
+  width: 172px;
+  height: 172px;
+  display: block;
+}
+.st-seal-orbit {
+  transform-origin: 86px 86px;
+  animation: st-orbit 34s linear infinite;
+}
+.st-seal-check {
+  stroke: var(--seal-color);
+  stroke-width: 3.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  fill: none;
+  stroke-dasharray: 120;
+  animation: st-draw 780ms cubic-bezier(0.22, 1, 0.36, 1) 180ms both;
+}
+.st-seal-ring-fill {
+  stroke: var(--seal-color);
+  stroke-width: 3;
+  fill: var(--seal-soft);
+  stroke-dasharray: 290;
+  stroke-dashoffset: 290;
+  transition: stroke-dashoffset 900ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.st-seal-stage.is-live .st-seal-ring-fill {
+  stroke-dashoffset: 0;
+}
+
+.st-ce-banner {
+  padding: 14px 16px;
+  border-radius: 12px;
+  border: 1px solid var(--st-line-2);
+  background: var(--st-well);
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--st-ink-2);
+}
+.st-ce-banner--ok { background: var(--st-ok-soft); border-color: var(--st-ok-line); color: var(--st-ok); }
+.st-ce-banner--warn { background: var(--st-warn-soft); border-color: var(--st-warn-line); color: var(--st-warn); }
+.st-ce-banner--bad { background: var(--st-bad-soft); border-color: var(--st-bad-line); color: var(--st-bad); }
+
+.st-ce-rules {
+  display: grid;
+  gap: 12px;
+}
+.st-ce-rule-box {
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: var(--st-well);
+  border: 1px solid var(--st-line);
+  display: grid;
+  gap: 8px;
+}
+.st-ce-rule-box strong {
+  font-size: 13px;
+  font-weight: 680;
+  color: var(--st-ink);
+}
+.st-ce-rule-box--ok { border-left: 3px solid var(--st-ok); }
+.st-ce-rule-box--bad { border-left: 3px solid var(--st-bad); }
+.st-ce-rule-box ul {
+  margin: 0;
+  padding-left: 18px;
+  display: grid;
+  gap: 5px;
+  font-size: 13px;
+  line-height: 1.48;
+  color: var(--st-ink-2);
 }
 
 @media (max-width: 980px) {
@@ -1046,5 +1192,6 @@ body.st-body .ct-menu__head span { color: var(--st-ink-3); }
   .st-folio { box-shadow: none !important; border: 1px solid #D1D5DB !important; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .st-header, .st-card, .st-folio, .st-brief { animation: none !important; }
+  .st-header, .st-card, .st-folio, .st-brief, .st-kpi, .st-exam-row, .st-ledger__cell,
+  .st-seal-orbit, .st-seal-check, .st-seal-pulse { animation: none !important; }
 }

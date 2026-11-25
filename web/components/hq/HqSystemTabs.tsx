@@ -738,3 +738,136 @@ export function HqStaffSecurityTab({
     </div>
   );
 }
+
+/* ==========================================================================
+   6. SCHOOL REVIEWS & TESTIMONIALS APPROVAL TAB
+   ========================================================================== */
+export function HqReviewsTab({
+  onToast,
+  onRefreshOverview,
+}: {
+  onToast: (msg: string) => void;
+  onRefreshOverview?: () => Promise<void>;
+}) {
+  const [data, setData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState<"all" | "pending" | "approved" | "rejected">("all");
+  const [busyId, setBusyId] = useState("");
+
+  async function load() {
+    setLoading(true);
+    const res = await fetch("/api/v1/hq/reviews", { credentials: "include" }).then((r) => r.json()).catch(() => null);
+    if (res?.ok) setData(res);
+    setLoading(false);
+  }
+
+  useEffect(() => {
+    void load();
+  }, []);
+
+  async function runAction(id: string, action: "approve" | "reject" | "toggle_featured" | "delete") {
+    setBusyId(id);
+    const res = await fetch("/api/v1/hq/reviews", {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id, action }),
+    }).then((r) => r.json()).catch(() => null);
+    setBusyId("");
+    onToast(res?.message || (res?.ok ? "Updated." : "Action failed."));
+    await load();
+    if (onRefreshOverview) await onRefreshOverview();
+  }
+
+  const allRows: any[] = data?.reviews || [];
+  const filtered = filter === "all" ? allRows : allRows.filter((r) => r.status === filter);
+  const sum = data?.summary || { total: 0, pending: 0, approved: 0, rejected: 0, average_rating: 0 };
+
+  return (
+    <div>
+      <div className="hq-head">
+        <div>
+          <h1>Reviews &amp; ratings</h1>
+          <p>School ratings submitted directly from CogniTara Studio Desktop. Approve ratings here to display them live on the CogniTara website.</p>
+        </div>
+        <button type="button" className="btn btn--ghost btn--sm" onClick={() => void load()}>Refresh</button>
+      </div>
+
+      <div className="hq-kpi-strip">
+        <div className="hq-kpi"><span className="hq-kpi__lbl">Pending approval</span><span className="hq-kpi__val" style={{ color: sum.pending > 0 ? "var(--warn)" : undefined }}>{sum.pending}</span></div>
+        <div className="hq-kpi"><span className="hq-kpi__lbl">Live on website</span><span className="hq-kpi__val" style={{ color: "var(--ok)" }}>{sum.approved}</span></div>
+        <div className="hq-kpi"><span className="hq-kpi__lbl">Average rating</span><span className="hq-kpi__val">{sum.average_rating ? `${sum.average_rating.toFixed(1)} / 5` : "—"}</span></div>
+        <div className="hq-kpi"><span className="hq-kpi__lbl">Total submitted</span><span className="hq-kpi__val">{sum.total}</span></div>
+      </div>
+
+      <div className="hq-toolbar">
+        <div className="hq-chips">
+          {(["all", "pending", "approved", "rejected"] as const).map((k) => (
+            <button key={k} type="button" className={`hq-chip ${filter === k ? "is-active" : ""}`} onClick={() => setFilter(k)}>
+              {k === "all" ? `All (${sum.total})` : k === "pending" ? `Pending (${sum.pending})` : k === "approved" ? `Live (${sum.approved})` : `Hidden (${sum.rejected})`}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {loading ? (
+        <div className="card" style={{ textAlign: "center", padding: 36, color: "var(--ink-3)" }}>Loading school ratings…</div>
+      ) : filtered.length === 0 ? (
+        <div className="card" style={{ textAlign: "center", padding: 40, color: "var(--ink-3)" }}>
+          No school ratings in this view yet. Ratings sent from CogniTara Studio Desktop appear here immediately for review.
+        </div>
+      ) : (
+        <div style={{ display: "grid", gap: 12 }}>
+          {filtered.map((r) => (
+            <article key={r.id} className="card" style={{ display: "grid", gap: 12 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, flexWrap: "wrap" }}>
+                <div style={{ display: "grid", gap: 3 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+                    <strong style={{ fontSize: 15, color: "var(--ink)" }}>{r.school_name}</strong>
+                    <span className="tnum" style={{ color: "var(--warn)", fontWeight: 700, fontSize: 14, letterSpacing: "0.06em" }}>
+                      {"★".repeat(Math.max(1, Math.min(5, Number(r.rating || 5))))}
+                      <span style={{ opacity: 0.25 }}>{"★".repeat(Math.max(0, 5 - Number(r.rating || 5)))}</span>
+                    </span>
+                    <span className={`status-txt ${r.status === "approved" ? "status-txt--ok" : r.status === "rejected" ? "status-txt--bad" : "status-txt--warn"}`}>
+                      {r.status === "approved" ? (r.featured ? "Featured live" : "Live on website") : r.status === "pending" ? "Awaiting approval" : "Hidden"}
+                    </span>
+                  </div>
+                  <div style={{ fontSize: 12.5, color: "var(--ink-3)" }}>
+                    {r.author_name} · {r.author_role}{r.city_region ? ` · ${r.city_region}` : ""}{r.app_version ? ` · Studio v${r.app_version}` : ""}
+                  </div>
+                </div>
+                <span className="tnum" style={{ fontSize: 12, color: "var(--ink-3)" }}>
+                  {new Date(r.updated_at || r.created_at).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}
+                </span>
+              </div>
+
+              {r.headline ? <div style={{ fontWeight: 650, fontSize: 14, color: "var(--ink)" }}>{r.headline}</div> : null}
+              <p style={{ margin: 0, fontSize: 13.5, lineHeight: 1.58, color: "var(--ink-2)" }}>&ldquo;{r.body}&rdquo;</p>
+
+              <div className="hq-btn-row" style={{ justifyContent: "flex-end", paddingTop: 6, borderTop: "1px solid var(--border)" }}>
+                {r.status !== "approved" ? (
+                  <button type="button" className="btn btn--ok btn--xs" disabled={busyId === r.id} onClick={() => void runAction(r.id, "approve")}>
+                    Approve to website
+                  </button>
+                ) : (
+                  <button type="button" className="btn btn--ghost btn--xs" disabled={busyId === r.id} onClick={() => void runAction(r.id, "toggle_featured")}>
+                    {r.featured ? "Unpin featured" : "Pin as featured"}
+                  </button>
+                )}
+                {r.status !== "rejected" ? (
+                  <button type="button" className="btn btn--ghost btn--xs" disabled={busyId === r.id} onClick={() => void runAction(r.id, "reject")}>
+                    Hide
+                  </button>
+                ) : null}
+                <button type="button" className="btn btn--danger btn--xs" disabled={busyId === r.id} onClick={() => void runAction(r.id, "delete")}>
+                  Delete
+                </button>
+              </div>
+            </article>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+

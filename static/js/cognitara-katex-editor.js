@@ -1084,26 +1084,29 @@
 
                     <!-- Scrollable Modal Body -->
                     <div class="katex-popover-body">
-                        <!-- Formula Type Dropdown Selector -->
-                        <div class="fb-type-select-row mb-3">
-                            <label class="fb-type-label" for="fbFormulaTypeSelect">
-                                <i class="fas fa-shapes text-primary"></i> Formula Type:
-                            </label>
-                            <select id="fbFormulaTypeSelect" class="fb-type-select">
-                                <option value="fraction" selected>Fraction (a/b)</option>
-                                <option value="root">Square &amp; Nth Root (&radic;x, &#8731;x)</option>
-                                <option value="power">Power / Exponent (x&#8319;, x&sup2;)</option>
-                                <option value="subscript">Subscript (x&#8345;, x&#8321;)</option>
-                                <option value="chemistry">Chemical Formula (H&#8322;O, CO&#8322;)</option>
-                                <option value="general">Custom LaTeX Code</option>
-                            </select>
+                        <!-- 1-Click Connected Formula Type Tabs -->
+                        <div class="fb-seg-tabs" role="tablist" aria-label="Formula type">
+                            <button type="button" class="fb-tab-btn active" data-tab="fraction" role="tab"><strong>a/b</strong><span>Fraction</span></button>
+                            <button type="button" class="fb-tab-btn" data-tab="root" role="tab"><strong>&radic;x</strong><span>Root</span></button>
+                            <button type="button" class="fb-tab-btn" data-tab="power" role="tab"><strong>x&#8319;</strong><span>Power</span></button>
+                            <button type="button" class="fb-tab-btn" data-tab="subscript" role="tab"><strong>x&#8345;</strong><span>Sub</span></button>
+                            <button type="button" class="fb-tab-btn" data-tab="chemistry" role="tab"><strong>H&#8322;O</strong><span>Chem</span></button>
+                            <button type="button" class="fb-tab-btn" data-tab="general" role="tab"><strong>TeX</strong><span>Custom</span></button>
                         </div>
+                        <select id="fbFormulaTypeSelect" class="fb-type-select" style="display:none;" aria-hidden="true">
+                            <option value="fraction" selected>Fraction</option>
+                            <option value="root">Root</option>
+                            <option value="power">Power</option>
+                            <option value="subscript">Subscript</option>
+                            <option value="chemistry">Chemistry</option>
+                            <option value="general">Custom LaTeX</option>
+                        </select>
 
                         <!-- TAB 1: FRACTION -->
                         <div class="fb-tab-panel active" data-tab-content="fraction">
                             <div class="fb-visual-fraction-container">
                                 <div class="mb-1">
-                                    <label class="fb-input-label">Numerator (Top):</label>
+                                    <label class="fb-input-label">Numerator (Top)</label>
                                 </div>
                                 <input type="text" id="fbFracNum" class="fb-math-input" placeholder="e.g. 5x + 3, y, 7" autocomplete="off">
 
@@ -1114,18 +1117,18 @@
                                 </div>
 
                                 <div class="mb-1">
-                                    <label class="fb-input-label">Denominator (Bottom):</label>
+                                    <label class="fb-input-label">Denominator (Bottom)</label>
                                 </div>
                                 <input type="text" id="fbFracDen" class="fb-math-input" placeholder="e.g. 2, 4y, x + 1" autocomplete="off">
 
-                                <div class="mt-2 pt-2 d-flex align-items-center gap-2 border-top">
-                                    <label class="text-muted" style="font-size:11px; margin:0; font-weight:600;">Whole number (optional):</label>
-                                    <input type="text" id="fbFracWhole" class="fb-math-input-sm" style="width:65px; text-align:center;" placeholder="e.g. 3">
+                                <div class="mt-2 pt-2 d-flex align-items-center gap-2" style="border-top:1px solid var(--ct-line, rgba(255,255,255,0.08));">
+                                    <label style="font-size:11.5px; margin:0; font-weight:600; color:var(--ct-ink-3, #9ca3af);">Whole number (optional):</label>
+                                    <input type="text" id="fbFracWhole" class="fb-math-input-sm" style="width:72px; text-align:center;" placeholder="e.g. 3">
                                 </div>
                             </div>
 
                             <div class="fb-preset-strip mt-2">
-                                <span class="fb-preset-label">Quick fractions:</span>
+                                <span class="fb-preset-label">Quick fractions</span>
                                 <button type="button" class="fb-preset-chip" data-num="1" data-den="2">&frac12;</button>
                                 <button type="button" class="fb-preset-chip" data-num="1" data-den="3">&#8531;</button>
                                 <button type="button" class="fb-preset-chip" data-num="1" data-den="4">&frac14;</button>
@@ -1143,21 +1146,20 @@
                                 <div class="row g-2 align-items-center">
                                     <div class="col-4">
                                         <div class="mb-1">
-                                            <label class="fb-input-label">Degree (n):</label>
+                                            <label class="fb-input-label">Degree (n)</label>
                                         </div>
-                                        <input type="text" id="fbRootDegree" class="fb-math-input" placeholder="Blank for &radic;" autocomplete="off" style="text-align:center;">
-                                        <small class="text-muted d-block mt-1" style="font-size:10px;">Blank = &radic;</small>
+                                        <input type="text" id="fbRootDegree" class="fb-math-input" placeholder="Blank = &radic;" autocomplete="off" style="text-align:center;">
                                     </div>
                                     <div class="col-8">
                                         <div class="mb-1">
-                                            <label class="fb-input-label">Radicand (Inside &radic;):</label>
+                                            <label class="fb-input-label">Radicand (Inside &radic;)</label>
                                         </div>
                                         <input type="text" id="fbRootRadicand" class="fb-math-input" placeholder="e.g. x + 4, 64" autocomplete="off">
                                     </div>
                                 </div>
                             </div>
                             <div class="fb-preset-strip mt-2">
-                                <span class="fb-preset-label">Quick roots:</span>
+                                <span class="fb-preset-label">Quick roots</span>
                                 <button type="button" class="fb-preset-chip" data-deg="" data-rad="x">&radic;x</button>
                                 <button type="button" class="fb-preset-chip" data-deg="" data-rad="2">&radic;2</button>
                                 <button type="button" class="fb-preset-chip" data-deg="3" data-rad="x">&#8731;x</button>
@@ -1171,20 +1173,20 @@
                                 <div class="row g-2 align-items-center">
                                     <div class="col-6">
                                         <div class="mb-1">
-                                            <label class="fb-input-label">Base Variable/Number:</label>
+                                            <label class="fb-input-label">Base</label>
                                         </div>
                                         <input type="text" id="fbPowerBase" class="fb-math-input" placeholder="e.g. x, 10" autocomplete="off">
                                     </div>
                                     <div class="col-6">
                                         <div class="mb-1">
-                                            <label class="fb-input-label">Exponent (Power):</label>
+                                            <label class="fb-input-label">Exponent (Power)</label>
                                         </div>
                                         <input type="text" id="fbPowerExp" class="fb-math-input" placeholder="e.g. 2, 3, n" autocomplete="off">
                                     </div>
                                 </div>
                             </div>
                             <div class="fb-preset-strip mt-2">
-                                <span class="fb-preset-label">Quick powers:</span>
+                                <span class="fb-preset-label">Quick powers</span>
                                 <button type="button" class="fb-preset-chip" data-base="x" data-exp="2">x&sup2;</button>
                                 <button type="button" class="fb-preset-chip" data-base="x" data-exp="3">x&sup3;</button>
                                 <button type="button" class="fb-preset-chip" data-base="x" data-exp="n">x&#8319;</button>
@@ -1199,20 +1201,20 @@
                                 <div class="row g-2 align-items-center">
                                     <div class="col-6">
                                         <div class="mb-1">
-                                            <label class="fb-input-label">Base Variable:</label>
+                                            <label class="fb-input-label">Base variable</label>
                                         </div>
                                         <input type="text" id="fbSubBase" class="fb-math-input" placeholder="e.g. x, a, v" autocomplete="off">
                                     </div>
                                     <div class="col-6">
                                         <div class="mb-1">
-                                            <label class="fb-input-label">Subscript Index:</label>
+                                            <label class="fb-input-label">Subscript index</label>
                                         </div>
                                         <input type="text" id="fbSubIndex" class="fb-math-input" placeholder="e.g. 1, 2, i, 0" autocomplete="off">
                                     </div>
                                 </div>
                             </div>
                             <div class="fb-preset-strip mt-2">
-                                <span class="fb-preset-label">Quick subscripts:</span>
+                                <span class="fb-preset-label">Quick subscripts</span>
                                 <button type="button" class="fb-preset-chip" data-sbase="x" data-sub="1">x&#8321;</button>
                                 <button type="button" class="fb-preset-chip" data-sbase="x" data-sub="2">x&#8322;</button>
                                 <button type="button" class="fb-preset-chip" data-sbase="v" data-sub="0">v&#8320;</button>
@@ -1224,15 +1226,15 @@
                         <div class="fb-tab-panel" data-tab-content="chemistry">
                             <div class="fb-visual-chem-container">
                                 <div class="mb-1">
-                                    <label class="fb-input-label"><i class="fas fa-flask text-primary"></i> Chemical Formula / Reaction:</label>
+                                    <label class="fb-input-label"><i class="fas fa-flask" style="color:var(--ct-accent,#3b82f6);"></i> Chemical formula or reaction</label>
                                 </div>
                                 <input type="text" id="fbChemFormula" class="fb-math-input" placeholder="e.g. CaCO3 -> CaO + CO2 or H2O" autocomplete="off">
-                                <small class="text-muted d-block mt-2" style="font-size:11px;">
-                                    Numbers format automatically as subscripts (e.g. <code>H2O</code> becomes H₂O).
+                                <small class="d-block mt-2" style="font-size:11.5px; color:var(--ct-ink-3, #9ca3af);">
+                                    Numbers format automatically as subscripts (for example <code>H2O</code> renders as H₂O).
                                 </small>
                             </div>
                             <div class="fb-preset-strip mt-2">
-                                <span class="fb-preset-label">Common compounds:</span>
+                                <span class="fb-preset-label">Common compounds</span>
                                 <span class="fb-quick-chip" data-chem="H2O">H₂O</span>
                                 <span class="fb-quick-chip" data-chem="CO2">CO₂</span>
                                 <span class="fb-quick-chip" data-chem="NaCl">NaCl</span>
@@ -1246,11 +1248,11 @@
                         <!-- TAB 6: ADVANCED / GENERAL -->
                         <div class="fb-tab-panel" data-tab-content="general">
                             <div class="fb-visual-advanced-container">
-                                <label class="fb-input-label">Custom LaTeX Code:</label>
+                                <label class="fb-input-label">Custom LaTeX expression</label>
                                 <input type="text" id="katexPopoverInput" class="fb-math-input font-monospace" placeholder="e.g. \\frac{a}{b} or \\alpha + \\beta" autocomplete="off">
                             </div>
                             <div class="fb-preset-strip mt-2">
-                                <span class="fb-preset-label">Symbols:</span>
+                                <span class="fb-preset-label">Templates</span>
                                 <span class="fb-symbol-btn" data-sym="\\pm">&plusmn;</span>
                                 <span class="fb-symbol-btn" data-sym="\\int_{a}^{b} f(x) dx">&int;</span>
                                 <span class="fb-symbol-btn" data-sym="\\sum_{i=1}^{n} x_i">&sum;</span>
@@ -1267,7 +1269,7 @@
                         <div class="fb-symbol-palette-container mt-2">
                             <div class="d-flex justify-content-between align-items-center mb-1">
                                 <span class="fb-palette-label">
-                                    <i class="fas fa-keyboard text-primary"></i> Math Keypad (Inserts into active box)
+                                    Math keypad (inserts into active box)
                                 </span>
                             </div>
                             <div class="fb-symbol-grid">
@@ -1297,16 +1299,16 @@
                         <!-- LIVE PREVIEW CARD -->
                         <div class="katex-popover-preview-container mt-2">
                             <span class="katex-popover-preview-label">
-                                <i class="fas fa-eye text-primary"></i> Live Preview (Student View):
+                                Live preview (student view)
                             </span>
                             <div class="katex-popover-preview-math" id="katexPopoverPreviewContent"></div>
                         </div>
 
                         <!-- DISPLAY MODE CHECKBOX -->
                         <div class="mt-2 d-flex align-items-center">
-                            <label style="font-size:12px; color:#475569; cursor:pointer; user-select:none; margin:0; display:flex; align-items:center; gap:6px;">
-                                <input type="checkbox" id="katexPopoverDisplayCheck" style="accent-color:#4f46e5; width:15px; height:15px;">
-                                Center formula on its own line (Block Display Mode)
+                            <label style="font-size:12.5px; color:var(--ct-ink-2, #9e9e9e); cursor:pointer; user-select:none; margin:0; display:flex; align-items:center; gap:7px;">
+                                <input type="checkbox" id="katexPopoverDisplayCheck" style="accent-color:var(--ct-accent, #3b82f6); width:15px; height:15px;">
+                                Center formula on its own line (block display)
                             </label>
                         </div>
                     </div>
@@ -1481,7 +1483,7 @@
                 .katex-editor-pill .pill-action-btn {
                     display: inline-flex !important; align-items: center !important; justify-content: center !important;
                     font-size: 10px !important; padding: 0 4px !important; cursor: pointer !important;
-                    border-radius: 4px !important; line-height: 1 !important; transition: all 0.12s ease !important;
+                    border-radius: 4px !important; line-height: 1 !important; transition: color 0.12s ease, background-color 0.12s ease !important;
                 }
                 .katex-editor-pill .pill-edit-btn { margin-left: 6px !important; color: var(--ct-accent, #3b82f6) !important; opacity: 0.78 !important; }
                 .katex-editor-pill:hover .pill-edit-btn { opacity: 1 !important; }
@@ -1504,59 +1506,102 @@
                     background: var(--ct-surface, #1c1c20) !important;
                     color: var(--ct-ink, #f4f4f5) !important;
                     border: 1px solid var(--ct-line-2, rgba(255,255,255,0.14)) !important;
-                    border-radius: 16px !important;
+                    border-radius: 18px !important;
                     box-shadow: 0 28px 64px -16px rgba(0, 0, 0, 0.55) !important;
-                    width: 100% !important; max-width: 560px !important; max-height: 88vh !important;
+                    width: 100% !important; max-width: 580px !important; max-height: 90vh !important;
                     display: flex !important; flex-direction: column !important; overflow: hidden !important;
-                    animation: popoverScaleIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
-                    font-family: var(--ct-font-sans, 'Plus Jakarta Sans', system-ui, sans-serif) !important;
+                    animation: popoverScaleIn 0.22s cubic-bezier(0.22, 1, 0.36, 1) !important;
+                    font-family: var(--ct-font, 'Plus Jakarta Sans', system-ui, sans-serif) !important;
                 }
                 @keyframes popoverScaleIn {
-                    from { opacity: 0; transform: scale(0.96) translateY(8px); }
+                    from { opacity: 0; transform: scale(0.96) translateY(10px); }
                     to { opacity: 1; transform: scale(1) translateY(0); }
                 }
                 .katex-popover-header {
-                    background: var(--ct-surface-2, #232328) !important;
+                    background: var(--ct-well, #141414) !important;
                     color: var(--ct-ink, #f4f4f5) !important;
                     border-bottom: 1px solid var(--ct-line, rgba(255,255,255,0.08)) !important;
-                    padding: 14px 18px !important;
+                    padding: 15px 20px !important;
                     display: flex !important; align-items: center !important; justify-content: space-between !important; flex-shrink: 0 !important;
                 }
                 .katex-popover-header-icon {
-                    width: 30px !important; height: 30px !important; border-radius: 8px !important;
-                    background: rgba(59, 130, 246, 0.14) !important; color: var(--ct-accent, #3b82f6) !important;
+                    width: 34px !important; height: 34px !important; border-radius: 9px !important;
+                    background: var(--ct-accent-soft, rgba(59, 130, 246, 0.14)) !important; color: var(--ct-accent, #3b82f6) !important;
                     display: flex !important; align-items: center !important; justify-content: center !important;
-                    font-size: 13px !important; flex-shrink: 0 !important;
+                    font-size: 14px !important; flex-shrink: 0 !important;
                 }
-                .katex-popover-header h6 { margin: 0 !important; font-size: 15px !important; font-weight: 700 !important; color: var(--ct-ink, #f4f4f5) !important; line-height: 1.25 !important; }
-                .katex-popover-sub { margin: 2px 0 0 !important; font-size: 11.5px !important; color: var(--ct-ink-3, #9ca3af) !important; line-height: 1.25 !important; }
+                .katex-popover-header h6 { margin: 0 !important; font-size: 15.5px !important; font-weight: 700 !important; color: var(--ct-ink, #f4f4f5) !important; line-height: 1.25 !important; }
+                .katex-popover-sub { margin: 2px 0 0 !important; font-size: 12px !important; color: var(--ct-ink-3, #9ca3af) !important; line-height: 1.25 !important; }
                 .katex-popover-close {
                     background: transparent !important; border: 1px solid var(--ct-line-2, rgba(255,255,255,0.14)) !important;
                     color: var(--ct-ink-2, #d4d4d8) !important; font-size: 18px !important; cursor: pointer !important;
-                    line-height: 1 !important; width: 30px !important; height: 30px !important; border-radius: 8px !important;
-                    display: flex !important; align-items: center !important; justify-content: center !important; transition: all 0.15s ease !important;
+                    line-height: 1 !important; width: 32px !important; height: 32px !important; border-radius: 8px !important;
+                    display: flex !important; align-items: center !important; justify-content: center !important; transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease !important;
                 }
-                .katex-popover-close:hover { background: rgba(239, 68, 68, 0.16) !important; color: #ef4444 !important; border-color: rgba(239,68,68,0.4) !important; }
+                .katex-popover-close:hover { background: rgba(239, 68, 68, 0.14) !important; color: #ef4444 !important; border-color: rgba(239,68,68,0.4) !important; }
 
-                .fb-type-select-row { display: flex !important; flex-direction: column !important; gap: 5px !important; }
+                /* 1-Click Connected Formula Type Segmented Tabs */
+                .fb-seg-tabs {
+                    display: grid !important;
+                    grid-template-columns: repeat(6, minmax(0, 1fr)) !important;
+                    gap: 4px !important;
+                    padding: 4px !important;
+                    background: var(--ct-well, #141414) !important;
+                    border: 1px solid var(--ct-line, rgba(255,255,255,0.08)) !important;
+                    border-radius: 11px !important;
+                    margin-bottom: 14px !important;
+                }
+                .fb-tab-btn {
+                    border: 1px solid transparent !important;
+                    background: transparent !important;
+                    color: var(--ct-ink-2, #9e9e9e) !important;
+                    border-radius: 8px !important;
+                    padding: 7px 4px !important;
+                    display: flex !important;
+                    flex-direction: column !important;
+                    align-items: center !important;
+                    justify-content: center !important;
+                    gap: 2px !important;
+                    cursor: pointer !important;
+                    transition: background-color 0.14s ease, color 0.14s ease, border-color 0.14s ease !important;
+                }
+                .fb-tab-btn strong { font-size: 13.5px !important; font-weight: 700 !important; line-height: 1.1 !important; }
+                .fb-tab-btn span { font-size: 10.5px !important; font-weight: 560 !important; opacity: 0.82 !important; }
+                .fb-tab-btn:hover { color: var(--ct-ink, #ececec) !important; background: var(--ct-surface-2, #202020) !important; }
+                .fb-tab-btn.active {
+                    background: var(--ct-primary, #3b82f6) !important;
+                    color: var(--ct-primary-ink, #ffffff) !important;
+                    border-color: transparent !important;
+                }
+                .fb-tab-btn.active strong,
+                .fb-tab-btn.active span,
+                .fb-tab-btn.active sub,
+                .fb-tab-btn.active sup {
+                    color: var(--ct-primary-ink, #ffffff) !important;
+                }
+                .fb-tab-btn.active span { opacity: 0.95 !important; }
+                @media (max-width: 520px) {
+                    .fb-seg-tabs { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; }
+                }
+
                 .fb-type-label, .fb-input-label {
                     font-size: 12px !important; font-weight: 600 !important; color: var(--ct-ink-2, #d4d4d8) !important;
                     margin: 0 !important; display: flex !important; align-items: center !important; gap: 6px !important;
                 }
                 .fb-type-select, .fb-math-input, .fb-math-input-sm {
-                    width: 100% !important; padding: 8px 11px !important;
+                    width: 100% !important; padding: 9px 12px !important;
                     border: 1px solid var(--ct-line-2, rgba(255,255,255,0.15)) !important;
-                    border-radius: 9px !important; font-size: 13.5px !important; font-weight: 500 !important;
-                    color: var(--ct-ink, #f4f4f5) !important; background: var(--ct-bg, #141416) !important;
+                    border-radius: 9px !important; font-size: 14px !important; font-weight: 500 !important;
+                    color: var(--ct-ink, #f4f4f5) !important; background: var(--ct-bg, #111111) !important;
                     outline: none !important; transition: border-color 0.15s ease, box-shadow 0.15s ease !important;
                 }
-                .fb-math-input-sm { padding: 5px 8px !important; font-size: 12px !important; }
+                .fb-math-input-sm { padding: 5px 8px !important; font-size: 12.5px !important; }
                 .fb-type-select:focus, .fb-math-input:focus, .fb-math-input-sm:focus {
                     border-color: var(--ct-accent, #3b82f6) !important;
                     box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.18) !important;
                 }
                 .katex-popover-body {
-                    padding: 16px 18px 14px !important; max-height: calc(88vh - 122px) !important;
+                    padding: 16px 20px 14px !important; max-height: calc(90vh - 126px) !important;
                     overflow-y: auto !important; flex: 1 1 auto !important;
                 }
                 .fb-tab-panel { display: none !important; }
@@ -1565,72 +1610,72 @@
                 .fb-visual-fraction-container, .fb-visual-root-container, .fb-visual-power-container,
                 .fb-visual-subscript-container, .fb-visual-chem-container, .fb-visual-advanced-container,
                 .fb-symbol-palette-container {
-                    background: var(--ct-surface-2, #232328) !important;
-                    border: 1px solid var(--ct-line, rgba(255,255,255,0.09)) !important;
-                    border-radius: 12px !important; padding: 12px 14px !important;
+                    background: var(--ct-surface-2, #202020) !important;
+                    border: 1px solid var(--ct-line, rgba(255,255,255,0.08)) !important;
+                    border-radius: 12px !important; padding: 13px 15px !important;
                 }
-                .fb-fraction-bar { display: flex !important; align-items: center !important; gap: 8px !important; margin: 8px 0 !important; }
+                .fb-fraction-bar { display: flex !important; align-items: center !important; gap: 8px !important; margin: 9px 0 !important; }
                 .fb-fraction-line { flex: 1 !important; height: 2px !important; background: var(--ct-accent, #3b82f6) !important; border-radius: 1px !important; }
                 .fb-fraction-badge { font-size: 11px !important; font-weight: 600 !important; color: #ffffff !important; background: var(--ct-accent, #3b82f6) !important; padding: 2px 9px !important; border-radius: 999px !important; }
 
-                .fb-preset-strip { display: flex !important; flex-wrap: wrap !important; align-items: center !important; gap: 6px !important; margin-top: 8px !important; }
-                .fb-preset-label, .fb-palette-label { font-size: 11px !important; font-weight: 700 !important; color: var(--ct-ink-3, #9ca3af) !important; text-transform: uppercase !important; letter-spacing: 0.04em !important; }
+                .fb-preset-strip { display: flex !important; flex-wrap: wrap !important; align-items: center !important; gap: 6px !important; margin-top: 9px !important; }
+                .fb-preset-label, .fb-palette-label { font-size: 11.5px !important; font-weight: 620 !important; color: var(--ct-ink-3, #9ca3af) !important; }
                 .fb-preset-chip, .fb-quick-chip, .fb-symbol-btn {
-                    background: var(--ct-surface, #1c1c20) !important; color: var(--ct-ink, #f4f4f5) !important;
-                    border: 1px solid var(--ct-line-2, rgba(255,255,255,0.14)) !important;
-                    border-radius: 7px !important; padding: 4px 9px !important; font-size: 11.5px !important;
-                    font-weight: 600 !important; cursor: pointer !important; transition: all 0.14s ease !important;
+                    background: var(--ct-surface, #191919) !important; color: var(--ct-ink, #f4f4f5) !important;
+                    border: 1px solid var(--ct-line-2, rgba(255,255,255,0.12)) !important;
+                    border-radius: 7px !important; padding: 5px 10px !important; font-size: 12px !important;
+                    font-weight: 600 !important; cursor: pointer !important; transition: background-color 0.14s ease, color 0.14s ease, border-color 0.14s ease !important;
                 }
                 .fb-preset-chip:hover, .fb-quick-chip:hover, .fb-symbol-btn:hover {
                     background: var(--ct-accent, #3b82f6) !important; color: #ffffff !important; border-color: var(--ct-accent, #3b82f6) !important;
                 }
                 .fb-symbol-grid { display: flex !important; flex-wrap: wrap !important; gap: 5px !important; margin-top: 7px !important; }
                 .fb-sym {
-                    min-width: 32px !important; height: 30px !important; padding: 0 6px !important;
-                    border: 1px solid var(--ct-line-2, rgba(255,255,255,0.14)) !important;
-                    background: var(--ct-surface, #1c1c20) !important; border-radius: 7px !important;
+                    min-width: 34px !important; height: 32px !important; padding: 0 7px !important;
+                    border: 1px solid var(--ct-line-2, rgba(255,255,255,0.12)) !important;
+                    background: var(--ct-surface, #191919) !important; border-radius: 7px !important;
                     font-size: 13.5px !important; font-weight: 600 !important; color: var(--ct-ink, #f4f4f5) !important;
                     cursor: pointer !important; display: flex !important; align-items: center !important; justify-content: center !important;
-                    transition: all 0.12s ease !important;
+                    transition: background-color 0.12s ease, color 0.12s ease, border-color 0.12s ease !important;
                 }
                 .fb-sym:hover { background: var(--ct-accent, #3b82f6) !important; color: #ffffff !important; border-color: var(--ct-accent, #3b82f6) !important; }
 
                 .katex-popover-preview-container {
-                    background: var(--ct-bg, #141416) !important;
-                    border: 1px dashed var(--ct-line-2, rgba(255,255,255,0.18)) !important;
-                    border-radius: 12px !important; padding: 10px 14px !important; min-height: 58px !important;
+                    background: var(--ct-well, #141414) !important;
+                    border: 1px solid var(--ct-line-2, rgba(255,255,255,0.12)) !important;
+                    border-radius: 12px !important; padding: 11px 14px !important; min-height: 60px !important;
                 }
-                .katex-popover-preview-label { font-size: 11px !important; font-weight: 700 !important; text-transform: uppercase !important; letter-spacing: 0.05em !important; color: var(--ct-ink-3, #9ca3af) !important; display: flex !important; align-items: center !important; gap: 6px !important; }
-                .katex-popover-preview-math { font-size: 20px !important; color: var(--ct-ink, #f4f4f5) !important; overflow-x: auto !important; min-height: 36px !important; display: flex !important; align-items: center !important; justify-content: center !important; padding: 6px 0 !important; }
+                .katex-popover-preview-label { font-size: 11.5px !important; font-weight: 620 !important; color: var(--ct-ink-3, #9ca3af) !important; display: flex !important; align-items: center !important; gap: 6px !important; }
+                .katex-popover-preview-math { font-size: 21px !important; color: var(--ct-ink, #f4f4f5) !important; overflow-x: auto !important; min-height: 38px !important; display: flex !important; align-items: center !important; justify-content: center !important; padding: 6px 0 !important; }
 
                 .katex-popover-footer {
-                    padding: 12px 18px !important; background: var(--ct-surface-2, #232328) !important;
+                    padding: 13px 20px !important; background: var(--ct-well, #141414) !important;
                     border-top: 1px solid var(--ct-line, rgba(255,255,255,0.08)) !important;
                     display: flex !important; align-items: center !important; gap: 8px !important; flex-shrink: 0 !important;
                 }
                 .btn-delete-formula { color: #ef4444 !important; background: rgba(239,68,68,0.12) !important; border: 1px solid rgba(239,68,68,0.3) !important; font-weight: 600 !important; border-radius: 8px !important; padding: 7px 12px !important; font-size: 12.5px !important; }
                 .btn-delete-formula:hover { background: #ef4444 !important; color: #ffffff !important; }
-                .btn-cancel-builder { font-weight: 600 !important; border-radius: 8px !important; padding: 7px 14px !important; font-size: 12.5px !important; border: 1px solid var(--ct-line-2, rgba(255,255,255,0.16)) !important; background: transparent !important; color: var(--ct-ink-2, #d4d4d8) !important; }
-                .btn-cancel-builder:hover { background: var(--ct-surface, #1c1c20) !important; color: var(--ct-ink, #f4f4f5) !important; }
+                .btn-cancel-builder { font-weight: 600 !important; border-radius: 8px !important; padding: 8px 14px !important; font-size: 12.5px !important; border: 1px solid var(--ct-line-2, rgba(255,255,255,0.14)) !important; background: var(--ct-surface-2, #202020) !important; color: var(--ct-ink, #ececec) !important; }
+                .btn-cancel-builder:hover { background: var(--ct-surface-3, #282828) !important; }
                 .btn-apply-formula {
-                    background: var(--ct-accent, #2563eb) !important; color: #ffffff !important; border: none !important;
-                    font-weight: 600 !important; font-size: 13px !important; border-radius: 8px !important; padding: 8px 18px !important;
+                    background: var(--ct-primary, #3b82f6) !important; color: var(--ct-primary-ink, #ffffff) !important; border: none !important;
+                    font-weight: 650 !important; font-size: 13px !important; border-radius: 9px !important; padding: 8px 18px !important;
                     display: inline-flex !important; align-items: center !important; gap: 6px !important; transition: opacity 0.15s ease !important;
                 }
                 .btn-apply-formula:hover { opacity: 0.92 !important; }
 
                 .f-btn-group {
-                    display: inline-flex !important; align-items: center !important; gap: 4px !important;
-                    background: var(--ct-surface-2, #232328) !important; padding: 3px 5px !important;
-                    border-radius: 8px !important; border: 1px solid var(--ct-line-2, rgba(255,255,255,0.12)) !important;
+                    display: inline-flex !important; align-items: center !important; gap: 3px !important;
+                    background: var(--ct-well, #141414) !important; padding: 3px 4px !important;
+                    border-radius: 8px !important; border: 1px solid var(--ct-line-2, rgba(255,255,255,0.10)) !important;
                 }
                 .f-btn {
                     border: none !important; background: transparent !important; color: var(--ct-ink, #f4f4f5) !important;
-                    font-size: 12px !important; font-weight: 600 !important; padding: 4px 9px !important;
+                    font-size: 12px !important; font-weight: 620 !important; padding: 5px 9px !important;
                     border-radius: 6px !important; cursor: pointer !important;
-                    display: inline-flex !important; align-items: center !important; gap: 5px !important; transition: all 0.12s ease !important;
+                    display: inline-flex !important; align-items: center !important; gap: 5px !important; transition: background-color 0.12s ease, color 0.12s ease !important;
                 }
-                .f-btn:hover { background: var(--ct-accent, #2563eb) !important; color: #ffffff !important; }
+                .f-btn:hover { background: var(--ct-primary, #3b82f6) !important; color: var(--ct-primary-ink, #ffffff) !important; }
             `;
             document.head.appendChild(style);
         }

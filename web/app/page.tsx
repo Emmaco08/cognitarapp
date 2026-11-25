@@ -3,11 +3,11 @@
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { BrandHeader } from "@/components/BrandHeader";
-import { IconCheck, IconDownload } from "@/components/Icons";
+import { ExamHallArchitecture } from "@/components/ExamHallArchitecture";
+import { IconDownload, IconStar } from "@/components/Icons";
+import { StudioDesktopShowcase } from "@/components/StudioDesktopShowcase";
 
 const RELEASES_URL = "https://github.com/Emmaco08/cognitarapp/releases/latest";
-
-type StageTab = "server" | "student" | "cloud";
 
 interface PlanItem {
   id: string;
@@ -19,6 +19,19 @@ interface PlanItem {
   price_ngn_kobo: number;
   price_usd_cents: number;
   features_json?: { highlights?: string[] };
+}
+
+interface ApprovedReview {
+  id: string;
+  school_name: string;
+  author_name: string;
+  author_role: string;
+  city_state: string;
+  rating: number;
+  headline: string;
+  body: string;
+  is_featured: boolean;
+  approved_at: string | null;
 }
 
 const FALLBACK_PLANS: PlanItem[] = [
@@ -51,7 +64,7 @@ const FALLBACK_PLANS: PlanItem[] = [
     features_json: {
       highlights: [
         "Three academic terms with Common Entrance mode",
-        "Instant Paystack receipt and signed licence key",
+        "Embedded Paystack checkout and signed licence key",
         "Automatic weekly cloud backup reminders",
       ],
     },
@@ -69,9 +82,63 @@ const FALLBACK_PLANS: PlanItem[] = [
       highlights: [
         "Never expires on your school computer",
         "90-day offline lease window between check-ins",
-        "Referral cash rewards and priority onboarding",
+        "Referral rewards and priority school onboarding",
       ],
     },
+  },
+];
+
+const TEAM_MEMBERS = [
+  {
+    initials: "EO",
+    name: "Emmanuel O.",
+    role: "Founder & Lead Systems Architect",
+    focus:
+      "Designs the offline LAN exam engine, Windows Studio shell, and Ed25519 cryptographic licensing architecture.",
+  },
+  {
+    initials: "AS",
+    name: "Assessment Systems",
+    role: "CBT & Authoring Engineering",
+    focus:
+      "Builds the student exam studio, visual KaTeX formula composer, Common Entrance workflow, and live hall supervision.",
+  },
+  {
+    initials: "SC",
+    name: "Security & Cloud",
+    role: "Infrastructure & Payments",
+    focus:
+      "Maintains the 5-layer hardware licence vault, Brevo OTP authentication, embedded Paystack SDK, and Neon cloud snapshots.",
+  },
+  {
+    initials: "SO",
+    name: "School Onboarding",
+    role: "Exam-Day Operations & Support",
+    focus:
+      "Helps ICT coordinators configure school Wi-Fi routers, migrate databases safely, and run calm examination weeks.",
+  },
+];
+
+const FAQ_ITEMS = [
+  {
+    q: "Do students need internet access during an examination?",
+    a: "No. Once CogniTara Studio is activated on one Windows PC, every laptop, desktop, or tablet on your school Wi-Fi or lab Ethernet cable connects directly to that PC over your local network.",
+  },
+  {
+    q: "What happens if power fails or a student laptop disconnects mid-exam?",
+    a: "Every selected option is flushed immediately to SQLite WAL storage on your school server. Disconnected students are paused cleanly with a 90-second grace window and resume right where they stopped with zero lost answers.",
+  },
+  {
+    q: "How do schools purchase or renew licences inside the desktop app?",
+    a: "CogniTara Studio integrates the Paystack Inline SDK directly inside its full-screen Plans & Billing screen. Schools pay by card, bank transfer, or USSD without external popup windows, receive an emailed receipt, and activate immediately.",
+  },
+  {
+    q: "How are school testimonials verified before appearing on this website?",
+    a: "Ratings can only be submitted by verified school accounts directly inside the CogniTara Studio desktop application. Every submission goes to CogniTara HQ for authenticity review before being published here.",
+  },
+  {
+    q: "What if our school server computer needs replacement?",
+    a: "Upload an encrypted cloud backup snapshot from CogniTara Studio anytime internet is available. When you install Studio on a new Windows computer and sign in, you can restore every exam, question bank, and student result in one click.",
   },
 ];
 
@@ -84,11 +151,12 @@ function fmtPrice(minor: number, currency: "NGN" | "USD") {
 }
 
 export default function CloudHomePage() {
-  const [stage, setStage] = useState<StageTab>("server");
-  const [serverOnline, setServerOnline] = useState(true);
-  const [pickedOption, setPickedOption] = useState("B");
   const [currency, setCurrency] = useState<"NGN" | "USD">("NGN");
   const [plans, setPlans] = useState<PlanItem[]>(FALLBACK_PLANS);
+  const [reviews, setReviews] = useState<ApprovedReview[]>([]);
+  const [reviewStats, setReviewStats] = useState<{ count: number; avg: number }>({ count: 0, avg: 0 });
+  const [reviewsLoaded, setReviewsLoaded] = useState(false);
+  const [openFaq, setOpenFaq] = useState<number>(0);
 
   useEffect(() => {
     fetch("/api/v1/plans")
@@ -99,6 +167,47 @@ export default function CloudHomePage() {
         }
       })
       .catch(() => {});
+
+    fetch("/api/v1/reviews")
+      .then((r) => r.json())
+      .then((j) => {
+        if (j?.ok && Array.isArray(j.reviews)) {
+          setReviews(j.reviews);
+          setReviewStats({
+            count: Number(j.stats?.approved_count ?? j.count ?? j.reviews.length ?? 0),
+            avg: Number(j.stats?.average_rating ?? j.average_rating ?? 0),
+          });
+        }
+      })
+      .catch(() => {})
+      .finally(() => setReviewsLoaded(true));
+  }, []);
+
+  // Subtle progressive reveal on scroll (never leaves sections hidden if reduced motion or IO unavailable)
+  useEffect(() => {
+    const els = Array.from(document.querySelectorAll<HTMLElement>(".lp-reveal"));
+    if (!els.length) return;
+    if (
+      typeof window === "undefined" ||
+      typeof IntersectionObserver === "undefined" ||
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    ) {
+      els.forEach((el) => el.classList.add("is-in"));
+      return;
+    }
+    const io = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add("is-in");
+            io.unobserve(entry.target);
+          }
+        });
+      },
+      { threshold: 0.08, rootMargin: "0px 0px -24px 0px" }
+    );
+    els.forEach((el) => io.observe(el));
+    return () => io.disconnect();
   }, []);
 
   return (
@@ -106,268 +215,128 @@ export default function CloudHomePage() {
       <BrandHeader variant="hero" />
 
       <main className="lp-wrap">
-        {/* Monumental Centered Hero + Wide Interactive Product Stage */}
+        {/* Monumental Kinetic Hero + Real Interactive CogniTara Studio Desktop Frame */}
         <section className="lp-hero">
-          <h1>Run school exams without relying on internet.</h1>
+          <h1 className="lp-hero__title">Run calm school exams offline from one Windows PC.</h1>
           <p>
-            Install CogniTara Studio on one Windows PC to serve hundreds of student devices over
-            local Wi-Fi, with automatic cloud backups.
+            Install CogniTara Studio on a single lab computer to serve hundreds of student devices
+            over local Wi-Fi, with instant cloud backups.
           </p>
           <div className="lp-hero__cta">
-            <Link href="/signup" className="btn btn--primary btn--lg">
+            <a href={RELEASES_URL} target="_blank" rel="noopener noreferrer" className="btn btn--primary btn--lg">
+              <IconDownload size={16} />
+              <span>Download CogniTara Studio</span>
+            </a>
+            <Link href="/signup" className="lp-quiet-link">
               Create school account
             </Link>
-            <a href={RELEASES_URL} target="_blank" rel="noopener noreferrer" className="lp-quiet-link">
-              Download for Windows
-            </a>
           </div>
         </section>
 
-        <section className="lp-stage" aria-label="Interactive CogniTara preview">
-          <div className="lp-stage__bar">
-            <div className="lp-seg" role="tablist" aria-label="Choose product view">
-              <button
-                type="button"
-                role="tab"
-                aria-selected={stage === "server"}
-                className={stage === "server" ? "is-active" : ""}
-                onClick={() => setStage("server")}
-              >
-                Windows Exam Server
-              </button>
-              <button
-                type="button"
-                role="tab"
-                aria-selected={stage === "student"}
-                className={stage === "student" ? "is-active" : ""}
-                onClick={() => setStage("student")}
-              >
-                Student Exam Hall
-              </button>
-              <button
-                type="button"
-                role="tab"
-                aria-selected={stage === "cloud"}
-                className={stage === "cloud" ? "is-active" : ""}
-                onClick={() => setStage("cloud")}
-              >
-                Receipts &amp; Cloud Backups
-              </button>
-            </div>
-            <span className="lp-stage__meta">
-              {stage === "server"
-                ? serverOnline
-                  ? "Local LAN active on 192.168.10.24:5000"
-                  : "Exam server paused cleanly"
-                : stage === "student"
-                  ? "Question 14 of 40 · Answers auto-saved locally"
-                  : "SHA-256 verified snapshot · Instant Paystack receipt"}
-            </span>
-          </div>
-
-          {stage === "server" ? (
-            <div className="lp-stage__body">
-              <div className="lp-stage__col">
-                <h2 className="lp-stage__title">One Windows PC runs the entire exam hall.</h2>
-                <p className="lp-stage__copy">
-                  Start the local server in one click. Every laptop, tablet, or desktop on your
-                  school router connects instantly with zero internet bandwidth required during the
-                  exam.
-                </p>
-                <div className="lp-stage__rows">
-                  <div className="lp-stage__row">
-                    <span>Student network address</span>
-                    <strong className="mono">http://192.168.10.24:5000</strong>
-                  </div>
-                  <div className="lp-stage__row">
-                    <span>Connected exam devices</span>
-                    <strong>{serverOnline ? "82 devices writing" : "0 devices"}</strong>
-                  </div>
-                  <div className="lp-stage__row">
-                    <span>Disconnect auto-pause grace</span>
-                    <strong>90 seconds with zero lost answers</strong>
-                  </div>
-                </div>
-              </div>
-
-              <div className="lp-stage__surface">
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
-                  <strong style={{ fontSize: "0.9375rem" }}>CogniTara Studio Control</strong>
-                  <span style={{ fontSize: "0.8125rem", fontWeight: 600, color: serverOnline ? "var(--ok)" : "var(--ink-3)" }}>
-                    {serverOnline ? "Running" : "Stopped"}
-                  </span>
-                </div>
-                <p className="lp-stage__copy" style={{ fontSize: "0.8125rem" }}>
-                  Try toggling the local exam server below. Stopping saves every open student answer
-                  first so candidates resume right where they paused.
-                </p>
-                <button
-                  type="button"
-                  className={serverOnline ? "btn btn--outline" : "btn btn--primary"}
-                  onClick={() => setServerOnline((v) => !v)}
-                >
-                  {serverOnline ? "Pause local exam server" : "Start local exam server"}
-                </button>
-              </div>
-            </div>
-          ) : stage === "student" ? (
-            <div className="lp-stage__body">
-              <div className="lp-stage__col">
-                <h2 className="lp-stage__title">Calm, distraction-free student testing.</h2>
-                <p className="lp-stage__copy">
-                  Students sign in with their admission number on any browser. Scientific calculator
-                  tools, rich mathematics rendering, and instant local saves work smoothly even if
-                  Wi-Fi drops.
-                </p>
-                <div className="lp-stage__rows">
-                  <div className="lp-stage__row">
-                    <span>Active examination</span>
-                    <strong>First Term Mathematics CBT</strong>
-                  </div>
-                  <div className="lp-stage__row">
-                    <span>Answer persistence</span>
-                    <strong style={{ color: "var(--ok)" }}>Saved locally in SQLite WAL</strong>
-                  </div>
-                  <div className="lp-stage__row">
-                    <span>Built-in tools</span>
-                    <strong>Scientific calculator &amp; formula display</strong>
-                  </div>
-                </div>
-              </div>
-
-              <div className="lp-stage__surface">
-                <div style={{ fontSize: "0.9375rem", fontWeight: 640 }}>
-                  Solve x² - 5x + 6 = 0 for x &gt; 2.
-                </div>
-                <div style={{ display: "grid", gap: 8 }}>
-                  {[
-                    ["A", "x = 2"],
-                    ["B", "x = 3"],
-                    ["C", "x = 5"],
-                    ["D", "x = 6"],
-                  ].map(([k, txt]) => (
-                    <button
-                      key={k}
-                      type="button"
-                      className={`lp-opt ${pickedOption === k ? "is-picked" : ""}`}
-                      onClick={() => setPickedOption(k)}
-                    >
-                      <b>{k}</b>
-                      <span>{txt}</span>
-                    </button>
-                  ))}
-                </div>
-                <span style={{ fontSize: "0.8125rem", color: "var(--ink-3)" }}>
-                  Selected option {pickedOption} saved immediately to your school server.
-                </span>
-              </div>
-            </div>
-          ) : (
-            <div className="lp-stage__body">
-              <div className="lp-stage__col">
-                <h2 className="lp-stage__title">Instant receipts and safe cloud snapshots.</h2>
-                <p className="lp-stage__copy">
-                  Every Paystack payment generates a printable receipt, emails your school
-                  automatically, and signs your offline Ed25519 licence. Back up your entire exam
-                  database to CogniTara Cloud in one click.
-                </p>
-                <div className="lp-stage__rows">
-                  <div className="lp-stage__row">
-                    <span>Latest payment confirmation</span>
-                    <strong style={{ color: "var(--ok)" }}>Verified &amp; emailed</strong>
-                  </div>
-                  <div className="lp-stage__row">
-                    <span>Latest cloud exam backup</span>
-                    <strong>18 exams · 1,420 questions · 311 KB</strong>
-                  </div>
-                  <div className="lp-stage__row">
-                    <span>Backup reminder schedule</span>
-                    <strong>Every 7 days in Studio &amp; Dashboard</strong>
-                  </div>
-                </div>
-              </div>
-
-              <div className="lp-stage__surface">
-                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                  <span
-                    style={{
-                      width: 28,
-                      height: 28,
-                      borderRadius: "50%",
-                      background: "var(--ok-soft)",
-                      color: "var(--ok)",
-                      display: "grid",
-                      placeItems: "center",
-                    }}
-                  >
-                    <IconCheck size={15} />
-                  </span>
-                  <strong style={{ fontSize: "0.9375rem" }}>Licence active on school PC</strong>
-                </div>
-                <div className="lp-stage__rows">
-                  <div className="lp-stage__row">
-                    <span>Licence key</span>
-                    <strong className="mono">CT-ANN-4K92-M7P1</strong>
-                  </div>
-                  <div className="lp-stage__row">
-                    <span>Cloud snapshot</span>
-                    <strong className="mono">SHA-256 verified</strong>
-                  </div>
-                </div>
-                <Link href="/signup" className="btn btn--primary">
-                  Open school portal
-                </Link>
-              </div>
-            </div>
-          )}
+        <section className="lp-desktop-stage" aria-label="Interactive CogniTara Studio Windows application">
+          <StudioDesktopShowcase />
         </section>
 
-        {/* Below-the-Fold Editorial Split: How Schools Run Exam Day */}
-        <section id="workflow" className="lp-section">
-          <div className="lp-split">
-            <div className="lp-split__sticky">
-              <h2 className="lp-h2">Built for exam day, not ideal Wi-Fi.</h2>
+        {/* Live Animated Exam-Hall Network Architecture */}
+        <section id="architecture" className="lp-section lp-reveal">
+          <ExamHallArchitecture />
+
+          <div className="lp-workflow-strip">
+            <div className="lp-wf-col">
+              <h3>Onboard with verified email OTP</h3>
               <p className="lp-body">
-                Schools move from download to their first full-class computer-based test in under
-                ten minutes, with zero cloud dependency while students write.
+                Create your school account directly inside CogniTara Studio on first launch, confirm
+                your 6-digit Brevo email code, and lock your local vault to your exam PC.
               </p>
             </div>
-
-            <div className="lp-steps">
-              <div className="lp-step">
-                <h3>1. Create your school account and install Studio</h3>
-                <p className="lp-body">
-                  Register your school online, verify your email code, and run the lightweight
-                  Windows installer on one lab or staff computer.
-                </p>
-              </div>
-              <div className="lp-step">
-                <h3>2. Author exams, import questions, and manage classes</h3>
-                <p className="lp-body">
-                  Teachers add questions with mathematics formulas, optional student photos of any
-                  size, and control live papers from the Teacher Exam Control Center.
-                </p>
-              </div>
-              <div className="lp-step">
-                <h3>3. Back up to CogniTara Cloud and earn referral rewards</h3>
-                <p className="lp-body">
-                  Upload compressed, integrity-checked snapshots of your exam database whenever
-                  internet is available, and share your school referral link for wallet commissions
-                  and free bonus days.
-                </p>
-              </div>
+            <div className="lp-wf-col">
+              <h3>Author rich papers in minutes</h3>
+              <p className="lp-body">
+                Teachers build exams with 1-click KaTeX math formulas, optional student photos of
+                any size, CSV bulk import, and dedicated Common Entrance candidate portals.
+              </p>
+            </div>
+            <div className="lp-wf-col">
+              <h3>Pay inline and back up safely</h3>
+              <p className="lp-body">
+                Upgrade plans using embedded Paystack checkout with instant receipts, and upload
+                SHA-256 verified database snapshots to CogniTara Cloud between terms.
+              </p>
             </div>
           </div>
+        </section>
+
+        {/* Verified School Testimonials (Live From Desktop App -> HQ Approval -> Website) */}
+        <section id="reviews" className="lp-section lp-reveal">
+          <div className="lp-section-head">
+            <div style={{ display: "grid", gap: 8 }}>
+              <h2 className="lp-h2">Rated by schools directly from CogniTara Studio.</h2>
+              <p className="lp-body">
+                Principals and ICT officers submit ratings from inside the desktop app. Every
+                review is verified in CogniTara HQ before publishing here.
+              </p>
+            </div>
+            {reviewStats.count > 0 ? (
+              <div className="lp-rating-summary">
+                <div className="lp-stars" aria-label={`${reviewStats.avg} out of 5 stars`}>
+                  {[1, 2, 3, 4, 5].map((n) => (
+                    <IconStar key={n} size={16} filled={n <= Math.round(reviewStats.avg)} />
+                  ))}
+                </div>
+                <strong className="tnum">{reviewStats.avg.toFixed(1)} / 5</strong>
+                <span className="tnum">
+                  {reviewStats.count} verified {reviewStats.count === 1 ? "school" : "schools"}
+                </span>
+              </div>
+            ) : null}
+          </div>
+
+          {reviews.length > 0 ? (
+            <div className="lp-reviews-grid">
+              {reviews.map((rev) => (
+                <article key={rev.id} className="lp-review">
+                  <div className="lp-stars" aria-label={`${rev.rating} out of 5 stars`}>
+                    {[1, 2, 3, 4, 5].map((n) => (
+                      <IconStar key={n} size={15} filled={n <= rev.rating} />
+                    ))}
+                  </div>
+                  {rev.headline ? <h3 className="lp-review__headline">{rev.headline}</h3> : null}
+                  <p className="lp-review__body">&ldquo;{rev.body}&rdquo;</p>
+                  <div className="lp-review__meta">
+                    <strong>{rev.author_name || "School Administrator"}</strong>
+                    <span>
+                      {[rev.author_role, rev.school_name, rev.city_state].filter(Boolean).join(" · ")}
+                    </span>
+                  </div>
+                </article>
+              ))}
+            </div>
+          ) : (
+            <div className="lp-reviews-empty">
+              <div className="lp-reviews-empty__copy">
+                <h3>Verified school reviews appear here as schools rate Studio.</h3>
+                <p className="lp-body">
+                  We never publish synthetic quotes. Open <strong>Cloud &amp; rate</strong> inside
+                  CogniTara Studio to submit your school&apos;s 5-star review directly to CogniTara HQ
+                  for approval.
+                </p>
+              </div>
+              <Link href="/signup" className="btn btn--outline">
+                Create school account
+              </Link>
+            </div>
+          )}
+          {!reviewsLoaded ? null : null}
         </section>
 
         {/* Transparent Live Pricing */}
-        <section id="pricing" className="lp-section">
+        <section id="pricing" className="lp-section lp-reveal">
           <div className="lp-pricing-head">
             <div style={{ display: "grid", gap: 8 }}>
               <h2 className="lp-h2">Simple licensing for every school size.</h2>
               <p className="lp-body">
-                Pay securely with Paystack by card, bank transfer, or USSD. Receive a printable
-                receipt and signed offline licence immediately.
+                Pay securely with Paystack inside Studio or online. Receive an official receipt and
+                signed Ed25519 offline licence immediately.
               </p>
             </div>
             <div className="lp-seg" role="group" aria-label="Select currency">
@@ -423,26 +392,91 @@ export default function CloudHomePage() {
           </div>
         </section>
 
+        {/* People Behind CogniTara (Editorial SaaS Startup Team Section) */}
+        <section id="team" className="lp-section lp-reveal">
+          <div className="lp-split">
+            <div className="lp-split__sticky">
+              <h2 className="lp-h2">Built by engineers obsessed with exam-day reliability.</h2>
+              <p className="lp-body">
+                CogniTara is crafted by a focused systems team dedicated to giving schools
+                industrial-grade examination infrastructure without recurring cloud bandwidth costs.
+              </p>
+            </div>
+
+            <div className="lp-team-grid">
+              {TEAM_MEMBERS.map((member) => (
+                <article key={member.name} className="lp-member">
+                  <div className="lp-member__top">
+                    <span className="lp-member__mono" aria-hidden="true">
+                      {member.initials}
+                    </span>
+                    <div>
+                      <h3>{member.name}</h3>
+                      <em>{member.role}</em>
+                    </div>
+                  </div>
+                  <p className="lp-body">{member.focus}</p>
+                </article>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Practical Questions for Principals & ICT Officers */}
+        <section id="faq" className="lp-section lp-reveal">
+          <div className="lp-split">
+            <div className="lp-split__sticky">
+              <h2 className="lp-h2">Common questions from school leaders.</h2>
+              <p className="lp-body">
+                Straight answers about offline capacity, power resilience, payments, and backups.
+              </p>
+            </div>
+
+            <div className="lp-faq-list">
+              {FAQ_ITEMS.map((item, idx) => {
+                const isOpen = openFaq === idx;
+                return (
+                  <div key={item.q} className={`lp-faq-item ${isOpen ? "is-open" : ""}`}>
+                    <button
+                      type="button"
+                      className="lp-faq-q"
+                      aria-expanded={isOpen}
+                      onClick={() => setOpenFaq(isOpen ? -1 : idx)}
+                    >
+                      <span>{item.q}</span>
+                      <span className="lp-faq-plus" aria-hidden="true">
+                        {isOpen ? "−" : "+"}
+                      </span>
+                    </button>
+                    {isOpen ? <p className="lp-faq-a lp-body">{item.a}</p> : null}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+
         {/* Focused Closing Band */}
-        <section className="lp-closing">
+        <section className="lp-closing lp-reveal">
           <h2 className="lp-h2">Ready to run calm, offline school exams?</h2>
           <p className="lp-body">
-            Create your school account in under a minute and download CogniTara Studio for Windows.
+            Download CogniTara Studio for Windows and set up your school exam server in minutes.
           </p>
-          <Link href="/signup" className="btn btn--primary btn--lg">
-            Create school account
-          </Link>
+          <a href={RELEASES_URL} target="_blank" rel="noopener noreferrer" className="btn btn--primary btn--lg">
+            <IconDownload size={16} />
+            <span>Download CogniTara Studio</span>
+          </a>
         </section>
 
         <footer className="lp-footer">
           <span>CogniTara School Examination Platform</span>
           <div className="lp-footer__links">
+            <a href="#architecture">How it works</a>
+            <a href="#reviews">Reviews</a>
+            <a href="#pricing">Pricing</a>
+            <a href="#team">Team</a>
             <Link href="/signin">Sign in</Link>
             <Link href="/signup">Create account</Link>
-            <a href={RELEASES_URL} target="_blank" rel="noopener noreferrer" style={{ display: "inline-flex", alignItems: "center", gap: 5 }}>
-              <IconDownload size={13} />
-              <span>Windows Installer</span>
-            </a>
             <Link href="/hq">Admin Console</Link>
           </div>
         </footer>

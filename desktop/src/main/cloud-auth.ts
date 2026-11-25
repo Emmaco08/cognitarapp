@@ -576,4 +576,39 @@ export class CloudAuthManager {
     const res = await this.requestJson(`/api/v1/backups?id=${encodeURIComponent(backupId)}`, "DELETE", undefined, token);
     return res.ok ? res.data : { ok: false, message: res.data?.message || "Could not delete cloud backup." };
   }
+
+  // ---- School Reviews & Ratings (Desktop App -> CogniTara HQ -> Public Website) ----
+
+  public async getMySchoolReview(): Promise<any> {
+    const token = this.getAccessToken();
+    if (!token) {
+      return { ok: false, error: "unauthorized", message: "Sign in to CogniTara Cloud to rate the app." };
+    }
+    const res = await this.requestJson("/api/v1/reviews?mine=1", "GET", undefined, token);
+    return res.ok ? res.data : { ok: false, error: res.data?.error, message: res.data?.message || "Could not load your rating." };
+  }
+
+  public async submitSchoolReview(payload: {
+    rating: number;
+    headline?: string;
+    body: string;
+    author_name?: string;
+    author_role?: string;
+    city_state?: string;
+  }): Promise<any> {
+    const token = this.getAccessToken();
+    if (!token) {
+      return { ok: false, error: "unauthorized", message: "Sign in to your CogniTara Cloud account first." };
+    }
+    const res = await this.requestJson(
+      "/api/v1/reviews",
+      "POST",
+      {
+        ...payload,
+        app_version: app.getVersion(),
+      },
+      token
+    );
+    return res.ok ? res.data : { ok: false, error: res.data?.error, message: res.data?.message || "Could not submit your review." };
+  }
 }

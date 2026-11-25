@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; script-src 'self'; font-src 'self'; connect-src 'none';">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; script-src 'self'; font-src 'self'; connect-src 'none'; child-src 'self' https://cognitara-cloud.vercel.app https://checkout.paystack.com https://standard.paystack.co; frame-src https://cognitara-cloud.vercel.app https://checkout.paystack.com https://standard.paystack.co;">
   <title>CogniTara Studio</title>
   <link rel="icon" href="./favicon.ico">
   <link rel="stylesheet" href="./studio.css">
@@ -44,6 +44,10 @@
   <symbol id="i-power" viewBox="0 0 24 24"><path d="M12 3v8"/><path d="M6.4 7a8 8 0 1 0 11.2 0"/></symbol>
   <symbol id="i-help" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M9.6 9.4a2.5 2.5 0 0 1 4.8.9c0 1.7-2.4 2.2-2.4 3.7M12 16.8v.2"/></symbol>
   <symbol id="i-spark" viewBox="0 0 24 24"><path d="M12 3l2.2 6.8L21 12l-6.8 2.2L12 21l-2.2-6.8L3 12l6.8-2.2z"/></symbol>
+  <symbol id="i-cloud" viewBox="0 0 24 24"><path d="M17.5 19H7a4.5 4.5 0 0 1-.4-9A6 6 0 0 1 18.2 11a4 4 0 0 1-.7 8z"/></symbol>
+  <symbol id="i-card" viewBox="0 0 24 24"><rect x="2.5" y="5" width="19" height="14" rx="2.5"/><path d="M2.5 10h19M6.5 15h4"/></symbol>
+  <symbol id="i-star" viewBox="0 0 24 24"><polygon points="12 2.8 14.9 8.7 21.4 9.6 16.7 14.2 17.8 20.7 12 17.6 6.2 20.7 7.3 14.2 2.6 9.6 9.1 8.7 12 2.8"/></symbol>
+  <symbol id="i-back" viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></symbol>
 </svg>
 
 <div class="desk" id="desk">
@@ -160,7 +164,7 @@
           <article class="pane" data-pane="0">
             <div class="welcome">
               <div class="welcome__copy">
-                <span class="badge rv"><svg><use href="#i-shield"/></svg>CogniTara Studio 2.2.3</span>
+                <p class="onb-version-note rv">CogniTara Studio 2.2.4</p>
                 <h1 class="kinetic">Your exam hall, running from one computer</h1>
                 <p class="lede rv">This PC becomes your school's exam server. Students write on any laptop, desktop or tablet on the school Wi‑Fi or network cable. No internet needed during exams.</p>
                 <ul class="welcome__facts">
@@ -427,7 +431,9 @@
           <li><button data-view="home" class="is-active"><svg><use href="#i-home"/></svg>Server</button></li>
           <li><button data-view="live"><svg><use href="#i-live"/></svg>Live exams<b class="rail__badge" id="liveBadge" hidden>0</b></button></li>
           <li><button data-view="licence"><svg><use href="#i-key"/></svg>Licence</button></li>
+          <li><button data-view="billing"><svg><use href="#i-card"/></svg>Plans &amp; billing</button></li>
           <li><button data-view="backups"><svg><use href="#i-backup"/></svg>Backups</button></li>
+          <li><button data-view="cloud"><svg><use href="#i-cloud"/></svg>Cloud &amp; rate</button></li>
           <li><button data-view="activity"><svg><use href="#i-activity"/></svg>Activity</button></li>
           <li><button data-view="settings"><svg><use href="#i-settings"/></svg>Settings</button></li>
         </ul>
@@ -677,7 +683,7 @@
               <h2>Software Updates & About</h2>
               <div class="set-row">
                 <span>
-                  <strong id="aboutVersion">CogniTara Studio 2.2.3</strong>
+                  <strong id="aboutVersion">CogniTara Studio 2.2.4</strong>
                   <em id="updSubtitle">5-layer licence vault active · Direct GitHub Releases auto-updater ready.</em>
                 </span>
                 <button class="btn btn--ghost btn--sm" id="setCheckUpdateBtn">Check for updates</button>
@@ -695,6 +701,350 @@
                 </div>
               </div>
             </section>
+          </div>
+        </div>
+
+        <!-- ===== PLANS & BILLING (Full-Screen Animated Flow + Embedded Paystack Inline SDK — ZERO POPUPS) ===== -->
+        <div class="view view--full" data-view="billing" id="billingView" data-bstage="select">
+          <header class="vhead vhead--flow">
+            <div class="vhead__left">
+              <button type="button" class="btn btn--ghost btn--sm flow-return-btn" id="billingReturnBtn" hidden>
+                <svg><use href="#i-back"/></svg><span id="billingReturnLabel">Back to setup</span>
+              </button>
+              <div>
+                <h1 id="billingTitle">Plans &amp; billing</h1>
+                <p id="billingSub">Choose a school plan, pay right inside CogniTara Studio via Paystack, or redeem an HQ licence voucher.</p>
+              </div>
+            </div>
+            <ol class="flow-steps" id="billingFlowSteps" aria-label="Checkout progress">
+              <li class="is-active" data-step="select"><b>1</b><span>Plan &amp; code</span></li>
+              <li data-step="checkout"><b>2</b><span>Paystack SDK</span></li>
+              <li data-step="receipt"><b>3</b><span>Active</span></li>
+            </ol>
+          </header>
+
+          <div class="cloud-modal__err" id="billingErr" hidden></div>
+          <div class="cloud-modal__ok" id="billingOk" hidden></div>
+
+          <!-- STAGE 1: FULL-SCREEN PLAN & VOUCHER WORKSPACE -->
+          <div class="bstage is-active" id="billingStageSelect" data-bstage="select">
+            <div class="billing-toolbar" id="billingTabBar">
+              <div class="seg seg--sm" id="billingTabs" role="tablist">
+                <button type="button" class="is-active" data-btab="plans">Buy with Paystack</button>
+                <button type="button" data-btab="redeem">Redeem voucher code</button>
+              </div>
+              <div class="seg seg--sm" id="billingCurrencySeg" aria-label="Currency">
+                <button type="button" class="is-active" data-curr="NGN">NGN (₦)</button>
+                <button type="button" data-curr="USD">USD ($)</button>
+              </div>
+            </div>
+
+            <!-- TAB 1: PLANS + ORDER SUMMARY SPLIT -->
+            <div class="billing-workspace" id="billingPlansPane">
+              <div class="billing-plans billing-plans--full" id="billingPlansGrid">
+                <div class="billing-loading">Loading live plans from CogniTara Cloud…</div>
+              </div>
+
+              <aside class="billing-checkout-col">
+                <div class="card billing-summary-card">
+                  <h2>Order summary</h2>
+                  <div class="field">
+                    <span>Discount or promo code <i>optional</i></span>
+                    <div class="billing-promo-row">
+                      <input id="billingPromoInput" class="mono" placeholder="e.g. SCHOOL20" autocomplete="off">
+                      <button type="button" class="btn btn--ghost btn--sm" id="billingApplyPromoBtn">Apply</button>
+                    </div>
+                  </div>
+
+                  <div class="billing-summary" id="billingSummary">
+                    <div class="billing-summary__row"><span>Selected plan</span><strong id="bsPlanName">—</strong></div>
+                    <div class="billing-summary__row" id="bsDiscountRow" hidden><span>Promo discount</span><strong style="color:var(--ok)" id="bsDiscountVal">—</strong></div>
+                    <div class="billing-summary__row is-total"><span>Total due</span><span class="mono" id="bsTotalVal">—</span></div>
+                  </div>
+
+                  <div id="billingPendingRefBox" class="cloud-profile" hidden>
+                    <div class="cloud-profile__row"><span>Pending reference</span><code id="bsPendingRef">—</code></div>
+                    <div class="cloud-modal__actions" style="margin-top:4px;justify-content:flex-start">
+                      <button type="button" class="btn btn--primary btn--sm" id="billingResumeVerifyBtn">Verify completed payment</button>
+                    </div>
+                  </div>
+
+                  <div class="billing-cta-stack">
+                    <button type="button" class="btn btn--primary btn--lg" id="billingPayBtn">Continue to Paystack checkout</button>
+                    <button type="button" class="btn btn--ghost" id="billingSignInHintBtn" hidden>Sign in or create Cloud account</button>
+                  </div>
+
+                  <p class="billing-trust-note">
+                    <svg><use href="#i-shield"/></svg>
+                    <span>Checkout runs directly inside this screen with Paystack Inline SDK. Once paid, your Ed25519 licence locks to this computer immediately.</span>
+                  </p>
+                </div>
+              </aside>
+            </div>
+
+            <!-- TAB 2: REDEEM VOUCHER CODE -->
+            <div class="billing-redeem-stage" id="billingRedeemPane" hidden>
+              <div class="card billing-redeem-card">
+                <div class="billing-redeem-icon"><svg><use href="#i-key"/></svg></div>
+                <h2>Redeem an HQ licence voucher</h2>
+                <p>Enter a single-use voucher issued by CogniTara HQ to immediately sign and bind an official Ed25519 school licence to this PC.</p>
+                <label class="field">
+                  <span>Voucher code</span>
+                  <input id="billingRedeemInput" class="mono billing-redeem-input" placeholder="CT-RDM-XXXX-XXXX" autocomplete="off">
+                </label>
+                <div class="billing-redeem-actions">
+                  <button type="button" class="btn btn--primary btn--lg" id="billingRedeemSubmitBtn">Redeem &amp; activate now</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- STAGE 2: FULL-SCREEN EMBEDDED PAYSTACK INLINE SDK (NO POPUP WINDOW!) -->
+          <div class="bstage" id="billingStageCheckout" data-bstage="checkout" hidden>
+            <div class="paystack-stage">
+              <div class="paystack-stage__bar">
+                <div class="paystack-stage__left">
+                  <button type="button" class="btn btn--ghost btn--sm" id="billingBackToPlansBtn">
+                    <svg><use href="#i-back"/></svg>Change plan
+                  </button>
+                  <div class="paystack-stage__meta">
+                    <strong id="psStagePlan">Annual School Plan</strong>
+                    <span><b id="psStageAmount" class="mono">—</b> · Ref <code id="psStageRef">—</code></span>
+                  </div>
+                </div>
+                <div class="paystack-stage__right">
+                  <button type="button" class="btn btn--primary btn--sm" id="billingVerifyRefBtn">Verify payment now</button>
+                  <button type="button" class="btn btn--ghost btn--sm" id="billingOpenFallbackBtn" title="Open Paystack in your web browser if needed">Browser fallback</button>
+                </div>
+              </div>
+
+              <div class="paystack-stage__frame" id="psStageFrame">
+                <div class="paystack-stage__loader" id="psStageLoader">
+                  <div class="paystack-pulse-ring">
+                    <svg viewBox="0 0 80 80" aria-hidden="true">
+                      <circle class="psr-track" cx="40" cy="40" r="32"/>
+                      <circle class="psr-arc" cx="40" cy="40" r="32" pathLength="100"/>
+                    </svg>
+                  </div>
+                  <strong id="psLoaderTitle">Loading Paystack Inline SDK…</strong>
+                  <span id="psLoaderSub">Connecting securely to Paystack inside CogniTara Studio.</span>
+                </div>
+
+                <webview id="paystackEmbedWebview" class="paystack-webview" partition="persist:paystack" src="about:blank"></webview>
+
+                <!-- Preview fallback shown only when running headless outside Electron -->
+                <div class="paystack-preview-mock" id="psStagePreview" hidden>
+                  <div class="paystack-preview-card">
+                    <div class="paystack-preview-head">
+                      <span>Secured by Paystack Inline SDK v2</span>
+                      <strong id="psMockAmount" class="mono">₦75,000</strong>
+                    </div>
+                    <p>Pay with card, bank transfer, USSD, or Apple Pay directly inside CogniTara Studio without external popup windows.</p>
+                    <div class="paystack-preview-fields">
+                      <div class="ps-mock-row"><span>Card / Bank Transfer / USSD</span><strong>Inline SDK Active</strong></div>
+                      <div class="ps-mock-row"><span>Auto-activation</span><strong>Ed25519 Hardware Lease</strong></div>
+                    </div>
+                    <button type="button" class="btn btn--primary btn--lg" id="psMockCompleteBtn">Simulate payment confirmation</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- STAGE 3: FULL-SCREEN PAYMENT CONFIRMED & RECEIPT CELEBRATION -->
+          <div class="bstage" id="billingStageReceipt" data-bstage="receipt" hidden>
+            <div class="receipt-hero card">
+              <div class="receipt-seal" aria-hidden="true">
+                <svg viewBox="0 0 120 120">
+                  <circle class="rs-halo" cx="60" cy="60" r="52"/>
+                  <circle class="rs-ring" cx="60" cy="60" r="40" pathLength="100"/>
+                  <path class="rs-check" d="M40 61 L54 75 L82 47" pathLength="100"/>
+                </svg>
+              </div>
+              <h2 id="brTitle">Payment confirmed &amp; licence activated</h2>
+              <p id="brSub">Your signed Ed25519 licence is active on this computer and an official receipt has been emailed to your school.</p>
+
+              <div class="billing-summary receipt-ledger" id="brDetails">
+                <div class="billing-summary__row"><span>Plan</span><strong id="brPlan">—</strong></div>
+                <div class="billing-summary__row"><span>Amount paid</span><strong class="mono" id="brAmount">—</strong></div>
+                <div class="billing-summary__row" id="brRefRow"><span>Reference</span><code id="brRef" class="mono">—</code></div>
+                <div class="billing-summary__row" id="brKeyRow">
+                  <span>Licence key</span>
+                  <span style="display:flex;align-items:center;gap:8px">
+                    <code id="brKey" class="mono" style="font-weight:600;color:var(--ok)">—</code>
+                    <button type="button" class="btn btn--ghost btn--sm" id="brCopyKeyBtn">Copy</button>
+                  </span>
+                </div>
+                <div class="billing-summary__row"><span>Status</span><strong style="color:var(--ok)" id="brStatus">Active on this PC</strong></div>
+              </div>
+
+              <div class="receipt-actions">
+                <button type="button" class="btn btn--ghost" id="brOpenWebReceiptBtn" hidden>View printable receipt</button>
+                <button type="button" class="btn btn--primary btn--lg" id="brDoneBtn">Continue to Studio</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ===== CLOUD ACCOUNT & RATE APP (Full-Screen Animated View — ZERO POPUPS) ===== -->
+        <div class="view view--full" data-view="cloud" id="cloudView">
+          <header class="vhead vhead--flow">
+            <div class="vhead__left">
+              <button type="button" class="btn btn--ghost btn--sm flow-return-btn" id="cloudReturnBtn" hidden>
+                <svg><use href="#i-back"/></svg><span id="cloudReturnLabel">Back</span>
+              </button>
+              <div>
+                <h1 id="cloudModalTitle">CogniTara Cloud &amp; rating</h1>
+                <p id="cloudModalSub">Manage your verified school identity, cloud backups, and rate CogniTara Studio for our website.</p>
+              </div>
+            </div>
+          </header>
+
+          <div class="cloud-modal__err" id="cloudErr" hidden></div>
+          <div class="cloud-modal__ok" id="cloudOk" hidden></div>
+
+          <!-- SIGNED-IN FULL-SCREEN 2-COLUMN WORKSPACE: IDENTITY + RATE APP -->
+          <div class="cloud-full-grid" id="cloudSignedInPane" hidden>
+            <section class="card cloud-id-card">
+              <div class="cloud-id-head">
+                <div class="cloud-id-crest" id="cmCrest">CT</div>
+                <div>
+                  <h2 id="cmSchool">—</h2>
+                  <p id="cmSync">Synced with CogniTara Cloud</p>
+                </div>
+              </div>
+
+              <div class="cloud-profile">
+                <div class="cloud-profile__row"><span>Account holder</span><strong id="cmUser">—</strong></div>
+                <div class="cloud-profile__row"><span>School email</span><code id="cmEmail">—</code></div>
+                <div class="cloud-profile__row"><span>Verification</span><strong id="cmVerified" style="color:var(--ok)">Email OTP verified</strong></div>
+                <div class="cloud-profile__row">
+                  <span>Referral code</span>
+                  <span style="display:flex;align-items:center;gap:8px">
+                    <code id="cmRef">—</code>
+                    <button type="button" class="btn btn--ghost btn--sm" data-copy="#cmRef">Copy</button>
+                  </span>
+                </div>
+                <div class="cloud-profile__row"><span>Cloud licences</span><strong id="cmLicCount">0 active</strong></div>
+              </div>
+
+              <div class="cloud-id-actions">
+                <button type="button" class="btn btn--primary" id="cmUpgradeBtn"><svg><use href="#i-card"/></svg>Plans &amp; billing</button>
+                <button type="button" class="btn btn--ghost" id="cmSyncNowBtn"><svg><use href="#i-restore"/></svg>Sync now</button>
+                <button type="button" class="btn btn--ghost" id="cmOpenPortalBtn"><svg><use href="#i-external"/></svg>Web portal</button>
+                <button type="button" class="btn btn--ghost" id="cmSignOutBtn">Sign out</button>
+              </div>
+            </section>
+
+            <!-- RATE COGNITARA STUDIO CARD (Reports Directly to HQ Moderation -> Landing Page) -->
+            <section class="card review-card" id="reviewCard">
+              <div class="review-card__head">
+                <div>
+                  <h2>Rate CogniTara Studio</h2>
+                  <p>Share how CogniTara performs on exam day. Your review is sent to CogniTara HQ and published on cognitara.net once approved.</p>
+                </div>
+              </div>
+
+              <div class="review-status" id="reviewStatusBanner" hidden>
+                <span class="review-status__dot"></span>
+                <div>
+                  <strong id="reviewStatusTitle">Pending HQ review</strong>
+                  <span id="reviewStatusSub">Sent to CogniTara HQ. You can update your rating anytime.</span>
+                </div>
+              </div>
+
+              <form class="form" id="schoolReviewForm">
+                <div class="review-stars-wrap">
+                  <span class="review-stars-title">Your rating</span>
+                  <div class="review-stars" id="reviewStars" role="radiogroup" aria-label="Star rating">
+                    <button type="button" class="star-btn is-lit" data-star="1" aria-label="1 star"><svg><use href="#i-star"/></svg></button>
+                    <button type="button" class="star-btn is-lit" data-star="2" aria-label="2 stars"><svg><use href="#i-star"/></svg></button>
+                    <button type="button" class="star-btn is-lit" data-star="3" aria-label="3 stars"><svg><use href="#i-star"/></svg></button>
+                    <button type="button" class="star-btn is-lit" data-star="4" aria-label="4 stars"><svg><use href="#i-star"/></svg></button>
+                    <button type="button" class="star-btn is-lit" data-star="5" aria-label="5 stars"><svg><use href="#i-star"/></svg></button>
+                  </div>
+                  <em class="review-rating-label" id="reviewRatingLabel">5 / 5 — Outstanding</em>
+                </div>
+
+                <div class="field-row">
+                  <label class="field"><span>Your name</span><input id="revName" required placeholder="Adaeze Okafor"></label>
+                  <label class="field"><span>Role / title</span><input id="revRole" placeholder="Principal or ICT Coordinator"></label>
+                </div>
+                <div class="field-row">
+                  <label class="field"><span>City &amp; state <i>optional</i></span><input id="revCity" placeholder="Lagos, Nigeria"></label>
+                  <label class="field"><span>Headline <i>optional</i></span><input id="revHeadline" maxlength="100" placeholder="Zero dropouts across 250 students"></label>
+                </div>
+                <label class="field">
+                  <span style="display:flex;justify-content:space-between"><span>Your review</span><i id="revCharCount">0 / 600</i></span>
+                  <textarea id="revBody" rows="3" required minlength="12" maxlength="600" placeholder="Tell other schools what exam day feels like with CogniTara Studio…"></textarea>
+                </label>
+
+                <div class="cloud-modal__actions">
+                  <button type="submit" class="btn btn--primary" id="revSubmitBtn">Send rating to CogniTara HQ</button>
+                </div>
+              </form>
+            </section>
+          </div>
+
+          <!-- SIGNED-OUT FULL-SCREEN ANIMATED CLOUD AUTH + BREVO 6-DIGIT OTP -->
+          <div class="cloud-auth-stage" id="cloudAuthPane">
+            <div class="card cloud-auth-box">
+              <div class="seg seg--sm" id="cloudTabs" style="margin-bottom:4px">
+                <button type="button" class="is-active" data-ctab="signin">Sign in</button>
+                <button type="button" data-ctab="signup">Create school account</button>
+              </div>
+
+              <form class="form" id="cloudSignInForm">
+                <label class="field"><span>School email</span><input id="ciEmail" type="email" required placeholder="principal@school.edu.ng" autocomplete="email"></label>
+                <label class="field"><span>Password</span><input id="ciPass" type="password" required placeholder="Your password" autocomplete="current-password"></label>
+                <div class="cloud-modal__actions">
+                  <button type="submit" class="btn btn--primary btn--lg" id="ciSubmitBtn">Sign in &amp; cache offline</button>
+                </div>
+              </form>
+
+              <form class="form" id="cloudSignUpForm" hidden>
+                <div class="field-row">
+                  <label class="field"><span>Full name</span><input id="cuName" required placeholder="Adaeze Okafor"></label>
+                  <label class="field"><span>School name</span><input id="cuSchool" required placeholder="Cedar Hills Academy"></label>
+                </div>
+                <div class="field-row">
+                  <label class="field"><span>School email</span><input id="cuEmail" type="email" required placeholder="principal@school.edu.ng"></label>
+                  <label class="field"><span>Phone <i>optional</i></span><input id="cuPhone" type="tel" placeholder="+234 800 000 0000"></label>
+                </div>
+                <div class="field-row">
+                  <label class="field"><span>Password</span><input id="cuPass" type="password" required minlength="8" placeholder="At least 8 characters"></label>
+                  <label class="field"><span>Referral code <i>optional</i></span><input id="cuRef" class="mono" placeholder="CT-XXXX-XXXXXX"></label>
+                </div>
+                <div class="cloud-modal__actions">
+                  <button type="submit" class="btn btn--primary btn--lg" id="cuSubmitBtn">Create account &amp; send OTP</button>
+                </div>
+              </form>
+
+              <form class="form" id="cloudOtpForm" hidden>
+                <p style="margin:0;font-size:13.5px;color:var(--ink-2)">Enter the 6-digit verification code sent to <strong id="coEmailLabel">—</strong>.</p>
+                <label class="field">
+                  <span>6-digit verification code</span>
+                  <input id="coCode" class="mono onb-otp-input" inputmode="numeric" maxlength="6" required placeholder="000000" autocomplete="one-time-code">
+                </label>
+                <div class="cloud-modal__actions" style="justify-content:space-between">
+                  <button type="button" class="btn btn--ghost btn--sm" id="coBackBtn">← Back</button>
+                  <div style="display:flex;gap:8px">
+                    <button type="button" class="btn btn--ghost btn--sm" id="coResendBtn">Resend code</button>
+                    <button type="submit" class="btn btn--primary" id="coSubmitBtn">Verify &amp; continue</button>
+                  </div>
+                </div>
+              </form>
+            </div>
+
+            <aside class="stage onb-stage-cloud">
+              <h3>Verified school identity, offline exam independence</h3>
+              <p>Sign in once with your 6-digit Brevo email code to link licences, encrypt cloud database backups, pay with embedded Paystack, and rate CogniTara Studio.</p>
+              <ul>
+                <li><svg><use href="#i-shield"/></svg><span><strong>Email OTP security.</strong> Only verified school admins can activate or move licences.</span></li>
+                <li><svg><use href="#i-backup"/></svg><span><strong>Encrypted cloud backups.</strong> Restore every exam, question, and score on a replacement PC.</span></li>
+                <li><svg><use href="#i-wifi"/></svg><span><strong>Zero internet required on exam day.</strong> Your session caches locally and stays offline-ready.</span></li>
+              </ul>
+            </aside>
           </div>
         </div>
       </main>
@@ -724,197 +1074,6 @@
           <kbd>Esc</kbd>
         </div>
         <ul class="palette__list" id="palList" role="listbox"></ul>
-      </div>
-    </div>
-
-    <!-- CogniTara Cloud Account Modal (Neon Postgres + Vercel + Offline Cache) -->
-    <div class="cloud-modal" id="cloudModal" hidden>
-      <div class="cloud-modal__box" role="dialog" aria-label="CogniTara Cloud Account">
-        <div class="cloud-modal__head">
-          <div>
-            <h2 id="cloudModalTitle">CogniTara Cloud Account</h2>
-            <p id="cloudModalSub">Online school sync powered by Neon Postgres with automatic offline caching.</p>
-          </div>
-          <button class="cloud-modal__close" id="cloudModalClose" aria-label="Close">
-            <svg viewBox="0 0 24 24"><path d="m7 7 10 10M17 7 7 17"/></svg>
-          </button>
-        </div>
-
-        <div class="cloud-modal__err" id="cloudErr" hidden></div>
-        <div class="cloud-modal__ok" id="cloudOk" hidden></div>
-
-        <!-- Signed-in view -->
-        <div id="cloudSignedInPane" hidden>
-          <div class="cloud-profile">
-            <div class="cloud-profile__row"><span>School</span><strong id="cmSchool">—</strong></div>
-            <div class="cloud-profile__row"><span>Account</span><strong id="cmUser">—</strong></div>
-            <div class="cloud-profile__row"><span>Email</span><code id="cmEmail">—</code></div>
-            <div class="cloud-profile__row"><span>Verification</span><strong id="cmVerified" style="color:var(--ok)">Email OTP verified</strong></div>
-            <div class="cloud-profile__row"><span>Referral Code</span><code id="cmRef">—</code></div>
-            <div class="cloud-profile__row"><span>Sync Status</span><strong id="cmSync">Synced</strong></div>
-          </div>
-          <div class="cloud-modal__actions" style="margin-top:16px">
-            <button class="btn btn--primary btn--sm" id="cmUpgradeBtn"><svg><use href="#i-spark"/></svg>Buy / Redeem Licence</button>
-            <button class="btn btn--ghost btn--sm" id="cmOpenPortalBtn"><svg><use href="#i-external"/></svg>Web Dashboard</button>
-            <button class="btn btn--ghost btn--sm" id="cmSyncNowBtn"><svg><use href="#i-restore"/></svg>Sync now</button>
-            <button class="btn btn--ghost btn--sm" id="cmSignOutBtn">Sign out</button>
-          </div>
-        </div>
-
-        <!-- Signed-out view (Sign In / Sign Up tabs) -->
-        <div id="cloudAuthPane">
-          <div class="seg seg--sm" id="cloudTabs" style="margin-bottom:14px">
-            <button type="button" class="is-active" data-ctab="signin">Sign in</button>
-            <button type="button" data-ctab="signup">Create school account</button>
-          </div>
-
-          <form class="form" id="cloudSignInForm">
-            <label class="field"><span>School email</span><input id="ciEmail" type="email" required placeholder="principal@school.edu.ng" autocomplete="email"></label>
-            <label class="field"><span>Password</span><input id="ciPass" type="password" required placeholder="Your password" autocomplete="current-password"></label>
-            <div class="cloud-modal__actions">
-              <button type="submit" class="btn btn--primary" id="ciSubmitBtn">Sign in &amp; cache offline</button>
-            </div>
-          </form>
-
-          <form class="form" id="cloudSignUpForm" hidden>
-            <div class="field-row">
-              <label class="field"><span>Full name</span><input id="cuName" required placeholder="Adaeze Okafor"></label>
-              <label class="field"><span>School name</span><input id="cuSchool" required placeholder="Cedar Hills Academy"></label>
-            </div>
-            <div class="field-row">
-              <label class="field"><span>School email</span><input id="cuEmail" type="email" required placeholder="principal@school.edu.ng"></label>
-              <label class="field"><span>Phone <i>optional</i></span><input id="cuPhone" type="tel" placeholder="+234 800 000 0000"></label>
-            </div>
-            <div class="field-row">
-              <label class="field"><span>Password</span><input id="cuPass" type="password" required minlength="8" placeholder="At least 8 characters"></label>
-              <label class="field"><span>Referral code <i>optional</i></span><input id="cuRef" class="mono" placeholder="CT-XXXX-XXXXXX"></label>
-            </div>
-            <div class="cloud-modal__actions">
-              <button type="submit" class="btn btn--primary" id="cuSubmitBtn">Create account &amp; sync</button>
-            </div>
-          </form>
-
-          <form class="form" id="cloudOtpForm" hidden>
-            <p style="margin:0;font-size:13px;color:var(--ink-2)">Enter the 6-digit Brevo verification code sent to <strong id="coEmailLabel">—</strong>.</p>
-            <label class="field">
-              <span>6-Digit Verification Code</span>
-              <input id="coCode" class="mono" inputmode="numeric" maxlength="6" required placeholder="000000" autocomplete="one-time-code" style="text-align:center;font-size:20px;letter-spacing:0.32em">
-            </label>
-            <div class="cloud-modal__actions" style="justify-content:space-between">
-              <button type="button" class="btn btn--ghost btn--sm" id="coBackBtn">← Back</button>
-              <div style="display:flex;gap:8px">
-                <button type="button" class="btn btn--ghost btn--sm" id="coResendBtn">Resend code</button>
-                <button type="submit" class="btn btn--primary" id="coSubmitBtn">Verify &amp; continue</button>
-              </div>
-            </div>
-          </form>
-        </div>
-      </div>
-    </div>
-
-    <!-- In-App Paystack Licence Store & Redeem Voucher Modal -->
-    <div class="cloud-modal" id="billingModal" hidden>
-      <div class="cloud-modal__box billing-box" role="dialog" aria-label="Buy or Redeem CogniTara Licence">
-        <div class="cloud-modal__head">
-          <div>
-            <h2>CogniTara Licence Store</h2>
-            <p id="billingSub">Choose a plan set by CogniTara HQ, apply a discount code, or redeem a licence voucher.</p>
-          </div>
-          <button class="cloud-modal__close" id="billingModalClose" aria-label="Close">
-            <svg viewBox="0 0 24 24"><path d="m7 7 10 10M17 7 7 17"/></svg>
-          </button>
-        </div>
-
-        <div class="cloud-modal__err" id="billingErr" hidden></div>
-        <div class="cloud-modal__ok" id="billingOk" hidden></div>
-
-        <div id="billingTabBar" style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
-          <div class="seg seg--sm" id="billingTabs">
-            <button type="button" class="is-active" data-btab="plans">Buy with Paystack</button>
-            <button type="button" data-btab="redeem">Redeem Voucher Code</button>
-          </div>
-          <div class="seg seg--sm" id="billingCurrencySeg">
-            <button type="button" class="is-active" data-curr="NGN">NGN (₦)</button>
-            <button type="button" data-curr="USD">USD ($)</button>
-          </div>
-        </div>
-
-        <!-- TAB 1: PAYSTACK PLANS & DISCOUNT CODE -->
-        <div id="billingPlansPane" style="display:grid;gap:14px">
-          <div class="billing-plans" id="billingPlansGrid">
-            <div style="grid-column:1/-1;padding:18px;text-align:center;color:var(--ink-3);font-size:13px">Loading live plans from CogniTara Cloud…</div>
-          </div>
-
-          <div class="field">
-            <span>Discount / Promo Code <i>optional</i></span>
-            <div class="billing-promo-row">
-              <input id="billingPromoInput" class="mono" placeholder="e.g. SCHOOL20" autocomplete="off">
-              <button type="button" class="btn btn--ghost btn--sm" id="billingApplyPromoBtn">Apply</button>
-            </div>
-          </div>
-
-          <div class="billing-summary" id="billingSummary">
-            <div class="billing-summary__row"><span>Selected Plan</span><strong id="bsPlanName">—</strong></div>
-            <div class="billing-summary__row" id="bsDiscountRow" hidden><span>Promo Discount</span><strong style="color:var(--ok)" id="bsDiscountVal">—</strong></div>
-            <div class="billing-summary__row is-total"><span>Total Due</span><span class="mono" id="bsTotalVal">—</span></div>
-          </div>
-
-          <div id="billingPendingRefBox" class="cloud-profile" hidden>
-            <div class="cloud-profile__row"><span>Checkout Reference</span><code id="bsPendingRef">—</code></div>
-            <div class="cloud-modal__actions" style="margin-top:4px">
-              <button type="button" class="btn btn--primary btn--sm" id="billingVerifyRefBtn">I completed payment — Verify &amp; Activate</button>
-            </div>
-          </div>
-
-          <div class="cloud-modal__actions">
-            <button type="button" class="btn btn--ghost" id="billingSignInHintBtn" hidden>Sign in / Register Cloud Account</button>
-            <button type="button" class="btn btn--primary" id="billingPayBtn">Pay securely with Paystack</button>
-          </div>
-        </div>
-
-        <!-- TAB 2: REDEEM VOUCHER CODE -->
-        <div id="billingRedeemPane" hidden style="display:grid;gap:14px">
-          <div class="field">
-            <span>Enter Redeem / Voucher Code</span>
-            <input id="billingRedeemInput" class="mono" placeholder="CT-RDM-XXXX-XXXX" autocomplete="off" style="text-transform:uppercase;font-size:15px">
-          </div>
-          <p class="hint" style="margin:0">Redeem codes issued by CogniTara HQ instantly generate and sign an official Ed25519 licence bound to this computer — no card needed.</p>
-          <div class="cloud-modal__actions">
-            <button type="button" class="btn btn--primary" id="billingRedeemSubmitBtn">Redeem &amp; Activate Now</button>
-          </div>
-        </div>
-
-        <!-- TAB 3: PAYMENT CONFIRMED & RECEIPT -->
-        <div id="billingReceiptPane" hidden style="display:grid;gap:14px">
-          <div style="display:flex;align-items:center;gap:14px;padding:16px;border-radius:12px;background:var(--ok-soft);border:1px solid rgba(52,211,153,0.28)">
-            <div style="width:42px;height:42px;border-radius:999px;background:var(--ok);color:#041510;display:grid;place-items:center;flex:none">
-              <svg style="width:22px;height:22px;stroke:currentColor;stroke-width:2.6;fill:none" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>
-            </div>
-            <div>
-              <strong id="brTitle" style="display:block;font-size:15.5px;color:var(--ink)">Payment confirmed &amp; licence activated</strong>
-              <span id="brSub" style="display:block;font-size:12.5px;color:var(--ink-2);margin-top:2px">Your Ed25519 licence is bound to this computer and a receipt has been emailed to your school.</span>
-            </div>
-          </div>
-
-          <div class="billing-summary" id="brDetails">
-            <div class="billing-summary__row"><span>Plan</span><strong id="brPlan">—</strong></div>
-            <div class="billing-summary__row"><span>Amount Paid</span><strong class="mono" id="brAmount">—</strong></div>
-            <div class="billing-summary__row" id="brRefRow"><span>Reference</span><code id="brRef" class="mono">—</code></div>
-            <div class="billing-summary__row" id="brKeyRow">
-              <span>Licence Key</span>
-              <span style="display:flex;align-items:center;gap:8px">
-                <code id="brKey" class="mono" style="font-weight:600;color:var(--ok)">—</code>
-                <button type="button" class="btn btn--ghost btn--sm" id="brCopyKeyBtn">Copy</button>
-              </span>
-            </div>
-            <div class="billing-summary__row"><span>Status</span><strong style="color:var(--ok)" id="brStatus">Active on this PC</strong></div>
-          </div>
-
-          <div class="cloud-modal__actions" style="justify-content:space-between">
-            <button type="button" class="btn btn--ghost" id="brOpenWebReceiptBtn" hidden>View printable receipt</button>
-            <button type="button" class="btn btn--primary" id="brDoneBtn" style="margin-left:auto">Done</button>
-          </div>
-        </div>
       </div>
     </div>
 

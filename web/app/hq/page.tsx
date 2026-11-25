@@ -17,6 +17,7 @@ import {
   IconSearch,
   IconSettings,
   IconShield,
+  IconStar,
   IconSun,
   IconTag,
   IconUsers,
@@ -25,11 +26,12 @@ import { HqLoginGate } from "@/components/hq/HqLoginGate";
 import { HqPaymentRow, HqPaymentsKpis, HqPaymentsTab } from "@/components/hq/HqPaymentsTab";
 import { HqPaymentSettingsTab, HqSettingsData } from "@/components/hq/HqPaymentSettingsTab";
 import { HqCodeRow, HqCodesTab, HqPlanRow, HqPlansTab, HqSchoolRow, HqSchoolsTab } from "@/components/hq/HqSchoolsAndPlansTabs";
-import { HqBackupsTab, HqBroadcastsTab, HqEmailsTab, HqReferralsTab, HqStaffSecurityTab } from "@/components/hq/HqSystemTabs";
+import { HqBackupsTab, HqBroadcastsTab, HqEmailsTab, HqReferralsTab, HqReviewsTab, HqStaffSecurityTab } from "@/components/hq/HqSystemTabs";
 
 type TabId =
   | "dashboard"
   | "schools"
+  | "reviews"
   | "referrals"
   | "bans"
   | "plans"
@@ -52,6 +54,7 @@ interface NavItem {
 const NAV_ITEMS: NavItem[] = [
   { id: "dashboard", group: "Overview", label: "Dashboard", icon: <IconLayout size={15} /> },
   { id: "schools", group: "Schools", label: "Schools & accounts", icon: <IconUsers size={15} /> },
+  { id: "reviews", group: "Schools", label: "Reviews & ratings", icon: <IconStar size={15} /> },
   { id: "referrals", group: "Schools", label: "Referrals & payouts", icon: <IconGift size={15} /> },
   { id: "bans", group: "Schools", label: "Fraud & bans", icon: <IconBan size={15} /> },
   { id: "plans", group: "Money", label: "Plans & prices", icon: <IconTag size={15} /> },
@@ -217,6 +220,7 @@ export default function DeveloperHqPage() {
   const m = overview?.metrics || {};
   const badgeCounts: Partial<Record<TabId, number>> = {
     schools: m.schools_total || 0,
+    reviews: m.reviews_pending || 0,
     bans: (m.schools_banned || 0) + (m.schools_suspended || 0),
     payments: (m.paid_orders || 0) + (m.pending_orders || 0),
     codes: m.promo_codes_active || 0,
@@ -425,6 +429,10 @@ export default function DeveloperHqPage() {
 
           {tab === "schools" ? (
             <HqSchoolsTab schools={schools} plans={plans} mode="all" onRefresh={loadAllData} onToast={showToast} />
+          ) : null}
+
+          {tab === "reviews" ? (
+            <HqReviewsTab onToast={showToast} onRefreshOverview={loadAllData} />
           ) : null}
 
           {tab === "bans" ? (

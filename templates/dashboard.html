@@ -89,9 +89,10 @@
             {% endif %}
           </div>
           <div class="st-greeting">
-            <span class="st-eyebrow">Student Portal · {{ session.class }}</span>
             <h1>Welcome back, {{ display_name }}</h1>
             <div class="st-meta-row">
+              <span>{{ session.class }}</span>
+              <span class="st-meta-dot" aria-hidden="true"></span>
               <span class="st-mono">@{{ username }}</span>
               <span class="st-meta-dot" aria-hidden="true"></span>
               <span class="st-status-live"><i></i>Ready for examinations</span>

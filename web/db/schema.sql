@@ -434,3 +434,26 @@ ON CONFLICT (slug) DO UPDATE SET
     description = COALESCE(NULLIF(plans.description, ''), EXCLUDED.description),
     badge = COALESCE(NULLIF(plans.badge, ''), EXCLUDED.badge),
     plan_tier = COALESCE(NULLIF(plans.plan_tier, ''), EXCLUDED.plan_tier);
+
+-- 20. v2.2.4: School Ratings & Testimonials (Submitted from Desktop Studio -> Approved in HQ -> Shown on Website)
+CREATE TABLE IF NOT EXISTS school_reviews (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    school_id UUID NOT NULL REFERENCES schools(id) ON DELETE CASCADE UNIQUE,
+    user_id UUID REFERENCES users_hq(id) ON DELETE SET NULL,
+    school_name TEXT NOT NULL,
+    author_name TEXT NOT NULL,
+    author_role TEXT NOT NULL DEFAULT 'School Administrator',
+    city_region TEXT NOT NULL DEFAULT '',
+    rating INTEGER NOT NULL CHECK (rating >= 1 AND rating <= 5),
+    headline TEXT NOT NULL DEFAULT '',
+    body TEXT NOT NULL,
+    app_version TEXT,
+    status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected')),
+    featured BOOLEAN NOT NULL DEFAULT FALSE,
+    reviewed_by UUID REFERENCES users_hq(id) ON DELETE SET NULL,
+    reviewed_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_school_reviews_status ON school_reviews(status, featured DESC, created_at DESC);
+

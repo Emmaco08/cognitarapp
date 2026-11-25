@@ -751,14 +751,11 @@
                     <span>Calculator</span>
                 </button>
                 {% endif %}
-                <div class="student-name-badge" style="display:inline-flex; align-items:center; gap:10px; padding:6px 16px; background:#ffffff; border:1.5px solid #cbd5e1; border-radius:24px; box-shadow:0 2px 4px rgba(0,0,0,0.04);">
-                    <img src="{{ url_for('static', filename='images/' + (student.photo or 'default.png')) if student and student.photo else url_for('static', filename='images/default.png') }}" 
+                <div class="student-name-badge">
+                    <img src="{{ url_for('static', filename='images/' + (student.photo or 'default.png')) if student and student.photo else url_for('avatar', name=(student.full_name if student else session.get('ce_student_name', 'Candidate'))) }}" 
                          alt="{{ session.get('ce_student_name', 'Candidate') }}" 
-                         style="width:38px; height:38px; border-radius:50%; object-fit:cover; border:2px solid #1a56db; flex-shrink:0;">
-                    <div style="text-align:left;">
-                        <span style="display:block; font-size:14px; font-weight:800; color:#0f172a; letter-spacing:-0.01em;">{{ student.full_name if student else session.get('ce_student_name', 'Candidate') }}</span>
-                        <span style="display:block; font-size:11px; font-weight:600; color:#64748b;">{{ student.username if student else '' }}</span>
-                    </div>
+                         style="width:24px; height:24px; border-radius:50%; object-fit:cover; flex-shrink:0;">
+                    <span>{{ student.full_name if student else session.get('ce_student_name', 'Candidate') }}{% if student and student.username %} · {{ student.username }}{% endif %}</span>
                 </div>
 
                 <div class="timer-box" id="timerContainer">
@@ -962,23 +959,27 @@
     
 
 
-    <!-- Beautiful Submit Modal -->
+    <!-- Submit Confirmation Modal -->
     <div id="beautifulSubmitModal" class="submit-premium-modal">
         <div class="submit-premium-content">
             <div class="submit-premium-header" id="submitModalHeader">
                 <div class="submit-animation-icon" id="submitModalIcon">
                     <div class="circle-bg"></div>
-                    <div class="icon-inner"><i class="fas fa-question-circle"></i></div>
+                    <div class="icon-inner" id="submitModalIconInner">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path class="ex-seal-path" d="M5 12.5l4.2 4.2L19 7.5"/></svg>
+                    </div>
                 </div>
-                <h3 id="submitModalTitle">Submit Exam?</h3>
-                <p id="submitModalSubtitle">Review your progress</p>
+                <div class="submit-header-copy">
+                    <h3 id="submitModalTitle">Submit Exam?</h3>
+                    <p id="submitModalSubtitle">Review your progress before locking answers</p>
+                </div>
             </div>
             <div class="submit-premium-body">
                 <div class="progress-ring-container">
                     <div class="ring-wrapper">
-                        <svg width="70" height="70" viewBox="0 0 70 70">
-                            <circle cx="35" cy="35" r="30" fill="none" stroke="#e2e8f0" stroke-width="6"/>
-                            <circle id="submitProgressCircle" cx="35" cy="35" r="30" fill="none" stroke="#10b981" stroke-width="6" stroke-dasharray="188.5" stroke-dashoffset="188.5" stroke-linecap="round" transform="rotate(-90 35 35)"/>
+                        <svg width="78" height="78" viewBox="0 0 70 70" aria-hidden="true">
+                            <circle class="ex-ring-track" cx="35" cy="35" r="30" fill="none" stroke-width="6"/>
+                            <circle id="submitProgressCircle" cx="35" cy="35" r="30" fill="none" stroke="var(--ex-ok)" stroke-width="6" stroke-dasharray="188.5" stroke-dashoffset="188.5" stroke-linecap="round" transform="rotate(-90 35 35)"/>
                         </svg>
                         <div class="ring-center">
                             <div class="answered-num" id="modalAnsweredCount">0</div>
@@ -986,7 +987,7 @@
                         </div>
                     </div>
                     <div class="stats-text">
-                        <div class="answered-label">Questions Completed</div>
+                        <div class="answered-label">Questions completed</div>
                         <div class="answered-count-large" id="modalAnsweredLarge">0</div>
                         <div class="unanswered-count" id="modalUnansweredDisplay">0 remaining</div>
                     </div>
@@ -995,8 +996,8 @@
                 <div id="successMessageContainer"></div>
             </div>
             <div class="submit-premium-footer">
-                <button class="btn-cancel" id="cancelSubmitBtn">Go Back</button>
-                <button class="btn-submit" id="confirmSubmitBtn">Submit Exam</button>
+                <button type="button" class="btn-cancel" id="cancelSubmitBtn">Review Answers</button>
+                <button type="button" class="btn-submit" id="confirmSubmitBtn">Submit Exam</button>
             </div>
         </div>
     </div>
@@ -1005,8 +1006,8 @@
     <div id="loadingModal" class="loading-modal">
         <div class="loading-content">
             <div class="loading-spinner-large"></div>
-            <h3>Submitting Exam...</h3>
-            <p>Please wait while we save your answers</p>
+            <h3>Submitting Exam</h3>
+            <p>Saving and locking your entrance examination responses…</p>
         </div>
     </div>
 
@@ -2126,15 +2127,17 @@ document.addEventListener('keydown', function(event) {
     function showBeautifulSubmitModal() {
         if (autoSubmitTriggered || examLocked || isPaused) return;
         const answered = document.querySelectorAll('.palette-btn.answered').length;
-        const unanswered = totalQuestions - answered;
-        const percentage = (answered / totalQuestions) * 100;
+        const unanswered = Math.max(0, totalQuestions - answered);
+        const percentage = totalQuestions > 0 ? (answered / totalQuestions) * 100 : 0;
         const circumference = 188.5;
         const offset = circumference - (percentage / 100) * circumference;
         const modal = document.getElementById('beautifulSubmitModal');
+        const circle = document.getElementById('submitProgressCircle');
+        const iconInner = document.getElementById('submitModalIconInner');
         document.getElementById('modalAnsweredCount').textContent = answered;
         document.getElementById('modalAnsweredLarge').textContent = answered;
-        document.getElementById('modalUnansweredDisplay').textContent = `${unanswered} remaining`;
-        document.getElementById('submitProgressCircle').style.strokeDashoffset = offset;
+        document.getElementById('modalUnansweredDisplay').textContent = unanswered === 0 ? 'All answered' : `${unanswered} remaining`;
+        circle.style.strokeDashoffset = String(circumference);
         const warningContainer = document.getElementById('warningMessageContainer');
         const successContainer = document.getElementById('successMessageContainer');
         warningContainer.innerHTML = '';
@@ -2142,19 +2145,30 @@ document.addEventListener('keydown', function(event) {
         if (unanswered === 0) {
             document.getElementById('submitModalHeader').classList.remove('warning');
             document.getElementById('submitModalIcon').classList.remove('warning');
-            document.getElementById('submitModalTitle').textContent = 'Ready to Submit!';
-            document.getElementById('submitModalSubtitle').textContent = 'All questions completed';
-            document.getElementById('submitProgressCircle').setAttribute('stroke', '#10b981');
-            successContainer.innerHTML = `<div class="success-message-box"><i class="fas fa-check-circle"></i><span><i class="fas fa-award"></i> Perfect! You've answered all ${totalQuestions} questions!</span></div>`;
+            document.getElementById('submitModalTitle').textContent = 'Ready to submit';
+            document.getElementById('submitModalSubtitle').textContent = 'Every question has a recorded answer';
+            circle.setAttribute('stroke', 'var(--ex-ok)');
+            if (iconInner) {
+                iconInner.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path class="ex-seal-path" d="M5 12.5l4.2 4.2L19 7.5"/></svg>';
+            }
+            successContainer.innerHTML = `<div class="success-message-box"><i class="fas fa-check-circle"></i><span>All ${totalQuestions} questions answered and ready for submission.</span></div>`;
         } else {
             document.getElementById('submitModalHeader').classList.add('warning');
             document.getElementById('submitModalIcon').classList.add('warning');
-            document.getElementById('submitModalTitle').textContent = 'Submit Exam?';
-            document.getElementById('submitModalSubtitle').textContent = `${unanswered} question(s) remaining`;
-            document.getElementById('submitProgressCircle').setAttribute('stroke', '#f59e0b');
-            warningContainer.innerHTML = `<div class="warning-message-box"><i class="fas fa-exclamation-triangle"></i><div class="warning-text"><strong>${unanswered}</strong> question(s) left unanswered</div></div>`;
+            document.getElementById('submitModalTitle').textContent = 'Submit exam now?';
+            document.getElementById('submitModalSubtitle').textContent = `${unanswered} question${unanswered === 1 ? '' : 's'} still unanswered`;
+            circle.setAttribute('stroke', 'var(--ex-warn)');
+            if (iconInner) {
+                iconInner.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path class="ex-seal-path" d="M12 8v5m0 3.5h.01M10.3 4.3L2.8 17.5a2 2 0 001.7 3h15a2 2 0 001.7-3L13.7 4.3a2 2 0 00-3.4 0z"/></svg>';
+            }
+            warningContainer.innerHTML = `<div class="warning-message-box"><i class="fas fa-exclamation-triangle"></i><div class="warning-text"><strong>${unanswered}</strong> question${unanswered === 1 ? ' is' : 's are'} left unanswered. You can still go back to review them.</div></div>`;
         }
         modal.classList.add('show');
+        requestAnimationFrame(function () {
+            requestAnimationFrame(function () {
+                circle.style.strokeDashoffset = String(offset);
+            });
+        });
     }
 
     function closeBeautifulSubmitModal() { document.getElementById('beautifulSubmitModal').classList.remove('show'); }
