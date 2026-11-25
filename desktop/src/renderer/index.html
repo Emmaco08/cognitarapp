@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; script-src 'self'; font-src 'self'; connect-src 'none'; child-src 'self' https://cognitara-cloud.vercel.app https://checkout.paystack.com https://standard.paystack.co; frame-src https://cognitara-cloud.vercel.app https://checkout.paystack.com https://standard.paystack.co;">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data: blob: https://*.paystack.co https://*.paystack.com; style-src 'self' 'unsafe-inline'; script-src 'self' https://checkout.paystack.com https://js.paystack.co; font-src 'self' data:; connect-src 'self' https://api.paystack.co https://checkout.paystack.com https://standard.paystack.co; child-src 'self' about: https://checkout.paystack.com https://standard.paystack.co; frame-src 'self' about: https://checkout.paystack.com https://standard.paystack.co;">
   <title>CogniTara Studio</title>
   <link rel="icon" href="./favicon.ico">
   <link rel="stylesheet" href="./studio.css">
@@ -164,7 +164,7 @@
           <article class="pane" data-pane="0">
             <div class="welcome">
               <div class="welcome__copy">
-                <p class="onb-version-note rv">CogniTara Studio 2.2.6</p>
+                <p class="onb-version-note rv">CogniTara Studio 2.2.7</p>
                 <h1 class="kinetic">Your exam hall, running from one computer</h1>
                 <p class="lede rv">This PC becomes your school's exam server. Students write on any laptop, desktop or tablet on the school Wi‑Fi or network cable. No internet needed during exams.</p>
                 <ul class="welcome__facts">
@@ -742,7 +742,7 @@
               <h2>Software Updates & About</h2>
               <div class="set-row">
                 <span>
-                  <strong id="aboutVersion">CogniTara Studio 2.2.6</strong>
+                  <strong id="aboutVersion">CogniTara Studio 2.2.7</strong>
                   <em id="updSubtitle">5-layer licence vault active · Direct GitHub Releases auto-updater ready.</em>
                 </span>
                 <button class="btn btn--ghost btn--sm" id="setCheckUpdateBtn">Check for updates</button>
@@ -861,52 +861,98 @@
             </div>
           </div>
 
-          <!-- STAGE 2: FULL-SCREEN EMBEDDED PAYSTACK INLINE SDK (NO POPUP WINDOW!) -->
+          <!-- STAGE 2: NATIVE BUNDLED PAYSTACK INLINEJS V2 SDK (ZERO WEBVIEW · ZERO EXTERNAL POPUP) -->
           <div class="bstage" id="billingStageCheckout" data-bstage="checkout" hidden>
-            <div class="paystack-stage">
+            <div class="paystack-stage" id="paystackStageRoot" data-sdk-state="loading">
               <div class="paystack-stage__bar">
                 <div class="paystack-stage__left">
                   <button type="button" class="btn btn--ghost btn--sm" id="billingBackToPlansBtn">
                     <svg><use href="#i-back"/></svg>Change plan
                   </button>
                   <div class="paystack-stage__meta">
-                    <strong id="psStagePlan">Annual School Plan</strong>
-                    <span><b id="psStageAmount" class="mono">—</b> · Ref <code id="psStageRef">—</code></span>
+                    <div class="paystack-stage__title-row">
+                      <strong id="psStagePlan">Annual School Plan</strong>
+                      <span class="ps-test-badge" id="psStageTestBadge" hidden>Test Mode</span>
+                    </div>
+                    <span><b id="psStageAmount" class="mono tnum">—</b> · Ref <code id="psStageRef" class="mono">—</code></span>
                   </div>
                 </div>
                 <div class="paystack-stage__right">
+                  <span class="ps-sdk-pill" id="psSdkStatusPill" data-tone="loading">
+                    <i class="ps-sdk-pill__dot" aria-hidden="true"></i>
+                    <span id="psSdkStatusText">Connecting Paystack SDK…</span>
+                  </span>
                   <button type="button" class="btn btn--primary btn--sm" id="billingVerifyRefBtn">Verify payment now</button>
-                  <button type="button" class="btn btn--ghost btn--sm" id="billingOpenFallbackBtn" title="Open Paystack in your web browser if needed">Browser fallback</button>
+                  <button type="button" class="btn btn--ghost btn--sm" id="billingOpenFallbackBtn" title="Emergency fallback if your school firewall blocks Paystack SDK">Browser fallback</button>
                 </div>
               </div>
 
               <div class="paystack-stage__frame" id="psStageFrame">
+                <div class="ps-stage-ambient" aria-hidden="true"></div>
+
+                <!-- Native Paystack SDK Loading & Cryptographic Verification State -->
                 <div class="paystack-stage__loader" id="psStageLoader">
-                  <div class="paystack-pulse-ring">
-                    <svg viewBox="0 0 80 80" aria-hidden="true">
-                      <circle class="psr-track" cx="40" cy="40" r="32"/>
-                      <circle class="psr-arc" cx="40" cy="40" r="32" pathLength="100"/>
+                  <div class="paystack-pulse-ring" aria-hidden="true">
+                    <svg viewBox="0 0 88 88">
+                      <circle class="psr-outer" cx="44" cy="44" r="38"/>
+                      <circle class="psr-track" cx="44" cy="44" r="30"/>
+                      <circle class="psr-arc" cx="44" cy="44" r="30" pathLength="100"/>
+                      <path class="psr-shield" d="M44 29l11 4.4v7.6c0 6.8-4.7 12.1-11 13.7-6.3-1.6-11-6.9-11-13.7v-7.6L44 29z"/>
+                      <path class="psr-check" d="M39.5 43.2l3 3.1 6.3-6.6"/>
                     </svg>
                   </div>
-                  <strong id="psLoaderTitle">Loading Paystack Inline SDK…</strong>
-                  <span id="psLoaderSub">Connecting securely to Paystack inside CogniTara Studio.</span>
+                  <div class="ps-loader-copy">
+                    <strong id="psLoaderTitle">Launching Paystack Inline SDK v2…</strong>
+                    <span id="psLoaderSub">Binding your school payment session securely inside CogniTara Studio.</span>
+                  </div>
+                  <ol class="ps-loader-steps" id="psLoaderSteps" aria-live="polite">
+                    <li class="is-done" data-lstep="1"><i></i><span>SDK bundled locally</span></li>
+                    <li class="is-active" data-lstep="2"><i></i><span>Binding access code</span></li>
+                    <li data-lstep="3"><i></i><span>PCI-DSS checkout ready</span></li>
+                  </ol>
                 </div>
 
-                <webview id="paystackEmbedWebview" class="paystack-webview" partition="persist:paystack" src="about:blank"></webview>
+                <!-- Native Paystack SDK Paused / Bank Transfer Pending / Error Recovery Card -->
+                <div class="ps-paused-wrap" id="psStagePaused" hidden>
+                  <div class="ps-paused-card" id="psPausedCard" data-kind="paused">
+                    <div class="ps-paused-icon" id="psPausedIcon" aria-hidden="true">
+                      <svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="M3 10h18M7 15h4"/></svg>
+                    </div>
+                    <div class="ps-paused-copy">
+                      <h3 id="psPausedTitle">Paystack checkout paused</h3>
+                      <p id="psPausedSub">You closed the Paystack sheet before completing payment. Your session is still ready — reopen anytime or change plan.</p>
+                    </div>
+                    <div class="ps-transfer-poll" id="psTransferPollRow" hidden>
+                      <span class="ps-transfer-spinner" aria-hidden="true"></span>
+                      <span id="psTransferPollText">Listening for Paystack bank transfer confirmation…</span>
+                    </div>
+                    <div class="ps-paused-meta">
+                      <div><span>Plan</span><strong id="psPausedPlan">Annual School</strong></div>
+                      <div><span>Amount</span><strong id="psPausedAmount" class="mono tnum">—</strong></div>
+                      <div><span>Reference</span><code id="psPausedRef" class="mono">—</code></div>
+                    </div>
+                    <div class="ps-paused-actions">
+                      <button type="button" class="btn btn--primary" id="psReopenSdkBtn">Reopen Paystack Checkout</button>
+                      <button type="button" class="btn btn--ghost" id="psPausedVerifyBtn">Verify if already paid</button>
+                      <button type="button" class="btn btn--ghost" id="psPausedFallbackBtn" hidden>Open in web browser</button>
+                    </div>
+                  </div>
+                </div>
 
-                <!-- Preview fallback shown only when running headless outside Electron -->
+                <!-- Headless visual preview fallback (shown only outside Electron when no access_code exists) -->
                 <div class="paystack-preview-mock" id="psStagePreview" hidden>
                   <div class="paystack-preview-card">
                     <div class="paystack-preview-head">
-                      <span>Secured by Paystack Inline SDK v2</span>
-                      <strong id="psMockAmount" class="mono">₦75,000</strong>
+                      <span class="ps-sdk-pill" data-tone="live"><i class="ps-sdk-pill__dot"></i><span>Paystack InlineJS SDK v2.28</span></span>
+                      <strong id="psMockAmount" class="mono tnum">₦75,000</strong>
                     </div>
-                    <p>Pay with card, bank transfer, USSD, or Apple Pay directly inside CogniTara Studio without external popup windows.</p>
+                    <p>Official <code>@paystack/inline-js</code> SDK incorporated natively inside CogniTara Studio — zero <code>&lt;webview&gt;</code>, zero external popup redirect. Supports Card + 3DS, Bank Transfer, USSD, OPay, and Visa QR.</p>
                     <div class="paystack-preview-fields">
-                      <div class="ps-mock-row"><span>Card / Bank Transfer / USSD</span><strong>Inline SDK Active</strong></div>
-                      <div class="ps-mock-row"><span>Auto-activation</span><strong>Ed25519 Hardware Lease</strong></div>
+                      <div class="ps-mock-row"><span>Engine</span><strong>Bundled <code>@paystack/inline-js</code></strong></div>
+                      <div class="ps-mock-row"><span>Channels</span><strong>Card · Transfer · USSD · Bank · OPay</strong></div>
+                      <div class="ps-mock-row"><span>Post-payment activation</span><strong>Instant Ed25519 Hardware Lease</strong></div>
                     </div>
-                    <button type="button" class="btn btn--primary btn--lg" id="psMockCompleteBtn">Simulate payment confirmation</button>
+                    <button type="button" class="btn btn--primary btn--lg" id="psMockCompleteBtn">Simulate Paystack onSuccess callback</button>
                   </div>
                 </div>
               </div>
@@ -1160,6 +1206,7 @@
 </div>
 
 <script src="./cognitara-qr.js"></script>
+<script src="./vendor/paystack-inline.js"></script>
 <script src="./studio-desktop.js"></script>
 </body>
 </html>

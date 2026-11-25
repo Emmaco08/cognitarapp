@@ -51,7 +51,7 @@
     writing: 0,
     samples: new Array(120).fill(0),
     stopArmed: false,
-    version: "2.2.6",
+    version: "2.2.7",
     activeView: "home",
     cloudAccount: null,
     updateState: null
@@ -137,6 +137,7 @@
       $$("#themeSeg button").forEach(function (b) { b.classList.toggle("is-active", b.dataset.t === t); });
       drawPulse(true);
       drawSpark(true);
+      if (typeof stylePaystackBackdrop === "function") stylePaystackBackdrop();
       if (persist && bridge) {
         bridge.updateSettings({ theme: t }).catch(function () {});
       }
@@ -1245,6 +1246,9 @@
   if ($("#cloudReturnBtn")) $("#cloudReturnBtn").addEventListener("click", function () { exitSubflow("home"); });
 
   function showView(name) {
+    if (name !== "billing" && typeof closeActivePaystackSdk === "function") {
+      closeActivePaystackSdk(false);
+    }
     state.activeView = name;
     $$(".view").forEach(function (v) { v.classList.toggle("is-active", v.dataset.view === name); });
     $$("#railNav button").forEach(function (b) { b.classList.toggle("is-active", b.dataset.view === name); });
@@ -1253,6 +1257,7 @@
     if (name === "licence") paintLicence();
     if (name === "backups") refreshBackups();
     if (name === "billing") {
+      if (typeof warmPaystackSdk === "function") warmPaystackSdk();
       loadBillingPlansIfNeeded();
       renderBillingSummary();
     }
@@ -1300,9 +1305,13 @@
   var palSel = 0, palItems = [];
   function openPalette() {
     if (state.mode !== "app") return;
+    if (typeof setPaystackOverlaySuspended === "function") setPaystackOverlaySuspended(true);
     $("#palette").hidden = false; $("#palInput").value = ""; filterPalette(); $("#palInput").focus();
   }
-  function closePalette() { $("#palette").hidden = true; }
+  function closePalette() {
+    $("#palette").hidden = true;
+    if (typeof setPaystackOverlaySuspended === "function") setPaystackOverlaySuspended(false);
+  }
   function filterPalette() {
     var q = $("#palInput").value.trim().toLowerCase();
     palItems = COMMANDS.filter(function (c) { return !q || c.label.toLowerCase().indexOf(q) > -1 || c.hint.toLowerCase().indexOf(q) > -1; });
@@ -2917,7 +2926,7 @@
     });
   }
 
-  /* ------------------------------------------------------------------ Full-Screen Billing & Embedded Paystack Inline SDK */
+  /* ------------------------------------------------------------------ Full-Screen Billing & Native Paystack InlineJS v2 SDK */
   var billingState = {
     stage: "select",
     plans: [],
@@ -2928,8 +2937,21 @@
     appliedPromo: null,
     pendingRef: null,
     fallbackUrl: null,
+    activeInit: null,
+    activePlanLabel: null,
+    activeAmountLabel: null,
     verifying: false
   };
+
+  var paystackSdk = null;
+  var paystackSdkCreatedAt = 0;
+  var paystackResizeObs = null;
+  var paystackListenersBound = false;
+  var paystackLoadTimer = null;
+  var paystackTransferTimer = null;
+  var paystackTransferPolls = 0;
+  var paystackActiveRunId = 0;
+  var paystackOverlaySuspended = false;
 
   function fmtMoney(minor, currency) {
     var val = (Number(minor || 0) / 100);
@@ -2941,6 +2963,254 @@
     var eEl = $("#billingErr"), oEl = $("#billingOk");
     if (eEl) { eEl.hidden = !errText; eEl.textContent = errText || ""; }
     if (oEl) { oEl.hidden = !okText; oEl.textContent = okText || ""; }
+  }
+
+  function clearPaystackLoadTimer() {
+    if (paystackLoadTimer) {
+      clearTimeout(paystackLoadTimer);
+      paystackLoadTimer = null;
+    }
+  }
+
+  function stopTransferPolling() {
+    if (paystackTransferTimer) {
+      clearTimeout(paystackTransferTimer);
+      paystackTransferTimer = null;
+    }
+    paystackTransferPolls = 0;
+  }
+
+  function destroyPaystackSdk() {
+    clearPaystackLoadTimer();
+    if (!paystackSdk) return;
+    try { paystackSdk.close(); } catch (_e) {}
+    try {
+      if (paystackSdk.backgroundIframe && paystackSdk.backgroundIframe.parentNode) {
+        paystackSdk.backgroundIframe.parentNode.removeChild(paystackSdk.backgroundIframe);
+      }
+    } catch (_e2) {}
+    try {
+      if (paystackSdk.checkoutIframe && paystackSdk.checkoutIframe.parentNode) {
+        paystackSdk.checkoutIframe.parentNode.removeChild(paystackSdk.checkoutIframe);
+      }
+    } catch (_e3) {}
+    paystackSdk = null;
+    paystackSdkCreatedAt = 0;
+  }
+
+  function stylePaystackBackdrop() {
+    if (!paystackSdk) return;
+    var bg = paystackSdk.backgroundIframe;
+    var ck = paystackSdk.checkoutIframe;
+    var isLight = state.theme === "light";
+    if (bg) {
+      bg.style.background = isLight ? "rgba(241, 245, 249, 0.72)" : "rgba(10, 14, 26, 0.62)";
+      bg.style.colorScheme = isLight ? "light" : "dark";
+      bg.style.borderRadius = "18px";
+      bg.style.zIndex = "15";
+      try {
+        var doc = bg.contentWindow && bg.contentWindow.document;
+        var legacyLoader = doc && doc.getElementById("app-loader");
+        if (legacyLoader) legacyLoader.style.display = "none";
+      } catch (_e) {}
+    }
+    if (ck) {
+      ck.style.borderRadius = "18px";
+      ck.style.zIndex = "16";
+      ck.style.background = "transparent";
+    }
+  }
+
+  function syncPaystackSdkBounds() {
+    if (!paystackSdk) return;
+    var frame = $("#psStageFrame");
+    if (!frame) return;
+    var rect = frame.getBoundingClientRect();
+    if (rect.width < 120 || rect.height < 120) return;
+
+    // Never allow Paystack's inline iframe to overlap the 56px native frameless titlebar
+    var topPx = Math.max(56, Math.round(rect.top));
+    var leftPx = Math.max(0, Math.round(rect.left));
+    var widthPx = Math.round(rect.width);
+    var heightPx = Math.max(320, Math.round(rect.bottom - topPx));
+
+    [paystackSdk.backgroundIframe, paystackSdk.checkoutIframe].forEach(function (ifr, idx) {
+      if (!ifr) return;
+      ifr.style.position = "fixed";
+      ifr.style.left = leftPx + "px";
+      ifr.style.top = topPx + "px";
+      ifr.style.width = widthPx + "px";
+      ifr.style.height = heightPx + "px";
+      ifr.style.borderRadius = "18px";
+      ifr.style.zIndex = idx === 0 ? "15" : "16";
+    });
+  }
+
+  function bindPaystackViewportWatchersOnce() {
+    if (paystackListenersBound) return;
+    paystackListenersBound = true;
+    var rafSync = function () {
+      window.requestAnimationFrame(syncPaystackSdkBounds);
+    };
+    window.addEventListener("resize", rafSync);
+    var frame = $("#psStageFrame");
+    if (frame && typeof ResizeObserver === "function") {
+      paystackResizeObs = new ResizeObserver(rafSync);
+      paystackResizeObs.observe(frame);
+    }
+    var view = $("#billingView");
+    if (view) view.addEventListener("scroll", rafSync, { passive: true });
+    var checkoutStage = $("#billingStageCheckout");
+    if (checkoutStage) checkoutStage.addEventListener("animationend", rafSync);
+    var viewsWrap = $(".views");
+    if (viewsWrap) viewsWrap.addEventListener("scroll", rafSync, { passive: true });
+  }
+
+  function warmPaystackSdk() {
+    if (typeof window.PaystackPop !== "function") return null;
+    bindPaystackViewportWatchersOnce();
+    if (paystackSdk) {
+      stylePaystackBackdrop();
+      syncPaystackSdkBounds();
+      return paystackSdk;
+    }
+    try {
+      paystackSdk = new window.PaystackPop();
+      paystackSdkCreatedAt = Date.now();
+      stylePaystackBackdrop();
+      syncPaystackSdkBounds();
+      return paystackSdk;
+    } catch (_e) {
+      paystackSdk = null;
+      return null;
+    }
+  }
+
+  function setPaystackOverlaySuspended(suspended) {
+    paystackOverlaySuspended = Boolean(suspended);
+    if (!paystackSdk || !paystackSdk.isOpen) return;
+    var iframes = [paystackSdk.backgroundIframe, paystackSdk.checkoutIframe];
+    if (paystackOverlaySuspended) {
+      iframes.forEach(function (ifr) {
+        if (!ifr) return;
+        ifr.style.visibility = "hidden";
+        ifr.style.pointerEvents = "none";
+      });
+    } else if (state.activeView === "billing" && billingState.stage === "checkout") {
+      syncPaystackSdkBounds();
+      iframes.forEach(function (ifr) {
+        if (!ifr) return;
+        ifr.style.visibility = "visible";
+        ifr.style.pointerEvents = "auto";
+      });
+    }
+  }
+
+  function hidePaystackIframesNow() {
+    if (!paystackSdk) return;
+    [paystackSdk.backgroundIframe, paystackSdk.checkoutIframe].forEach(function (ifr) {
+      if (!ifr) return;
+      ifr.style.display = "none";
+      ifr.style.visibility = "hidden";
+      ifr.style.pointerEvents = "none";
+    });
+  }
+
+  function closeActivePaystackSdk(keepTransferPoll) {
+    paystackActiveRunId += 1;
+    clearPaystackLoadTimer();
+    if (!keepTransferPoll) stopTransferPolling();
+    if (!paystackSdk) return;
+    try { paystackSdk.close(); } catch (_e) {}
+    hidePaystackIframesNow();
+  }
+
+  function setLoaderSteps(stepsSpec) {
+    var list = $("#psLoaderSteps");
+    if (!list || !Array.isArray(stepsSpec)) return;
+    list.innerHTML = stepsSpec.map(function (st) {
+      var cls = st.state === "done" ? "is-done" : (st.state === "active" ? "is-active" : "");
+      return "<li class='" + cls + "'><i></i><span>" + esc(st.label) + "</span></li>";
+    }).join("");
+  }
+
+  function setPaystackStageUi(mode, opts) {
+    opts = opts || {};
+    var root = $("#paystackStageRoot");
+    if (root) root.dataset.sdkState = mode;
+
+    var pill = $("#psSdkStatusPill");
+    var pillTxt = $("#psSdkStatusText");
+    var toneMap = {
+      loading: { tone: "loading", text: "Connecting Paystack SDK…" },
+      live: { tone: "live", text: "Paystack SDK v2 Live" },
+      verifying: { tone: "verifying", text: "Verifying signature…" },
+      paused: { tone: "paused", text: "Checkout paused" },
+      transfer: { tone: "transfer", text: "Awaiting bank transfer…" },
+      error: { tone: "error", text: "Connection issue" },
+      preview: { tone: "live", text: "Paystack SDK Preview" }
+    };
+    var meta = toneMap[mode] || toneMap.loading;
+    if (pill) pill.dataset.tone = meta.tone;
+    if (pillTxt) pillTxt.textContent = opts.pillText || meta.text;
+
+    var loader = $("#psStageLoader");
+    var paused = $("#psStagePaused");
+    var preview = $("#psStagePreview");
+    if (loader) loader.hidden = !(mode === "loading" || mode === "verifying" || mode === "live");
+    if (paused) paused.hidden = !(mode === "paused" || mode === "transfer" || mode === "error");
+    if (preview) preview.hidden = mode !== "preview";
+
+    if (mode === "loading") {
+      if ($("#psLoaderTitle")) $("#psLoaderTitle").textContent = opts.title || "Launching Paystack Inline SDK v2…";
+      if ($("#psLoaderSub")) $("#psLoaderSub").textContent = opts.sub || "Binding your school payment session directly inside CogniTara Studio.";
+      setLoaderSteps([
+        { label: "SDK bundled locally", state: "done" },
+        { label: "Binding access code", state: "active" },
+        { label: "PCI-DSS checkout ready", state: "pending" }
+      ]);
+    } else if (mode === "live") {
+      if ($("#psLoaderTitle")) $("#psLoaderTitle").textContent = "Paystack Inline SDK v2 Active";
+      if ($("#psLoaderSub")) $("#psLoaderSub").textContent = "Complete payment securely in the Paystack card above.";
+      setLoaderSteps([
+        { label: "SDK bundled locally", state: "done" },
+        { label: "Session verified", state: "done" },
+        { label: "Checkout active", state: "done" }
+      ]);
+    } else if (mode === "verifying") {
+      if ($("#psLoaderTitle")) $("#psLoaderTitle").textContent = opts.title || "Confirming payment with Paystack…";
+      if ($("#psLoaderSub")) $("#psLoaderSub").textContent = opts.sub || "Verifying Paystack server receipt and signing your Ed25519 hardware school licence.";
+      setLoaderSteps([
+        { label: "Payment received", state: "done" },
+        { label: "Verifying with Paystack API", state: "active" },
+        { label: "Binding Ed25519 licence", state: "pending" }
+      ]);
+    } else if (mode === "paused" || mode === "transfer" || mode === "error") {
+      var card = $("#psPausedCard");
+      if (card) card.dataset.kind = mode;
+      if ($("#psPausedTitle")) {
+        $("#psPausedTitle").textContent = opts.title || (
+          mode === "transfer" ? "Awaiting bank transfer confirmation"
+          : mode === "error" ? "Could not open Paystack Checkout"
+          : "Paystack checkout paused"
+        );
+      }
+      if ($("#psPausedSub")) {
+        $("#psPausedSub").textContent = opts.sub || (
+          mode === "transfer" ? "Your bank transfer is being tracked automatically. Keep this screen open — CogniTara Studio will activate your Ed25519 licence the moment Paystack confirms settlement."
+          : mode === "error" ? "Paystack's checkout service did not respond over this network. Retry the native SDK or open checkout in your web browser."
+          : "You closed Paystack before completing payment. Your checkout session is still ready — reopen anytime or switch plans."
+        );
+      }
+      if ($("#psTransferPollRow")) $("#psTransferPollRow").hidden = mode !== "transfer";
+      if ($("#psTransferPollText") && opts.pollText) $("#psTransferPollText").textContent = opts.pollText;
+      if ($("#psReopenSdkBtn")) {
+        $("#psReopenSdkBtn").textContent = mode === "error" ? "Retry Paystack Checkout" : "Reopen Paystack Checkout";
+      }
+      if ($("#psPausedFallbackBtn")) {
+        $("#psPausedFallbackBtn").hidden = !(billingState.fallbackUrl && (mode === "error" || mode === "paused"));
+      }
+    }
   }
 
   function setBillingStage(nextStage) {
@@ -2965,7 +3235,7 @@
       li.classList.toggle("is-done", i < idx);
     });
     if (nextStage !== "checkout") {
-      resetPaystackWebview();
+      closeActivePaystackSdk(false);
     }
   }
 
@@ -2978,97 +3248,230 @@
     setBillingMsg("", "");
   }
 
-  function resetPaystackWebview() {
-    var wv = $("#paystackEmbedWebview");
-    if (wv && typeof wv.loadURL === "function") {
-      try { wv.loadURL("about:blank"); } catch (_e) {}
-    }
-    if ($("#psStagePreview")) $("#psStagePreview").hidden = true;
-    if ($("#psStageLoader")) $("#psStageLoader").hidden = false;
-  }
-
-  var webviewBound = false;
-  function bindPaystackWebviewOnce() {
-    var wv = $("#paystackEmbedWebview");
-    if (!wv || webviewBound) return;
-    webviewBound = true;
-
-    function inspectPaystackUrl(url) {
-      var u = String(url || "");
-      if (!u || u === "about:blank") return;
-      if (u.indexOf("#ct_pay_success=") > -1 || u.indexOf("/pay/done") > -1 || u.indexOf("paystack_ref=") > -1) {
-        var ref = billingState.pendingRef || "";
-        var mHash = u.match(/#ct_pay_success=([^&]+)/);
-        if (mHash && mHash[1]) ref = decodeURIComponent(mHash[1]);
-        var mQuery = u.match(/[?&](?:reference|trxref|paystack_ref)=([^&#]+)/);
-        if (!ref && mQuery && mQuery[1]) ref = decodeURIComponent(mQuery[1]);
-        if (ref) {
-          if ($("#psStageLoader")) {
-            $("#psStageLoader").hidden = false;
-            if ($("#psLoaderTitle")) $("#psLoaderTitle").textContent = "Confirming payment with Paystack…";
-            if ($("#psLoaderSub")) $("#psLoaderSub").textContent = "Verifying signature and binding your Ed25519 school licence to this computer.";
-          }
-          void verifyPendingPaystackRef(ref);
-        }
+  function startTransferConfirmationPolling(ref) {
+    stopTransferPolling();
+    if (!ref || !bridge) return;
+    var poll = async function () {
+      if (billingState.stage !== "checkout" || state.activeView !== "billing" || billingState.pendingRef !== ref) {
+        stopTransferPolling();
         return;
       }
-      if (u.indexOf("#ct_pay_cancel=") > -1) {
-        setBillingStage("select");
-        setBillingMsg("", "Checkout closed before payment completed. Select a plan or try again anytime.");
+      paystackTransferPolls += 1;
+      if ($("#psTransferPollText")) {
+        $("#psTransferPollText").textContent = "Checking Paystack bank settlement… (check #" + paystackTransferPolls + ")";
       }
+      if (!billingState.verifying) {
+        try {
+          var res = await bridge.verifyPaystackReference(ref);
+          if (res && res.ok) {
+            stopTransferPolling();
+            billingState.pendingRef = null;
+            billingState.fallbackUrl = null;
+            billingState.activeInit = null;
+            if ($("#billingPendingRefBox")) $("#billingPendingRefBox").hidden = true;
+            toast("Bank transfer confirmed & licence active!");
+            await refreshLicenceFromEngine();
+            showBillingReceipt({
+              ok: true,
+              source: "paystack",
+              reference: ref,
+              receipt: res.receipt || null,
+              license: res.license,
+              license_key: res.license_key,
+              message: res.message || "Bank transfer confirmed and licence activated!"
+            });
+            return;
+          }
+        } catch (_e) {}
+      }
+      if (paystackTransferPolls < 40) {
+        paystackTransferTimer = setTimeout(poll, 6000);
+      } else if ($("#psTransferPollText")) {
+        $("#psTransferPollText").textContent = "Still waiting for your bank — click 'Verify if already paid' once debit completes.";
+      }
+    };
+    paystackTransferTimer = setTimeout(poll, 5000);
+  }
+
+  function launchNativePaystackSdk(initRes, planLabel, amountLabel) {
+    initRes = initRes || {};
+    billingState.activeInit = initRes;
+    billingState.activePlanLabel = planLabel || initRes.plan_name || "CogniTara Licence";
+    billingState.activeAmountLabel = amountLabel || "";
+    billingState.pendingRef = initRes.reference || billingState.pendingRef;
+    billingState.fallbackUrl = initRes.authorization_url || null;
+
+    if ($("#bsPendingRef")) $("#bsPendingRef").textContent = billingState.pendingRef || "—";
+    if ($("#billingPendingRefBox")) $("#billingPendingRefBox").hidden = !billingState.pendingRef;
+    if ($("#psStagePlan")) $("#psStagePlan").textContent = billingState.activePlanLabel;
+    if ($("#psStageTestBadge")) $("#psStageTestBadge").hidden = !initRes.is_test;
+    if ($("#psStageAmount")) $("#psStageAmount").textContent = billingState.activeAmountLabel;
+    if ($("#psStageRef")) $("#psStageRef").textContent = billingState.pendingRef || "—";
+    if ($("#psPausedPlan")) $("#psPausedPlan").textContent = billingState.activePlanLabel;
+    if ($("#psPausedAmount")) $("#psPausedAmount").textContent = billingState.activeAmountLabel || "—";
+    if ($("#psPausedRef")) $("#psPausedRef").textContent = billingState.pendingRef || "—";
+    if ($("#billingOpenFallbackBtn")) $("#billingOpenFallbackBtn").hidden = !billingState.fallbackUrl;
+
+    setBillingMsg("", "");
+    stopTransferPolling();
+    clearPaystackLoadTimer();
+    setBillingStage("checkout");
+
+    // Headless preview mode (outside Electron with no real access_code/public_key)
+    if (!initRes.access_code && !initRes.public_key) {
+      if ($("#psMockAmount")) $("#psMockAmount").textContent = billingState.activeAmountLabel || "₦75,000";
+      setPaystackStageUi("preview");
+      return;
     }
 
-    wv.addEventListener("dom-ready", function () {
-      if (billingState.stage === "checkout" && $("#psStageLoader")) {
-        $("#psStageLoader").hidden = true;
+    if (typeof window.PaystackPop !== "function") {
+      setPaystackStageUi("error", {
+        title: "Paystack SDK bundle unavailable",
+        sub: "The bundled Paystack InlineJS v2 library could not be initialized. Use the browser fallback below or restart CogniTara Studio."
+      });
+      return;
+    }
+
+    // If a pre-warmed PaystackPop was created while offline and never reached checkout.paystack.com, recreate it fresh
+    if (paystackSdk && !paystackSdk.isLoaded && Date.now() - paystackSdkCreatedAt > 4000) {
+      destroyPaystackSdk();
+    }
+
+    var sdk = warmPaystackSdk();
+    if (!sdk) {
+      setPaystackStageUi("error", {
+        title: "Could not initialize Paystack SDK",
+        sub: "Click Retry Paystack Checkout or use the browser fallback below."
+      });
+      return;
+    }
+
+    setPaystackStageUi("loading");
+    paystackActiveRunId += 1;
+    var runId = paystackActiveRunId;
+    var receivedLoadOrError = false;
+    var transferPendingTriggered = false;
+
+    paystackLoadTimer = setTimeout(function () {
+      if (runId !== paystackActiveRunId || receivedLoadOrError || billingState.verifying) return;
+      try { sdk.close(); } catch (_e) {}
+      hidePaystackIframesNow();
+      setPaystackStageUi("error", {
+        title: "Paystack checkout timed out",
+        sub: "Could not reach checkout.paystack.com within 14 seconds. Check your internet/firewall or click 'Open in web browser' below."
+      });
+    }, 14000);
+
+    window.requestAnimationFrame(function () {
+      if (runId !== paystackActiveRunId || billingState.stage !== "checkout") return;
+      stylePaystackBackdrop();
+      syncPaystackSdkBounds();
+      [sdk.backgroundIframe, sdk.checkoutIframe].forEach(function (ifr) {
+        if (ifr) ifr.style.pointerEvents = "auto";
+      });
+
+      var txConfig = initRes.access_code
+        ? { accessCode: String(initRes.access_code) }
+        : {
+            key: String(initRes.public_key),
+            email: String(initRes.email || (state.cloudAccount && state.cloudAccount.user && state.cloudAccount.user.email) || ""),
+            amount: Number(initRes.charge_minor || initRes.amount_minor || 0),
+            currency: String(initRes.currency || billingState.currency || "NGN"),
+            reference: initRes.reference ? String(initRes.reference) : undefined
+          };
+
+      txConfig.onLoad = function () {
+        if (runId !== paystackActiveRunId) return;
+        receivedLoadOrError = true;
+        clearPaystackLoadTimer();
+        stylePaystackBackdrop();
+        syncPaystackSdkBounds();
+        if (!billingState.verifying) {
+          setPaystackStageUi("live");
+        }
+      };
+
+      txConfig.onSuccess = function (tx) {
+        if (runId !== paystackActiveRunId) return;
+        receivedLoadOrError = true;
+        clearPaystackLoadTimer();
+        stopTransferPolling();
+        try { sdk.close(); } catch (_e) {}
+        hidePaystackIframesNow();
+        var ref = (tx && (tx.reference || tx.trxref)) || billingState.pendingRef;
+        setPaystackStageUi("verifying", {
+          title: "Payment received by Paystack!",
+          sub: "Verifying cryptographic settlement and signing your Ed25519 school licence for this computer…"
+        });
+        if (ref) {
+          void verifyPendingPaystackRef(ref, 3);
+        }
+      };
+
+      txConfig.onCancel = function () {
+        if (runId !== paystackActiveRunId || billingState.verifying) return;
+        receivedLoadOrError = true;
+        clearPaystackLoadTimer();
+        try { sdk.close(); } catch (_e) {}
+        hidePaystackIframesNow();
+        if (transferPendingTriggered) return;
+        setPaystackStageUi("paused");
+      };
+
+      txConfig.onBankTransferConfirmationPending = function () {
+        if (runId !== paystackActiveRunId || billingState.verifying) return;
+        receivedLoadOrError = true;
+        transferPendingTriggered = true;
+        clearPaystackLoadTimer();
+        try { sdk.close(); } catch (_e) {}
+        hidePaystackIframesNow();
+        setPaystackStageUi("transfer", {
+          pollText: "Listening for Paystack bank transfer settlement…"
+        });
+        if (billingState.pendingRef) {
+          startTransferConfirmationPolling(billingState.pendingRef);
+        }
+      };
+
+      txConfig.onError = function (err) {
+        if (runId !== paystackActiveRunId || billingState.verifying) return;
+        receivedLoadOrError = true;
+        clearPaystackLoadTimer();
+        try { sdk.close(); } catch (_e) {}
+        hidePaystackIframesNow();
+        setPaystackStageUi("error", {
+          title: "Paystack checkout could not load",
+          sub: (err && err.message) || "Paystack returned a checkout setup error. Retry below or open checkout in your web browser."
+        });
+      };
+
+      try {
+        sdk.newTransaction(txConfig);
+        window.requestAnimationFrame(syncPaystackSdkBounds);
+        setTimeout(syncPaystackSdkBounds, 360);
+      } catch (err) {
+        receivedLoadOrError = true;
+        clearPaystackLoadTimer();
+        try { sdk.close(); } catch (_e2) {}
+        hidePaystackIframesNow();
+        setPaystackStageUi("error", {
+          title: "Could not start Paystack SDK transaction",
+          sub: (err && err.message) || "Unexpected SDK error. Click Retry or open checkout in your web browser."
+        });
       }
-    });
-    wv.addEventListener("did-stop-loading", function () {
-      if (billingState.stage === "checkout" && $("#psStageLoader") && !billingState.verifying) {
-        $("#psStageLoader").hidden = true;
-      }
-    });
-    wv.addEventListener("did-navigate-in-page", function (e) { inspectPaystackUrl(e && e.url); });
-    wv.addEventListener("did-navigate", function (e) { inspectPaystackUrl(e && e.url); });
-    wv.addEventListener("did-redirect-navigation", function (e) { inspectPaystackUrl(e && e.url); });
-    wv.addEventListener("did-fail-load", function (e) {
-      if (!e || e.errorCode === -3) return; // ignore ERR_ABORTED on intentional resets
-      if (billingState.stage !== "checkout") return;
-      if ($("#psStageLoader")) $("#psStageLoader").hidden = true;
-      setBillingMsg("Could not load embedded Paystack checkout over this network. Click 'Browser fallback' above or retry.", "");
     });
   }
 
-  function launchEmbeddedPaystackStage(initRes, planLabel, amountLabel) {
-    billingState.pendingRef = initRes.reference || billingState.pendingRef;
-    billingState.fallbackUrl = initRes.authorization_url || null;
-    if ($("#bsPendingRef")) $("#bsPendingRef").textContent = billingState.pendingRef || "—";
-    if ($("#billingPendingRefBox")) $("#billingPendingRefBox").hidden = !billingState.pendingRef;
-    if ($("#psStagePlan")) $("#psStagePlan").textContent = planLabel || initRes.plan_name || "CogniTara Licence";
-    if ($("#psStageAmount")) $("#psStageAmount").textContent = amountLabel || "";
-    if ($("#psStageRef")) $("#psStageRef").textContent = billingState.pendingRef || "—";
-    if ($("#psLoaderTitle")) $("#psLoaderTitle").textContent = "Loading Paystack Inline SDK…";
-    if ($("#psLoaderSub")) $("#psLoaderSub").textContent = "Connecting securely to Paystack inside CogniTara Studio.";
-
-    setBillingMsg("", "");
-    setBillingStage("checkout");
-
-    var wv = $("#paystackEmbedWebview");
-    if (bridge && wv && initRes.embed_url) {
-      bindPaystackWebviewOnce();
-      if ($("#psStagePreview")) $("#psStagePreview").hidden = true;
-      if ($("#psStageLoader")) $("#psStageLoader").hidden = false;
-      try {
-        wv.src = initRes.embed_url;
-      } catch (_e) {
-        if (typeof wv.loadURL === "function") wv.loadURL(initRes.embed_url);
-      }
-    } else {
-      // Headless visual preview fallback
-      if ($("#psStageLoader")) $("#psStageLoader").hidden = true;
-      if ($("#psMockAmount")) $("#psMockAmount").textContent = amountLabel || "₦75,000";
-      if ($("#psStagePreview")) $("#psStagePreview").hidden = false;
+  function reopenCurrentPaystackCheckout() {
+    if (!billingState.activeInit) {
+      setBillingStage("select");
+      return;
     }
+    launchNativePaystackSdk(
+      billingState.activeInit,
+      billingState.activePlanLabel,
+      billingState.activeAmountLabel
+    );
   }
 
   var activeReceiptRef = null;
@@ -3143,9 +3546,32 @@
       setBillingStage("select");
     });
   }
+  if ($("#psReopenSdkBtn")) {
+    $("#psReopenSdkBtn").addEventListener("click", function () {
+      reopenCurrentPaystackCheckout();
+    });
+  }
+  if ($("#psPausedVerifyBtn")) {
+    $("#psPausedVerifyBtn").addEventListener("click", function () {
+      if (billingState.pendingRef) void verifyPendingPaystackRef(billingState.pendingRef, 0);
+    });
+  }
+  if ($("#psPausedFallbackBtn")) {
+    $("#psPausedFallbackBtn").addEventListener("click", function () {
+      if (billingState.fallbackUrl) {
+        openExternalUrl(billingState.fallbackUrl);
+        toast("Opened Paystack checkout in your browser — click Verify payment once finished.");
+      }
+    });
+  }
   if ($("#billingOpenFallbackBtn")) {
     $("#billingOpenFallbackBtn").addEventListener("click", function () {
       if (billingState.fallbackUrl) {
+        closeActivePaystackSdk(true);
+        setPaystackStageUi("paused", {
+          title: "Continuing in web browser",
+          sub: "Complete your Paystack payment in your browser window, then click 'Verify if already paid' below to activate your Ed25519 licence."
+        });
         openExternalUrl(billingState.fallbackUrl);
         toast("Opened Paystack checkout in your browser — click Verify payment once finished.");
       }
@@ -3461,35 +3887,61 @@
     });
   }
 
-  async function verifyPendingPaystackRef(refToVerify) {
+  async function verifyPendingPaystackRef(refToVerify, autoRetries) {
     if (!refToVerify || !bridge || billingState.verifying) return;
     billingState.verifying = true;
+    var retriesLeft = typeof autoRetries === "number" ? autoRetries : 0;
     var btn = $("#billingVerifyRefBtn");
+    var pBtn = $("#psPausedVerifyBtn");
     if (btn) { btn.disabled = true; btn.textContent = "Verifying…"; }
+    if (pBtn) { pBtn.disabled = true; pBtn.textContent = "Verifying…"; }
     try {
-      var res = await bridge.verifyPaystackReference(refToVerify);
-      if (res && res.ok) {
-        billingState.pendingRef = null;
-        billingState.fallbackUrl = null;
-        if ($("#billingPendingRefBox")) $("#billingPendingRefBox").hidden = true;
-        toast("Paystack payment verified & licence active!");
-        await refreshLicenceFromEngine();
-        showBillingReceipt({
-          ok: true,
-          source: "paystack",
-          reference: refToVerify,
-          receipt: res.receipt || null,
-          license: res.license,
-          license_key: res.license_key,
-          message: res.message || "Payment confirmed and licence activated!"
-        });
-      } else {
-        if ($("#psStageLoader")) $("#psStageLoader").hidden = true;
-        setBillingMsg((res && res.message) || "Payment not confirmed yet. Complete checkout and click Verify payment now.", "");
+      var attempt = 0;
+      var lastRes = null;
+      while (attempt <= retriesLeft) {
+        if (billingState.stage === "checkout" && attempt > 0) {
+          setPaystackStageUi("verifying", {
+            title: "Finalizing payment settlement…",
+            sub: "Confirming with Paystack servers (attempt " + (attempt + 1) + " of " + (retriesLeft + 1) + ")…"
+          });
+        }
+        lastRes = await bridge.verifyPaystackReference(refToVerify).catch(function () { return null; });
+        if (lastRes && lastRes.ok) {
+          stopTransferPolling();
+          billingState.pendingRef = null;
+          billingState.fallbackUrl = null;
+          billingState.activeInit = null;
+          if ($("#billingPendingRefBox")) $("#billingPendingRefBox").hidden = true;
+          toast("Paystack payment verified & licence active!");
+          await refreshLicenceFromEngine();
+          showBillingReceipt({
+            ok: true,
+            source: "paystack",
+            reference: refToVerify,
+            receipt: lastRes.receipt || null,
+            license: lastRes.license,
+            license_key: lastRes.license_key,
+            message: lastRes.message || "Payment confirmed and licence activated!"
+          });
+          return;
+        }
+        attempt += 1;
+        if (attempt <= retriesLeft) {
+          await new Promise(function (resolve) { setTimeout(resolve, 1400 + attempt * 800); });
+        }
       }
+
+      if (billingState.stage === "checkout" && !(paystackSdk && paystackSdk.isOpen)) {
+        setPaystackStageUi("paused", {
+          title: "Payment not confirmed yet",
+          sub: (lastRes && lastRes.message) || "Complete your payment in Paystack Checkout, then click 'Verify if already paid' below."
+        });
+      }
+      setBillingMsg((lastRes && lastRes.message) || "Payment not confirmed yet. Complete checkout and click Verify payment now.", "");
     } finally {
       billingState.verifying = false;
       if (btn) { btn.disabled = false; btn.textContent = "Verify payment now"; }
+      if (pBtn) { pBtn.disabled = false; pBtn.textContent = "Verify if already paid"; }
     }
   }
 
@@ -3535,7 +3987,7 @@
     }
 
     if (!bridge) {
-      launchEmbeddedPaystackStage({ reference: "CTPAY_2026_DEMO88", plan_name: plan ? plan.display_name : "Annual School Plan" }, plan ? plan.display_name : "Annual School Plan", amountLabel);
+      launchNativePaystackSdk({ reference: "CTPAY_2026_DEMO88", plan_name: plan ? plan.display_name : "Annual School Plan" }, plan ? plan.display_name : "Annual School Plan", amountLabel);
       return;
     }
 
@@ -3557,7 +4009,7 @@
         return;
       }
       var finalChargeLabel = res.charge_minor != null ? fmtMoney(res.charge_minor, res.currency || billingState.currency) : amountLabel;
-      launchEmbeddedPaystackStage(res, res.plan_name || (plan && plan.display_name), finalChargeLabel);
+      launchNativePaystackSdk(res, res.plan_name || (plan && plan.display_name), finalChargeLabel);
     } finally {
       if (btn) {
         btn.disabled = false;
@@ -3575,12 +4027,12 @@
 
   if ($("#billingVerifyRefBtn")) {
     $("#billingVerifyRefBtn").addEventListener("click", function () {
-      if (billingState.pendingRef) void verifyPendingPaystackRef(billingState.pendingRef);
+      if (billingState.pendingRef) void verifyPendingPaystackRef(billingState.pendingRef, 0);
     });
   }
   if ($("#billingResumeVerifyBtn")) {
     $("#billingResumeVerifyBtn").addEventListener("click", function () {
-      if (billingState.pendingRef) void verifyPendingPaystackRef(billingState.pendingRef);
+      if (billingState.pendingRef) void verifyPendingPaystackRef(billingState.pendingRef, 0);
     });
   }
 
@@ -4035,7 +4487,7 @@
       renderUpdateState({
         status: "downloading",
         currentVersion: "2.2.3",
-        availableVersion: "2.2.6",
+        availableVersion: "2.2.7",
         percent: 68.4,
         bytesPerSecond: 4.2 * 1024 * 1024,
         transferred: 58.2 * 1024 * 1024,
@@ -4045,7 +4497,7 @@
       renderUpdateState({
         status: "downloaded",
         currentVersion: "2.2.3",
-        availableVersion: "2.2.6",
+        availableVersion: "2.2.7",
         percent: 100
       });
     }
@@ -4075,7 +4527,18 @@
       if (targetView === "billing") {
         var bstage = params.get("bstage");
         if (bstage === "checkout") {
-          launchEmbeddedPaystackStage({ reference: "CTPAY_2026_8F4B9A", plan_name: "Annual School" }, "Annual School", "₦75,000");
+          var ac = params.get("access_code");
+          launchNativePaystackSdk({
+            reference: "CTPAY_2026_8F4B9A",
+            plan_name: "Annual School",
+            access_code: ac || null,
+            authorization_url: "https://checkout.paystack.com/demo",
+            is_test: params.get("test") === "1"
+          }, "Annual School", "₦75,000");
+          var sdkState = params.get("sdkstate");
+          if (sdkState) {
+            setPaystackStageUi(sdkState);
+          }
         } else if (bstage === "receipt") {
           showBillingReceipt({
             ok: true,

@@ -1,6 +1,6 @@
 [package]
 name = "cognitara-setup"
-version = "2.2.6"
+version = "2.2.7"
 description = "CogniTara Studio custom Windows setup experience (Tauri v2 + WebView2)"
 authors = ["CogniTara Education Technologies"]
 license = "UNLICENSED"

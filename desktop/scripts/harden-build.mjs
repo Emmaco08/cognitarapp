@@ -29,6 +29,9 @@ async function run() {
   let totalAfter = 0;
 
   for (const fp of files) {
+    if (fp.includes(`${path.sep}vendor${path.sep}`)) {
+      continue;
+    }
     const src = fs.readFileSync(fp, "utf8");
     totalBefore += src.length;
     const isRenderer = fp.includes(`${path.sep}renderer${path.sep}`);

@@ -281,7 +281,7 @@ function createWindow(): void {
       contextIsolation: true,
       nodeIntegration: false,
       sandbox: true,
-      webviewTag: true,
+      webviewTag: false,
       webSecurity: true,
       devTools: !app.isPackaged,
       spellcheck: false,
@@ -297,26 +297,6 @@ function createWindow(): void {
   }
 
   mainWindow = new BrowserWindow(winOptions);
-
-  // Strict webview allowlist: ONLY CogniTara embedded Paystack Inline SDK & Paystack Checkout origins
-  mainWindow.webContents.on("will-attach-webview", (event, webPreferences, params) => {
-    delete webPreferences.preload;
-    webPreferences.nodeIntegration = false;
-    webPreferences.contextIsolation = true;
-    webPreferences.sandbox = true;
-    webPreferences.webSecurity = true;
-
-    const src = String(params.src || "");
-    const allowed =
-      src === "" ||
-      src === "about:blank" ||
-      src.startsWith("https://cognitara-cloud.vercel.app/pay/embed") ||
-      src.startsWith("https://checkout.paystack.com/") ||
-      src.startsWith("https://standard.paystack.co/");
-    if (!allowed) {
-      event.preventDefault();
-    }
-  });
 
   // Anti-tamper & reverse-engineering hardening in packaged builds
   if (app.isPackaged) {
@@ -340,13 +320,60 @@ function createWindow(): void {
     });
   }
 
-  // Enforce strict navigation & popup boundaries
+  // Enforce strict navigation & popup boundaries.
+  // Preserve window.opener ONLY for bank 3D-Secure / OPay / Pay-with-Bank auth popups
+  // initiated by Paystack's official checkout frame; route all other external links to OS browser.
   const expectedRendererHref = pathToFileURL(getRendererEntry()).href.toLowerCase();
-  mainWindow.webContents.setWindowOpenHandler(({ url }) => {
-    if (isSafeExternalUrl(url)) {
-      shell.openExternal(url).catch(() => {});
+  mainWindow.webContents.setWindowOpenHandler((details) => {
+    const targetUrl = String(details.url || "");
+    let refOrigin = "";
+    try {
+      refOrigin = details.referrer?.url ? new URL(details.referrer.url).origin : "";
+    } catch {
+      refOrigin = "";
+    }
+    const isPaystackOpener =
+      refOrigin === "https://checkout.paystack.com" ||
+      refOrigin === "https://standard.paystack.co" ||
+      refOrigin === "https://api.paystack.co";
+    const isSafeAuthPopupUrl =
+      targetUrl === "" ||
+      targetUrl === "about:blank" ||
+      targetUrl.startsWith("https://");
+
+    if (isPaystackOpener && isSafeAuthPopupUrl) {
+      return {
+        action: "allow",
+        overrideBrowserWindowOptions: {
+          parent: mainWindow || undefined,
+          width: 520,
+          height: 680,
+          autoHideMenuBar: true,
+          title: "Bank Verification — Paystack",
+          backgroundColor: "#FFFFFF",
+          webPreferences: {
+            nodeIntegration: false,
+            contextIsolation: true,
+            sandbox: true,
+            webviewTag: false,
+            webSecurity: true,
+            devTools: !app.isPackaged,
+          },
+        },
+      };
+    }
+
+    if (isSafeExternalUrl(targetUrl)) {
+      shell.openExternal(targetUrl).catch(() => {});
     }
     return { action: "deny" };
+  });
+
+  mainWindow.webContents.on("did-create-window", (childWindow) => {
+    childWindow.setMenuBarVisibility(false);
+    if (app.isPackaged) {
+      childWindow.webContents.on("context-menu", (ev) => ev.preventDefault());
+    }
   });
 
   mainWindow.webContents.on("will-navigate", (event, targetUrl) => {
@@ -1069,42 +1096,36 @@ function registerIpcHandlers(): void {
       hwid_hash: lic?.hwid_hash || undefined,
       display_hwid: lic?.display_hwid || undefined,
     });
-    if (!initRes.ok || !initRes.authorization_url) {
+    if (!initRes.ok || (!initRes.access_code && !initRes.authorization_url)) {
       return initRes;
     }
 
     const reference = String(initRes.reference || "");
     const checkoutUrl = String(initRes.authorization_url || "");
-    if (!isSafeExternalUrl(checkoutUrl)) {
+    if (checkoutUrl && !isSafeExternalUrl(checkoutUrl)) {
       return { ok: false, message: "Unsafe checkout URL returned by gateway." };
     }
 
-    // Build borderless Paystack Inline SDK v2 embed URL (renders directly inside Studio's full-screen Billing stage — zero popup windows)
-    const cloudBase = (cloudAuth.getCloudUrl() || "https://cognitara-cloud.vercel.app").replace(/\/$/, "");
-    const embedParams = new URLSearchParams();
-    if (initRes.access_code) embedParams.set("access_code", String(initRes.access_code));
-    if (reference) embedParams.set("reference", reference);
-    if (initRes.plan_name) embedParams.set("plan", String(initRes.plan_name));
-    if (payload?.amount_label) embedParams.set("amount", String(payload.amount_label));
-    embedParams.set("theme", settings.theme === "light" ? "light" : "dark");
-    embedParams.set("fallback_url", checkoutUrl);
+    const session = cloudAuth.getSession();
 
-    const embedUrl = initRes.access_code
-      ? `${cloudBase}/pay/embed?${embedParams.toString()}`
-      : checkoutUrl;
-
+    // Hand the Paystack transaction access_code & metadata directly to the locally bundled
+    // @paystack/inline-js v2 SDK in the renderer — zero <webview>, zero remote wrapper.
     return {
       ok: true,
       reference,
-      access_code: initRes.access_code || null,
-      authorization_url: checkoutUrl,
-      embed_url: embedUrl,
+      access_code: initRes.access_code ? String(initRes.access_code) : null,
+      public_key: initRes.public_key ? String(initRes.public_key) : null,
+      email: session?.user?.email ? String(session.user.email) : null,
+      authorization_url: checkoutUrl || null,
       plan_name: initRes.plan_name || "CogniTara Studio Licence",
+      original_amount_minor: initRes.original_amount_minor,
+      discount_amount_minor: initRes.discount_amount_minor,
       amount_minor: initRes.amount_minor,
       charge_minor: initRes.charge_minor,
       added_fee_minor: initRes.added_fee_minor,
       currency: initRes.currency,
       is_test: Boolean(initRes.is_test),
+      fee_mode: initRes.fee_mode || null,
       fee_note: initRes.fee_note || null,
     };
   });
