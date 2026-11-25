@@ -648,10 +648,12 @@ def restore_database_with_vault_preservation(
                 valid_idx = [i for i, c in enumerate(prev_school_cols) if c in dst_s_cols]
                 if valid_idx:
                     use_c = [prev_school_cols[i] for i in valid_idx]
+                    quoted_s_cols = ", ".join('"' + col + '"' for col in use_c)
+                    q_marks = ", ".join("?" for _ in use_c)
                     st_conn.execute("DELETE FROM school_settings")
                     for sr in prev_school_rows:
                         st_conn.execute(
-                            f"INSERT OR REPLACE INTO school_settings ({', '.join(f'\"{c}\"' for c in use_c)}) VALUES ({', '.join('?' for _ in use_c)})",
+                            f"INSERT OR REPLACE INTO school_settings ({quoted_s_cols}) VALUES ({q_marks})",
                             [sr[i] for i in valid_idx],
                         )
             if hash_legacy_passwords:
