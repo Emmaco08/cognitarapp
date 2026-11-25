@@ -130,6 +130,8 @@ export async function POST(req: NextRequest) {
 
       if (!otpRes.ok) {
         // Roll back brand-new unverified user so they aren't blocked by email_exists on retry
+        await sql`DELETE FROM referrals WHERE owner_user_id = ${user.id}::uuid`;
+        await sql`DELETE FROM schools WHERE id = ${school.id}::uuid`;
         await sql`DELETE FROM users_hq WHERE id = ${user.id}::uuid`;
         return NextResponse.json(
           { ok: false, error: otpRes.error || "brevo_delivery_failed", message: otpRes.message || "Could not send verification email." },

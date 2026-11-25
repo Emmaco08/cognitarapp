@@ -362,8 +362,10 @@ export async function POST(
 
     // 10. DELETE TEST / SPAM SCHOOL ACCOUNT
     if (action === "delete_school") {
+      await sql`DELETE FROM email_otp_codes WHERE user_id = ${school.owner_id}::uuid`;
       await sql`DELETE FROM cloud_sessions WHERE user_id = ${school.owner_id}::uuid`;
       await sql`DELETE FROM promo_redemptions WHERE school_id = ${school.id}::uuid`;
+      await sql`DELETE FROM referrals WHERE owner_user_id = ${school.owner_id}::uuid OR school_id = ${school.id}::uuid`;
       await sql`DELETE FROM schools WHERE id = ${school.id}::uuid`;
       await sql`DELETE FROM users_hq WHERE id = ${school.owner_id}::uuid`;
       await logDeveloperAudit({
