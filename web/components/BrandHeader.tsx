@@ -21,13 +21,27 @@ export function BrandMark() {
   );
 }
 
-export function BrandHeader({ signedIn = false, isHq = false }: { signedIn?: boolean; isHq?: boolean }) {
+export function BrandHeader({
+  signedIn = false,
+  isHq = false,
+  variant = "default",
+}: {
+  signedIn?: boolean;
+  isHq?: boolean;
+  variant?: "default" | "hero";
+}) {
   const [theme, setTheme] = useState<"dark" | "light">("dark");
+  const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
     const cur = document.documentElement.getAttribute("data-theme");
     setTheme(cur === "light" ? "light" : "dark");
-  }, []);
+    if (variant !== "hero") return;
+    const onScroll = () => setScrolled(window.scrollY > 18);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, [variant]);
 
   function toggleTheme() {
     const next = theme === "dark" ? "light" : "dark";
@@ -38,45 +52,62 @@ export function BrandHeader({ signedIn = false, isHq = false }: { signedIn?: boo
     } catch {}
   }
 
-  return (
-    <header className="ct-nav">
-      <Link href="/" className="ct-brand">
-        <BrandMark />
-        <span className="ct-brand__name">
-          Cogni<em>Tara</em>
-        </span>
-      </Link>
+  const navClass =
+    variant === "hero"
+      ? `ct-nav ct-nav--hero ${scrolled ? "is-scrolled" : ""}`
+      : "ct-nav";
 
-      <nav className="ct-nav__links">
-        <button
-          type="button"
-          className="btn btn--ghost btn--sm"
-          onClick={toggleTheme}
-          aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
-        >
-          {theme === "dark" ? <IconSun size={14} /> : <IconMoon size={14} />}
-          <span>{theme === "dark" ? "Light" : "Dark"}</span>
-        </button>
-        {isHq ? (
-          <Link href="/hq" className="btn btn--ghost btn--sm">
-            Admin Console
-          </Link>
-        ) : null}
-        {signedIn ? (
-          <Link href="/dashboard" className="btn btn--primary btn--sm">
-            Dashboard
-          </Link>
-        ) : (
-          <>
-            <Link href="/signin" className="btn btn--ghost btn--sm">
-              Sign in
+  return (
+    <header className={navClass}>
+      <div className="ct-nav__inner">
+        <Link href="/" className="ct-brand">
+          <BrandMark />
+          <span className="ct-brand__name">
+            Cogni<em>Tara</em>
+          </span>
+        </Link>
+
+        <nav className="ct-nav__links" aria-label="Primary navigation">
+          {variant === "hero" ? (
+            <>
+              <a href="#workflow" className="ct-nav__link">
+                How it works
+              </a>
+              <a href="#pricing" className="ct-nav__link">
+                Pricing
+              </a>
+            </>
+          ) : null}
+          <button
+            type="button"
+            className="ct-nav__theme"
+            onClick={toggleTheme}
+            aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+          >
+            {theme === "dark" ? <IconSun size={15} /> : <IconMoon size={15} />}
+            <span className="ct-nav__theme-lbl">{theme === "dark" ? "Light" : "Dark"}</span>
+          </button>
+          {isHq ? (
+            <Link href="/hq" className="ct-nav__link">
+              Admin Console
             </Link>
-            <Link href="/signup" className="btn btn--primary btn--sm">
-              Get started
+          ) : null}
+          {signedIn ? (
+            <Link href="/dashboard" className="btn btn--primary btn--sm">
+              Dashboard
             </Link>
-          </>
-        )}
-      </nav>
+          ) : (
+            <>
+              <Link href="/signin" className="ct-nav__link">
+                Sign in
+              </Link>
+              <Link href="/signup" className="btn btn--primary btn--sm">
+                Get started
+              </Link>
+            </>
+          )}
+        </nav>
+      </div>
     </header>
   );
 }

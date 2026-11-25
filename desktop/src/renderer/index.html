@@ -446,19 +446,19 @@
           <button type="button" class="btn btn--ghost btn--sm" id="hqNoticeDismiss">Dismiss</button>
         </div>
 
-        <div class="hq-banner" id="homeBackupReminder" data-level="warning" hidden>
-          <div class="hq-banner__body">
-            <strong>Exam Database Backup Reminder</strong>
-            <span id="homeBackupReminderText">Back up your exam database to CogniTara Cloud so your questions and results stay safe.</span>
-          </div>
-          <div style="display:flex;gap:8px;align-items:center">
-            <button type="button" class="btn btn--primary btn--sm" id="homeBackupNowBtn">Back up to Cloud</button>
-            <button type="button" class="btn btn--ghost btn--sm" id="homeBackupDismiss">Later</button>
-          </div>
-        </div>
-
         <!-- ===== HOME / SERVER ===== -->
         <div class="view is-active" data-view="home">
+          <div class="hq-banner" id="homeBackupReminder" data-level="warning" hidden style="margin:0 0 16px;position:static">
+            <div class="hq-banner__body">
+              <strong>Exam Database Backup Reminder</strong>
+              <span id="homeBackupReminderText">Back up your exam database to CogniTara Cloud so your questions and results stay safe.</span>
+            </div>
+            <div style="display:flex;gap:8px;align-items:center;flex-shrink:0">
+              <button type="button" class="btn btn--primary btn--sm" id="homeBackupNowBtn">Back up to Cloud</button>
+              <button type="button" class="btn btn--ghost btn--sm" id="homeBackupDismiss">Later</button>
+            </div>
+          </div>
+
           <header class="greet">
             <div>
               <p class="greet__hello" id="greetHello">Good morning</p>
