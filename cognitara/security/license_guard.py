@@ -338,7 +338,7 @@ class LicenseGuard:
             hwid_hash = fp["hwid_hash"]
 
             # Refuse re-activation if this machine already has a burned HQ revocation tombstone
-            existing = self.vault.load_and_reconcile(hwid_hash, now_utc=now_ts)
+            existing = self.vault.load_and_reconcile(hwid_hash, now_utc=now_ts, current_fp=fp)
             if existing["status"] == "REVOKED":
                 existing_state = existing.get("state") or {}
                 existing_lic = existing_state.get("license_id")
@@ -375,6 +375,7 @@ class LicenseGuard:
                 "vault_version": 2,
                 "license_id": str(payload["license_id"]),
                 "hwid_hash": hwid_hash,
+                "hw_component_hashes": fp["component_hashes"],
                 "signed_lease": lease_envelope,
                 "activated_at_utc": int(prior_state["activated_at_utc"]) if same_license else now_ts,
                 "last_heartbeat_utc": now_ts,
@@ -402,7 +403,7 @@ class LicenseGuard:
             fp = self.get_fingerprint()
             hwid_hash = fp["hwid_hash"]
 
-            existing = self.vault.load_and_reconcile(hwid_hash, now_utc=now_ts)
+            existing = self.vault.load_and_reconcile(hwid_hash, now_utc=now_ts, current_fp=fp)
             if existing["status"] == "REVOKED":
                 return {
                     "ok": False,
@@ -411,10 +412,15 @@ class LicenseGuard:
                     "status": self.evaluate(advance_monotonic=False),
                 }
             if existing["status"] in ("TAMPERED", "CLOCK_TAMPER"):
+                is_clock = existing["status"] == "CLOCK_TAMPER"
                 return {
                     "ok": False,
-                    "error": "clock_tamper_detected",
-                    "message": "System clock tampering was detected. Fix your Windows date & time first.",
+                    "error": "clock_tamper_detected" if is_clock else (existing.get("tamper_reason") or "vault_verification_needed"),
+                    "message": (
+                        "System clock tampering was detected. Fix your Windows date & time first."
+                        if is_clock
+                        else "Local licence vault needs verification or reset before starting a trial."
+                    ),
                     "status": self.evaluate(advance_monotonic=False),
                 }
 
@@ -468,6 +474,55 @@ class LicenseGuard:
             }
             return self.activate_lease(trial_envelope)
 
+    def repair_or_reset_corrupt_vault(self) -> Dict[str, Any]:
+        """
+        Safely clear a non-revoked, non-clock-tampered corrupted/legacy vault
+        (e.g. upgraded from a pre-production key or stale WMI anchor) so the user
+        can cleanly re-activate via CogniTara Cloud, Paystack, Redeem Code, or
+        a signed `.cgnlic` file without losing any school or exam data.
+
+        Strictly refuses when:
+          - An HQ revocation tombstone is present (`HQ_REVOKED_LOCK`), OR
+          - The system clock is rolled back behind `max_seen_utc - 300s`.
+        """
+        with self._lock:
+            now_ts = int(self._clock_utc())
+            fp = self.get_fingerprint()
+            hwid_hash = fp["hwid_hash"]
+            rec = self.vault.load_and_reconcile(hwid_hash, now_utc=now_ts, current_fp=fp)
+
+            if rec["status"] == "REVOKED":
+                return {
+                    "ok": False,
+                    "error": "license_revoked_by_hq",
+                    "message": "This licence was permanently revoked by CogniTara HQ and cannot be reset locally.",
+                    "status": self.evaluate(advance_monotonic=False),
+                }
+
+            max_seen = int(rec.get("max_seen_utc") or 0)
+            if rec["status"] == "CLOCK_TAMPER" or (max_seen > 0 and now_ts < max_seen - 300):
+                return {
+                    "ok": False,
+                    "error": "clock_rollback_detected",
+                    "message": "Your Windows clock is behind the last trusted timestamp. Fix your system clock first.",
+                    "status": self.evaluate(advance_monotonic=False),
+                }
+
+            if rec["status"] == "OK":
+                # Check whether the stored lease itself failed verification (e.g. old key or HWID mismatch)
+                cur = self.evaluate(advance_monotonic=False)
+                if cur.get("is_licensed"):
+                    return {"ok": True, "already_healthy": True, "status": cur}
+
+            self.vault.clear_anchors()
+            status = self.evaluate(advance_monotonic=False)
+            return {
+                "ok": True,
+                "repaired": True,
+                "message": "Local licence vault cleared cleanly. Sign in or activate your licence to continue.",
+                "status": status,
+            }
+
     def apply_revocation_tombstone(self, tombstone_envelope: Dict[str, Any]) -> Dict[str, Any]:
         """Verify and permanently burn an HQ RevocationTombstone into all 3 anchors."""
         with self._lock:
@@ -478,7 +533,7 @@ class LicenseGuard:
             now_ts = int(self._clock_utc())
             fp = self.get_fingerprint()
             hwid_hash = fp["hwid_hash"]
-            rec = self.vault.load_and_reconcile(hwid_hash, now_utc=now_ts)
+            rec = self.vault.load_and_reconcile(hwid_hash, now_utc=now_ts, current_fp=fp)
             base_state = dict(rec.get("state") or {})
 
             # If a different license is currently active, ignore mismatched tombstone
@@ -489,6 +544,7 @@ class LicenseGuard:
                 "vault_version": 2,
                 "license_id": str(tombstone["license_id"]),
                 "hwid_hash": hwid_hash,
+                "hw_component_hashes": fp["component_hashes"],
                 "signed_lease": base_state.get("signed_lease"),
                 "activated_at_utc": int(base_state.get("activated_at_utc") or now_ts),
                 "last_heartbeat_utc": now_ts,
@@ -520,7 +576,7 @@ class LicenseGuard:
             "hw_component_hashes": fp["component_hashes"],
             "machine_hostname": fp["hostname"],
             "os_version": fp["os_version"],
-            "app_version": "2.2.1",
+            "app_version": "2.2.2",
         }).encode("utf-8")
         req = urllib.request.Request(
             f"{base}/api/v1/licenses/activate",
@@ -564,7 +620,7 @@ class LicenseGuard:
         req_body = json.dumps({
             "license_id": status["license_id"],
             "hwid_hash": fp["hwid_hash"],
-            "app_version": "2.2.1",
+            "app_version": "2.2.2",
             "client_utc": datetime.fromtimestamp(self._clock_utc(), tz=timezone.utc).isoformat(),
             "used_seconds": status.get("used_seconds", 0),
             "lock_state": status["lock_state"],
@@ -619,7 +675,7 @@ class LicenseGuard:
 
             fp = self.get_fingerprint()
             hwid_hash = fp["hwid_hash"]
-            rec = self.vault.load_and_reconcile(hwid_hash, now_utc=now_ts)
+            rec = self.vault.load_and_reconcile(hwid_hash, now_utc=now_ts, current_fp=fp)
             reg_active, ce_active = self._count_active_exams()
             active_exams_count = reg_active + ce_active
 
@@ -638,6 +694,8 @@ class LicenseGuard:
                 "now_utc": now_ts,
                 "max_seen_utc": int(rec.get("max_seen_utc") or 0),
                 "tamper_reason": rec.get("tamper_reason"),
+                "is_clock_rollback": False,
+                "can_repair_vault": False,
                 "license_id": None,
                 "license_key": None,
                 "school_name": None,
@@ -669,12 +727,18 @@ class LicenseGuard:
                     "used_seconds": int((state or {}).get("used_seconds") or 0),
                     "tamper_strikes": int((state or {}).get("tamper_strikes") or 0),
                     "tombstone": tomb or None,
+                    "is_clock_rollback": False,
+                    "can_repair_vault": False,
                 })
                 self._last_status = base_report
                 return dict(base_report)
 
             # Anchor tampering or >300s clock rollback
             if rec["status"] in ("TAMPERED", "CLOCK_TAMPER"):
+                is_clock_rollback = rec["status"] == "CLOCK_TAMPER" or (
+                    int(rec.get("max_seen_utc") or 0) > 0
+                    and now_ts < int(rec.get("max_seen_utc") or 0) - 300
+                )
                 if state is not None:
                     state["tamper_strikes"] = int(state.get("tamper_strikes") or 0) + 1
                     state["lock_state"] = "CLOCK_TAMPER_LOCK"
@@ -689,6 +753,8 @@ class LicenseGuard:
                     "used_seconds": int((state or {}).get("used_seconds") or 0),
                     "tamper_strikes": int((state or {}).get("tamper_strikes") or 1),
                     "tamper_reason": rec.get("tamper_reason") or "clock_rollback_detected",
+                    "is_clock_rollback": is_clock_rollback,
+                    "can_repair_vault": not is_clock_rollback,
                 })
                 self._last_status = base_report
                 return dict(base_report)
@@ -710,6 +776,8 @@ class LicenseGuard:
                     "license_id": state.get("license_id"),
                     "tamper_reason": lease_err,
                     "tamper_strikes": state["tamper_strikes"],
+                    "is_clock_rollback": False,
+                    "can_repair_vault": True,
                 })
                 self._last_status = base_report
                 return dict(base_report)

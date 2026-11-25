@@ -248,7 +248,7 @@ def main() -> None:
         mock_wizard_page(
             sidebar,
             "Welcome to CogniTara Studio Setup",
-            "This will install CogniTara Studio 2.2.1 — the offline-first LAN CBT exam server with the 5-layer licence vault — on this computer.\n"
+            "This will install CogniTara Studio 2.2.2 — the offline-first LAN CBT exam server with the 5-layer licence vault — on this computer.\n"
             "Exam data, logs and backups are stored in %ProgramData%\\CogniTara and are preserved during updates.\n"
             "Click Next to continue.",
             "mock_welcome_page",
@@ -256,7 +256,7 @@ def main() -> None:
         mock_wizard_page(
             sidebar,
             "CogniTara Studio is ready",
-            "CogniTara Studio 2.2.1 has been installed on this computer.\n"
+            "CogniTara Studio 2.2.2 has been installed on this computer.\n"
             "Launch Studio to complete the 5-step school setup, or sign in with your CogniTara Cloud account.",
             "mock_finish_page",
             checkbox="Launch CogniTara Studio",

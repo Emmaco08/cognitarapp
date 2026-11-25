@@ -616,3 +616,120 @@ def test_internal_desktop_api_auth_backups_and_setup(tmp_path):
     r_restore = client.post("/api/internal/backups/restore", headers=headers, json={"filename": bk_name})
     assert r_restore.status_code == 200
     assert r_restore.get_json()["restored_from"] == bk_name
+
+
+def test_hwid_1_of_4_drift_auto_heals_triple_anchors_without_false_clock_lock(tmp_path):
+    """
+    Replacing 1 of 4 hardware components (e.g. SSD swap or transient WMI disk change)
+    must seamlessly re-seal Anchor A, B, and C without triggering a false clock tamper lock,
+    while preserving monotonic used_seconds and max_seen_utc.
+    """
+    env = _make_guard(tmp_path)
+    lease = _build_signed_lease(env["priv"], env["fp"])
+    assert env["guard"].activate_lease(lease)["ok"] is True
+
+    env["clock"].advance(300)
+    st1 = env["guard"].evaluate(advance_monotonic=True)
+    assert st1["lock_state"] == "ACTIVE"
+    assert st1["used_seconds"] == 300
+
+    # Simulate 1-of-4 component change (e.g. disk serial shifts on Windows)
+    env["current_comp"]["disk_serial"] = "NVME-REPLACED-9999"
+    env["clock"].advance(60)
+    st2 = env["guard"].evaluate(advance_monotonic=True)
+    assert st2["lock_state"] == "ACTIVE"
+    assert st2["is_licensed"] is True
+    assert st2["is_clock_rollback"] is False
+    assert st2["used_seconds"] == 360
+
+    # Subsequent evaluation under the new HWID stays clean and verified
+    env["clock"].advance(60)
+    st3 = env["guard"].evaluate(advance_monotonic=True)
+    assert st3["lock_state"] == "ACTIVE"
+    assert st3["used_seconds"] == 420
+
+    # Meanwhile changing 2+ components (cloning to another PC) STILL fails closed
+    env["current_comp"]["smbios_uuid"] = "CLONED-PC-BIOS"
+    env["current_comp"]["cpu_id"] = "CLONED-PC-CPU"
+    st4 = env["guard"].evaluate(advance_monotonic=False)
+    assert st4["lock_state"] in ("CLOCK_TAMPER_LOCK", "HWID_MISMATCH_LOCK")
+    assert st4["is_licensed"] is False
+    assert st4["is_clock_rollback"] is False
+    assert st4["can_repair_vault"] is True
+
+
+def test_repair_corrupt_vault_allowed_only_when_clock_valid_and_not_revoked(tmp_path):
+    """
+    When a local vault is mismatched/legacy while the system clock IS valid and NOT revoked,
+    repair_or_reset_corrupt_vault() cleanly returns to UNACTIVATED so the user can re-activate.
+    Genuine clock rollback and HQ revocation tombstones MUST strictly refuse repair.
+    """
+    env = _make_guard(tmp_path)
+    lease = _build_signed_lease(env["priv"], env["fp"])
+    assert env["guard"].activate_lease(lease)["ok"] is True
+
+    # 1. Corrupt Anchor A while clock is completely valid (10 minutes forward)
+    with open(env["vault_file"], "wb") as f:
+        f.write(b"CORRUPT-LEGACY-VAULT-BYTES")
+    env["clock"].advance(600)
+
+    locked = env["guard"].evaluate(advance_monotonic=False)
+    assert locked["lock_state"] == "CLOCK_TAMPER_LOCK"
+    assert locked["is_clock_rollback"] is False
+    assert locked["can_repair_vault"] is True
+
+    # Repair via internal desktop API succeeds and returns clean UNACTIVATED state
+    token = secrets.token_hex(16)
+    app = create_app({
+        "TESTING": True,
+        "ENFORCE_LICENSE": True,
+        "WTF_CSRF_ENABLED": False,
+        "DATABASE_NAME": env["db_path"],
+        "DESKTOP_CONTROL_TOKEN": token,
+        "SECRET_KEY": "test-secret",
+    })
+    app.extensions["license_guard"] = env["guard"]
+    client = app.test_client()
+    r_rep = client.post("/api/internal/license/repair-vault", headers={"X-CogniTara-Desktop-Token": token})
+    assert r_rep.status_code == 200
+    assert r_rep.get_json()["ok"] is True
+    assert r_rep.get_json()["status"]["lock_state"] == "UNACTIVATED"
+
+    # Re-activate cleanly after repair
+    assert env["guard"].activate_lease(lease)["ok"] is True
+
+    # 2. Genuine clock rollback MUST strictly refuse repair
+    env["clock"].utc -= 1200
+    rolled = env["guard"].evaluate(advance_monotonic=False)
+    assert rolled["lock_state"] == "CLOCK_TAMPER_LOCK"
+    assert rolled["is_clock_rollback"] is True
+    assert rolled["can_repair_vault"] is False
+    r_refuse_clock = client.post("/api/internal/license/repair-vault", headers={"X-CogniTara-Desktop-Token": token})
+    assert r_refuse_clock.status_code == 403
+    assert r_refuse_clock.get_json()["error"] == "clock_rollback_detected"
+
+    # Restore valid clock
+    env["clock"].utc += 1500
+    assert env["guard"].evaluate(advance_monotonic=False)["lock_state"] == "ACTIVE"
+
+    # 3. Permanent HQ revocation MUST strictly refuse repair
+    tombstone_body = {
+        "schema_version": 2,
+        "tombstone_id": "tmb_01REPAIRBLOCK",
+        "school_id": "sch_01TEST0001",
+        "license_id": "lic_01TESTVAULT001",
+        "reason_code": "CHARGEBACK",
+        "reason_detail": "Revoked by HQ",
+        "revoked_at": "2026-11-25T00:00:00Z",
+        "effective_immediately": True,
+    }
+    tomb_env = {
+        "status": "REVOKED",
+        "tombstone": tombstone_body,
+        "ed25519_sig": sign_canonical_ed25519(tombstone_body, env["priv"]),
+    }
+    assert env["guard"].apply_revocation_tombstone(tomb_env)["ok"] is True
+    r_refuse_rev = client.post("/api/internal/license/repair-vault", headers={"X-CogniTara-Desktop-Token": token})
+    assert r_refuse_rev.status_code == 403
+    assert r_refuse_rev.get_json()["error"] == "license_revoked_by_hq"
+

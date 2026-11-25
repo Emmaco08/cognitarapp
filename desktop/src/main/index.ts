@@ -192,19 +192,85 @@ async function requestSafeQuit(): Promise<void> {
   app.quit();
 }
 
+let closeDialogOpen = false;
+
+async function handleWindowCloseRequest(): Promise<void> {
+  if (isQuitting || closeDialogOpen) return;
+
+  // When the LAN exam server is NOT running, close cleanly and exit the app
+  if (!engine || engine.getLanState() !== "running") {
+    await requestSafeQuit();
+    return;
+  }
+
+  // When the LAN exam server IS actively serving exams, let the admin decide cleanly
+  if (!mainWindow || mainWindow.isDestroyed()) {
+    await requestSafeQuit();
+    return;
+  }
+
+  closeDialogOpen = true;
+  try {
+    let writing = 0;
+    try {
+      const tel = await engine.callInternal<{ ok: boolean; live?: { total_writing?: number } }>(
+        "GET",
+        "/telemetry"
+      );
+      writing = tel.data?.live?.total_writing || 0;
+    } catch {
+      writing = 0;
+    }
+
+    const detail =
+      writing > 0
+        ? `${writing} student${writing === 1 ? " is" : "s are"} currently writing an exam. Keeping CogniTara in the system tray leaves the exam server online without interrupting students.`
+        : "The school exam server is currently running. Keep it running quietly in the Windows system tray, or stop the server and quit completely.";
+
+    const res = await dialog.showMessageBox(mainWindow, {
+      type: "question",
+      buttons: ["Keep running in tray", "Stop server and quit", "Cancel"],
+      defaultId: 0,
+      cancelId: 2,
+      title: "Exam server is running",
+      message: writing > 0 ? `${writing} student${writing === 1 ? " is" : "s are"} writing right now` : "Close CogniTara Studio?",
+      detail,
+    });
+
+    if (res.response === 0) {
+      mainWindow.hide();
+    } else if (res.response === 1) {
+      await requestSafeQuit();
+    }
+  } finally {
+    closeDialogOpen = false;
+  }
+}
+
+function broadcastMaximizedState(): void {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.webContents.send("window:maximizedChanged", mainWindow.isMaximized());
+  }
+}
+
 function createWindow(): void {
   const iconFile =
     process.platform === "win32"
       ? getAssetPath("cognitara-favicon.ico")
       : getAssetPath("cognitara-app-icon.png");
 
+  // Always construct frameless Windows 11 windows with native resizable/minimizable/maximizable flags
+  // so Windows DWM assigns proper WS_THICKFRAME, WS_MINIMIZEBOX, and WS_MAXIMIZEBOX styles.
   const winOptions: Electron.BrowserWindowConstructorOptions = {
     width: 640,
     height: 400,
     minWidth: 640,
     minHeight: 400,
     frame: false,
-    resizable: false,
+    resizable: true,
+    minimizable: true,
+    maximizable: true,
+    closable: true,
     center: true,
     show: false,
     backgroundColor: settings.theme === "light" ? "#F6F8FC" : "#0A0E1A",
@@ -244,15 +310,20 @@ function createWindow(): void {
     }
   });
 
+  mainWindow.on("maximize", broadcastMaximizedState);
+  mainWindow.on("unmaximize", broadcastMaximizedState);
+  mainWindow.on("restore", broadcastMaximizedState);
+
   mainWindow.on("close", (event) => {
     if (!isQuitting) {
       event.preventDefault();
-      mainWindow?.hide();
+      void handleWindowCloseRequest();
     }
   });
 
   mainWindow.once("ready-to-show", () => {
     mainWindow?.show();
+    broadcastMaximizedState();
   });
 
   mainWindow.loadFile(getRendererEntry()).catch((err) => {
@@ -266,15 +337,20 @@ function setWindowMode(mode: "boot" | "studio"): void {
   currentWindowMode = mode;
 
   if (mode === "boot") {
-    mainWindow.setResizable(false);
+    if (mainWindow.isMaximized()) mainWindow.unmaximize();
     mainWindow.setMinimumSize(640, 400);
-    mainWindow.setSize(640, 400, true);
+    mainWindow.setSize(640, 400, false);
     mainWindow.center();
   } else {
-    mainWindow.setMinimumSize(1024, 680);
     mainWindow.setResizable(true);
-    mainWindow.setSize(1280, 800, true);
-    mainWindow.center();
+    mainWindow.setMinimizable(true);
+    mainWindow.setMaximizable(true);
+    mainWindow.setMinimumSize(1024, 680);
+    if (!mainWindow.isMaximized()) {
+      mainWindow.setSize(1280, 800, false);
+      mainWindow.center();
+    }
+    broadcastMaximizedState();
   }
 }
 
@@ -335,6 +411,7 @@ function registerIpcHandlers(): void {
       backupDir: bkRes.data?.backup_dir || settings.backupDir,
       cloudAccount: cloudAuth ? cloudAuth.getSession() : null,
       updateState: updater ? updater.getState() : null,
+      isMaximized: mainWindow && !mainWindow.isDestroyed() ? mainWindow.isMaximized() : false,
     };
   });
 
@@ -416,6 +493,11 @@ function registerIpcHandlers(): void {
     const res = await engine!.callInternal("POST", "/license/start-trial", {
       school_name: schoolName || undefined,
     });
+    return res.data;
+  });
+
+  ipcMain.handle("license:repairVault", async () => {
+    const res = await engine!.callInternal("POST", "/license/repair-vault", {});
     return res.data;
   });
 
@@ -547,17 +629,24 @@ function registerIpcHandlers(): void {
     return { ok: true, settings };
   });
 
-  ipcMain.handle("window:action", (_evt, action: "minimize" | "maximize" | "close") => {
-    if (!mainWindow || mainWindow.isDestroyed()) return;
+  ipcMain.handle("window:action", async (_evt, action: "minimize" | "maximize" | "close") => {
+    if (!mainWindow || mainWindow.isDestroyed()) return { ok: false };
     if (action === "minimize") {
-      mainWindow.hide();
-    } else if (action === "maximize") {
-      if (currentWindowMode === "boot") return;
+      mainWindow.minimize();
+      return { ok: true };
+    }
+    if (action === "maximize") {
+      if (currentWindowMode === "boot") return { ok: false, maximized: false };
       if (mainWindow.isMaximized()) mainWindow.unmaximize();
       else mainWindow.maximize();
-    } else if (action === "close") {
-      mainWindow.hide();
+      broadcastMaximizedState();
+      return { ok: true, maximized: mainWindow.isMaximized() };
     }
+    if (action === "close") {
+      await handleWindowCloseRequest();
+      return { ok: true };
+    }
+    return { ok: false };
   });
 
   ipcMain.handle("window:setMode", (_evt, mode: "boot" | "studio") => {
@@ -683,6 +772,28 @@ function registerIpcHandlers(): void {
     }
     return { ok: false, error: "no_activatable_lease" };
   }
+
+  ipcMain.handle("cloud:activateLicense", async (_evt, licenseKey?: string) => {
+    if (!cloudAuth) return { ok: false, message: "Cloud service unavailable." };
+    const syncRes = await cloudAuth.syncProfile().catch(() => null);
+    const session = syncRes?.session || cloudAuth.getSession();
+    const list = Array.isArray(session.licenses) ? session.licenses : [];
+    const target = licenseKey
+      ? list.find((l) => l.license_key === licenseKey)
+      : list.find((l) => String(l.status || "").toLowerCase() === "active") || list[0];
+    if (!target) {
+      return { ok: false, error: "no_cloud_license", message: "No active licence found on this CogniTara Cloud account yet." };
+    }
+    const act = await activateSignedLeaseLocally(target.signed_lease_json, target.license_key);
+    if (act && act.ok) {
+      return { ok: true, status: act.status, license_key: target.license_key };
+    }
+    return {
+      ok: false,
+      error: act?.error || "activation_failed",
+      message: act?.message || "Could not activate the cloud licence on this computer.",
+    };
+  });
 
   ipcMain.handle("billing:getPlans", async () => {
     if (!cloudAuth) return { ok: false, message: "Cloud service unavailable." };

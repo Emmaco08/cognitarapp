@@ -190,6 +190,14 @@ def api_internal_license_start_trial():
     return jsonify(res), code
 
 
+@internal_desktop_bp.route("/license/repair-vault", methods=["POST"])
+def api_internal_license_repair_vault():
+    guard = _get_guard()
+    res = guard.repair_or_reset_corrupt_vault()
+    code = 200 if res.get("ok") else 403
+    return jsonify(res), code
+
+
 # =============================================================================
 # Live Telemetry & Active Exam Proctor Controls
 # =============================================================================

@@ -9,6 +9,8 @@ export interface CogniTaraDesktopBridge {
   startTrialLicense: (schoolName?: string) => Promise<any>;
   checkInLicense: () => Promise<any>;
   recheckLicense: () => Promise<any>;
+  repairCorruptVault: () => Promise<any>;
+  activateCloudLicense: (licenseKey?: string) => Promise<any>;
   startServer: () => Promise<any>;
   stopServer: () => Promise<any>;
   extendExam: (examId: number, examType: string, minutes: number) => Promise<any>;
@@ -34,7 +36,7 @@ export interface CogniTaraDesktopBridge {
   completeOnboarding: (payload: { selectedLanIp?: string }) => Promise<any>;
   getSettings: () => Promise<any>;
   updateSettings: (partial: Record<string, unknown>) => Promise<any>;
-  windowAction: (action: "minimize" | "maximize" | "close") => Promise<void>;
+  windowAction: (action: "minimize" | "maximize" | "close") => Promise<any>;
   setWindowMode: (mode: "boot" | "studio") => Promise<void>;
   openExternal: (url: string) => Promise<void>;
   openWindowsDateSettings: () => Promise<void>;
@@ -71,6 +73,7 @@ export interface CogniTaraDesktopBridge {
   onUpdateStatusChanged: (cb: (status: any) => void) => () => void;
   onCloudSessionChanged: (cb: (session: any) => void) => () => void;
   onBillingCompleted: (cb: (result: any) => void) => () => void;
+  onWindowMaximizedChanged: (cb: (maximized: boolean) => void) => () => void;
 }
 
 const api: CogniTaraDesktopBridge = {
@@ -82,6 +85,8 @@ const api: CogniTaraDesktopBridge = {
   startTrialLicense: (schoolName) => ipcRenderer.invoke("license:startTrial", schoolName),
   checkInLicense: () => ipcRenderer.invoke("license:checkIn"),
   recheckLicense: () => ipcRenderer.invoke("license:recheck"),
+  repairCorruptVault: () => ipcRenderer.invoke("license:repairVault"),
+  activateCloudLicense: (licenseKey) => ipcRenderer.invoke("cloud:activateLicense", licenseKey),
   startServer: () => ipcRenderer.invoke("server:start"),
   stopServer: () => ipcRenderer.invoke("server:stop"),
   extendExam: (examId, examType, minutes) =>
@@ -143,6 +148,11 @@ const api: CogniTaraDesktopBridge = {
     const listener = (_evt: Electron.IpcRendererEvent, result: any) => cb(result);
     ipcRenderer.on("billing:completed", listener);
     return () => ipcRenderer.removeListener("billing:completed", listener);
+  },
+  onWindowMaximizedChanged: (cb) => {
+    const listener = (_evt: Electron.IpcRendererEvent, maximized: boolean) => cb(Boolean(maximized));
+    ipcRenderer.on("window:maximizedChanged", listener);
+    return () => ipcRenderer.removeListener("window:maximizedChanged", listener);
   },
 };
 

@@ -29,6 +29,7 @@ from typing import Any, Callable, Dict, Optional, Tuple
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 
 from cognitara.database.initialization import init_license_tables
+from cognitara.security.hwid import match_hardware_fingerprint
 
 logger = logging.getLogger("cognitara.security.vault_store")
 
@@ -38,6 +39,7 @@ STATE_HMAC_DOMAIN = b"CogniTara-Vault-v2-StateKey"
 REGISTRY_MAC_DOMAIN = b"CogniTara-Registry-Anchor-v2"
 DB_CHECKSUM_DOMAIN = b"CogniTara-DB-Anchor-v2"
 AES_MAGIC = b"CTV2AES\x00"
+AES_MAGIC_V3 = b"CTV3AES\x00"
 
 CLOCK_ROLLBACK_TOLERANCE_SECONDS = 300  # > 5 minutes rollback trips CLOCK_TAMPER_LOCK
 
@@ -48,7 +50,7 @@ def canonical_json_bytes(obj: Any) -> bytes:
 
 
 def compute_state_hmac(state: Dict[str, Any], hwid_hash: str) -> str:
-    payload = {k: v for k, v in state.items() if k != "state_hmac"}
+    payload = {k: v for k, v in state.items() if k != "state_hmac" and not str(k).startswith("_")}
     key = hmac.new(STATE_HMAC_DOMAIN, hwid_hash.encode("utf-8"), hashlib.sha256).digest()
     return hmac.new(key, canonical_json_bytes(payload), hashlib.sha256).hexdigest()
 
@@ -144,14 +146,33 @@ def encrypt_vault_bytes(plaintext: bytes, hwid_hash: str) -> bytes:
     """Encrypt Anchor A bytes using Windows DPAPI on Win32 or AES-GCM elsewhere."""
     if sys.platform == "win32":
         return _dpapi_protect(plaintext, DPAPI_ENTROPY)
-    key = hmac.new(DPAPI_ENTROPY, hwid_hash.encode("utf-8"), hashlib.sha256).digest()
+    hwid_bytes = hwid_hash.encode("utf-8")
+    key = hmac.new(DPAPI_ENTROPY, hwid_bytes, hashlib.sha256).digest()
     nonce = os.urandom(12)
     ct = AESGCM(key).encrypt(nonce, plaintext, DPAPI_ENTROPY)
-    return AES_MAGIC + nonce + ct
+    return AES_MAGIC_V3 + len(hwid_bytes).to_bytes(2, "big") + hwid_bytes + nonce + ct
 
 
-def decrypt_vault_bytes(ciphertext: bytes, hwid_hash: str) -> bytes:
+def decrypt_vault_bytes(
+    ciphertext: bytes,
+    hwid_hash: str,
+    allow_embedded_hwid: bool = False,
+) -> bytes:
     """Decrypt Anchor A bytes using Windows DPAPI on Win32 or AES-GCM elsewhere."""
+    if ciphertext.startswith(AES_MAGIC_V3):
+        header_len = len(AES_MAGIC_V3) + 2
+        if len(ciphertext) < header_len + 12 + 16:
+            raise ValueError("Truncated AES v3 vault envelope")
+        hwid_len = int.from_bytes(ciphertext[len(AES_MAGIC_V3):header_len], "big")
+        if len(ciphertext) < header_len + hwid_len + 12 + 16:
+            raise ValueError("Truncated AES v3 vault header")
+        embedded_hwid = ciphertext[header_len:header_len + hwid_len].decode("utf-8", errors="strict")
+        nonce_start = header_len + hwid_len
+        nonce = ciphertext[nonce_start:nonce_start + 12]
+        body = ciphertext[nonce_start + 12:]
+        effective_hwid = embedded_hwid if allow_embedded_hwid else hwid_hash
+        key = hmac.new(DPAPI_ENTROPY, effective_hwid.encode("utf-8"), hashlib.sha256).digest()
+        return AESGCM(key).decrypt(nonce, body, DPAPI_ENTROPY)
     if ciphertext.startswith(AES_MAGIC):
         if len(ciphertext) < len(AES_MAGIC) + 12 + 16:
             raise ValueError("Truncated AES vault envelope")
@@ -205,11 +226,11 @@ def _atomic_write_bytes(path: str, data: bytes) -> None:
 
 
 # =============================================================================
-# Anchor B: Windows Registry (HKLM with HKCU fallback) / File Fallback
+# Anchor B: Windows Registry (HKCU + HKLM synchronized) / File Fallback
 # =============================================================================
 
 class RegistryAnchor:
-    """Persists Anchor B in Windows Registry (HKLM -> HKCU fallback) or sidecar file."""
+    """Persists Anchor B in Windows Registry (HKCU + best-effort HKLM mirror) or sidecar file."""
 
     SUBKEY = r"SOFTWARE\CogniTara\Vault"
 
@@ -220,7 +241,21 @@ class RegistryAnchor:
     def _file_path(self) -> str:
         return self.fallback_file or _default_registry_fallback_path()
 
-    def read(self) -> Optional[Dict[str, Any]]:
+    @staticmethod
+    def _mac_matches(entry: Dict[str, Any], hwid_hash: str) -> bool:
+        expected = compute_anchor_mac(
+            REGISTRY_MAC_DOMAIN,
+            str(entry.get("LicenseId") or ""),
+            int(entry.get("MaxSeenUtc") or 0),
+            int(entry.get("UsedSeconds") or 0),
+            str(entry.get("LockState") or ""),
+            str(entry.get("TombstoneId") or ""),
+            hwid_hash,
+        )
+        actual = str(entry.get("AnchorMac") or "")
+        return bool(actual and hmac.compare_digest(actual, expected))
+
+    def read(self, preferred_hwids: Optional[Tuple[str, ...]] = None) -> Optional[Dict[str, Any]]:
         if self.force_file_backend:
             path = self._file_path()
             if not os.path.isfile(path):
@@ -234,7 +269,9 @@ class RegistryAnchor:
 
         import winreg  # type: ignore
 
-        for hive in (winreg.HKEY_LOCAL_MACHINE, winreg.HKEY_CURRENT_USER):
+        entries: list[Dict[str, Any]] = []
+        had_corrupt = False
+        for hive, label in ((winreg.HKEY_CURRENT_USER, "HKCU"), (winreg.HKEY_LOCAL_MACHINE, "HKLM")):
             try:
                 access = winreg.KEY_READ | getattr(winreg, "KEY_WOW64_64KEY", 0)
                 with winreg.OpenKey(hive, self.SUBKEY, 0, access) as key:
@@ -247,21 +284,36 @@ class RegistryAnchor:
                         tombstone_id, _ = winreg.QueryValueEx(key, "TombstoneId")
                     except FileNotFoundError:
                         tombstone_id = ""
-                    return {
+                    entries.append({
                         "LicenseId": str(license_id),
                         "MaxSeenUtc": int(max_seen),
                         "UsedSeconds": int(used_sec),
                         "LockState": str(lock_state),
                         "TombstoneId": str(tombstone_id or ""),
                         "AnchorMac": str(anchor_mac),
-                        "hive": "HKLM" if hive == winreg.HKEY_LOCAL_MACHINE else "HKCU",
-                    }
+                        "hive": label,
+                    })
             except FileNotFoundError:
                 continue
             except Exception as exc:
-                logger.warning("Registry anchor read error: %s", exc)
-                return {"_corrupt": True}
-        return None
+                logger.warning("Registry anchor read error (%s): %s", label, exc)
+                had_corrupt = True
+
+        if not entries:
+            return {"_corrupt": True} if had_corrupt else None
+
+        if len(entries) == 1:
+            return entries[0]
+
+        # Resolve HKCU vs HKLM cleanly: prefer entries with a valid MAC and higher monotonic progress
+        hwids = tuple(h for h in (preferred_hwids or ()) if h)
+        def _rank(item: Dict[str, Any]) -> Tuple[int, int, int, int]:
+            is_revoked = 1 if (item.get("LockState") == "HQ_REVOKED_LOCK" or item.get("TombstoneId")) else 0
+            mac_ok = 1 if (hwids and any(self._mac_matches(item, h) for h in hwids)) else 0
+            return (is_revoked, mac_ok, int(item.get("MaxSeenUtc") or 0), int(item.get("UsedSeconds") or 0))
+
+        entries.sort(key=_rank, reverse=True)
+        return entries[0]
 
     def write(
         self,
@@ -297,8 +349,10 @@ class RegistryAnchor:
         import winreg  # type: ignore
 
         access = winreg.KEY_WRITE | getattr(winreg, "KEY_WOW64_64KEY", 0)
+        written_labels: list[str] = []
         last_exc: Optional[Exception] = None
-        for hive, label in ((winreg.HKEY_LOCAL_MACHINE, "HKLM"), (winreg.HKEY_CURRENT_USER, "HKCU")):
+        # Always write HKCU (reliable for non-elevated user sessions) and best-effort mirror to HKLM
+        for hive, label in ((winreg.HKEY_CURRENT_USER, "HKCU"), (winreg.HKEY_LOCAL_MACHINE, "HKLM")):
             try:
                 with winreg.CreateKeyEx(hive, self.SUBKEY, 0, access) as key:
                     winreg.SetValueEx(key, "LicenseId", 0, winreg.REG_SZ, payload["LicenseId"])
@@ -307,14 +361,42 @@ class RegistryAnchor:
                     winreg.SetValueEx(key, "LockState", 0, winreg.REG_SZ, payload["LockState"])
                     winreg.SetValueEx(key, "TombstoneId", 0, winreg.REG_SZ, payload["TombstoneId"])
                     winreg.SetValueEx(key, "AnchorMac", 0, winreg.REG_SZ, payload["AnchorMac"])
-                return label
-            except PermissionError as exc:
+                written_labels.append(label)
+            except (PermissionError, OSError) as exc:
                 last_exc = exc
                 continue
-            except OSError as exc:
-                last_exc = exc
-                continue
+        if written_labels:
+            return "+".join(written_labels)
         raise OSError(f"Unable to write Windows Registry anchor: {last_exc}")
+
+    def clear(self) -> None:
+        if self.force_file_backend:
+            path = self._file_path()
+            try:
+                if os.path.isfile(path):
+                    os.unlink(path)
+            except OSError:
+                pass
+            return
+
+        import winreg  # type: ignore
+
+        access = winreg.KEY_ALL_ACCESS | getattr(winreg, "KEY_WOW64_64KEY", 0)
+        for hive in (winreg.HKEY_CURRENT_USER, winreg.HKEY_LOCAL_MACHINE):
+            try:
+                winreg.DeleteKeyEx(hive, self.SUBKEY, access, 0)
+            except FileNotFoundError:
+                continue
+            except OSError:
+                try:
+                    with winreg.OpenKey(hive, self.SUBKEY, 0, access) as key:
+                        for name in ("LicenseId", "MaxSeenUtc", "UsedSeconds", "LockState", "TombstoneId", "AnchorMac"):
+                            try:
+                                winreg.DeleteValue(key, name)
+                            except OSError:
+                                pass
+                except OSError:
+                    continue
 
 
 # =============================================================================
@@ -410,79 +492,135 @@ class TripleAnchorVaultStore:
         return candidates[0]
 
     # ---- Anchor A ----
-    def read_anchor_a(self, hwid_hash: str) -> Tuple[Optional[Dict[str, Any]], Optional[str]]:
-        """
-        Returns (state_dict_or_none, error_code_or_none).
-        Returns (None, None) when no vault file exists yet.
-        """
-        existing_path = None
-        for path in self._candidate_vault_paths():
-            if os.path.isfile(path):
-                existing_path = path
-                self._resolved_vault_path = path
-                break
-        if not existing_path:
-            return None, None
-
+    def _try_parse_anchor_a_file(
+        self,
+        path: str,
+        hwid_hash: str,
+        current_fp: Optional[Dict[str, Any]] = None,
+    ) -> Tuple[Optional[Dict[str, Any]], Optional[str]]:
         try:
-            with open(existing_path, "rb") as f:
+            with open(path, "rb") as f:
                 raw = f.read()
-            plaintext = decrypt_vault_bytes(raw, hwid_hash)
+            plaintext = decrypt_vault_bytes(raw, hwid_hash, allow_embedded_hwid=bool(current_fp))
             data = json.loads(plaintext.decode("utf-8"))
             if not isinstance(data, dict):
                 return None, "anchor_a_corrupt"
         except Exception as exc:
-            logger.warning("Anchor A decrypt/parse failure: %s", exc)
+            logger.warning("Anchor A decrypt/parse failure (%s): %s", path, exc)
             return None, "anchor_a_corrupt"
 
         stored_hmac = str(data.get("state_hmac") or "")
         expected_hmac = compute_state_hmac(data, hwid_hash)
-        if not stored_hmac or not hmac.compare_digest(stored_hmac, expected_hmac):
-            return None, "anchor_a_hmac_mismatch"
-        return data, None
+        if stored_hmac and hmac.compare_digest(stored_hmac, expected_hmac):
+            return data, None
+
+        # Check >= 3/4 hardware component tolerance (same physical PC after minor drift / disk / WMI change)
+        stored_hwid = str(data.get("hwid_hash") or "").strip()
+        if (
+            current_fp
+            and stored_hwid
+            and stored_hwid != hwid_hash
+            and stored_hmac
+            and hmac.compare_digest(stored_hmac, compute_state_hmac(data, stored_hwid))
+        ):
+            lease_payload = (data.get("signed_lease") or {}).get("payload") or {}
+            expected_comps = data.get("hw_component_hashes") or lease_payload.get("hw_component_hashes")
+            matched, match_count, _ = match_hardware_fingerprint(
+                expected_hwid_hash=stored_hwid,
+                current_fp=current_fp,
+                expected_component_hashes=expected_comps,
+                min_component_matches=3,
+            )
+            if matched:
+                rebound = dict(data)
+                rebound["_rebind_from_hwid"] = stored_hwid
+                rebound["_rebind_match_count"] = match_count
+                return rebound, None
+
+        return None, "anchor_a_hmac_mismatch"
+
+    def read_anchor_a(
+        self,
+        hwid_hash: str,
+        current_fp: Optional[Dict[str, Any]] = None,
+    ) -> Tuple[Optional[Dict[str, Any]], Optional[str]]:
+        """
+        Returns (state_dict_or_none, error_code_or_none).
+        Returns (None, None) when no vault file exists yet.
+        Checks all candidate paths (e.g. %ProgramData% and %LOCALAPPDATA%) and
+        prefers the freshest valid vault to prevent multi-path split-brain.
+        """
+        existing_paths = [p for p in self._candidate_vault_paths() if os.path.isfile(p)]
+        if not existing_paths:
+            return None, None
+
+        valid_entries: list[Tuple[str, Dict[str, Any]]] = []
+        first_err: Optional[str] = None
+        for path in existing_paths:
+            data, err = self._try_parse_anchor_a_file(path, hwid_hash, current_fp=current_fp)
+            if data is not None and err is None:
+                valid_entries.append((path, data))
+            elif first_err is None:
+                first_err = err
+
+        if valid_entries:
+            valid_entries.sort(
+                key=lambda item: (
+                    1 if item[1].get("lock_state") == "HQ_REVOKED_LOCK" else 0,
+                    0 if item[1].get("_rebind_from_hwid") else 1,
+                    int(item[1].get("max_seen_utc") or 0),
+                    int(item[1].get("used_seconds") or 0),
+                ),
+                reverse=True,
+            )
+            best_path, best_data = valid_entries[0]
+            self._resolved_vault_path = best_path
+            return best_data, None
+
+        self._resolved_vault_path = existing_paths[0]
+        return None, first_err or "anchor_a_corrupt"
 
     def write_anchor_a(self, state: Dict[str, Any], hwid_hash: str) -> str:
-        signed_state = dict(state)
+        signed_state = {k: v for k, v in state.items() if not str(k).startswith("_")}
         signed_state["vault_version"] = VAULT_VERSION
         signed_state["hwid_hash"] = hwid_hash
         signed_state["state_hmac"] = compute_state_hmac(signed_state, hwid_hash)
         encrypted = encrypt_vault_bytes(canonical_json_bytes(signed_state), hwid_hash)
 
+        written_paths: list[str] = []
         last_exc: Optional[Exception] = None
         for path in self._candidate_vault_paths():
             try:
                 _atomic_write_bytes(path, encrypted)
-                self._resolved_vault_path = path
-                return path
-            except PermissionError as exc:
+                written_paths.append(path)
+            except (PermissionError, OSError) as exc:
                 last_exc = exc
                 continue
-            except OSError as exc:
-                last_exc = exc
-                continue
+        if written_paths:
+            self._resolved_vault_path = written_paths[0]
+            return written_paths[0]
         raise OSError(f"Unable to persist Anchor A vault file: {last_exc}")
 
     # ---- Anchor B ----
-    def read_anchor_b(self, hwid_hash: str) -> Tuple[Optional[Dict[str, Any]], Optional[str]]:
-        raw = self.registry.read()
+    def read_anchor_b(
+        self,
+        hwid_hash: str,
+        alternate_hwid: Optional[str] = None,
+    ) -> Tuple[Optional[Dict[str, Any]], Optional[str]]:
+        preferred = (hwid_hash, alternate_hwid) if alternate_hwid else (hwid_hash,)
+        raw = self.registry.read(preferred_hwids=preferred)
         if raw is None:
             return None, None
         if raw.get("_corrupt"):
             return None, "anchor_b_corrupt"
 
-        expected = compute_anchor_mac(
-            REGISTRY_MAC_DOMAIN,
-            str(raw.get("LicenseId") or ""),
-            int(raw.get("MaxSeenUtc") or 0),
-            int(raw.get("UsedSeconds") or 0),
-            str(raw.get("LockState") or ""),
-            str(raw.get("TombstoneId") or ""),
-            hwid_hash,
-        )
-        actual = str(raw.get("AnchorMac") or "")
-        if not actual or not hmac.compare_digest(actual, expected):
-            return raw, "anchor_b_mac_mismatch"
-        return raw, None
+        candidates = [hwid_hash]
+        if alternate_hwid and alternate_hwid != hwid_hash:
+            candidates.append(alternate_hwid)
+        for cand_hwid in candidates:
+            if RegistryAnchor._mac_matches(raw, cand_hwid):
+                return raw, None
+        return raw, "anchor_b_mac_mismatch"
 
     # ---- Anchor C ----
     def read_anchor_c(self, hwid_hash: str) -> Tuple[Optional[Dict[str, Any]], int, Optional[str]]:
@@ -522,18 +660,27 @@ class TripleAnchorVaultStore:
         anchor_c: Dict[str, Any],
         tombstone_id: str,
         hwid_hash: str,
+        alternate_hwid: Optional[str] = None,
     ) -> bool:
-        expected = compute_anchor_mac(
-            DB_CHECKSUM_DOMAIN,
-            anchor_c["license_id"],
-            anchor_c["max_seen_utc"],
-            anchor_c["used_seconds"],
-            anchor_c["lock_state"],
-            tombstone_id,
-            hwid_hash,
-        )
         actual = str(anchor_c.get("vault_checksum") or "")
-        return bool(actual and hmac.compare_digest(actual, expected))
+        if not actual:
+            return False
+        candidates = [hwid_hash]
+        if alternate_hwid and alternate_hwid != hwid_hash:
+            candidates.append(alternate_hwid)
+        for cand_hwid in candidates:
+            expected = compute_anchor_mac(
+                DB_CHECKSUM_DOMAIN,
+                anchor_c["license_id"],
+                anchor_c["max_seen_utc"],
+                anchor_c["used_seconds"],
+                anchor_c["lock_state"],
+                tombstone_id,
+                cand_hwid,
+            )
+            if hmac.compare_digest(actual, expected):
+                return True
+        return False
 
     def write_anchor_c(
         self,
@@ -590,6 +737,35 @@ class TripleAnchorVaultStore:
                 except Exception:
                     pass
 
+    def clear_anchors(self) -> None:
+        """
+        Remove Anchor A files, Anchor B registry keys, and Anchor C SQLite row.
+        Caller MUST verify the vault is NOT revoked and system clock is valid first.
+        """
+        for path in self._candidate_vault_paths():
+            try:
+                if os.path.isfile(path):
+                    os.unlink(path)
+            except OSError:
+                pass
+        self._resolved_vault_path = self._explicit_vault_path
+        self.registry.clear()
+
+        conn = None
+        try:
+            conn = self._db_conn_factory()
+            init_license_tables(conn)
+            conn.execute("DELETE FROM local_license_state")
+            conn.commit()
+        except Exception as exc:
+            logger.warning("Failed clearing Anchor C SQLite row: %s", exc)
+        finally:
+            if conn is not None:
+                try:
+                    conn.close()
+                except Exception:
+                    pass
+
     # ---- Unified Atomic Seal ----
     def seal_all(self, state: Dict[str, Any], hwid_hash: str) -> Dict[str, Any]:
         """Persist state atomically across Anchor A (DPAPI), Anchor B (Registry), and Anchor C (SQLite)."""
@@ -630,15 +806,21 @@ class TripleAnchorVaultStore:
         }
 
     # ---- Triple-Anchor Load & Anti-Tamper Reconciliation ----
-    def load_and_reconcile(self, hwid_hash: str, now_utc: Optional[int] = None) -> Dict[str, Any]:
+    def load_and_reconcile(
+        self,
+        hwid_hash: str,
+        now_utc: Optional[int] = None,
+        current_fp: Optional[Dict[str, Any]] = None,
+    ) -> Dict[str, Any]:
         """
         Reads Anchor A, B, C and exam activity timestamps, returning a structured
         reconciliation report indicating whether the vault is unactivated, healthy,
         clock-tampered, anchor-tampered, or revoked.
         """
         now_ts = int(now_utc if now_utc is not None else time.time())
-        anchor_a, err_a = self.read_anchor_a(hwid_hash)
-        anchor_b, err_b = self.read_anchor_b(hwid_hash)
+        anchor_a, err_a = self.read_anchor_a(hwid_hash, current_fp=current_fp)
+        rebind_from_hwid = str((anchor_a or {}).get("_rebind_from_hwid") or "").strip() or None
+        anchor_b, err_b = self.read_anchor_b(hwid_hash, alternate_hwid=rebind_from_hwid)
         anchor_c, exam_max_utc, err_c = self.read_anchor_c(hwid_hash)
 
         anchors_health = {
@@ -666,6 +848,24 @@ class TripleAnchorVaultStore:
                 int((anchor_c or {}).get("max_seen_utc") or 0),
                 exam_max_utc,
             )
+            is_revoked_secondary = (
+                (anchor_b and (anchor_b.get("LockState") == "HQ_REVOKED_LOCK" or bool(anchor_b.get("TombstoneId"))))
+                or (anchor_c and anchor_c.get("lock_state") == "HQ_REVOKED_LOCK")
+            )
+            if is_revoked_secondary:
+                return {
+                    "status": "REVOKED",
+                    "state": {
+                        "license_id": (anchor_b or {}).get("LicenseId") or (anchor_c or {}).get("license_id"),
+                        "lock_state": "HQ_REVOKED_LOCK",
+                        "revocation_tombstone": {"tombstone_id": (anchor_b or {}).get("TombstoneId") or "TMB-HQ-REVOKED"},
+                    },
+                    "tamper_reason": None,
+                    "max_seen_utc": max_seen,
+                    "exam_max_utc": exam_max_utc,
+                    "now_utc": now_ts,
+                    "anchors": anchors_health,
+                }
             return {
                 "status": "TAMPERED",
                 "state": None,
@@ -683,6 +883,24 @@ class TripleAnchorVaultStore:
                 int((anchor_c or {}).get("max_seen_utc") or 0),
                 exam_max_utc,
             )
+            is_revoked_secondary = (
+                (anchor_b and (anchor_b.get("LockState") == "HQ_REVOKED_LOCK" or bool(anchor_b.get("TombstoneId"))))
+                or (anchor_c and anchor_c.get("lock_state") == "HQ_REVOKED_LOCK")
+            )
+            if is_revoked_secondary:
+                return {
+                    "status": "REVOKED",
+                    "state": {
+                        "license_id": (anchor_b or {}).get("LicenseId") or (anchor_c or {}).get("license_id"),
+                        "lock_state": "HQ_REVOKED_LOCK",
+                        "revocation_tombstone": {"tombstone_id": (anchor_b or {}).get("TombstoneId") or "TMB-HQ-REVOKED"},
+                    },
+                    "tamper_reason": None,
+                    "max_seen_utc": max_seen,
+                    "exam_max_utc": exam_max_utc,
+                    "now_utc": now_ts,
+                    "anchors": anchors_health,
+                }
             return {
                 "status": "TAMPERED",
                 "state": None,
@@ -693,7 +911,7 @@ class TripleAnchorVaultStore:
                 "anchors": anchors_health,
             }
 
-        state = dict(anchor_a)
+        state = {k: v for k, v in anchor_a.items() if not str(k).startswith("_")}
         tombstone = state.get("revocation_tombstone") or {}
         tombstone_id = str(
             (tombstone.get("tombstone") or {}).get("tombstone_id")
@@ -714,7 +932,9 @@ class TripleAnchorVaultStore:
             }
 
         # Verify Anchor C checksum if present
-        if anchor_c is not None and not self.verify_anchor_c_checksum(anchor_c, tombstone_id, hwid_hash):
+        if anchor_c is not None and not self.verify_anchor_c_checksum(
+            anchor_c, tombstone_id, hwid_hash, alternate_hwid=rebind_from_hwid
+        ):
             anchors_health["sqlite"] = "anchor_c_checksum_mismatch"
             return {
                 "status": "TAMPERED",
@@ -776,6 +996,19 @@ class TripleAnchorVaultStore:
                 "anchors": anchors_health,
             }
 
+        # Auto-heal all 3 anchors cleanly after verified >=3/4 hardware component tolerance match
+        if rebind_from_hwid and current_fp:
+            try:
+                state["hwid_hash"] = hwid_hash
+                if current_fp.get("component_hashes"):
+                    state["hw_component_hashes"] = current_fp["component_hashes"]
+                self.seal_all(state, hwid_hash)
+                logger.info(
+                    "Seamlessly re-bound triple-anchor vault to updated HWID after >=3/4 component match."
+                )
+            except Exception as exc:
+                logger.warning("Failed to persist HWID auto-rebind: %s", exc)
+
         return {
             "status": "OK",
             "state": state,
@@ -784,4 +1017,5 @@ class TripleAnchorVaultStore:
             "exam_max_utc": exam_max_utc,
             "now_utc": now_ts,
             "anchors": anchors_health,
+            "hwid_rebound": bool(rebind_from_hwid),
         }

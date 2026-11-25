@@ -34,10 +34,12 @@ html, body {
   border-radius: 0 !important;
 }
 
-/* Native Windows frameless window drag regions */
+/* Native Windows frameless window drag regions & crisp Windows 11 caption buttons */
 .titlebar {
   -webkit-app-region: drag;
   user-select: none;
+  padding-right: 0 !important;
+  z-index: 20;
 }
 
 .titlebar button,
@@ -47,9 +49,171 @@ html, body {
 .titlebar .search,
 .titlebar .tb-actions,
 .titlebar .tb-update,
-.titlebar .titlebar__ctrls {
+.titlebar .titlebar__ctrls,
+.titlebar .titlebar__ctrls button {
   -webkit-app-region: no-drag;
 }
+
+.titlebar__ctrls {
+  display: flex;
+  align-items: stretch;
+  align-self: stretch;
+  gap: 0 !important;
+  margin-left: 2px;
+  position: relative;
+  z-index: 25;
+}
+
+.titlebar__ctrls .tb-btn {
+  width: 46px;
+  height: 100%;
+  border-radius: 0;
+  display: grid;
+  place-items: center;
+  color: var(--ink-2);
+  transition: background-color 110ms ease, color 110ms ease;
+}
+
+.titlebar__ctrls .tb-btn svg {
+  width: 14px;
+  height: 14px;
+  stroke-width: 1.5;
+}
+
+.titlebar__ctrls .tb-btn:hover {
+  background: var(--nav-hover);
+  color: var(--ink);
+}
+
+.titlebar__ctrls .tb-btn:active {
+  background: var(--line-2);
+}
+
+.titlebar__ctrls .tb-btn--close:hover {
+  background: #E81123;
+  color: #fff;
+}
+
+.titlebar__ctrls .tb-btn--close:active {
+  background: #C42B1C;
+  color: #fff;
+}
+
+.tb-btn--max .ico-restore { display: none; }
+.win.is-maximized .tb-btn--max .ico-max { display: none; }
+.win.is-maximized .tb-btn--max .ico-restore { display: block; }
+
+/* 6-step onboarding spacing & Finish pane nav hide */
+.onb__side { gap: 18px !important; padding: 20px 18px 18px !important; }
+.onb__hl { height: 50px !important; }
+.onb__steps li { height: 50px !important; }
+.onb[data-step="5"] { --ax: -140px; --ay: 140px; --bx: 480px; --by: -180px; }
+.onb[data-step="6"] { --ax: 180px; --ay: -120px; --bx: 280px; --by: 200px; }
+.onb[data-step="5"] .onb__nav { opacity: 1 !important; transform: none !important; pointer-events: auto !important; }
+.onb[data-step="6"] .onb__nav { opacity: 0 !important; transform: translate3d(0, 100%, 0) !important; pointer-events: none !important; }
+
+/* Inline Onboarding Cloud Auth + Brevo OTP Card */
+.field-row {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
+}
+.field,
+.field input,
+.field select {
+  min-width: 0;
+  width: 100%;
+}
+.onb-auth-card {
+  display: grid;
+  gap: 14px;
+  padding: 20px 22px;
+  border-radius: 16px;
+  background: var(--card);
+  border: 1px solid var(--card-border);
+  box-shadow: var(--card-shadow);
+  min-width: 0;
+  overflow: hidden;
+}
+.onb-auth-card .form { gap: 12px; min-width: 0; }
+.onb-auth-verified {
+  display: grid;
+  gap: 14px;
+}
+.onb-auth-verified__head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.onb-auth-verified__icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  background: var(--ok-soft);
+  color: var(--ok);
+  flex: none;
+}
+.onb-auth-verified__head strong { display: block; font-size: 15px; font-weight: 700; }
+.onb-auth-verified__head em { display: block; font-style: normal; font-size: 12.5px; color: var(--ink-2); }
+.onb-otp-input {
+  text-align: center;
+  font-size: 22px !important;
+  font-weight: 700;
+  letter-spacing: 0.34em;
+  height: 48px !important;
+}
+.onb-stage-cloud {
+  padding: 26px 24px;
+  display: grid;
+  gap: 16px;
+  align-content: start;
+}
+.onb-stage-cloud__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  width: fit-content;
+  padding: 4px 11px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 600;
+}
+.onb-stage-cloud h3 {
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+.onb-stage-cloud p {
+  font-size: 13px;
+  color: var(--ink-2);
+  line-height: 1.5;
+}
+.onb-stage-cloud ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+.onb-stage-cloud li {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--ink-2);
+}
+.onb-stage-cloud li svg {
+  width: 24px;
+  height: 24px;
+  padding: 5px;
+  border-radius: 7px;
+  background: var(--ok-soft);
+  color: var(--ok);
+  margin-top: 1px;
+}
+.onb-stage-cloud li strong { color: var(--ink); font-weight: 600; }
 
 .boot {
   -webkit-app-region: drag;

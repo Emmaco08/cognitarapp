@@ -41,6 +41,8 @@ export interface LicenseStatus {
   now_utc: number;
   max_seen_utc: number;
   tamper_reason: string | null;
+  is_clock_rollback?: boolean;
+  can_repair_vault?: boolean;
   license_id: string | null;
   license_key: string | null;
   school_name: string | null;
@@ -132,6 +134,7 @@ export interface CloudAccountSession {
     phone?: string;
     role: string;
     status: string;
+    email_verified?: boolean;
   } | null;
   school: {
     id: string;

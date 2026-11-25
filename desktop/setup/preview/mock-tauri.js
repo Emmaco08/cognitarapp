@@ -7,7 +7,7 @@
   const update = params.get("update") === "1";
   const info = {
     productName: "CogniTara Studio",
-    version: "2.2.1",
+    version: "2.2.2",
     preview: false,
     platform: "windows",
     defaultDir: "C:\\Program Files\\CogniTara Studio",

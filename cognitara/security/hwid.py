@@ -54,31 +54,58 @@ def _run_hidden_cmd(args: list[str], timeout: float = 4.0) -> str:
     return ""
 
 
-def _read_windows_machine_guid() -> str:
+def _read_winreg_value(subkey: str, value_name: str) -> str:
     if sys.platform != "win32":
         return ""
     try:
         import winreg  # type: ignore
 
         access = winreg.KEY_READ | getattr(winreg, "KEY_WOW64_64KEY", 0)
-        with winreg.OpenKey(
-            winreg.HKEY_LOCAL_MACHINE,
-            r"SOFTWARE\Microsoft\Cryptography",
-            0,
-            access,
-        ) as key:
-            val, _ = winreg.QueryValueEx(key, "MachineGuid")
-            if val:
+        with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, subkey, 0, access) as key:
+            val, _ = winreg.QueryValueEx(key, value_name)
+            if val is not None:
                 return str(val).strip()
-    except Exception as exc:
-        logger.debug("Win32 MachineGuid registry read failed: %s", exc)
+    except Exception:
+        pass
     return ""
+
+
+def _read_windows_machine_guid() -> str:
+    return _read_winreg_value(r"SOFTWARE\Microsoft\Cryptography", "MachineGuid")
+
+
+def _read_windows_registry_fallbacks() -> Tuple[str, str, str]:
+    """
+    Instant, zero-subprocess Windows Registry fallbacks for SMBIOS, CPU, and
+    machine profile identifiers. Completely immune to PowerShell cold-start
+    timeouts and volatile network/VPN MAC addresses (`uuid.getnode()`).
+    """
+    if sys.platform != "win32":
+        return "", "", ""
+
+    hw_profile = _read_winreg_value(
+        r"SYSTEM\CurrentControlSet\Control\IDConfigDB\Hardware Profiles\0001",
+        "HwProfileGuid",
+    )
+    bios_vendor = _read_winreg_value(r"HARDWARE\DESCRIPTION\System\BIOS", "SystemManufacturer")
+    bios_product = _read_winreg_value(r"HARDWARE\DESCRIPTION\System\BIOS", "SystemProductName")
+    board_product = _read_winreg_value(r"HARDWARE\DESCRIPTION\System\BIOS", "BaseBoardProduct")
+    smbios_fallback = "|".join(p for p in (hw_profile, bios_vendor, bios_product, board_product) if p)
+
+    cpu_name = _read_winreg_value(r"HARDWARE\DESCRIPTION\System\CentralProcessor\0", "ProcessorNameString")
+    cpu_ident = _read_winreg_value(r"HARDWARE\DESCRIPTION\System\CentralProcessor\0", "Identifier")
+    cpu_fallback = cpu_name or cpu_ident or os.environ.get("PROCESSOR_IDENTIFIER", "")
+
+    machine_guid = _read_windows_machine_guid()
+    disk_fallback = f"WIN-REG-DISK-{machine_guid}" if machine_guid else ""
+    return smbios_fallback, cpu_fallback, disk_fallback
 
 
 def _read_windows_cim_batch() -> Tuple[str, str, str]:
     """
-    Collect SMBIOS UUID, CPU ProcessorId, and primary physical disk serial in a
-    single non-interactive PowerShell CIM call (zero console window).
+    Collect SMBIOS UUID, CPU ProcessorId, and primary internal physical disk
+    serial in a single non-interactive PowerShell CIM call (zero console window).
+    Excludes USB/removable drives so plugging in flash drives never shifts HWID.
     """
     if sys.platform != "win32":
         return "", "", ""
@@ -87,13 +114,15 @@ def _read_windows_cim_batch() -> Tuple[str, str, str]:
         "$ErrorActionPreference='SilentlyContinue';"
         "$u=(Get-CimInstance Win32_ComputerSystemProduct | Select-Object -First 1 -ExpandProperty UUID);"
         "$c=(Get-CimInstance Win32_Processor | Select-Object -First 1 -ExpandProperty ProcessorId);"
-        "$d=(Get-CimInstance Win32_DiskDrive | Where-Object {$_.Index -eq 0} | Select-Object -First 1 -ExpandProperty SerialNumber);"
-        "if (-not $d) { $d=(Get-CimInstance Win32_DiskDrive | Select-Object -First 1 -ExpandProperty SerialNumber) };"
+        "$disks=(Get-CimInstance Win32_DiskDrive | Where-Object { $_.InterfaceType -ne 'USB' -and $_.MediaType -notmatch 'Removable' } | Sort-Object Index);"
+        "$d=($disks | Where-Object { $_.Index -eq 0 } | Select-Object -First 1 -ExpandProperty SerialNumber);"
+        "if (-not $d) { $d=($disks | Select-Object -First 1 -ExpandProperty SerialNumber) };"
+        "if (-not $d) { $d=(Get-CimInstance Win32_DiskDrive | Sort-Object Index | Select-Object -First 1 -ExpandProperty SerialNumber) };"
         "Write-Output (\"$u`n$c`n$d\")"
     )
     out = _run_hidden_cmd(
         ["powershell", "-NoProfile", "-NonInteractive", "-Command", ps_script],
-        timeout=6.0,
+        timeout=12.0,
     )
     if out:
         lines = [line.strip() for line in out.splitlines()]
@@ -178,14 +207,14 @@ def _collect_linux_components() -> Dict[str, str]:
 def _collect_raw_components() -> Dict[str, str]:
     if sys.platform == "win32":
         smbios, cpu, disk = _read_windows_cim_batch()
+        reg_smbios, reg_cpu, reg_disk = _read_windows_registry_fallbacks()
         machine_guid = _read_windows_machine_guid()
         host_fallback = socket.gethostname() or "WIN-HOST"
-        node_fallback = f"{uuid.getnode():012x}"
         return {
-            "smbios_uuid": smbios or f"WIN-HOST-{host_fallback}",
-            "cpu_id": cpu or os.environ.get("PROCESSOR_IDENTIFIER", platform.processor() or "WIN-CPU"),
-            "disk_serial": disk or f"WIN-DISK-{node_fallback}",
-            "machine_guid": machine_guid or f"win-node-{node_fallback}",
+            "smbios_uuid": smbios or reg_smbios or f"WIN-HOST-{host_fallback}",
+            "cpu_id": cpu or reg_cpu or platform.processor() or "WIN-CPU",
+            "disk_serial": disk or reg_disk or f"WIN-DISK-{host_fallback}",
+            "machine_guid": machine_guid or f"win-host-{host_fallback}",
         }
     return _collect_linux_components()
 

@@ -48,7 +48,7 @@
     writing: 0,
     samples: new Array(120).fill(0),
     stopArmed: false,
-    version: "2.1.0",
+    version: "2.2.2",
     activeView: "home",
     cloudAccount: null,
     updateState: null
@@ -189,9 +189,14 @@
     openCloudModal();
   });
   $("#tbSchoolBtn").addEventListener("click", function () {
-    if (state.mode === "onboarding") goStep(1);
-    else if (state.server === "running") openExternalUrl(localPortalUrl("/admin/settings"));
-    else toast("Start the server to edit school settings in the admin portal");
+    if (state.mode === "onboarding") {
+      if (state.cloudAccount && state.cloudAccount.signedIn) goStep(2);
+      else goStep(1);
+    } else if (state.server === "running") {
+      openExternalUrl(localPortalUrl("/admin/settings"));
+    } else {
+      toast("Start the server to edit school settings in the admin portal");
+    }
   });
   function drawSpark(force) {
     if (document.hidden || state.mode !== "app") return;
@@ -346,6 +351,7 @@
     if (data.serverState) state.server = data.serverState;
     if (data.cloudAccount) state.cloudAccount = data.cloudAccount;
     if (data.updateState) state.updateState = data.updateState;
+    if (typeof data.isMaximized === "boolean") syncMaximizedUi(data.isMaximized);
 
     syncSchool();
     syncAddr(false);
@@ -361,12 +367,21 @@
     }
   }
 
-  /* ------------------------------------------------------------------ onboarding */
+  /* ------------------------------------------------------------------ onboarding (6 steps incl. Cloud OTP) */
   var step = 0;
+  var TOTAL_ONB_STEPS = 6; // steps 0..5, finish = 6
   var activated = false;
   var savingStep = false;
-  var nextLabels = ["Get started", "Continue", "Continue", "Continue", "Finish setup"];
-  var etaText = ["About 3 minutes left", "About 2 minutes left", "About 2 minutes left", "About a minute left", "Almost done", "All done"];
+  var nextLabels = ["Get started", "Continue", "Continue", "Continue", "Continue", "Finish setup"];
+  var etaText = [
+    "About 3 minutes left",
+    "About 2 minutes left",
+    "About 2 minutes left",
+    "About 2 minutes left",
+    "About a minute left",
+    "Almost done",
+    "All done"
+  ];
 
   $$(".kinetic").forEach(function (h) {
     var words = h.textContent.trim().split(/\s+/);
@@ -382,8 +397,249 @@
   $("#schoolForm").addEventListener("submit", function (e) { e.preventDefault(); });
   $("#adminForm").addEventListener("submit", function (e) { e.preventDefault(); });
 
+  // Inline Step 2: CogniTara Cloud Account + Brevo 6-Digit OTP Verification
+  var onbPendingOtp = null;
+  var onbResendTimer = null;
+
+  function setOnbCloudMsg(errText, okText) {
+    var errEl = $("#onbCloudErr"), okEl = $("#onbCloudOk");
+    if (errEl) { errEl.hidden = !errText; errEl.textContent = errText || ""; }
+    if (okEl) { okEl.hidden = !okText; okEl.textContent = okText || ""; }
+  }
+
+  function startOtpCountdown(btn, seconds, timerRefSetter) {
+    if (!btn) return;
+    var left = Math.max(5, Number(seconds || 45));
+    btn.disabled = true;
+    btn.textContent = "Resend in " + left + "s";
+    var id = setInterval(function () {
+      left--;
+      if (left <= 0) {
+        clearInterval(id);
+        timerRefSetter(null);
+        btn.disabled = false;
+        btn.textContent = "Resend code";
+      } else {
+        btn.textContent = "Resend in " + left + "s";
+      }
+    }, 1000);
+    timerRefSetter(id);
+  }
+
+  function switchOnbCloudTab(tab) {
+    onbPendingOtp = null;
+    if (onbResendTimer) { clearInterval(onbResendTimer); onbResendTimer = null; }
+    if ($("#onbCloudTabs")) $("#onbCloudTabs").hidden = false;
+    if ($("#onbOtpForm")) $("#onbOtpForm").hidden = true;
+    $$("#onbCloudTabs button").forEach(function (b) { b.classList.toggle("is-active", b.dataset.octab === tab); });
+    if ($("#onbSignUpForm")) $("#onbSignUpForm").hidden = tab !== "signup";
+    if ($("#onbSignInForm")) $("#onbSignInForm").hidden = tab !== "signin";
+    setOnbCloudMsg("", "");
+  }
+
+  function showOnbOtpStep(email, purpose, msg) {
+    onbPendingOtp = { email: email, purpose: purpose || "signup_verify" };
+    if ($("#onbCloudTabs")) $("#onbCloudTabs").hidden = true;
+    if ($("#onbSignUpForm")) $("#onbSignUpForm").hidden = true;
+    if ($("#onbSignInForm")) $("#onbSignInForm").hidden = true;
+    if ($("#onbOtpForm")) $("#onbOtpForm").hidden = false;
+    if ($("#onbOtpEmailLabel")) $("#onbOtpEmailLabel").textContent = email;
+    if ($("#onbOtpCode")) {
+      $("#onbOtpCode").value = "";
+      setTimeout(function () { $("#onbOtpCode").focus(); }, 60);
+    }
+    setOnbCloudMsg("", msg || ("Enter the 6-digit Brevo verification code sent to " + email + "."));
+    if (onbResendTimer) clearInterval(onbResendTimer);
+    startOtpCountdown($("#onbOtpResendBtn"), 45, function (id) { onbResendTimer = id; });
+  }
+
+  function syncOnboardingCloudUi() {
+    var s = state.cloudAccount;
+    var isSignedIn = Boolean(s && s.signedIn && s.user);
+    if ($("#onbCloudVerified")) $("#onbCloudVerified").hidden = !isSignedIn;
+    if ($("#onbCloudForms")) $("#onbCloudForms").hidden = isSignedIn;
+    if (isSignedIn) {
+      var schoolName = (s.school && s.school.school_name) || state.school.school_name || "CogniTara School";
+      if ($("#onbCvSchool")) $("#onbCvSchool").textContent = schoolName;
+      if ($("#onbCvEmail")) $("#onbCvEmail").textContent = (s.user.email || "") + " · Email OTP verified";
+      if ($("#onbCvName")) $("#onbCvName").textContent = s.user.full_name || "School Admin";
+      if ($("#onbCvRef")) $("#onbCvRef").textContent = s.referralCode || "—";
+
+      // Auto-populate Step 3 (school name) and Step 6 (admin full name) if still default/empty
+      if ($("#fSchool") && schoolName && (!$("#fSchool").value.trim() || $("#fSchool").value.trim() === "CogniTara School")) {
+        $("#fSchool").value = schoolName;
+        syncSchool();
+      }
+      if ($("#fName") && s.user.full_name && !$("#fName").value.trim()) {
+        $("#fName").value = s.user.full_name;
+        $("#tbAvatar").textContent = initials(s.user.full_name);
+      }
+    }
+    // Show 1-click "Use my Cloud licence" button in Step 4 if account already has an active cloud licence
+    var cloudBtn = $("#licCloudBtn");
+    if (cloudBtn) {
+      var hasActiveLic = Boolean(
+        isSignedIn &&
+        Array.isArray(s.licenses) &&
+        s.licenses.some(function (l) { return String(l.status || "").toLowerCase() === "active"; })
+      );
+      cloudBtn.hidden = !hasActiveLic || activated;
+    }
+    updateNext();
+  }
+
+  $$("#onbCloudTabs button").forEach(function (b) {
+    b.addEventListener("click", function () { switchOnbCloudTab(b.dataset.octab); });
+  });
+
+  if ($("#onbOtpCode")) {
+    $("#onbOtpCode").addEventListener("input", function () {
+      this.value = this.value.replace(/\D/g, "").slice(0, 6);
+    });
+  }
+
+  if ($("#onbSignUpForm")) {
+    $("#onbSignUpForm").addEventListener("submit", async function (e) {
+      e.preventDefault();
+      setOnbCloudMsg("", "");
+      var btn = $("#ocuSubmitBtn");
+      btn.disabled = true;
+      btn.textContent = "Creating account & sending OTP…";
+      try {
+        var res = bridge
+          ? await bridge.cloudSignUp({
+              full_name: $("#ocuName").value.trim(),
+              school_name: $("#ocuSchool").value.trim(),
+              email: $("#ocuEmail").value.trim(),
+              phone: $("#ocuPhone").value.trim(),
+              password: $("#ocuPass").value,
+              referral_code: $("#ocuRef").value.trim() || undefined
+            })
+          : { ok: false, message: "Cloud IPC requires CogniTara Studio desktop." };
+
+        if (res && res.ok && res.otp_required) {
+          showOnbOtpStep(res.email || $("#ocuEmail").value.trim(), res.purpose || "signup_verify", res.message);
+        } else if (res && res.ok && res.session) {
+          renderCloudAccount(res.session);
+          setOnbCloudMsg("", "Cloud school account created and cached offline.");
+          toast("CogniTara Cloud account verified!");
+        } else {
+          setOnbCloudMsg((res && res.message) || "Could not create account. Check your details and internet connection.", "");
+        }
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "Create account & send OTP";
+      }
+    });
+  }
+
+  if ($("#onbSignInForm")) {
+    $("#onbSignInForm").addEventListener("submit", async function (e) {
+      e.preventDefault();
+      setOnbCloudMsg("", "");
+      var btn = $("#ociSubmitBtn");
+      btn.disabled = true;
+      btn.textContent = "Signing in…";
+      try {
+        var res = bridge
+          ? await bridge.cloudSignIn({
+              email: $("#ociEmail").value.trim(),
+              password: $("#ociPass").value
+            })
+          : { ok: false, message: "Cloud IPC requires CogniTara Studio desktop." };
+
+        if (res && res.ok && res.otp_required) {
+          showOnbOtpStep(res.email || $("#ociEmail").value.trim(), res.purpose || "signin_otp", res.message);
+        } else if (res && res.ok && res.session) {
+          renderCloudAccount(res.session);
+          setOnbCloudMsg("", "Signed in and cached locally for offline exams.");
+          toast("Signed in to CogniTara Cloud");
+        } else {
+          setOnbCloudMsg((res && res.message) || "Invalid email address or password.", "");
+        }
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "Sign in & send OTP";
+      }
+    });
+  }
+
+  if ($("#onbOtpBackBtn")) {
+    $("#onbOtpBackBtn").addEventListener("click", function () {
+      switchOnbCloudTab(onbPendingOtp && onbPendingOtp.purpose === "signin_otp" ? "signin" : "signup");
+    });
+  }
+
+  if ($("#onbOtpResendBtn")) {
+    $("#onbOtpResendBtn").addEventListener("click", async function () {
+      if (!onbPendingOtp || !bridge) return;
+      var btn = $("#onbOtpResendBtn");
+      btn.disabled = true;
+      btn.textContent = "Sending…";
+      var res = await bridge.cloudResendOtp(onbPendingOtp).catch(function () { return null; });
+      if (res && res.ok) {
+        setOnbCloudMsg("", res.message || "Fresh 6-digit verification code sent.");
+        startOtpCountdown(btn, 45, function (id) { onbResendTimer = id; });
+      } else {
+        setOnbCloudMsg((res && res.message) || "Please wait a moment before requesting another code.", "");
+        startOtpCountdown(btn, (res && res.retry_after_sec) || 20, function (id) { onbResendTimer = id; });
+      }
+    });
+  }
+
+  if ($("#onbOtpForm")) {
+    $("#onbOtpForm").addEventListener("submit", async function (e) {
+      e.preventDefault();
+      if (!onbPendingOtp) return;
+      setOnbCloudMsg("", "");
+      var code = ($("#onbOtpCode").value || "").replace(/\D/g, "").slice(0, 6);
+      if (code.length !== 6) {
+        setOnbCloudMsg("Enter the full 6-digit verification code from your email.", "");
+        return;
+      }
+      var btn = $("#onbOtpVerifyBtn");
+      btn.disabled = true;
+      btn.textContent = "Verifying…";
+      try {
+        var res = bridge
+          ? await bridge.cloudVerifyOtp({
+              email: onbPendingOtp.email,
+              purpose: onbPendingOtp.purpose,
+              code: code
+            })
+          : { ok: false, message: "Cloud IPC requires CogniTara Studio desktop." };
+        if (res && res.ok && res.session) {
+          onbPendingOtp = null;
+          if (onbResendTimer) { clearInterval(onbResendTimer); onbResendTimer = null; }
+          renderCloudAccount(res.session);
+          setOnbCloudMsg("", "Email verified via Brevo OTP! You can continue to school setup.");
+          toast("Email verified — CogniTara Cloud account active!");
+          logEvent("licence", "ok", "i-shield", "<b>Cloud account verified via Brevo OTP</b> (" + esc(res.session.user.email) + ")");
+        } else {
+          setOnbCloudMsg((res && res.message) || "Invalid or expired 6-digit code. Try again or resend.", "");
+        }
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "Verify Email & Continue";
+      }
+    });
+  }
+
+  if ($("#onbCloudSwitchBtn")) {
+    $("#onbCloudSwitchBtn").addEventListener("click", async function () {
+      if (bridge) {
+        var res = await bridge.cloudSignOut().catch(function () { return null; });
+        if (res && res.session) renderCloudAccount(res.session);
+      } else {
+        renderCloudAccount({ signedIn: false, offline: false });
+      }
+      switchOnbCloudTab("signup");
+    });
+  }
+
   function startOnboarding(initialStep) {
     setMode("onboarding");
+    syncOnboardingCloudUi();
     goStep(typeof initialStep === "number" ? initialStep : 0);
   }
   function goStep(n) {
@@ -398,44 +654,54 @@
       li.classList.toggle("is-done", i < n);
     });
     step = n;
-    var items = $$("#onbSteps li"), cur = items[Math.min(n, 4)];
-    var fill = n >= 5 ? 1 : n / 4;
+    var items = $$("#onbSteps li"), cur = items[Math.min(n, TOTAL_ONB_STEPS - 1)];
+    var fill = n >= TOTAL_ONB_STEPS ? 1 : n / (TOTAL_ONB_STEPS - 1);
     $("#onbRailFill").style.setProperty("--p", String(fill));
     var hl = $("#onbHl");
-    hl.style.opacity = n >= 5 ? "0" : "1";
+    hl.style.opacity = n >= TOTAL_ONB_STEPS ? "0" : "1";
     if (cur) hl.style.transform = "translate3d(0, " + cur.offsetTop + "px, 0)";
-    $("#onbEta").style.strokeDashoffset = String(100 - (Math.min(n, 5) / 5) * 100);
-    $("#onbEtaText").textContent = etaText[n];
-    setProgress(n >= 5 ? 1 : (n + 1) / 6);
-    setHeaderStatus("setup", n >= 5 ? "Setup complete" : "Setting up", n >= 5 ? "Ready to start" : "Step " + (n + 1) + " of 5");
+    $("#onbEta").style.strokeDashoffset = String(100 - (Math.min(n, TOTAL_ONB_STEPS) / TOTAL_ONB_STEPS) * 100);
+    $("#onbEtaText").textContent = etaText[n] || "Almost done";
+    setProgress(n >= TOTAL_ONB_STEPS ? 1 : (n + 1) / (TOTAL_ONB_STEPS + 1));
+    setHeaderStatus(
+      "setup",
+      n >= TOTAL_ONB_STEPS ? "Setup complete" : "Setting up",
+      n >= TOTAL_ONB_STEPS ? "Ready to start" : "Step " + (n + 1) + " of " + TOTAL_ONB_STEPS
+    );
     $("#onbBack").style.visibility = n === 0 ? "hidden" : "visible";
     var num = $("#onbCountNum");
-    num.textContent = String(Math.min(n + 1, 5));
+    num.textContent = String(Math.min(n + 1, TOTAL_ONB_STEPS));
     num.classList.remove("is-roll"); void num.offsetWidth; num.classList.add("is-roll");
-    if (n < 5) $("#onbNextLabel").textContent = nextLabels[n];
+    if (n < TOTAL_ONB_STEPS) $("#onbNextLabel").textContent = nextLabels[n];
     if (n === 0) runHallCount();
-    if (n === 2 && activated) paintActivatedVerify();
-    if (n === 3) scanNetwork();
-    if (n === 4) scrambleCodes();
-    if (n === 5) runFinish();
+    if (n === 1) syncOnboardingCloudUi();
+    if (n === 3) {
+      syncOnboardingCloudUi();
+      if (activated) paintActivatedVerify();
+    }
+    if (n === 4) scanNetwork();
+    if (n === 5) scrambleCodes();
+    if (n === 6) runFinish();
     updateNext();
   }
 
   var nextWasDisabled = false;
   function updateNext() {
     var ok = !savingStep;
-    if (step === 1) ok = ok && $("#fSchool").value.trim().length > 1;
-    if (step === 2) ok = ok && activated;
-    if (step === 4) ok = ok && $("#fName").value.trim().length > 1 && $("#fUser").value.trim().length >= 3 && scorePass($("#fPass").value) >= 3 && $("#recSaved").checked;
+    if (step === 1) ok = ok && Boolean(state.cloudAccount && state.cloudAccount.signedIn && state.cloudAccount.user);
+    if (step === 2) ok = ok && $("#fSchool").value.trim().length > 1;
+    if (step === 3) ok = ok && activated;
+    if (step === 5) ok = ok && $("#fName").value.trim().length > 1 && $("#fUser").value.trim().length >= 3 && scorePass($("#fPass").value) >= 3 && $("#recSaved").checked;
     var btn = $("#onbNext");
+    if (!btn) return;
     btn.disabled = !ok;
     if (ok && nextWasDisabled && !REDUCED) { btn.classList.remove("is-ready"); void btn.offsetWidth; btn.classList.add("is-ready"); }
     nextWasDisabled = !ok;
   }
 
   async function handleNextStep() {
-    if (savingStep || step >= 5) return;
-    if (step === 1 && bridge) {
+    if (savingStep || step >= TOTAL_ONB_STEPS) return;
+    if (step === 2 && bridge) {
       savingStep = true;
       updateNext();
       try {
@@ -455,7 +721,12 @@
         updateNext();
       }
     }
-    if (step === 4 && bridge) {
+    if (step === 3 && state.onboardingComplete && activated) {
+      enterApp();
+      toast("Licence verified — CogniTara Studio is ready.");
+      return;
+    }
+    if (step === 5 && bridge) {
       savingStep = true;
       updateNext();
       try {
@@ -487,8 +758,8 @@
   });
   document.addEventListener("keydown", function (e) {
     if (state.mode !== "onboarding" || e.target.matches("input, select, textarea")) return;
-    if (e.key === "ArrowRight" && !$("#onbNext").disabled && step < 5) handleNextStep();
-    if (e.key === "ArrowLeft" && step > 0 && step < 5) goStep(step - 1);
+    if (e.key === "ArrowRight" && !$("#onbNext").disabled && step < TOTAL_ONB_STEPS) handleNextStep();
+    if (e.key === "ArrowLeft" && step > 0 && step < TOTAL_ONB_STEPS) goStep(step - 1);
   });
 
   // Step 1: hall capacity counter
@@ -653,6 +924,7 @@
     var v = $("#verify"), arc = $("#verifyArc"), items = $$(".verify__list li", v);
     $("#activateBtn").disabled = true;
     if ($("#licTrialBtn")) $("#licTrialBtn").disabled = true;
+    if ($("#licCloudBtn")) $("#licCloudBtn").disabled = true;
     v.dataset.state = "run";
     items.forEach(function (li) { li.className = ""; });
     items[0].className = "is-run";
@@ -662,6 +934,8 @@
         ? "<span>Verifying signed licence file…</span>"
         : mode === "trial"
         ? "<span>Sealing 14-day hardware-bound trial vault…</span>"
+        : mode === "cloud"
+        ? "<span>Activating licence from your verified Cloud account…</span>"
         : "<span>Contacting cognitara.net…</span>"
     );
 
@@ -671,6 +945,8 @@
         result = await bridge.importLicenseFile();
       } else if (mode === "trial") {
         result = await bridge.startTrialLicense($("#fSchool").value.trim());
+      } else if (mode === "cloud") {
+        result = await bridge.activateCloudLicense();
       } else {
         var fullKey = "CGNT-" + keyInput.value.trim();
         result = await bridge.activateLicenseKey(fullKey);
@@ -686,6 +962,7 @@
       setVerifyResult("<span>Waiting for your key</span>");
       $("#activateBtn").disabled = paintKey().length !== 16;
       if ($("#licTrialBtn")) $("#licTrialBtn").disabled = false;
+      if ($("#licCloudBtn")) $("#licCloudBtn").disabled = false;
       return;
     }
 
@@ -694,6 +971,7 @@
       activated = true;
       paintActivatedVerify();
       paintLicence();
+      syncOnboardingCloudUi();
       updateNext();
       logEvent("licence", "ok", "i-shield", "<b>Licence activated</b> (" + esc(planDisplayName(state.license.plan_tier)) + ")");
       return;
@@ -706,10 +984,16 @@
     setVerifyResult("<strong style='color:var(--bad)'>Activation failed</strong><span>" + esc(errMsg) + "</span>");
     $("#activateBtn").disabled = paintKey().length !== 16;
     if ($("#licTrialBtn")) $("#licTrialBtn").disabled = false;
+    if ($("#licCloudBtn")) $("#licCloudBtn").disabled = false;
     toast(errMsg);
   }
 
   $("#activateBtn").addEventListener("click", function () { runRealActivation("key"); });
+  if ($("#licCloudBtn")) {
+    $("#licCloudBtn").addEventListener("click", function () {
+      if (!activated) runRealActivation("cloud");
+    });
+  }
   $("#licFileBtn").addEventListener("click", function () {
     if (!activated) runRealActivation("file");
   });
@@ -730,7 +1014,7 @@
     });
   });
 
-  // Step 4: real LAN adapters + QR
+  // Step 5: real LAN adapters + QR
   var scanned = false;
   function buildQr(host, text) {
     if (!host || !window.CogniQR) return;
@@ -788,7 +1072,7 @@
     renderQr($("#homeQr"), addr(), false);
   }
 
-  // Step 5: super admin & recovery codes
+  // Step 6: super admin & recovery codes
   function scorePass(p) {
     var s = 0;
     if (p.length >= 10) s++;
@@ -854,7 +1138,9 @@
 
   function runFinish() {
     var tier = (state.license && state.license.plan_tier) || "annual";
+    var cloudEmail = (state.cloudAccount && state.cloudAccount.user && state.cloudAccount.user.email) || "Verified";
     var rows = [
+      ["i-check", "Cloud account verified", cloudEmail],
       ["i-home", "School profile", $("#fSchool").value.trim()],
       ["i-key", "Licence active", planDisplayName(tier) + " plan"],
       ["i-wifi", "Students connect at", addr()],
@@ -1704,6 +1990,11 @@
       $("#cmSchool").textContent = schoolLabel;
       $("#cmUser").textContent = s.user.full_name;
       $("#cmEmail").textContent = s.user.email;
+      if ($("#cmVerified")) {
+        var ver = s.user.email_verified !== false;
+        $("#cmVerified").textContent = ver ? "Email OTP verified" : "Pending verification";
+        $("#cmVerified").style.color = ver ? "var(--ok)" : "var(--warn)";
+      }
       $("#cmRef").textContent = s.referralCode || "—";
       $("#cmSync").textContent = s.offline
         ? "Offline · Using local encrypted cache"
@@ -1719,6 +2010,7 @@
       $("#cloudAuthPane").hidden = false;
     }
     renderHqDirectives(s && s.directives ? s.directives : null);
+    syncOnboardingCloudUi();
   }
 
   function renderHqDirectives(d) {
@@ -1755,6 +2047,7 @@
   }
 
   var pendingCloudOtp = null;
+  var modalOtpResendTimer = null;
   function showCloudOtpStep(email, purpose, msg) {
     pendingCloudOtp = { email: email, purpose: purpose || "signup_verify" };
     $("#cloudTabs").hidden = true;
@@ -1764,11 +2057,15 @@
     $("#coEmailLabel").textContent = email;
     $("#coCode").value = "";
     setCloudMsg("", msg || ("Enter the 6-digit code sent to " + email + "."));
+    if (modalOtpResendTimer) clearInterval(modalOtpResendTimer);
+    startOtpCountdown($("#coResendBtn"), 45, function (id) { modalOtpResendTimer = id; });
     setTimeout(function () { $("#coCode").focus(); }, 60);
   }
 
   function switchCloudTab(tab) {
     pendingCloudOtp = null;
+    if (modalOtpResendTimer) { clearInterval(modalOtpResendTimer); modalOtpResendTimer = null; }
+    if ($("#coResendBtn")) { $("#coResendBtn").disabled = false; $("#coResendBtn").textContent = "Resend code"; }
     $("#cloudTabs").hidden = false;
     $("#cloudOtpForm").hidden = true;
     $$("#cloudTabs button").forEach(function (b) { b.classList.toggle("is-active", b.dataset.ctab === tab); });
@@ -1804,6 +2101,12 @@
     if (e.key === "Escape" && !$("#cloudModal").hidden) closeCloudModal();
     if (e.key === "Escape" && $("#billingModal") && !$("#billingModal").hidden) closeBillingModal();
   });
+
+  if ($("#coCode")) {
+    $("#coCode").addEventListener("input", function () {
+      this.value = this.value.replace(/\D/g, "").slice(0, 6);
+    });
+  }
 
   $("#cloudSignInForm").addEventListener("submit", async function (e) {
     e.preventDefault();
@@ -1875,19 +2178,23 @@
   });
 
   if ($("#coBackBtn")) {
-    $("#coBackBtn").addEventListener("click", function () { switchCloudTab("signin"); });
+    $("#coBackBtn").addEventListener("click", function () {
+      switchCloudTab(pendingCloudOtp && pendingCloudOtp.purpose === "signup_verify" ? "signup" : "signin");
+    });
   }
   if ($("#coResendBtn")) {
     $("#coResendBtn").addEventListener("click", async function () {
       if (!pendingCloudOtp || !bridge) return;
       var btn = $("#coResendBtn");
       btn.disabled = true;
-      try {
-        var res = await bridge.cloudResendOtp(pendingCloudOtp);
-        if (res && res.ok) setCloudMsg("", res.message || "Fresh 6-digit code sent.");
-        else setCloudMsg((res && res.message) || "Wait a moment before resending.", "");
-      } finally {
-        setTimeout(function () { btn.disabled = false; }, 12000);
+      btn.textContent = "Sending…";
+      var res = await bridge.cloudResendOtp(pendingCloudOtp).catch(function () { return null; });
+      if (res && res.ok) {
+        setCloudMsg("", res.message || "Fresh 6-digit code sent.");
+        startOtpCountdown(btn, 45, function (id) { modalOtpResendTimer = id; });
+      } else {
+        setCloudMsg((res && res.message) || "Wait a moment before resending.", "");
+        startOtpCountdown(btn, (res && res.retry_after_sec) || 20, function (id) { modalOtpResendTimer = id; });
       }
     });
   }
@@ -1896,16 +2203,21 @@
       e.preventDefault();
       if (!pendingCloudOtp) return;
       setCloudMsg("", "");
+      var code = ($("#coCode").value || "").replace(/\D/g, "").slice(0, 6);
+      if (code.length !== 6) {
+        setCloudMsg("Enter all 6 digits from your verification email.", "");
+        return;
+      }
       var btn = $("#coSubmitBtn");
       btn.disabled = true;
       btn.textContent = "Verifying…";
       try {
-        var code = $("#coCode").value.replace(/\D/g, "").slice(0, 6);
         var res = bridge
           ? await bridge.cloudVerifyOtp({ email: pendingCloudOtp.email, purpose: pendingCloudOtp.purpose, code: code })
           : { ok: false, message: "Cloud IPC requires CogniTara Studio desktop." };
         if (res && res.ok && res.session) {
           pendingCloudOtp = null;
+          if (modalOtpResendTimer) { clearInterval(modalOtpResendTimer); modalOtpResendTimer = null; }
           $("#cloudTabs").hidden = false;
           $("#cloudOtpForm").hidden = true;
           renderCloudAccount(res.session);
@@ -2246,13 +2558,16 @@
       var lic = (licRes && licRes.license) || licRes;
       if (lic && lic.lock_state) {
         state.license = lic;
-        if (typeof renderLicence === "function") renderLicence(lic);
+        paintLicence();
         if (lic.is_licensed && state.mode === "onboarding") {
           activated = true;
-          if ($("#onbNext")) $("#onbNext").disabled = false;
+          paintActivatedVerify();
+          syncOnboardingCloudUi();
+          updateNext();
         }
         if (lic.is_licensed && state.mode === "lock") {
-          setMode("app");
+          if (state.onboardingComplete) enterApp();
+          else startOnboarding(state.cloudAccount && state.cloudAccount.signedIn ? 2 : 1);
         }
       }
     } catch (_e) {}
@@ -2286,9 +2601,9 @@
         : "The server has stopped accepting new exams. Your exams, questions and results are safe and will be here when you renew.";
       $("#lockMeta").textContent = L.expires_at ? ("Licence ended " + fmtDateShort(L.expires_at)) : "Your local database is safe and intact.";
       $("#lockActions").innerHTML =
-        "<button class='btn btn--primary' data-lock-act='renew'>Renew on cognitara.net</button>" +
-        "<button class='btn btn--ghost' data-lock-act='import'>Import licence file</button>" +
-        (isLease ? "<button class='btn btn--ghost' data-lock-act='checkin'>Check in now</button>" : "");
+        "<button type='button' class='btn btn--primary' data-lock-act='renew'>Renew / Buy Licence</button>" +
+        "<button type='button' class='btn btn--ghost' data-lock-act='import'>Import licence file</button>" +
+        (isLease ? "<button type='button' class='btn btn--ghost' data-lock-act='checkin'>Check in now</button>" : "");
 
       var draining = L.lock_state === "DRAINING" || (L.is_draining && Number(L.drain_remaining_seconds || 0) > 0);
       if (draining) {
@@ -2303,29 +2618,59 @@
       setHeaderStatus("locked", draining ? "Finishing exams" : "Locked", draining ? "New exams blocked" : "Licence expired");
     } else if (kind === "clock") {
       var isHwid = L.lock_state === "HWID_MISMATCH_LOCK";
-      $("#lockTitle").textContent = isHwid
-        ? "This licence belongs to another computer"
-        : "This computer's date and time look wrong";
-      $("#lockBody").textContent = isHwid
-        ? "CogniTara detected hardware changes that don't match this licence. Contact support for a hardware transfer or import the licence issued for this PC."
-        : "The clock is set earlier than the last time CogniTara ran, so the server is paused to protect your licence. Set the correct date and time in Windows, then check again.";
-      $("#lockMeta").textContent = isHwid
-        ? "Computer ID: " + (L.display_hwid || "Unknown")
-        : "Last trusted time: " + fmtDateTime(L.max_seen_utc) + ". Current clock: " + fmtDateTime(L.now_utc);
-      $("#lockActions").innerHTML = isHwid
-        ? "<button class='btn btn--primary' data-lock-act='support'>Contact support</button><button class='btn btn--ghost' data-lock-act='import'>Import licence file</button>"
-        : "<button class='btn btn--primary' data-lock-act='datesettings'>Open Windows date settings</button><button class='btn btn--ghost' data-lock-act='recheck'>Check again</button>";
+      var isActualClockRollback = Boolean(
+        L.is_clock_rollback === true ||
+        (L.tamper_reason === "clock_rollback_detected" &&
+          Number(L.max_seen_utc || 0) > 0 &&
+          Number(L.now_utc || 0) < Number(L.max_seen_utc || 0) - 300)
+      );
+
+      if (isActualClockRollback) {
+        $("#lockTitle").textContent = "This computer's date and time look wrong";
+        $("#lockBody").textContent =
+          "The Windows clock is set earlier than the last time CogniTara ran, so the server is paused to protect your licence. Set the correct date and time in Windows, then check again.";
+        $("#lockMeta").textContent =
+          "Last trusted time: " + fmtDateTime(L.max_seen_utc) + ". Current clock: " + fmtDateTime(L.now_utc);
+        $("#lockActions").innerHTML =
+          "<button type='button' class='btn btn--primary' data-lock-act='datesettings'>Open Windows date settings</button>" +
+          "<button type='button' class='btn btn--ghost' data-lock-act='recheck'>Check again</button>";
+        setHeaderStatus("locked", "Locked", "Clock changed");
+      } else if (isHwid) {
+        $("#lockTitle").textContent = "This licence belongs to another computer";
+        $("#lockBody").textContent =
+          "CogniTara detected hardware changes that don't match this licence. Reset and re-activate with your CogniTara Cloud account, or import the licence issued for this PC.";
+        $("#lockMeta").textContent =
+          "Computer ID: " + (L.display_hwid || "Unknown") + (L.tamper_reason ? (" · Detail: " + L.tamper_reason) : "");
+        $("#lockActions").innerHTML =
+          "<button type='button' class='btn btn--primary' data-lock-act='repair'>Reset & Re-activate on This PC</button>" +
+          "<button type='button' class='btn btn--ghost' data-lock-act='billing'>Buy / Redeem / Cloud</button>" +
+          "<button type='button' class='btn btn--ghost' data-lock-act='import'>Import licence file</button>";
+        setHeaderStatus("locked", "Locked", "Hardware mismatch");
+      } else {
+        $("#lockTitle").textContent = "Licence verification needed";
+        $("#lockBody").textContent =
+          "Your Windows clock looks accurate, so this is not a clock error. CogniTara needs to refresh this computer's local licence vault after an update or hardware change — all exam records are completely safe.";
+        $("#lockMeta").textContent =
+          "Computer ID: " + (L.display_hwid || "Unknown") +
+          (L.tamper_reason ? (" · Code: " + L.tamper_reason) : "") +
+          " · Clock: " + fmtDateTime(L.now_utc);
+        $("#lockActions").innerHTML =
+          "<button type='button' class='btn btn--primary' data-lock-act='repair'>Reset & Re-activate on This PC</button>" +
+          "<button type='button' class='btn btn--ghost' data-lock-act='billing'>Buy / Redeem Licence</button>" +
+          "<button type='button' class='btn btn--ghost' data-lock-act='import'>Import licence file</button>" +
+          "<button type='button' class='btn btn--ghost' data-lock-act='recheck'>Check again</button>";
+        setHeaderStatus("locked", "Verification needed", "Refresh local vault");
+      }
       drainLeft = 0;
       lock.classList.add("no-drain");
-      setHeaderStatus("locked", "Locked", isHwid ? "Hardware mismatch" : "Clock changed");
     } else {
       var ref = (L.tombstone && L.tombstone.tombstone_id) || "TMB-HQ-REVOKED";
       $("#lockTitle").textContent = "This licence has been revoked";
       $("#lockBody").textContent = "CogniTara HQ has turned off this licence. Exams can't be started on this computer. Your data stays on this PC and is not deleted.";
       $("#lockMeta").innerHTML = "Reference <code>" + esc(ref) + "</code>. Email support@cognitara.net with this reference.";
       $("#lockActions").innerHTML =
-        "<button class='btn btn--primary' data-lock-act='support'>Contact support</button>" +
-        "<button class='btn btn--ghost' data-lock-act='export'>Export my data</button>";
+        "<button type='button' class='btn btn--primary' data-lock-act='support'>Contact support</button>" +
+        "<button type='button' class='btn btn--ghost' data-lock-act='export'>Export my data</button>";
       drainLeft = 0;
       lock.classList.add("no-drain");
       setHeaderStatus("locked", "Locked", "Licence revoked");
@@ -2343,19 +2688,46 @@
   $("#lockActions").addEventListener("click", async function (e) {
     var b = e.target.closest("[data-lock-act]"); if (!b) return;
     var act = b.dataset.lockAct;
-    if (act === "renew") openExternalUrl("https://cognitara-cloud.vercel.app/dashboard");
+    if (act === "renew" || act === "billing") openBillingModal("plans");
     if (act === "support") openExternalUrl("mailto:support@cognitara.net?subject=CogniTara%20Licence%20Support");
     if (act === "datesettings" && bridge) bridge.openWindowsDateSettings().catch(function () {});
     if (act === "export" && bridge) {
       var exp = await bridge.exportDataBackup().catch(function () { return null; });
       toast(exp && exp.ok ? "Backup exported and folder opened" : "Could not export backup");
     }
+    if (act === "repair" && bridge) {
+      b.disabled = true;
+      var origTxt = b.textContent;
+      b.textContent = "Resetting vault…";
+      try {
+        var rep = await bridge.repairCorruptVault().catch(function () { return null; });
+        if (rep && rep.ok && rep.status) {
+          state.license = rep.status;
+          activated = Boolean(rep.status.is_licensed);
+          paintLicence();
+          if (rep.status.is_licensed) {
+            enterApp();
+            toast("Licence vault verified and active!");
+          } else {
+            toast("Vault refreshed cleanly. Verify your Cloud account or activate a licence.");
+            startOnboarding(state.cloudAccount && state.cloudAccount.signedIn ? 3 : 1);
+          }
+        } else {
+          toast((rep && (rep.message || rep.error)) || "Could not reset vault. Check your Windows clock.");
+        }
+      } finally {
+        b.disabled = false;
+        b.textContent = origTxt;
+      }
+    }
     if (act === "import" && bridge) {
       var imp = await bridge.importLicenseFile();
       if (imp && imp.ok && imp.status && imp.status.lock_state === "ACTIVE") {
         state.license = imp.status;
+        activated = true;
         paintLicence();
-        enterApp();
+        if (state.onboardingComplete) enterApp();
+        else startOnboarding(state.cloudAccount && state.cloudAccount.signedIn ? 4 : 1);
         toast("Licence restored. You can start the server now.");
       } else if (imp && !imp.canceled) {
         toast((imp && (imp.message || imp.error)) || "Invalid licence file");
@@ -2379,20 +2751,64 @@
         var nextLock = mapLockKind(rec.license);
         if (!nextLock) {
           paintLicence();
-          enterApp();
-          toast("System clock verified. Licence active.");
+          if (state.onboardingComplete) enterApp();
+          else startOnboarding(state.cloudAccount && state.cloudAccount.signedIn ? 3 : 1);
+          toast("Licence verified.");
         } else {
           showLock(nextLock, rec.license);
-          toast("Issue still detected. Verify your Windows date & time.");
+          toast(
+            rec.license.is_clock_rollback
+              ? "Windows clock is still behind the last trusted timestamp."
+              : "Vault mismatch still present — click Reset & Re-activate on This PC."
+          );
         }
       }
     }
   });
 
   /* ------------------------------------------------------------------ native window chrome */
-  $("#minBtn").addEventListener("click", function () { if (bridge) bridge.windowAction("minimize"); });
-  $("#maxBtn").addEventListener("click", function () { if (bridge) bridge.windowAction("maximize"); setTimeout(function () { measurePulseCanvas(); drawPulse(true); }, 250); });
-  $("#closeBtn").addEventListener("click", function () { if (bridge) bridge.windowAction("close"); });
+  function syncMaximizedUi(isMax) {
+    var maxed = Boolean(isMax);
+    win.classList.toggle("is-maximized", maxed);
+    var maxBtn = $("#maxBtn");
+    if (maxBtn) {
+      maxBtn.title = maxed ? "Restore down" : "Maximise";
+      maxBtn.setAttribute("aria-label", maxed ? "Restore down" : "Maximise");
+    }
+    setTimeout(function () { measurePulseCanvas(); drawPulse(true); moveIndicator(); }, 180);
+  }
+
+  $("#minBtn").addEventListener("click", function (e) {
+    e.preventDefault();
+    e.stopPropagation();
+    if (bridge) bridge.windowAction("minimize").catch(function () {});
+  });
+  $("#maxBtn").addEventListener("click", async function (e) {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!bridge) {
+      syncMaximizedUi(!win.classList.contains("is-maximized"));
+      return;
+    }
+    var res = await bridge.windowAction("maximize").catch(function () { return null; });
+    if (res && typeof res.maximized === "boolean") syncMaximizedUi(res.maximized);
+  });
+  $("#closeBtn").addEventListener("click", function (e) {
+    e.preventDefault();
+    e.stopPropagation();
+    if (bridge) bridge.windowAction("close").catch(function () {});
+  });
+  $$(".titlebar__drag").forEach(function (dragEl) {
+    dragEl.addEventListener("dblclick", async function () {
+      if (state.mode === "boot") return;
+      if (!bridge) {
+        syncMaximizedUi(!win.classList.contains("is-maximized"));
+        return;
+      }
+      var res = await bridge.windowAction("maximize").catch(function () { return null; });
+      if (res && typeof res.maximized === "boolean") syncMaximizedUi(res.maximized);
+    });
+  });
 
   /* ------------------------------------------------------------------ main-process push events */
   if (bridge) {
@@ -2419,6 +2835,11 @@
     if (bridge.onCloudSessionChanged) {
       bridge.onCloudSessionChanged(function (session) {
         renderCloudAccount(session);
+      });
+    }
+    if (bridge.onWindowMaximizedChanged) {
+      bridge.onWindowMaximizedChanged(function (maximized) {
+        syncMaximizedUi(maximized);
       });
     }
   }
@@ -2458,7 +2879,7 @@
       days_remaining: 287,
       total_days: 365,
       now_utc: Math.floor(Date.now() / 1000),
-      max_seen_utc: Math.floor(Date.now() / 1000) + 86400 * 30,
+      max_seen_utc: Math.floor(Date.now() / 1000) - 2400,
       lease_remaining_seconds: 86400 * 28,
       last_heartbeat_utc: Math.floor(Date.now() / 1000) - 900,
       active_exams_count: 2,
@@ -2467,11 +2888,11 @@
       tombstone: { tombstone_id: "TMB-01JXZ99887766" }
     };
     state.cloudAccount = {
-      signedIn: true,
+      signedIn: params.get("guest") !== "1",
       offline: false,
       cloudUrl: "https://cognitara-cloud.vercel.app",
       lastSyncedAt: Date.now() - 120000,
-      user: { id: "u1", email: "principal@cedarhills.edu.ng", full_name: "Adaeze Okafor", role: "school_owner", status: "active" },
+      user: { id: "u1", email: "principal@cedarhills.edu.ng", full_name: "Adaeze Okafor", role: "school_owner", status: "active", email_verified: true },
       school: { id: "s1", school_name: "Cedar Hills International Academy", country_code: "NG", status: "active" },
       referralCode: "CT-CEDA-8F2A1C",
       licenses: []
@@ -2504,8 +2925,8 @@
     if (params.get("update") === "downloading") {
       renderUpdateState({
         status: "downloading",
-        currentVersion: "2.1.0",
-        availableVersion: "2.1.1",
+        currentVersion: "2.2.2",
+        availableVersion: "2.2.3",
         percent: 68.4,
         bytesPerSecond: 4.2 * 1024 * 1024,
         transferred: 58.2 * 1024 * 1024,
@@ -2514,8 +2935,8 @@
     } else if (params.get("update") === "downloaded") {
       renderUpdateState({
         status: "downloaded",
-        currentVersion: "2.1.0",
-        availableVersion: "2.1.1",
+        currentVersion: "2.2.2",
+        availableVersion: "2.2.3",
         percent: 100
       });
     }
@@ -2525,6 +2946,7 @@
     } else if (screenParam === "onboarding") {
       var st = parseInt(params.get("step") || "0", 10);
       startOnboarding(isNaN(st) ? 0 : st);
+      if (params.get("otp") === "1") showOnbOtpStep("principal@cedarhills.edu.ng", "signup_verify", "6-digit Brevo OTP sent to principal@cedarhills.edu.ng");
     } else if (screenParam === "app") {
       if (params.get("running") === "1") {
         state.startedAt = Date.now() - 4920 * 1000;
@@ -2545,6 +2967,8 @@
       showLock("expired", state.license);
     } else if (screenParam === "clock") {
       state.license.lock_state = "CLOCK_TAMPER_LOCK";
+      state.license.tamper_reason = params.get("rollback") === "1" ? "clock_rollback_detected" : "anchor_a_hmac_mismatch";
+      state.license.is_clock_rollback = params.get("rollback") === "1";
       showLock("clock", state.license);
     } else if (screenParam === "revoked") {
       state.license.lock_state = "HQ_REVOKED_LOCK";
