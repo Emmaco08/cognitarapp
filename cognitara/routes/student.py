@@ -169,7 +169,7 @@ def ce_start_exam():
     
     # ========== CRITICAL: CHECK FOR EXISTING ATTEMPT FIRST ==========
     existing = conn.execute("""
-        SELECT id, status, resume_requested, is_paused, remaining_time, 
+        SELECT id, exam_id, status, resume_requested, is_paused, pause_reason, remaining_time, 
                current_progress, warnings_count
         FROM ce_attempts 
         WHERE student_id=? AND exam_id=?
@@ -185,7 +185,7 @@ def ce_start_exam():
                 return render_template("exam_paused.html",
                                        attempt=existing,
                                        exam=dict(exam_row) if exam_row else None,
-                                       pause_reason=existing.get("pause_reason") or "Your examination attempt has been paused.",
+                                       pause_reason=existing["pause_reason"] or "Your examination attempt has been paused.",
                                        is_ce=True,
                                        role="student")
             session["ce_attempt_id"] = existing["id"]

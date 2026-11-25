@@ -11,7 +11,7 @@ body.ct-app.ct-bs {
   font-family: var(--ct-font) !important;
   padding: 0 !important;
   margin: 0 !important;
-  overflow-x: hidden;
+  overflow-x: clip;
 }
 
 /* Strip legacy decorative floating icons / blurred blobs / duplicate topbars */

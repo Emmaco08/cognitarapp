@@ -234,13 +234,15 @@
                 self.convertFormulasToPills(el);
             });
 
-            // Prevent toolbar buttons from stealing editor selection focus on mousedown
-            document.addEventListener('mousedown', function(e) {
-                const btn = e.target.closest('.f-btn, .fb-sym, .fb-quick-chip, .fb-preset-chip, .fb-symbol-btn');
-                if (btn) {
-                    e.preventDefault();
-                }
-            }, true);
+            // Prevent toolbar buttons from stealing editor selection focus on mousedown (bind once)
+            if (!this.isInitialized) {
+                document.addEventListener('mousedown', function(e) {
+                    const btn = e.target.closest('.f-btn, .fb-sym, .fb-quick-chip, .fb-preset-chip, .fb-symbol-btn');
+                    if (btn) {
+                        e.preventDefault();
+                    }
+                }, true);
+            }
 
             this.isInitialized = true;
         },
@@ -1446,23 +1448,21 @@
             const style = document.createElement('style');
             style.id = 'katexEditorStyles';
             style.textContent = `
-                /* KaTeX Editor Pill inside contenteditable */
                 .katex-editor-pill {
                     display: inline-flex !important;
                     align-items: center !important;
                     vertical-align: middle !important;
                     margin: 2px 4px !important;
                     padding: 3px 10px !important;
-                    background: #ffffff !important;
-                    border: 1.5px solid #a5b4fc !important;
-                    border-radius: 9px !important;
+                    background: var(--ct-surface-2, #222328) !important;
+                    border: 1px solid var(--ct-accent, #3b82f6) !important;
+                    border-radius: 8px !important;
                     cursor: pointer !important;
                     user-select: all !important;
                     line-height: normal !important;
-                    font-size: 1.05em !important;
-                    color: #1e293b !important;
-                    transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1) !important;
-                    box-shadow: 0 2px 5px rgba(99, 102, 241, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.9) !important;
+                    font-size: 1.04em !important;
+                    color: var(--ct-ink, #f4f4f5) !important;
+                    transition: border-color 0.15s ease, transform 0.15s ease !important;
                     white-space: nowrap !important;
                     position: relative !important;
                 }
@@ -1474,486 +1474,163 @@
                     max-width: 100% !important;
                 }
                 .katex-editor-pill:hover {
-                    background: #f5f3ff !important;
-                    border-color: #6366f1 !important;
-                    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.28) !important;
                     transform: translateY(-1px) !important;
+                    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.22) !important;
                 }
-                .katex-editor-pill .pill-preview {
-                    display: inline-flex !important;
-                    align-items: center !important;
-                    pointer-events: none !important;
-                }
+                .katex-editor-pill .pill-preview { display: inline-flex !important; align-items: center !important; pointer-events: none !important; }
                 .katex-editor-pill .pill-action-btn {
-                    display: inline-flex !important;
-                    align-items: center !important;
-                    justify-content: center !important;
-                    font-size: 10px !important;
-                    padding: 0 4px !important;
-                    cursor: pointer !important;
-                    border-radius: 4px !important;
-                    line-height: 1 !important;
-                    transition: all 0.12s ease !important;
+                    display: inline-flex !important; align-items: center !important; justify-content: center !important;
+                    font-size: 10px !important; padding: 0 4px !important; cursor: pointer !important;
+                    border-radius: 4px !important; line-height: 1 !important; transition: all 0.12s ease !important;
                 }
-                .katex-editor-pill .pill-edit-btn {
-                    margin-left: 6px !important;
-                    color: #6366f1 !important;
-                    opacity: 0.7 !important;
-                }
-                .katex-editor-pill:hover .pill-edit-btn {
-                    opacity: 1 !important;
-                }
+                .katex-editor-pill .pill-edit-btn { margin-left: 6px !important; color: var(--ct-accent, #3b82f6) !important; opacity: 0.78 !important; }
+                .katex-editor-pill:hover .pill-edit-btn { opacity: 1 !important; }
                 .katex-editor-pill .pill-delete-btn {
-                    margin-left: 3px !important;
-                    color: #94a3b8 !important;
-                    font-size: 14px !important;
-                    font-weight: 700 !important;
-                    opacity: 0 !important;
-                    width: 16px !important;
-                    height: 16px !important;
+                    margin-left: 3px !important; color: var(--ct-ink-3, #9ca3af) !important; font-size: 14px !important;
+                    font-weight: 700 !important; opacity: 0 !important; width: 16px !important; height: 16px !important;
                 }
-                .katex-editor-pill:hover .pill-delete-btn {
-                    opacity: 0.8 !important;
-                }
-                .katex-editor-pill .pill-delete-btn:hover {
-                    opacity: 1 !important;
-                    color: #ef4444 !important;
-                    background: #fee2e2 !important;
-                }
+                .katex-editor-pill:hover .pill-delete-btn { opacity: 0.85 !important; }
+                .katex-editor-pill .pill-delete-btn:hover { opacity: 1 !important; color: #ef4444 !important; background: rgba(239,68,68,0.14) !important; }
 
-                /* Visual Builder Backdrop */
                 .katex-formula-popover-backdrop {
-                    position: fixed !important;
-                    top: 0 !important; left: 0 !important; right: 0 !important; bottom: 0 !important;
-                    background: rgba(15, 23, 42, 0.65) !important;
+                    position: fixed !important; inset: 0 !important;
+                    background: rgba(9, 9, 11, 0.72) !important;
                     backdrop-filter: blur(8px) !important;
                     z-index: 100000 !important;
-                    display: none;
-                    align-items: center !important;
-                    justify-content: center !important;
-                    padding: 12px !important;
+                    display: none; align-items: center !important; justify-content: center !important; padding: 16px !important;
                 }
-                .katex-formula-popover-backdrop.show {
-                    display: flex !important;
-                }
+                .katex-formula-popover-backdrop.show { display: flex !important; }
                 .katex-formula-popover-card {
-                    background: #ffffff !important;
-                    border-radius: 14px !important;
-                    box-shadow: 0 25px 60px -15px rgba(15, 23, 42, 0.4), 0 0 0 1px rgba(99, 102, 241, 0.15) !important;
-                    width: 100% !important;
-                    max-width: 460px !important;
-                    max-height: 85vh !important;
-                    display: flex !important;
-                    flex-direction: column !important;
-                    overflow: hidden !important;
-                    animation: popoverScaleIn 0.22s cubic-bezier(0.16, 1, 0.3, 1) !important;
-                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif !important;
+                    background: var(--ct-surface, #1c1c20) !important;
+                    color: var(--ct-ink, #f4f4f5) !important;
+                    border: 1px solid var(--ct-line-2, rgba(255,255,255,0.14)) !important;
+                    border-radius: 16px !important;
+                    box-shadow: 0 28px 64px -16px rgba(0, 0, 0, 0.55) !important;
+                    width: 100% !important; max-width: 560px !important; max-height: 88vh !important;
+                    display: flex !important; flex-direction: column !important; overflow: hidden !important;
+                    animation: popoverScaleIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+                    font-family: var(--ct-font-sans, 'Plus Jakarta Sans', system-ui, sans-serif) !important;
                 }
                 @keyframes popoverScaleIn {
-                    from { opacity: 0; transform: scale(0.95) translateY(8px); }
+                    from { opacity: 0; transform: scale(0.96) translateY(8px); }
                     to { opacity: 1; transform: scale(1) translateY(0); }
                 }
                 .katex-popover-header {
-                    background: linear-gradient(135deg, #3730a3 0%, #4f46e5 100%) !important;
-                    color: white !important;
-                    padding: 12px 18px !important;
-                    display: flex !important;
-                    align-items: center !important;
-                    justify-content: space-between !important;
-                    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25) !important;
-                    flex-shrink: 0 !important;
+                    background: var(--ct-surface-2, #232328) !important;
+                    color: var(--ct-ink, #f4f4f5) !important;
+                    border-bottom: 1px solid var(--ct-line, rgba(255,255,255,0.08)) !important;
+                    padding: 14px 18px !important;
+                    display: flex !important; align-items: center !important; justify-content: space-between !important; flex-shrink: 0 !important;
                 }
                 .katex-popover-header-icon {
-                    width: 28px !important;
-                    height: 28px !important;
-                    border-radius: 7px !important;
-                    background: rgba(255, 255, 255, 0.2) !important;
-                    display: flex !important;
-                    align-items: center !important;
-                    justify-content: center !important;
-                    font-size: 13px !important;
-                    color: #ffffff !important;
-                    flex-shrink: 0 !important;
+                    width: 30px !important; height: 30px !important; border-radius: 8px !important;
+                    background: rgba(59, 130, 246, 0.14) !important; color: var(--ct-accent, #3b82f6) !important;
+                    display: flex !important; align-items: center !important; justify-content: center !important;
+                    font-size: 13px !important; flex-shrink: 0 !important;
                 }
-                .katex-popover-header h6 {
-                    margin: 0 !important;
-                    font-size: 15px !important;
-                    font-weight: 700 !important;
-                    color: white !important;
-                    line-height: 1.2 !important;
-                }
-                .katex-popover-sub {
-                    margin: 1px 0 0 !important;
-                    font-size: 11px !important;
-                    color: rgba(255, 255, 255, 0.85) !important;
-                    line-height: 1.2 !important;
-                }
+                .katex-popover-header h6 { margin: 0 !important; font-size: 15px !important; font-weight: 700 !important; color: var(--ct-ink, #f4f4f5) !important; line-height: 1.25 !important; }
+                .katex-popover-sub { margin: 2px 0 0 !important; font-size: 11.5px !important; color: var(--ct-ink-3, #9ca3af) !important; line-height: 1.25 !important; }
                 .katex-popover-close {
-                    background: rgba(255, 255, 255, 0.18) !important;
-                    border: 1px solid rgba(255, 255, 255, 0.25) !important;
-                    color: white !important;
-                    font-size: 18px !important;
-                    cursor: pointer !important;
-                    line-height: 1 !important;
-                    width: 28px !important;
-                    height: 28px !important;
-                    border-radius: 50% !important;
-                    display: flex !important;
-                    align-items: center !important;
-                    justify-content: center !important;
-                    transition: all 0.2s ease !important;
-                    flex-shrink: 0 !important;
+                    background: transparent !important; border: 1px solid var(--ct-line-2, rgba(255,255,255,0.14)) !important;
+                    color: var(--ct-ink-2, #d4d4d8) !important; font-size: 18px !important; cursor: pointer !important;
+                    line-height: 1 !important; width: 30px !important; height: 30px !important; border-radius: 8px !important;
+                    display: flex !important; align-items: center !important; justify-content: center !important; transition: all 0.15s ease !important;
                 }
-                .katex-popover-close:hover {
-                    background: rgba(239, 68, 68, 0.9) !important;
-                    transform: rotate(90deg) !important;
-                }
+                .katex-popover-close:hover { background: rgba(239, 68, 68, 0.16) !important; color: #ef4444 !important; border-color: rgba(239,68,68,0.4) !important; }
 
-                /* Formula Type Dropdown */
-                .fb-type-select-row {
-                    display: flex !important;
-                    flex-direction: column !important;
-                    gap: 4px !important;
+                .fb-type-select-row { display: flex !important; flex-direction: column !important; gap: 5px !important; }
+                .fb-type-label, .fb-input-label {
+                    font-size: 12px !important; font-weight: 600 !important; color: var(--ct-ink-2, #d4d4d8) !important;
+                    margin: 0 !important; display: flex !important; align-items: center !important; gap: 6px !important;
                 }
-                .fb-type-label {
-                    font-size: 11.5px !important;
-                    font-weight: 700 !important;
-                    color: #334155 !important;
-                    margin: 0 !important;
-                    display: flex !important;
-                    align-items: center !important;
-                    gap: 6px !important;
+                .fb-type-select, .fb-math-input, .fb-math-input-sm {
+                    width: 100% !important; padding: 8px 11px !important;
+                    border: 1px solid var(--ct-line-2, rgba(255,255,255,0.15)) !important;
+                    border-radius: 9px !important; font-size: 13.5px !important; font-weight: 500 !important;
+                    color: var(--ct-ink, #f4f4f5) !important; background: var(--ct-bg, #141416) !important;
+                    outline: none !important; transition: border-color 0.15s ease, box-shadow 0.15s ease !important;
                 }
-                .fb-type-select {
-                    width: 100% !important;
-                    padding: 7px 11px !important;
-                    border: 1.5px solid #cbd5e1 !important;
-                    border-radius: 8px !important;
-                    font-size: 13px !important;
-                    font-weight: 600 !important;
-                    color: #0f172a !important;
-                    background: #ffffff !important;
-                    outline: none !important;
-                    cursor: pointer !important;
-                    transition: all 0.15s ease !important;
+                .fb-math-input-sm { padding: 5px 8px !important; font-size: 12px !important; }
+                .fb-type-select:focus, .fb-math-input:focus, .fb-math-input-sm:focus {
+                    border-color: var(--ct-accent, #3b82f6) !important;
+                    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.18) !important;
                 }
-                .fb-type-select:focus {
-                    border-color: #4f46e5 !important;
-                    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15) !important;
-                }
-
                 .katex-popover-body {
-                    padding: 12px 18px 10px !important;
-                    max-height: calc(85vh - 110px) !important;
-                    overflow-y: auto !important;
-                    flex: 1 1 auto !important;
+                    padding: 16px 18px 14px !important; max-height: calc(88vh - 122px) !important;
+                    overflow-y: auto !important; flex: 1 1 auto !important;
                 }
-                .katex-popover-body::-webkit-scrollbar {
-                    width: 6px !important;
-                }
-                .katex-popover-body::-webkit-scrollbar-track {
-                    background: #f1f5f9 !important;
-                    border-radius: 3px !important;
-                }
-                .katex-popover-body::-webkit-scrollbar-thumb {
-                    background: #cbd5e1 !important;
-                    border-radius: 3px !important;
-                }
-                .katex-popover-body::-webkit-scrollbar-thumb:hover {
-                    background: #94a3b8 !important;
-                }
+                .fb-tab-panel { display: none !important; }
+                .fb-tab-panel.active { display: block !important; }
 
-                .fb-tab-panel {
-                    display: none !important;
-                }
-                .fb-tab-panel.active {
-                    display: block !important;
-                }
-
-                .fb-input-label {
-                    font-size: 11.5px !important;
-                    font-weight: 700 !important;
-                    color: #1e293b !important;
-                    margin: 0 !important;
-                    display: flex !important;
-                    align-items: center !important;
-                    gap: 6px !important;
-                }
-
-                .fb-math-input {
-                    width: 100% !important;
-                    padding: 7px 11px !important;
-                    border: 1.5px solid #cbd5e1 !important;
-                    border-radius: 8px !important;
-                    font-size: 13.5px !important;
-                    font-weight: 600 !important;
-                    color: #0f172a !important;
-                    outline: none !important;
-                    background: #ffffff !important;
-                    transition: all 0.15s ease !important;
-                }
-                .fb-math-input:focus {
-                    border-color: #4f46e5 !important;
-                    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15) !important;
-                    background: #ffffff !important;
-                }
-                .fb-math-input-sm {
-                    padding: 4px 7px !important;
-                    border: 1.5px solid #cbd5e1 !important;
-                    border-radius: 6px !important;
-                    font-size: 11.5px !important;
-                    font-weight: 600 !important;
-                    outline: none !important;
-                }
-                .fb-math-input-sm:focus {
-                    border-color: #4f46e5 !important;
-                }
-
-                /* Visual Containers for Fractions, Roots, Powers */
-                .fb-visual-fraction-container,
-                .fb-visual-root-container,
-                .fb-visual-power-container,
-                .fb-visual-subscript-container,
-                .fb-visual-chem-container,
-                .fb-visual-advanced-container {
-                    background: #f8fafc !important;
-                    border: 1.5px solid #e2e8f0 !important;
-                    border-radius: 10px !important;
-                    padding: 10px 14px !important;
-                }
-                .fb-fraction-bar {
-                    display: flex !important;
-                    align-items: center !important;
-                    gap: 8px !important;
-                    margin: 6px 0 !important;
-                }
-                .fb-fraction-line {
-                    flex: 1 !important;
-                    height: 2px !important;
-                    background: #6366f1 !important;
-                    border-radius: 1px !important;
-                }
-                .fb-fraction-badge {
-                    font-size: 11px !important;
-                    font-weight: 700 !important;
-                    color: #ffffff !important;
-                    background: #6366f1 !important;
-                    padding: 1px 8px !important;
-                    border-radius: 12px !important;
-                }
-
-                /* Preset strips */
-                .fb-preset-strip {
-                    display: flex !important;
-                    flex-wrap: wrap !important;
-                    align-items: center !important;
-                    gap: 4px !important;
-                    margin-top: 6px !important;
-                }
-                .fb-preset-label {
-                    font-size: 11px !important;
-                    font-weight: 700 !important;
-                    color: #64748b !important;
-                }
-                .fb-preset-chip {
-                    background: #ffffff !important;
-                    color: #4338ca !important;
-                    border: 1px solid #c7d2fe !important;
-                    border-radius: 6px !important;
-                    padding: 2px 7px !important;
-                    font-size: 11px !important;
-                    font-weight: 700 !important;
-                    cursor: pointer !important;
-                    transition: all 0.12s ease !important;
-                    box-shadow: 0 1px 2px rgba(0,0,0,0.04) !important;
-                }
-                .fb-preset-chip:hover {
-                    background: #4f46e5 !important;
-                    color: white !important;
-                    border-color: #4f46e5 !important;
-                    transform: translateY(-1px) !important;
-                }
-
-                /* Symbol grid */
+                .fb-visual-fraction-container, .fb-visual-root-container, .fb-visual-power-container,
+                .fb-visual-subscript-container, .fb-visual-chem-container, .fb-visual-advanced-container,
                 .fb-symbol-palette-container {
-                    background: #f8fafc !important;
-                    border: 1.5px solid #e2e8f0 !important;
-                    border-radius: 10px !important;
-                    padding: 8px 10px !important;
+                    background: var(--ct-surface-2, #232328) !important;
+                    border: 1px solid var(--ct-line, rgba(255,255,255,0.09)) !important;
+                    border-radius: 12px !important; padding: 12px 14px !important;
                 }
-                .fb-palette-label {
-                    font-size: 10.5px !important;
-                    font-weight: 800 !important;
-                    color: #475569 !important;
-                    text-transform: uppercase !important;
-                    letter-spacing: 0.5px !important;
-                    display: flex !important;
-                    align-items: center !important;
-                    gap: 6px !important;
+                .fb-fraction-bar { display: flex !important; align-items: center !important; gap: 8px !important; margin: 8px 0 !important; }
+                .fb-fraction-line { flex: 1 !important; height: 2px !important; background: var(--ct-accent, #3b82f6) !important; border-radius: 1px !important; }
+                .fb-fraction-badge { font-size: 11px !important; font-weight: 600 !important; color: #ffffff !important; background: var(--ct-accent, #3b82f6) !important; padding: 2px 9px !important; border-radius: 999px !important; }
+
+                .fb-preset-strip { display: flex !important; flex-wrap: wrap !important; align-items: center !important; gap: 6px !important; margin-top: 8px !important; }
+                .fb-preset-label, .fb-palette-label { font-size: 11px !important; font-weight: 700 !important; color: var(--ct-ink-3, #9ca3af) !important; text-transform: uppercase !important; letter-spacing: 0.04em !important; }
+                .fb-preset-chip, .fb-quick-chip, .fb-symbol-btn {
+                    background: var(--ct-surface, #1c1c20) !important; color: var(--ct-ink, #f4f4f5) !important;
+                    border: 1px solid var(--ct-line-2, rgba(255,255,255,0.14)) !important;
+                    border-radius: 7px !important; padding: 4px 9px !important; font-size: 11.5px !important;
+                    font-weight: 600 !important; cursor: pointer !important; transition: all 0.14s ease !important;
                 }
-                .fb-symbol-grid {
-                    display: flex !important;
-                    flex-wrap: wrap !important;
-                    gap: 4px !important;
-                    margin-top: 5px !important;
+                .fb-preset-chip:hover, .fb-quick-chip:hover, .fb-symbol-btn:hover {
+                    background: var(--ct-accent, #3b82f6) !important; color: #ffffff !important; border-color: var(--ct-accent, #3b82f6) !important;
                 }
+                .fb-symbol-grid { display: flex !important; flex-wrap: wrap !important; gap: 5px !important; margin-top: 7px !important; }
                 .fb-sym {
-                    width: 28px !important;
-                    height: 26px !important;
-                    border: 1px solid #e2e8f0 !important;
-                    background: white !important;
-                    border-radius: 6px !important;
-                    font-size: 13px !important;
-                    font-weight: 700 !important;
-                    color: #334155 !important;
-                    cursor: pointer !important;
-                    display: flex !important;
-                    align-items: center !important;
-                    justify-content: center !important;
-                    transition: all 0.12s ease !important;
-                    box-shadow: 0 1px 2px rgba(0,0,0,0.04) !important;
-                }
-                .fb-sym:hover {
-                    background: #4f46e5 !important;
-                    color: white !important;
-                    border-color: #4f46e5 !important;
-                    transform: translateY(-1px) !important;
-                    box-shadow: 0 2px 4px rgba(79, 70, 229, 0.25) !important;
-                }
-
-                .fb-quick-chip, .fb-symbol-btn {
-                    background: #eef2ff !important;
-                    color: #3730a3 !important;
-                    border: 1px solid #c7d2fe !important;
-                    border-radius: 6px !important;
-                    padding: 3px 8px !important;
-                    font-size: 11px !important;
-                    font-weight: 700 !important;
-                    cursor: pointer !important;
+                    min-width: 32px !important; height: 30px !important; padding: 0 6px !important;
+                    border: 1px solid var(--ct-line-2, rgba(255,255,255,0.14)) !important;
+                    background: var(--ct-surface, #1c1c20) !important; border-radius: 7px !important;
+                    font-size: 13.5px !important; font-weight: 600 !important; color: var(--ct-ink, #f4f4f5) !important;
+                    cursor: pointer !important; display: flex !important; align-items: center !important; justify-content: center !important;
                     transition: all 0.12s ease !important;
                 }
-                .fb-quick-chip:hover, .fb-symbol-btn:hover {
-                    background: #4f46e5 !important;
-                    color: white !important;
-                    border-color: #4f46e5 !important;
-                    transform: translateY(-1px) !important;
-                }
+                .fb-sym:hover { background: var(--ct-accent, #3b82f6) !important; color: #ffffff !important; border-color: var(--ct-accent, #3b82f6) !important; }
 
-                /* Preview container */
                 .katex-popover-preview-container {
-                    background: linear-gradient(135deg, #f8fafc 0%, #eef2ff 100%) !important;
-                    border: 1.5px dashed #a5b4fc !important;
-                    border-radius: 10px !important;
-                    padding: 8px 14px !important;
-                    min-height: 48px !important;
+                    background: var(--ct-bg, #141416) !important;
+                    border: 1px dashed var(--ct-line-2, rgba(255,255,255,0.18)) !important;
+                    border-radius: 12px !important; padding: 10px 14px !important; min-height: 58px !important;
                 }
-                .katex-popover-preview-label {
-                    font-size: 10.5px !important;
-                    font-weight: 800 !important;
-                    text-transform: uppercase !important;
-                    letter-spacing: 0.5px !important;
-                    color: #3730a3 !important;
-                    display: flex !important;
-                    align-items: center !important;
-                    gap: 6px !important;
-                }
-                .katex-popover-preview-math {
-                    font-size: 18px !important;
-                    color: #1e1b4b !important;
-                    overflow-x: auto !important;
-                    min-height: 32px !important;
-                    display: flex !important;
-                    align-items: center !important;
-                    justify-content: center !important;
-                    padding: 4px 0 !important;
-                }
+                .katex-popover-preview-label { font-size: 11px !important; font-weight: 700 !important; text-transform: uppercase !important; letter-spacing: 0.05em !important; color: var(--ct-ink-3, #9ca3af) !important; display: flex !important; align-items: center !important; gap: 6px !important; }
+                .katex-popover-preview-math { font-size: 20px !important; color: var(--ct-ink, #f4f4f5) !important; overflow-x: auto !important; min-height: 36px !important; display: flex !important; align-items: center !important; justify-content: center !important; padding: 6px 0 !important; }
 
                 .katex-popover-footer {
-                    padding: 10px 18px !important;
-                    background: #f8fafc !important;
-                    border-top: 1px solid #e2e8f0 !important;
-                    display: flex !important;
-                    align-items: center !important;
-                    gap: 8px !important;
-                    flex-shrink: 0 !important;
+                    padding: 12px 18px !important; background: var(--ct-surface-2, #232328) !important;
+                    border-top: 1px solid var(--ct-line, rgba(255,255,255,0.08)) !important;
+                    display: flex !important; align-items: center !important; gap: 8px !important; flex-shrink: 0 !important;
                 }
-                .btn-delete-formula {
-                    color: #ef4444 !important;
-                    background: #fee2e2 !important;
-                    border: 1px solid #fca5a5 !important;
-                    font-weight: 700 !important;
-                    border-radius: 8px !important;
-                    padding: 6px 12px !important;
-                    font-size: 12px !important;
-                    transition: all 0.15s ease !important;
-                }
-                .btn-delete-formula:hover {
-                    background: #ef4444 !important;
-                    color: white !important;
-                }
-                .btn-cancel-builder {
-                    font-weight: 600 !important;
-                    border-radius: 8px !important;
-                    padding: 6px 14px !important;
-                    font-size: 12.5px !important;
-                    border: 1.5px solid #cbd5e1 !important;
-                    background: #ffffff !important;
-                    color: #475569 !important;
-                }
-                .btn-cancel-builder:hover {
-                    background: #f1f5f9 !important;
-                    color: #1e293b !important;
-                }
+                .btn-delete-formula { color: #ef4444 !important; background: rgba(239,68,68,0.12) !important; border: 1px solid rgba(239,68,68,0.3) !important; font-weight: 600 !important; border-radius: 8px !important; padding: 7px 12px !important; font-size: 12.5px !important; }
+                .btn-delete-formula:hover { background: #ef4444 !important; color: #ffffff !important; }
+                .btn-cancel-builder { font-weight: 600 !important; border-radius: 8px !important; padding: 7px 14px !important; font-size: 12.5px !important; border: 1px solid var(--ct-line-2, rgba(255,255,255,0.16)) !important; background: transparent !important; color: var(--ct-ink-2, #d4d4d8) !important; }
+                .btn-cancel-builder:hover { background: var(--ct-surface, #1c1c20) !important; color: var(--ct-ink, #f4f4f5) !important; }
                 .btn-apply-formula {
-                    background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%) !important;
-                    color: white !important;
-                    border: none !important;
-                    font-weight: 700 !important;
-                    font-size: 13px !important;
-                    border-radius: 8px !important;
-                    padding: 7px 18px !important;
-                    box-shadow: 0 3px 10px rgba(79, 70, 229, 0.35) !important;
-                    display: inline-flex !important;
-                    align-items: center !important;
-                    gap: 6px !important;
-                    transition: all 0.15s ease !important;
+                    background: var(--ct-accent, #2563eb) !important; color: #ffffff !important; border: none !important;
+                    font-weight: 600 !important; font-size: 13px !important; border-radius: 8px !important; padding: 8px 18px !important;
+                    display: inline-flex !important; align-items: center !important; gap: 6px !important; transition: opacity 0.15s ease !important;
                 }
-                .btn-apply-formula:hover {
-                    background: linear-gradient(135deg, #4338ca 0%, #3730a3 100%) !important;
-                    box-shadow: 0 4px 14px rgba(79, 70, 229, 0.45) !important;
-                    transform: translateY(-1px) !important;
-                }
+                .btn-apply-formula:hover { opacity: 0.92 !important; }
 
-                /* Dedicated Formula Toolbar Buttons in shared-toolbar */
                 .f-btn-group {
-                    display: inline-flex !important;
-                    align-items: center !important;
-                    gap: 3px !important;
-                    background: #eef2ff !important;
-                    padding: 2px 4px !important;
-                    border-radius: 8px !important;
-                    border: 1px solid #c7d2fe !important;
+                    display: inline-flex !important; align-items: center !important; gap: 4px !important;
+                    background: var(--ct-surface-2, #232328) !important; padding: 3px 5px !important;
+                    border-radius: 8px !important; border: 1px solid var(--ct-line-2, rgba(255,255,255,0.12)) !important;
                 }
                 .f-btn {
-                    border: none !important;
-                    background: #ffffff !important;
-                    color: #4338ca !important;
-                    font-size: 11.5px !important;
-                    font-weight: 700 !important;
-                    padding: 4px 10px !important;
-                    border-radius: 6px !important;
-                    cursor: pointer !important;
-                    display: inline-flex !important;
-                    align-items: center !important;
-                    gap: 5px !important;
-                    box-shadow: 0 1px 2px rgba(0,0,0,0.05) !important;
-                    transition: all 0.12s ease !important;
+                    border: none !important; background: transparent !important; color: var(--ct-ink, #f4f4f5) !important;
+                    font-size: 12px !important; font-weight: 600 !important; padding: 4px 9px !important;
+                    border-radius: 6px !important; cursor: pointer !important;
+                    display: inline-flex !important; align-items: center !important; gap: 5px !important; transition: all 0.12s ease !important;
                 }
-                .f-btn:hover {
-                    background: #4f46e5 !important;
-                    color: #ffffff !important;
-                    transform: translateY(-1px) !important;
-                }
+                .f-btn:hover { background: var(--ct-accent, #2563eb) !important; color: #ffffff !important; }
             `;
             document.head.appendChild(style);
         }

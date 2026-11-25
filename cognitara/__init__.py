@@ -94,12 +94,18 @@ def create_app(config_class=Config):
     app.register_error_handler(CSRFError, handle_csrf_error)
     app.register_error_handler(429, ratelimit_handler)
 
+    @app.before_request
+    def keep_authenticated_session_alive():
+        from flask import session as _sess
+        if any(k in _sess for k in ("admin_id", "teacher_id", "student_id", "ce_student_id")):
+            _sess.permanent = True
+
     @app.errorhandler(413)
     def handle_large_payload(error):
         from flask import request
         if request.is_json or request.path.startswith('/api/'):
-            return {"error": "Payload too large", "message": "Uploaded content exceeds 16MB limit."}, 413
-        return "Uploaded content exceeds maximum allowed size (16MB).", 413
+            return {"error": "Payload too large", "message": "Uploaded content exceeds the server limit."}, 413
+        return "Uploaded content exceeds the configured server upload limit.", 413
 
     @app.errorhandler(500)
     def handle_server_error(error):

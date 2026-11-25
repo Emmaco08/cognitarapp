@@ -433,15 +433,15 @@ class TestCognitaraModularSuite(unittest.TestCase):
             conn.close()
 
     def test_14_sweep_disconnected_attempts_active_detection(self):
-        """Verify sweep_disconnected_attempts pauses attempts with dropped heartbeats (>25s) without background threads."""
+        """Verify sweep_disconnected_attempts pauses attempts with dropped heartbeats (>90s) without background threads."""
         conn = get_db_connection()
         try:
             attempt = self._ensure_active_regular_attempt(conn)
             self.assertIsNotNone(attempt)
             att_id = attempt["id"]
             
-            # Simulate dropped heartbeat 35 seconds ago (CogniTara stores UTC timestamps)
-            stale_time = (get_utc_now() - timedelta(seconds=35)).strftime('%Y-%m-%d %H:%M:%S')
+            # Simulate dropped heartbeat 105 seconds ago (beyond 90s HEARTBEAT_TIMEOUT_SECONDS)
+            stale_time = (get_utc_now() - timedelta(seconds=105)).strftime('%Y-%m-%d %H:%M:%S')
             conn.execute("""
                 UPDATE scores 
                 SET last_heartbeat=?, updated_at=?, is_paused=0, status='in_progress', authoritative_deadline=DATETIME('now', '+20 minutes')
@@ -530,10 +530,9 @@ class TestCognitaraModularSuite(unittest.TestCase):
             conn.close()
 
     def test_17_request_body_size_limit_configured(self):
-        """Verify MAX_CONTENT_LENGTH is set to a secure limit (16MB)."""
+        """Verify MAX_CONTENT_LENGTH defaults to None so image uploads of any size are accepted."""
         limit = self.app.config.get("MAX_CONTENT_LENGTH")
-        self.assertIsNotNone(limit)
-        self.assertEqual(limit, 16 * 1024 * 1024)
+        self.assertIsNone(limit)
 
 if __name__ == "__main__":
     unittest.main()

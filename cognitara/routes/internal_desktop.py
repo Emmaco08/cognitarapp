@@ -10,6 +10,8 @@ Never reachable from the school LAN or without the launch token.
 from __future__ import annotations
 
 import base64
+import gzip
+import hashlib
 import hmac
 import json
 import logging
@@ -17,6 +19,7 @@ import os
 import re
 import sqlite3
 import sys
+import tempfile
 import time
 from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List
@@ -530,6 +533,10 @@ def api_internal_hot_backup():
     dst_conn = None
     try:
         src_conn = sqlite3.connect(src_path, timeout=30.0)
+        try:
+            src_conn.execute("PRAGMA wal_checkpoint(TRUNCATE)")
+        except Exception:
+            pass
         dst_conn = sqlite3.connect(dst_path, timeout=30.0)
         src_conn.backup(dst_conn)
         dst_conn.commit()
@@ -570,6 +577,164 @@ def api_internal_hot_backup():
             "verified": True,
         },
     }), 200
+
+
+@internal_desktop_bp.route("/backups/set-dir", methods=["POST"])
+def api_internal_set_backup_dir():
+    data = request.get_json(silent=True) or {}
+    new_dir = str(data.get("backup_dir") or "").strip()
+    if not new_dir:
+        return jsonify({"ok": False, "error": "missing_backup_dir"}), 400
+    try:
+        os.makedirs(new_dir, exist_ok=True)
+        abs_dir = os.path.abspath(new_dir)
+        os.environ["COGNITARA_BACKUP_DIR"] = abs_dir
+        current_app.config["BACKUP_DIR"] = abs_dir
+        return jsonify({"ok": True, "backup_dir": abs_dir}), 200
+    except OSError as exc:
+        return jsonify({"ok": False, "error": "invalid_dir", "message": str(exc)}), 400
+
+
+@internal_desktop_bp.route("/backups/delete", methods=["POST"])
+def api_internal_delete_backup():
+    data = request.get_json(silent=True) or {}
+    filename = os.path.basename(str(data.get("filename") or "").strip())
+    if not filename or not filename.endswith(".db") or "/" in filename or "\\" in filename:
+        return jsonify({"ok": False, "error": "invalid_backup_filename"}), 400
+    backup_dir = _resolve_backup_dir()
+    candidate = os.path.abspath(os.path.join(backup_dir, filename))
+    if not candidate.startswith(os.path.abspath(backup_dir) + os.sep) or not os.path.isfile(candidate):
+        return jsonify({"ok": False, "error": "backup_not_found"}), 404
+    try:
+        os.remove(candidate)
+        return jsonify({"ok": True, "deleted": filename}), 200
+    except OSError as exc:
+        return jsonify({"ok": False, "error": "delete_failed", "message": str(exc)}), 500
+
+
+@internal_desktop_bp.route("/backups/export-cloud-snapshot", methods=["POST"])
+def api_internal_export_cloud_snapshot():
+    """Creates an integrity-verified, gzipped exam DB snapshot for encrypted CogniTara Cloud upload."""
+    src_path = _resolve_active_db_path()
+    stamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    filename = f"cognitara_exam_db_{stamp}.db.gz"
+
+    stats: Dict[str, int] = {}
+    with tempfile.TemporaryDirectory() as tmpdir:
+        tmp_db = os.path.join(tmpdir, "snapshot.db")
+        src_conn = None
+        dst_conn = None
+        try:
+            src_conn = sqlite3.connect(src_path, timeout=30.0)
+            try:
+                src_conn.execute("PRAGMA wal_checkpoint(TRUNCATE)")
+            except Exception:
+                pass
+            dst_conn = sqlite3.connect(tmp_db, timeout=30.0)
+            src_conn.backup(dst_conn)
+            dst_conn.commit()
+            for tbl, key in [("exams", "exams"), ("questions", "questions"), ("students", "students"), ("scores", "scores")]:
+                try:
+                    stats[key] = int(dst_conn.execute(f"SELECT COUNT(*) FROM {tbl}").fetchone()[0])
+                except Exception:
+                    stats[key] = 0
+        except Exception as exc:
+            logger.error("Cloud snapshot creation failed: %s", exc)
+            return jsonify({"ok": False, "error": "snapshot_failed", "message": str(exc)}), 500
+        finally:
+            if dst_conn:
+                dst_conn.close()
+            if src_conn:
+                src_conn.close()
+
+        if not _verify_sqlite_integrity(tmp_db):
+            return jsonify({"ok": False, "error": "snapshot_integrity_failed"}), 500
+
+        with open(tmp_db, "rb") as fh:
+            raw_bytes = fh.read()
+
+    compressed = gzip.compress(raw_bytes, compresslevel=6)
+    sha256 = hashlib.sha256(compressed).hexdigest()
+    payload_b64 = base64.b64encode(compressed).decode("ascii")
+
+    return jsonify({
+        "ok": True,
+        "filename": filename,
+        "raw_size_bytes": len(raw_bytes),
+        "compressed_bytes": len(compressed),
+        "sha256": sha256,
+        "stats": stats,
+        "payload_b64": payload_b64,
+    }), 200
+
+
+@internal_desktop_bp.route("/backups/restore-cloud-snapshot", methods=["POST"])
+def api_internal_restore_cloud_snapshot():
+    """Restores exam.db atomically from a gzipped CogniTara Cloud snapshot with safety backup."""
+    data = request.get_json(silent=True) or {}
+    payload_b64 = str(data.get("payload_b64") or "").strip()
+    expected_sha = str(data.get("sha256") or "").strip().lower()
+    if not payload_b64:
+        return jsonify({"ok": False, "error": "empty_snapshot"}), 400
+
+    try:
+        compressed = base64.b64decode(payload_b64)
+    except Exception:
+        return jsonify({"ok": False, "error": "invalid_base64"}), 400
+
+    if expected_sha and hashlib.sha256(compressed).hexdigest().lower() != expected_sha:
+        return jsonify({"ok": False, "error": "checksum_mismatch", "message": "Backup checksum verification failed."}), 400
+
+    try:
+        raw_db = gzip.decompress(compressed)
+    except Exception:
+        return jsonify({"ok": False, "error": "corrupt_gzip", "message": "Could not decompress cloud backup."}), 400
+
+    backup_dir = _resolve_backup_dir()
+    active_db = _resolve_active_db_path()
+    safety_name = f"exam_pre_cloud_restore_{datetime.now().strftime('%Y%m%d_%H%M%S')}.db"
+    safety_path = os.path.join(backup_dir, safety_name)
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        tmp_db = os.path.join(tmpdir, "cloud_restore.db")
+        with open(tmp_db, "wb") as fh:
+            fh.write(raw_db)
+
+        if not _verify_sqlite_integrity(tmp_db):
+            return jsonify({"ok": False, "error": "backup_corrupt", "message": "Downloaded backup failed SQLite integrity check."}), 400
+
+        # Safety snapshot of current database before restoring
+        src_cur = None
+        dst_safe = None
+        try:
+            src_cur = sqlite3.connect(active_db, timeout=30.0)
+            dst_safe = sqlite3.connect(safety_path, timeout=30.0)
+            src_cur.backup(dst_safe)
+            dst_safe.commit()
+        finally:
+            if dst_safe:
+                dst_safe.close()
+            if src_cur:
+                src_cur.close()
+
+        # Atomic restore into active exam.db
+        b_src = None
+        b_dst = None
+        try:
+            b_src = sqlite3.connect(tmp_db, timeout=30.0)
+            b_dst = sqlite3.connect(active_db, timeout=30.0)
+            b_src.backup(b_dst)
+            b_dst.commit()
+        except Exception as exc:
+            logger.error("Cloud restore failed: %s", exc)
+            return jsonify({"ok": False, "error": "restore_failed", "message": str(exc)}), 500
+        finally:
+            if b_dst:
+                b_dst.close()
+            if b_src:
+                b_src.close()
+
+    return jsonify({"ok": True, "safety_snapshot": safety_name}), 200
 
 
 @internal_desktop_bp.route("/backups/restore", methods=["POST"])
@@ -691,7 +856,7 @@ def api_internal_setup_school():
         if match:
             ext = "svg" if match.group(1) == "svg+xml" else match.group(1).replace("jpeg", "jpg")
             raw_bytes = base64.b64decode(match.group(2))
-            if len(raw_bytes) <= 2 * 1024 * 1024:
+            if raw_bytes:
                 logo_filename = f"school_logo.{ext}"
                 upload_dir = current_app.config.get("UPLOAD_FOLDER") or Config.UPLOAD_FOLDER
                 os.makedirs(upload_dir, exist_ok=True)

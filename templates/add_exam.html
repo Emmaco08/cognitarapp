@@ -707,7 +707,7 @@
                 }
                 let content = textarea.value;
                 // Convert ^power to superscript for preview
-                content = content.replace(/\^([^\s]+)/g, '<sup>$1</sup>');
+                if (!content.includes('$') && !content.includes('\\(')) { content = content.replace(/\^([^\s]+)/g, '<sup>$1</sup>'); }
                 previewContent.innerHTML = content;
                 if (typeof renderMathInElement === 'function') {
                     renderMathInElement(previewContent, {
@@ -866,7 +866,7 @@ function addQuestion() {
             }
             
             if (!allValid) {
-                alert('<i class="fas fa-times-circle"></i> Please fix image issues before submitting.');
+                alert('Please select valid image files before submitting.');
                 return false;
             }
             

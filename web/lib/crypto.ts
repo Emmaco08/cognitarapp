@@ -24,8 +24,14 @@ function getEncryptionKeyBuffer(): Buffer {
   if (/^[0-9a-fA-F]{64}$/.test(hex)) {
     return Buffer.from(hex, "hex");
   }
-  const fallback = process.env.COGNITARA_AUTH_SECRET || "cognitara-fallback-enc-key";
-  return crypto.createHash("sha256").update(`ct-aes256:${fallback}`).digest();
+  const fallback = (process.env.COGNITARA_AUTH_SECRET || "").trim();
+  if (fallback) {
+    return crypto.createHash("sha256").update(`ct-aes256:${fallback}`).digest();
+  }
+  if (process.env.NODE_ENV === "production") {
+    throw new Error("COGNITARA_ENCRYPTION_KEY or COGNITARA_AUTH_SECRET must be configured in production.");
+  }
+  return crypto.createHash("sha256").update("ct-aes256:cognitara-dev-local-enc-key").digest();
 }
 
 /** AES-256-GCM authenticated encryption for sensitive credentials (e.g. Paystack Secret Key). */

@@ -62,8 +62,9 @@ session/
 htmlcov/
 
 # Local Backups, Scratch & Artifacts
-backups/
-backups*/
+/backups/
+/backups*/
+*.tsbuildinfo
 brag-output/
 brag-output*/
 scratch/

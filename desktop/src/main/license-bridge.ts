@@ -4,6 +4,9 @@
  * Performs independent Ed25519 signature verification in the Electron main
  * process (using Node's native `crypto.verify`) so tampering with only the
  * renderer or only the Python engine cannot unlock server startup.
+ *
+ * Production hardening: In packaged builds (`app.isPackaged`), the pinned
+ * Ed25519 public key CANNOT be overridden via environment variables.
  */
 
 import crypto from "crypto";
@@ -14,6 +17,19 @@ const DEFAULT_ED25519_PUBLIC_KEY_B64 = "cUDQSjHQMeXyWg3Ydptk-APs7Pd_lEyIp_XqBErD
 
 // ASN.1 DER SPKI prefix for raw 32-byte Ed25519 public key (RFC 8410)
 const ED25519_SPKI_PREFIX = Buffer.from("302a300506032b6570032100", "hex");
+
+function isElectronPackaged(): boolean {
+  if (!process.versions || !process.versions.electron) {
+    return false;
+  }
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const electron = require("electron");
+    return Boolean(electron && electron.app && electron.app.isPackaged);
+  } catch {
+    return true;
+  }
+}
 
 function b64urlDecode(input: string): Buffer {
   const cleaned = String(input || "").trim().replace(/-/g, "+").replace(/_/g, "/");
@@ -48,7 +64,12 @@ export function verifyEd25519LeaseInElectron(
   }
 
   try {
-    const pubB64 = overridePubKeyB64 || process.env.COGNITARA_ED25519_PUBLIC_KEY_B64 || DEFAULT_ED25519_PUBLIC_KEY_B64;
+    // Hardened: ignore COGNITARA_ED25519_PUBLIC_KEY_B64 env var in packaged builds!
+    const allowEnvOverride = !isElectronPackaged();
+    const pubB64 =
+      overridePubKeyB64 ||
+      (allowEnvOverride ? process.env.COGNITARA_ED25519_PUBLIC_KEY_B64 : undefined) ||
+      DEFAULT_ED25519_PUBLIC_KEY_B64;
     const rawPub = b64urlDecode(pubB64);
     if (rawPub.length !== 32) {
       return { ok: false, reason: "invalid_public_key" };

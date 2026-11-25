@@ -6,7 +6,7 @@ from cognitara.utils.helpers import get_utc_now
 from cognitara.services.timing_service import calculate_authoritative_remaining_time
 from cognitara.services.grading_service import finalize_regular_exam_attempt, finalize_ce_exam_attempt
 
-HEARTBEAT_TIMEOUT_SECONDS = 25
+HEARTBEAT_TIMEOUT_SECONDS = 90
 
 def process_regular_heartbeat(student_id, attempt_id, session_key):
     conn = get_db_connection()

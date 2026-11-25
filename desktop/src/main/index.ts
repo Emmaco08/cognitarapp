@@ -12,7 +12,8 @@
 
 import fs from "fs";
 import path from "path";
-import { app, BrowserWindow, dialog, ipcMain, shell } from "electron";
+import { pathToFileURL } from "url";
+import { app, BrowserWindow, dialog, ipcMain, Menu, shell } from "electron";
 import { CloudAuthManager } from "./cloud-auth";
 import { EngineManager } from "./engine";
 import {
@@ -282,6 +283,7 @@ function createWindow(): void {
       sandbox: true,
       webviewTag: false,
       webSecurity: true,
+      devTools: !app.isPackaged,
       spellcheck: false,
     },
   };
@@ -290,9 +292,36 @@ function createWindow(): void {
     winOptions.backgroundMaterial = "mica";
   }
 
+  if (app.isPackaged) {
+    Menu.setApplicationMenu(null);
+  }
+
   mainWindow = new BrowserWindow(winOptions);
 
+  // Anti-tamper & reverse-engineering hardening in packaged builds
+  if (app.isPackaged) {
+    mainWindow.webContents.on("devtools-opened", () => {
+      mainWindow?.webContents.closeDevTools();
+    });
+    mainWindow.webContents.on("before-input-event", (event, input) => {
+      const k = String(input.key || "").toLowerCase();
+      const ctrlOrMeta = Boolean(input.control || input.meta);
+      if (
+        k === "f12" ||
+        k === "f5" ||
+        (ctrlOrMeta && input.shift && (k === "i" || k === "j" || k === "c")) ||
+        (ctrlOrMeta && (k === "u" || k === "r"))
+      ) {
+        event.preventDefault();
+      }
+    });
+    mainWindow.webContents.on("context-menu", (event) => {
+      event.preventDefault();
+    });
+  }
+
   // Enforce strict navigation & popup boundaries
+  const expectedRendererHref = pathToFileURL(getRendererEntry()).href.toLowerCase();
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
     if (isSafeExternalUrl(url)) {
       shell.openExternal(url).catch(() => {});
@@ -301,8 +330,8 @@ function createWindow(): void {
   });
 
   mainWindow.webContents.on("will-navigate", (event, targetUrl) => {
-    const allowedPrefix = "file://";
-    if (!targetUrl.startsWith(allowedPrefix)) {
+    const cleanTarget = String(targetUrl || "").split("#")[0].split("?")[0].toLowerCase();
+    if (cleanTarget !== expectedRendererHref) {
       event.preventDefault();
       if (isSafeExternalUrl(targetUrl)) {
         shell.openExternal(targetUrl).catch(() => {});
@@ -490,6 +519,14 @@ function registerIpcHandlers(): void {
   });
 
   ipcMain.handle("license:startTrial", async (_evt, schoolName?: string) => {
+    const sess = cloudAuth?.getSession();
+    if (sess?.directives && sess.directives.allow_trial_activation === false) {
+      return {
+        ok: false,
+        error: "trial_disabled_by_hq",
+        message: "Free trial activation is currently disabled by CogniTara HQ. Purchase a plan or redeem a voucher code.",
+      };
+    }
     const res = await engine!.callInternal("POST", "/license/start-trial", {
       school_name: schoolName || undefined,
     });
@@ -552,6 +589,11 @@ function registerIpcHandlers(): void {
     return res.data;
   });
 
+  ipcMain.handle("backups:delete", async (_evt, filename: string) => {
+    const res = await engine!.callInternal("POST", "/backups/delete", { filename });
+    return res.data;
+  });
+
   ipcMain.handle("backups:chooseDir", async () => {
     if (!mainWindow) return { ok: false, canceled: true };
     const picked = await dialog.showOpenDialog(mainWindow, {
@@ -564,6 +606,7 @@ function registerIpcHandlers(): void {
     }
     settings = saveSettings({ ...settings, backupDir: picked.filePaths[0] });
     engine!.updateSettings(settings);
+    await engine!.callInternal("POST", "/backups/set-dir", { backup_dir: settings.backupDir }).catch(() => {});
     return { ok: true, backupDir: settings.backupDir };
   });
 
@@ -574,6 +617,60 @@ function registerIpcHandlers(): void {
       shell.openPath(targetDir).catch(() => {});
     }
     return res.data;
+  });
+
+  // ---- Cloud Exam Database Backups (Upload, List, Restore, Delete) ----
+  ipcMain.handle("cloudBackups:list", async () => {
+    if (!cloudAuth) return { ok: false, message: "Cloud service unavailable." };
+    return cloudAuth.listCloudBackups();
+  });
+
+  ipcMain.handle("cloudBackups:uploadNow", async (_evt, label?: string) => {
+    if (!cloudAuth) return { ok: false, message: "Cloud service unavailable." };
+    const sess = cloudAuth.getSession();
+    if (!sess.signedIn) {
+      return { ok: false, error: "unauthorized", message: "Sign in to your CogniTara Cloud account first to back up online." };
+    }
+    const snap = await engine!.callInternal<any>("POST", "/backups/export-cloud-snapshot", {});
+    if (!snap.data?.ok || !snap.data?.payload_b64) {
+      return { ok: false, error: snap.data?.error || "snapshot_failed", message: snap.data?.message || "Could not create exam database snapshot." };
+    }
+    const up = await cloudAuth.uploadCloudBackup({
+      filename: snap.data.filename,
+      label: label || `Exam Backup (${new Date().toLocaleDateString()})`,
+      raw_size_bytes: snap.data.raw_size_bytes,
+      stats: snap.data.stats || {},
+      payload_b64: snap.data.payload_b64,
+    });
+    if (up.ok && mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send("cloud:sessionChanged", cloudAuth.getSession());
+    }
+    return up;
+  });
+
+  ipcMain.handle("cloudBackups:restore", async (_evt, backupId: string) => {
+    if (!cloudAuth) return { ok: false, message: "Cloud service unavailable." };
+    const dl = await cloudAuth.downloadCloudBackup(String(backupId || "").trim());
+    if (!dl.ok || !dl.backup?.payload_b64) {
+      return { ok: false, message: dl.message || "Could not download cloud backup." };
+    }
+    const wasRunning = engine!.getLanState() === "running";
+    if (wasRunning) {
+      await engine!.stopLanServer();
+    }
+    const res = await engine!.callInternal("POST", "/backups/restore-cloud-snapshot", {
+      payload_b64: dl.backup.payload_b64,
+      sha256: dl.backup.sha256,
+    });
+    if (res.data?.ok && wasRunning) {
+      await engine!.startLanServer();
+    }
+    return res.data;
+  });
+
+  ipcMain.handle("cloudBackups:delete", async (_evt, backupId: string) => {
+    if (!cloudAuth) return { ok: false, message: "Cloud service unavailable." };
+    return cloudAuth.deleteCloudBackup(String(backupId || "").trim());
   });
 
   ipcMain.handle("setup:school", async (_evt, payload) => {
@@ -594,6 +691,22 @@ function registerIpcHandlers(): void {
   });
 
   ipcMain.handle("setup:complete", async (_evt, payload?: { selectedLanIp?: string }) => {
+    // Enforce online-first school registration / sign-in on first onboarding!
+    const sess = cloudAuth?.getSession();
+    if (!sess || !sess.signedIn || !sess.user) {
+      return {
+        ok: false,
+        error: "cloud_account_required",
+        message: "Connect to the internet and sign in (or register your school) before finishing first-time setup.",
+      };
+    }
+    if (sess.user.email_verified === false) {
+      return {
+        ok: false,
+        error: "email_verification_required",
+        message: "Verify your 6-digit email OTP code before completing onboarding.",
+      };
+    }
     settings = saveSettings({
       ...settings,
       onboardingComplete: true,
@@ -853,13 +966,17 @@ function registerIpcHandlers(): void {
       mainWindow.webContents.send("billing:completed", {
         ok: true,
         source: "paystack",
+        reference: String(reference || "").trim(),
+        receipt: res.receipt || null,
         license: localAct?.status || res.license,
-        message: res.message || "Paystack payment verified and licence activated!",
+        license_key: res.license?.license_key,
+        message: res.message || "Payment confirmed and licence activated!",
       });
     }
     return {
       ok: true,
       message: res.message || "Payment verified and licence activated!",
+      receipt: res.receipt || null,
       license: localAct?.status || res.license,
       license_key: res.license?.license_key,
     };
@@ -897,6 +1014,7 @@ function registerIpcHandlers(): void {
         nodeIntegration: false,
         sandbox: true,
         webSecurity: true,
+        devTools: !app.isPackaged,
       },
     });
 
@@ -921,9 +1039,10 @@ function registerIpcHandlers(): void {
             ok: true,
             source: "paystack",
             reference,
+            receipt: vRes.receipt || null,
             license: localAct?.status || vRes.license,
             license_key: vRes.license?.license_key,
-            message: "Paystack payment confirmed! Licence activated on this PC.",
+            message: "Payment confirmed! Your school licence is now active on this PC.",
           });
         }
       } else {
@@ -932,7 +1051,7 @@ function registerIpcHandlers(): void {
     };
 
     const handlePotentialCallback = (url: string) => {
-      if (url.includes("paystack_ref=") || url.includes("/dashboard")) {
+      if (url.includes("/pay/done") || url.includes("paystack_ref=") || url.includes("/dashboard")) {
         void tryAutoVerify();
       }
     };
@@ -940,7 +1059,6 @@ function registerIpcHandlers(): void {
     payWin.webContents.on("will-redirect", (_e, url) => handlePotentialCallback(url));
     payWin.webContents.on("did-navigate", (_e, url) => handlePotentialCallback(url));
     payWin.on("closed", () => {
-      // Also run one quick verify check when user closes the window after completing payment
       void tryAutoVerify();
     });
 
@@ -953,6 +1071,8 @@ function registerIpcHandlers(): void {
       reference,
       authorization_url: checkoutUrl,
       amount_minor: initRes.amount_minor,
+      charge_minor: initRes.charge_minor,
+      added_fee_minor: initRes.added_fee_minor,
       currency: initRes.currency,
     };
   });

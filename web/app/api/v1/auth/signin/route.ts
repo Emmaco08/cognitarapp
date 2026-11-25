@@ -10,6 +10,12 @@ import {
 import { getPlatformSettings, logDeveloperAudit, toPublicPlatformDirectives } from "@/lib/platform";
 import { createAndSendEmailOtp } from "@/lib/brevo";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
+import {
+  checkDbLockout,
+  clearDbAuthLockout,
+  issuePreAuthChallenge,
+  recordDbAuthFailure,
+} from "@/lib/security";
 
 export const dynamic = "force-dynamic";
 
@@ -43,23 +49,31 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const acctRl = checkRateLimit(`signin-acct:${ip}:${email}`, 8, 60_000);
-    if (!acctRl.allowed) {
+    const lockKey = `signin:${ip}:${email}`;
+    const lock = await checkDbLockout(lockKey);
+    if (lock.locked) {
+      const mins = Math.max(1, Math.ceil(lock.retryAfterSec / 60));
       return NextResponse.json(
-        { ok: false, error: "rate_limited", message: `Too many failed attempts for this account. Try again in ${acctRl.retryAfterSec}s.` },
+        {
+          ok: false,
+          error: "account_locked",
+          retry_after_sec: lock.retryAfterSec,
+          message: `Too many failed sign-in attempts. Locked for ${mins} minute${mins === 1 ? "" : "s"}.`,
+        },
         { status: 429 }
       );
     }
 
     const sql = getSql();
     const users = await sql`
-      SELECT id, email, password_hash, full_name, phone, role, status, email_verified, created_at
+      SELECT id, email, password_hash, full_name, phone, role, status, email_verified, totp_enabled, created_at
       FROM users_hq
       WHERE email = ${email}
       LIMIT 1
     `;
 
     if (!users.length) {
+      await recordDbAuthFailure(lockKey);
       return NextResponse.json(
         { ok: false, error: "invalid_credentials", message: "Invalid email address or password." },
         { status: 401 }
@@ -67,13 +81,16 @@ export async function POST(req: NextRequest) {
     }
 
     const user = users[0] as Record<string, any>;
+    const isHqAdmin = user.role === "hq_super_admin" || user.role === "hq_admin";
+
     if (!verifyPassword(password, String(user.password_hash || ""))) {
-      if (user.role === "hq_super_admin" || user.role === "hq_admin") {
+      const fail = await recordDbAuthFailure(lockKey);
+      if (isHqAdmin) {
         await logDeveloperAudit({
           actorEmail: email,
           action: "hq_signin_failed",
           ipAddress: ip,
-          details: { client_type: clientType },
+          details: { client_type: clientType, attempts: fail.attempts, locked_sec: fail.lockedSeconds },
         });
       }
       return NextResponse.json(
@@ -89,9 +106,11 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    await clearDbAuthLockout(lockKey);
+
     const schools = await sql`
       SELECT id, school_name, country_code, state_region, contact_email, contact_phone, status,
-             ban_reason, custom_notice, custom_notice_level, feature_overrides_json, created_at
+             ban_reason, custom_notice, custom_notice_level, feature_overrides_json, last_cloud_backup_at, created_at
       FROM schools
       WHERE owner_user_id = ${user.id}::uuid
       ORDER BY created_at ASC
@@ -113,8 +132,73 @@ export async function POST(req: NextRequest) {
     }
 
     const settings = await getPlatformSettings();
-    const isHqAdmin = user.role === "hq_super_admin" || user.role === "hq_admin";
-    if (!isHqAdmin && settings.require_email_otp && settings.brevo_configured) {
+    const clientMeta = {
+      client_type: clientType,
+      display_hwid: displayHwid,
+      device_label: deviceLabel,
+      app_version: appVersion,
+    };
+
+    // Mandatory 2FA for HQ Admins when require_hq_2fa is enabled (and either TOTP or Brevo Email OTP is available)
+    const hq2faRequired = isHqAdmin && settings.require_hq_2fa && (Boolean(user.totp_enabled) || settings.brevo_configured);
+    const schoolOtpRequired = !isHqAdmin && settings.require_email_otp && settings.brevo_configured;
+
+    if (hq2faRequired) {
+      const methods: string[] = [];
+      if (user.totp_enabled) methods.push("totp", "recovery_code");
+      if (settings.brevo_configured) methods.push("email_otp");
+
+      // Automatically send Brevo Email 2FA code if TOTP isn't set up (or always offer fallback)
+      let emailSent = false;
+      if (!user.totp_enabled && settings.brevo_configured) {
+        const otpRes = await createAndSendEmailOtp({
+          settings,
+          userId: String(user.id),
+          email,
+          fullName: user.full_name || "",
+          schoolName: "CogniTara HQ",
+          purpose: "hq_2fa",
+          ipAddress: ip,
+          clientMeta,
+          bypassCooldown: true,
+        });
+        if (!otpRes.ok) {
+          return NextResponse.json(
+            { ok: false, error: otpRes.error || "brevo_delivery_failed", message: otpRes.message || "Could not send HQ security code." },
+            { status: 502 }
+          );
+        }
+        emailSent = true;
+      }
+
+      const challengeToken = issuePreAuthChallenge({
+        userId: String(user.id),
+        email,
+        role: String(user.role),
+        purpose: "hq_2fa",
+        meta: clientMeta,
+        ttlSeconds: 600,
+      });
+
+      return NextResponse.json({
+        ok: true,
+        otp_required: true,
+        two_factor_required: true,
+        is_hq_admin: true,
+        purpose: "hq_2fa",
+        email,
+        methods,
+        preferred_method: user.totp_enabled ? "totp" : "email_otp",
+        email_otp_sent: emailSent,
+        challenge_token: challengeToken,
+        expires_in_seconds: 600,
+        message: user.totp_enabled
+          ? "Enter the 6-digit code from your authenticator app (or request an email code)."
+          : `We sent a 6-digit HQ security code to ${email}. Enter it to open the console.`,
+      });
+    }
+
+    if (schoolOtpRequired) {
       const purpose = user.email_verified ? "signin_otp" : "signup_verify";
       const otpRes = await createAndSendEmailOtp({
         settings,
@@ -123,12 +207,8 @@ export async function POST(req: NextRequest) {
         fullName: user.full_name || "",
         schoolName: school?.school_name || "",
         purpose,
-        clientMeta: {
-          client_type: clientType,
-          display_hwid: displayHwid,
-          device_label: deviceLabel,
-          app_version: appVersion,
-        },
+        ipAddress: ip,
+        clientMeta,
         bypassCooldown: true,
       });
 
@@ -139,11 +219,21 @@ export async function POST(req: NextRequest) {
         );
       }
 
+      const challengeToken = issuePreAuthChallenge({
+        userId: String(user.id),
+        email,
+        role: String(user.role),
+        purpose,
+        meta: clientMeta,
+        ttlSeconds: 600,
+      });
+
       return NextResponse.json({
         ok: true,
         otp_required: true,
         purpose,
         email,
+        challenge_token: challengeToken,
         expires_in_seconds: otpRes.expires_in_seconds || 600,
         message: `We sent a 6-digit security code to ${email}. Enter it to finish signing in.`,
       });
@@ -179,12 +269,13 @@ export async function POST(req: NextRequest) {
         `
       : [];
 
-    const { rawToken, expiresAt } = await createCloudSession({
+    const { rawToken, expiresAt, maxAgeSeconds } = await createCloudSession({
       userId: user.id,
       schoolId: school ? school.id : null,
       clientType,
       deviceLabel,
       displayHwid,
+      isHqAdmin,
     });
 
     if (isHqAdmin) {
@@ -193,7 +284,7 @@ export async function POST(req: NextRequest) {
         actorEmail: user.email,
         action: "hq_signin_success",
         ipAddress: ip,
-        details: { client_type: clientType },
+        details: { client_type: clientType, method: "password" },
       });
     }
 
@@ -204,6 +295,7 @@ export async function POST(req: NextRequest) {
       school_notice: school?.custom_notice || "",
       school_notice_level: school?.custom_notice_level || "info",
       feature_overrides: school?.feature_overrides_json || {},
+      last_cloud_backup_at: school?.last_cloud_backup_at ? new Date(school.last_cloud_backup_at).toISOString() : null,
     };
 
     const payload = {
@@ -218,6 +310,8 @@ export async function POST(req: NextRequest) {
         phone: user.phone || "",
         role: user.role,
         status: user.status,
+        email_verified: Boolean(user.email_verified),
+        totp_enabled: Boolean(user.totp_enabled),
       },
       school: school
         ? {
@@ -228,6 +322,7 @@ export async function POST(req: NextRequest) {
             contact_email: school.contact_email,
             contact_phone: school.contact_phone || "",
             status: school.status,
+            last_cloud_backup_at: school.last_cloud_backup_at ? new Date(school.last_cloud_backup_at).toISOString() : null,
           }
         : null,
       referral_code: referralCode,
@@ -236,7 +331,7 @@ export async function POST(req: NextRequest) {
     };
 
     const res = NextResponse.json(payload, { status: 200 });
-    attachSessionCookie(res, rawToken);
+    attachSessionCookie(res, rawToken, maxAgeSeconds);
     return res;
   } catch (err) {
     console.error("Sign-in error:", err);

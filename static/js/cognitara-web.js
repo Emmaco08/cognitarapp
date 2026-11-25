@@ -510,12 +510,26 @@
     return { open: open, close: close };
   }
 
+  /* ---------------- Bootstrap Modal Stacking Fix ---------------- */
+  function fixBootstrapModals() {
+    var moveModal = function (m) {
+      if (m && m.parentNode && m.parentNode !== doc.body) {
+        doc.body.appendChild(m);
+      }
+    };
+    $$(".ct-main .modal, .ct-content .modal").forEach(moveModal);
+    doc.addEventListener("show.bs.modal", function (e) {
+      if (e && e.target) moveModal(e.target);
+    });
+  }
+
   /* ---------------- Boot ---------------- */
   function boot() {
     $$("[data-ct-theme-toggle]").forEach(function (b) {
       b.addEventListener("click", function (e) { e.preventDefault(); theme.toggle(); });
       b.setAttribute("aria-label", theme.get() === "dark" ? "Switch to light theme" : "Switch to dark theme");
     });
+    fixBootstrapModals();
     bindRipple();
     bindModals();
     bindDropdowns();

@@ -19,7 +19,13 @@ export interface CogniTaraDesktopBridge {
   listBackups: () => Promise<any>;
   createHotBackup: (kind?: string) => Promise<any>;
   restoreBackup: (filename: string) => Promise<any>;
+  deleteLocalBackup: (filename: string) => Promise<any>;
   chooseBackupDir: () => Promise<any>;
+  // Cloud Exam Database Backups & Configurable Reminder
+  listCloudBackups: () => Promise<any>;
+  backupToCloudNow: (label?: string) => Promise<any>;
+  restoreCloudBackup: (backupId: string) => Promise<any>;
+  deleteCloudBackup: (backupId: string) => Promise<any>;
   saveSchoolProfile: (payload: {
     school_name: string;
     school_motto: string;
@@ -59,8 +65,8 @@ export interface CogniTaraDesktopBridge {
   cloudSignIn: (payload: { email: string; password: string }) => Promise<any>;
   cloudSync: () => Promise<any>;
   cloudSignOut: () => Promise<any>;
-  cloudVerifyOtp: (payload: { email: string; code: string; purpose?: string }) => Promise<any>;
-  cloudResendOtp: (payload: { email: string; purpose?: string }) => Promise<any>;
+  cloudVerifyOtp: (payload: { email: string; code: string; purpose?: string; challenge_token?: string }) => Promise<any>;
+  cloudResendOtp: (payload: { email: string; purpose?: string; challenge_token?: string }) => Promise<any>;
   // Paystack In-App Billing, Plans, Discount & Redeem Codes
   getBillingPlans: () => Promise<any>;
   validatePromoCode: (payload: { code: string; plan_id?: string | null; currency?: string }) => Promise<any>;
@@ -97,7 +103,12 @@ const api: CogniTaraDesktopBridge = {
   listBackups: () => ipcRenderer.invoke("backups:list"),
   createHotBackup: (kind = "manual") => ipcRenderer.invoke("backups:create", kind),
   restoreBackup: (filename) => ipcRenderer.invoke("backups:restore", filename),
+  deleteLocalBackup: (filename) => ipcRenderer.invoke("backups:delete", filename),
   chooseBackupDir: () => ipcRenderer.invoke("backups:chooseDir"),
+  listCloudBackups: () => ipcRenderer.invoke("cloudBackups:list"),
+  backupToCloudNow: (label) => ipcRenderer.invoke("cloudBackups:uploadNow", label),
+  restoreCloudBackup: (backupId) => ipcRenderer.invoke("cloudBackups:restore", backupId),
+  deleteCloudBackup: (backupId) => ipcRenderer.invoke("cloudBackups:delete", backupId),
   saveSchoolProfile: (payload) => ipcRenderer.invoke("setup:school", payload),
   saveSuperAdmin: (payload) => ipcRenderer.invoke("setup:superadmin", payload),
   completeOnboarding: (payload) => ipcRenderer.invoke("setup:complete", payload),

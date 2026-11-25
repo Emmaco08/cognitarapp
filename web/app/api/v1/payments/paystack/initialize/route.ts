@@ -2,7 +2,12 @@ import crypto from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { getSql } from "@/lib/db";
 import { extractBearerOrCookieToken, resolveAuthenticatedAccount } from "@/lib/auth";
-import { evaluatePromoCode, getPlatformSettings, paystackRequest } from "@/lib/platform";
+import {
+  computePaystackFeeBreakdown,
+  evaluatePromoCode,
+  getPlatformSettings,
+  paystackRequest,
+} from "@/lib/platform";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 
 export const dynamic = "force-dynamic";
@@ -21,7 +26,7 @@ export async function POST(req: NextRequest) {
     const token = extractBearerOrCookieToken(req);
     if (!token) {
       return NextResponse.json(
-        { ok: false, error: "unauthorized", message: "Sign in to your CogniTara Cloud account first to purchase a licence." },
+        { ok: false, error: "unauthorized", message: "Sign in to your CogniTara account first to purchase a licence." },
         { status: 401 }
       );
     }
@@ -42,16 +47,30 @@ export async function POST(req: NextRequest) {
     const settings = await getPlatformSettings();
     if (!settings.allow_paystack_checkout) {
       return NextResponse.json(
-        { ok: false, error: "checkout_paused", message: "Online checkout is temporarily paused by CogniTara HQ." },
+        { ok: false, error: "checkout_paused", message: "Payments are temporarily paused for a few minutes. Please try again shortly." },
         { status: 403 }
       );
     }
+
+    const isTestMode = settings.paystack_mode !== "live";
+    const isStaff = account.user.role === "hq_super_admin" || account.user.role === "hq_admin";
+    if (isTestMode && settings.test_mode_staff_only && !isStaff) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error: "payments_paused_test_mode",
+          message: "Payments are paused for a few minutes while we run maintenance checks. Please try again shortly.",
+        },
+        { status: 503 }
+      );
+    }
+
     if (!settings.paystack_secret_key || !settings.paystack_public_key) {
       return NextResponse.json(
         {
           ok: false,
           error: "paystack_not_configured",
-          message: "Paystack keys are not configured yet. Set Public & Secret Keys in the Developer HQ Console.",
+          message: `Paystack ${isTestMode ? "Test" : "Live"} keys are not configured yet. Set them in HQ Payment Settings.`,
         },
         { status: 503 }
       );
@@ -65,6 +84,7 @@ export async function POST(req: NextRequest) {
     const planId = String(body.plan_id || "").trim();
     const currency = String(body.currency || settings.default_currency || "NGN").trim().toUpperCase();
     const promoCodeRaw = String(body.promo_code || "").trim().toUpperCase();
+    const source = body.source === "desktop" ? "desktop" : "web";
     const hwidHash = body.hwid_hash && /^[0-9a-f]{64}$/i.test(String(body.hwid_hash)) ? String(body.hwid_hash).toLowerCase() : null;
     const displayHwid = body.display_hwid ? String(body.display_hwid).trim().slice(0, 64) : null;
 
@@ -81,7 +101,7 @@ export async function POST(req: NextRequest) {
 
     const originalMinor = Number(currency === "USD" ? plan.price_usd_cents : plan.price_ngn_kobo);
     let discountMinor = 0;
-    let finalMinor = originalMinor;
+    let discountedMinor = originalMinor;
     let promoId: string | null = null;
     let promoText: string | null = null;
 
@@ -103,7 +123,7 @@ export async function POST(req: NextRequest) {
           {
             ok: false,
             error: "use_redeem_endpoint",
-            message: "This is a full redeem voucher code — click Redeem Code to activate immediately for free!",
+            message: "This is a free voucher code — click Redeem Code to activate immediately for free!",
           },
           { status: 400 }
         );
@@ -111,27 +131,34 @@ export async function POST(req: NextRequest) {
       promoId = ev.promo?.id || null;
       promoText = ev.promo?.code || promoCodeRaw;
       discountMinor = ev.discount_amount_minor || 0;
-      finalMinor = ev.final_amount_minor ?? originalMinor;
+      discountedMinor = ev.final_amount_minor ?? originalMinor;
     }
 
-    if (finalMinor <= 0) {
+    if (discountedMinor <= 0) {
       return NextResponse.json(
         {
           ok: false,
           error: "zero_amount_use_redeem",
-          message: "Your 100% discount makes this order free — use the Redeem button to activate instantly!",
+          message: "Your 100% discount makes this order free — use Redeem Code to activate instantly!",
         },
         { status: 400 }
       );
     }
 
+    const feeBreakdown = computePaystackFeeBreakdown({
+      baseMinor: discountedMinor,
+      currency,
+      settings,
+    });
+
+    const chargeMinor = feeBreakdown.charge_minor;
     const reference = `CTPAY_${Date.now()}_${crypto.randomBytes(5).toString("hex").toUpperCase()}`;
     const origin = req.nextUrl.origin || "https://cognitara-cloud.vercel.app";
-    const callbackUrl = `${origin}/dashboard?paystack_ref=${encodeURIComponent(reference)}`;
+    const callbackUrl = `${origin}/pay/done?reference=${encodeURIComponent(reference)}&source=${source}`;
 
     const psRes = await paystackRequest(settings.paystack_secret_key, "/transaction/initialize", "POST", {
       email: account.user.email,
-      amount: finalMinor,
+      amount: chargeMinor,
       currency,
       reference,
       callback_url: callbackUrl,
@@ -142,6 +169,9 @@ export async function POST(req: NextRequest) {
         plan_id: plan.id,
         plan_slug: plan.slug,
         promo_code: promoText,
+        fee_mode: settings.paystack_fee_mode,
+        added_fee_minor: feeBreakdown.added_fee_minor,
+        source,
         hwid_hash: hwidHash,
         display_hwid: displayHwid,
       },
@@ -158,39 +188,59 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const initCheck = [
+      {
+        step: "Checkout initialized",
+        ok: true,
+        detail: `${isTestMode ? "Test" : "Live"} mode · ${currency} ${(chargeMinor / 100).toLocaleString()} (${source})`,
+        at: new Date().toISOString(),
+      },
+    ];
+
     await sql`
       INSERT INTO subscriptions_payments (
         school_id, user_id, plan_id, paystack_reference, currency, amount_minor,
-        original_amount_minor, discount_amount_minor, promo_code_id, promo_code_text,
-        payment_channel, status, pending_hwid_hash, pending_display_hwid
+        original_amount_minor, discount_amount_minor, fee_minor, customer_paid_minor,
+        is_test, promo_code_id, promo_code_text, payment_channel, status,
+        pending_hwid_hash, pending_display_hwid, verification_checks_json
       ) VALUES (
         ${account.school.id}::uuid,
         ${account.user.id}::uuid,
         ${plan.id}::uuid,
         ${reference},
         ${currency},
-        ${finalMinor},
+        ${discountedMinor},
         ${originalMinor},
         ${discountMinor},
+        ${feeBreakdown.added_fee_minor},
+        ${chargeMinor},
+        ${isTestMode},
         ${promoId}::uuid,
         ${promoText},
         'paystack',
         'initialized',
         ${hwidHash},
-        ${displayHwid}
+        ${displayHwid},
+        ${JSON.stringify(initCheck)}::jsonb
       )
     `;
 
     return NextResponse.json({
       ok: true,
       reference,
+      is_test: isTestMode,
       authorization_url: psRes.data.data.authorization_url,
       access_code: psRes.data.data.access_code,
       public_key: settings.paystack_public_key,
+      callback_url: callbackUrl,
       currency,
       original_amount_minor: originalMinor,
       discount_amount_minor: discountMinor,
-      amount_minor: finalMinor,
+      amount_minor: discountedMinor,
+      added_fee_minor: feeBreakdown.added_fee_minor,
+      charge_minor: chargeMinor,
+      fee_mode: feeBreakdown.fee_mode,
+      fee_note: feeBreakdown.fee_note,
       plan_name: plan.display_name,
     });
   } catch (err) {

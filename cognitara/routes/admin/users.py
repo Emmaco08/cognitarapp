@@ -102,9 +102,13 @@ def reject_student(student_id):
     pending = conn.execute("SELECT * FROM pending_registrations WHERE id=?", (student_id,)).fetchone()
     
     if pending:
-        photo_path = get_upload_path(pending['photo'])
-        if os.path.exists(photo_path):
-            os.remove(photo_path)
+        if pending['photo'] and pending['photo'] != 'default.png':
+            photo_path = get_upload_path(pending['photo'])
+            if os.path.exists(photo_path):
+                try:
+                    os.remove(photo_path)
+                except OSError:
+                    pass
         
         conn.execute("DELETE FROM pending_registrations WHERE id=?", (student_id,))
         
@@ -536,15 +540,7 @@ def delete_student(student_id):
         conn.execute("DELETE FROM warning_logs WHERE student_id=?", (student_id,))
         # 3. Delete scores
         conn.execute("DELETE FROM scores WHERE student_id=?", (student_id,))
-        # 4. Delete CE attempt questions, attempts, warning logs
-        try:
-            conn.execute("DELETE FROM ce_attempt_questions WHERE attempt_id IN (SELECT id FROM ce_attempts WHERE student_id=?)", (student_id,))
-            conn.execute("DELETE FROM ce_warning_logs WHERE student_id=?", (student_id,))
-            conn.execute("DELETE FROM ce_attempts WHERE student_id=?", (student_id,))
-            conn.execute("DELETE FROM ce_students WHERE id=?", (student_id,))
-        except Exception:
-            pass
-        # 5. Delete student
+        # 4. Delete student (never touch ce_students — independent ID sequence!)
         conn.execute("DELETE FROM students WHERE id=?", (student_id,))
         log_action("Admin", session["username"], f"Deleted student '{student['username']}'", conn=conn)
         conn.commit()

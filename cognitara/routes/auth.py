@@ -66,6 +66,7 @@ def login():
             user = conn.execute("SELECT * FROM admin WHERE username=?", (username,)).fetchone()
             if user and verify_and_upgrade_password(conn, "admin", "id", user["id"], user["password"], password):
                 session.clear()
+                session.permanent = True
                 session["admin_id"] = user["id"]
                 session["username"] = user["username"]
                 session["role"] = "Admin"
@@ -79,6 +80,7 @@ def login():
             user = conn.execute("SELECT * FROM teachers WHERE username=?", (username,)).fetchone()
             if user and verify_and_upgrade_password(conn, "teachers", "id", user["id"], user["password"], password):
                 session.clear()
+                session.permanent = True
                 session["teacher_id"] = user["id"]
                 session["username"] = user["username"]
                 session["class"] = user["class"]
@@ -101,6 +103,7 @@ def login():
                 
                 if student_status == "approved":
                     session.clear()
+                    session.permanent = True
                     session["student_id"] = user["id"]
                     session["username"] = user["username"]
                     session["full_name"] = user["full_name"] if "full_name" in user.keys() and user["full_name"] else user["username"]
@@ -173,13 +176,16 @@ def register():
             conn.close()
             return render_template("student_register.html", error="Username already pending approval!")
         
-        safe_user = secure_filename(username) or f"user_{int(datetime.now().timestamp())}"
-        filename = f"student_{safe_user}_{int(datetime.now().timestamp())}.jpg"
-        save_path = get_upload_path(filename)
-        success = compress_image(file, save_path, 50)
-        if not success:
-            conn.close()
-            return render_template("student_register.html", error="Photo could not be saved. Please try another image.")
+        filename = "default.png"
+        if file and getattr(file, "filename", ""):
+            safe_user = secure_filename(username) or f"user_{int(datetime.now().timestamp())}"
+            cand_name = f"student_{safe_user}_{int(datetime.now().timestamp())}.jpg"
+            save_path = get_upload_path(cand_name)
+            success = compress_image(file, save_path)
+            if not success:
+                conn.close()
+                return render_template("student_register.html", error="Photo could not be processed. Please upload a valid image file or leave photo blank.")
+            filename = cand_name
         
         hashed_password = generate_password_hash(password)
         
@@ -232,6 +238,7 @@ def ce_login_page():
         
         if student and verify_and_upgrade_password(conn, "ce_students", "id", student["id"], student["password"], password):
             session.clear()
+            session.permanent = True
             session["ce_student_id"] = student["id"]
             session["ce_exam_id"] = student["exam_id"]
             session["ce_student_name"] = student["full_name"]

@@ -160,7 +160,7 @@
           <article class="pane" data-pane="0">
             <div class="welcome">
               <div class="welcome__copy">
-                <span class="badge rv"><svg><use href="#i-shield"/></svg>CogniTara Studio 2.2.2</span>
+                <span class="badge rv"><svg><use href="#i-shield"/></svg>CogniTara Studio 2.2.3</span>
                 <h1 class="kinetic">Your exam hall, running from one computer</h1>
                 <p class="lede rv">This PC becomes your school's exam server. Students write on any laptop, desktop or tablet on the school Wi‑Fi or network cable. No internet needed during exams.</p>
                 <ul class="welcome__facts">
@@ -446,6 +446,17 @@
           <button type="button" class="btn btn--ghost btn--sm" id="hqNoticeDismiss">Dismiss</button>
         </div>
 
+        <div class="hq-banner" id="homeBackupReminder" data-level="warning" hidden>
+          <div class="hq-banner__body">
+            <strong>Exam Database Backup Reminder</strong>
+            <span id="homeBackupReminderText">Back up your exam database to CogniTara Cloud so your questions and results stay safe.</span>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <button type="button" class="btn btn--primary btn--sm" id="homeBackupNowBtn">Back up to Cloud</button>
+            <button type="button" class="btn btn--ghost btn--sm" id="homeBackupDismiss">Later</button>
+          </div>
+        </div>
+
         <!-- ===== HOME / SERVER ===== -->
         <div class="view is-active" data-view="home">
           <header class="greet">
@@ -578,12 +589,15 @@
         <!-- ===== BACKUPS ===== -->
         <div class="view" data-view="backups">
           <header class="vhead">
-            <div><h1>Backups</h1><p>Copies of every exam, question, student and result.</p></div>
-            <div class="vhead__actions"><button class="btn btn--primary" id="backupBtn"><svg><use href="#i-backup"/></svg>Back up now</button></div>
+            <div><h1>Backups</h1><p>Local and CogniTara Cloud copies of every exam, question, student and result.</p></div>
+            <div class="vhead__actions" style="display:flex;gap:8px;flex-wrap:wrap">
+              <button class="btn btn--ghost" id="cloudBackupBtn"><svg><use href="#i-backup"/></svg>Back up to Cloud</button>
+              <button class="btn btn--primary" id="backupBtn"><svg><use href="#i-backup"/></svg>Local backup</button>
+            </div>
           </header>
           <div class="backup-progress" id="backupProg" hidden><i></i><span>Copying exam records…</span></div>
           <div class="bk-settings">
-            <label class="field"><span>Automatic backups</span>
+            <label class="field"><span>Automatic local backups</span>
               <select id="bkSchedule">
                 <option value="30m">Every 30 minutes while exams are running</option>
                 <option value="60m">Every hour</option>
@@ -591,10 +605,23 @@
                 <option value="off">Off</option>
               </select>
             </label>
-            <label class="field"><span>Save backups to</span>
+            <label class="field"><span>Save local backups to</span>
               <div class="pathbox"><code id="bkDirPath">C:\ProgramData\CogniTara\Backups</code><button class="btn btn--ghost btn--sm" id="bkDirBtn">Change</button></div>
             </label>
           </div>
+
+          <h2 class="subhead" style="margin-top:18px;display:flex;justify-content:space-between;align-items:center">
+            <span>CogniTara Cloud Backups</span>
+            <em id="cloudBkMeta" style="font-style:normal;font-size:12px;color:var(--ink-3);font-weight:500">Reminder every 7 days</em>
+          </h2>
+          <div class="table-wrap" style="margin-bottom:20px">
+            <table class="table" id="cloudBkTable">
+              <thead><tr><th>Cloud snapshot</th><th>Contents</th><th>Size</th><th>Uploaded</th><th></th></tr></thead>
+              <tbody><tr><td colspan="5" style="text-align:center;color:var(--ink-3);padding:18px">Sign in to CogniTara Cloud to sync encrypted exam backups.</td></tr></tbody>
+            </table>
+          </div>
+
+          <h2 class="subhead">Local Backups on This PC</h2>
           <div class="table-wrap">
             <table class="table" id="bkTable">
               <thead><tr><th>Backup</th><th>Type</th><th>Size</th><th>Check</th><th></th></tr></thead>
@@ -650,7 +677,7 @@
               <h2>Software Updates & About</h2>
               <div class="set-row">
                 <span>
-                  <strong id="aboutVersion">CogniTara Studio 2.2.2</strong>
+                  <strong id="aboutVersion">CogniTara Studio 2.2.3</strong>
                   <em id="updSubtitle">5-layer licence vault active · Direct GitHub Releases auto-updater ready.</em>
                 </span>
                 <button class="btn btn--ghost btn--sm" id="setCheckUpdateBtn">Check for updates</button>
@@ -801,7 +828,7 @@
         <div class="cloud-modal__err" id="billingErr" hidden></div>
         <div class="cloud-modal__ok" id="billingOk" hidden></div>
 
-        <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
+        <div id="billingTabBar" style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
           <div class="seg seg--sm" id="billingTabs">
             <button type="button" class="is-active" data-btab="plans">Buy with Paystack</button>
             <button type="button" data-btab="redeem">Redeem Voucher Code</button>
@@ -854,6 +881,38 @@
           <p class="hint" style="margin:0">Redeem codes issued by CogniTara HQ instantly generate and sign an official Ed25519 licence bound to this computer — no card needed.</p>
           <div class="cloud-modal__actions">
             <button type="button" class="btn btn--primary" id="billingRedeemSubmitBtn">Redeem &amp; Activate Now</button>
+          </div>
+        </div>
+
+        <!-- TAB 3: PAYMENT CONFIRMED & RECEIPT -->
+        <div id="billingReceiptPane" hidden style="display:grid;gap:14px">
+          <div style="display:flex;align-items:center;gap:14px;padding:16px;border-radius:12px;background:var(--ok-soft);border:1px solid rgba(52,211,153,0.28)">
+            <div style="width:42px;height:42px;border-radius:999px;background:var(--ok);color:#041510;display:grid;place-items:center;flex:none">
+              <svg style="width:22px;height:22px;stroke:currentColor;stroke-width:2.6;fill:none" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>
+            </div>
+            <div>
+              <strong id="brTitle" style="display:block;font-size:15.5px;color:var(--ink)">Payment confirmed &amp; licence activated</strong>
+              <span id="brSub" style="display:block;font-size:12.5px;color:var(--ink-2);margin-top:2px">Your Ed25519 licence is bound to this computer and a receipt has been emailed to your school.</span>
+            </div>
+          </div>
+
+          <div class="billing-summary" id="brDetails">
+            <div class="billing-summary__row"><span>Plan</span><strong id="brPlan">—</strong></div>
+            <div class="billing-summary__row"><span>Amount Paid</span><strong class="mono" id="brAmount">—</strong></div>
+            <div class="billing-summary__row" id="brRefRow"><span>Reference</span><code id="brRef" class="mono">—</code></div>
+            <div class="billing-summary__row" id="brKeyRow">
+              <span>Licence Key</span>
+              <span style="display:flex;align-items:center;gap:8px">
+                <code id="brKey" class="mono" style="font-weight:600;color:var(--ok)">—</code>
+                <button type="button" class="btn btn--ghost btn--sm" id="brCopyKeyBtn">Copy</button>
+              </span>
+            </div>
+            <div class="billing-summary__row"><span>Status</span><strong style="color:var(--ok)" id="brStatus">Active on this PC</strong></div>
+          </div>
+
+          <div class="cloud-modal__actions" style="justify-content:space-between">
+            <button type="button" class="btn btn--ghost" id="brOpenWebReceiptBtn" hidden>View printable receipt</button>
+            <button type="button" class="btn btn--primary" id="brDoneBtn" style="margin-left:auto">Done</button>
           </div>
         </div>
       </div>

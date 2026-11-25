@@ -1,4 +1,4 @@
-{%- from '_ct_shell.html' import ico, ct_boot_script, admin_shell_start, teacher_shell_start, student_topbar, shell_end -%}
+{%- from '_ct_shell.html' import ico, ct_boot_script, admin_shell_start, teacher_shell_start, portal_shell_start, portal_shell_end, student_topbar, shell_end -%}
 <!DOCTYPE html>
 <html lang="en" data-theme="dark">
 <head>
@@ -372,7 +372,7 @@
   {{ ct_boot_script() }}
 </head>
 <body class="ct-app ct-bs tc-studio">
-{{ teacher_shell_start(active='dashboard', crumb='Exam Settings') }}
+{{ portal_shell_start(active='dashboard', crumb='Exam Settings') }}
 
     <div class="edu-icon"><i class="fas fa-cog"></i></div>
     <div class="edu-icon"><i class="fas fa-sliders-h"></i></div>
@@ -854,8 +854,7 @@
                                             id="toggle-btn-${data.section.id}"
                                             data-section-id="${data.section.id}" 
                                             data-active="1"
-                                            data-section-name="${escapeHtml(data.section.section_name)}"
-                                            onclick="toggleSectionActive(${data.section.id}, true, '${escapeHtml(data.section.section_name)}')">
+                                            data-section-name="${escapeHtml(data.section.section_name)}">
                                         <i class="fas fa-ban"></i> Deactivate Section
                                     </button>
                                     <a href="/teacher/exam_section/${data.section.id}/questions" class="btn-group-action btn-manage-questions"><i class="fas fa-plus-circle"></i> Manage Questions</a>
@@ -866,6 +865,8 @@
                         </div>
                     `;
                     sectionsList.insertAdjacentHTML('beforeend', newSectionHtml);
+                    const createdCard = document.getElementById(`section-card-${data.section.id}`);
+                    if (createdCard) createdCard.classList.add('expanded');
                     attachUpdateEventListeners();
                     attachDeleteEventListeners();
                     attachToggleEventListeners();
@@ -1008,7 +1009,11 @@
         attachToggleEventListeners();
         
         document.addEventListener('DOMContentLoaded', function() {
-            document.querySelectorAll('.section-card').forEach(card => card.classList.remove('expanded'));
+            const cards = document.querySelectorAll('.section-card');
+            cards.forEach((card, idx) => {
+                if (idx === 0) card.classList.add('expanded');
+                else card.classList.remove('expanded');
+            });
         });
     </script>
     <script>
@@ -1098,6 +1103,6 @@
     });
 </script>
 
-{{ shell_end(role='teacher') }}
+{{ portal_shell_end() }}
 </body>
 </html>

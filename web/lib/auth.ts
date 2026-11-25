@@ -4,7 +4,8 @@ import { getSql } from "./db";
 import { getPlatformSettings, toPublicPlatformDirectives } from "./platform";
 
 export const SESSION_COOKIE_NAME = "ct_cloud_session";
-const SESSION_TTL_DAYS = 30;
+const DEFAULT_SESSION_TTL_DAYS = 30;
+const HQ_SESSION_TTL_HOURS = 12;
 
 export function normalizeEmail(raw: string): string {
   return String(raw || "").trim().toLowerCase();
@@ -43,7 +44,10 @@ export function generateSessionToken(): { rawToken: string; tokenHash: string } 
 }
 
 export function hashSessionToken(rawToken: string): string {
-  const pepper = process.env.COGNITARA_AUTH_SECRET || "cognitara-cloud-session-pepper-v2";
+  const pepper = (process.env.COGNITARA_AUTH_SECRET || "").trim() || (process.env.NODE_ENV === "production" ? "" : "cognitara-cloud-session-pepper-v2");
+  if (!pepper) {
+    throw new Error("COGNITARA_AUTH_SECRET must be set in production.");
+  }
   return crypto.createHmac("sha256", pepper).update(rawToken).digest("hex");
 }
 
@@ -67,13 +71,13 @@ export function extractBearerOrCookieToken(req: NextRequest): string | null {
   return cookieTok || null;
 }
 
-export function attachSessionCookie(res: NextResponse, rawToken: string): void {
+export function attachSessionCookie(res: NextResponse, rawToken: string, maxAgeSeconds = DEFAULT_SESSION_TTL_DAYS * 86400): void {
   res.cookies.set(SESSION_COOKIE_NAME, rawToken, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
     path: "/",
-    maxAge: SESSION_TTL_DAYS * 86400,
+    maxAge: maxAgeSeconds,
   });
 }
 
@@ -93,10 +97,12 @@ export async function createCloudSession(params: {
   clientType: "web" | "desktop";
   deviceLabel?: string | null;
   displayHwid?: string | null;
-}): Promise<{ rawToken: string; expiresAt: string }> {
+  isHqAdmin?: boolean;
+}): Promise<{ rawToken: string; expiresAt: string; maxAgeSeconds: number }> {
   const sql = getSql();
   const { rawToken, tokenHash } = generateSessionToken();
-  const expiresAt = new Date(Date.now() + SESSION_TTL_DAYS * 86400 * 1000).toISOString();
+  const maxAgeSeconds = params.isHqAdmin ? HQ_SESSION_TTL_HOURS * 3600 : DEFAULT_SESSION_TTL_DAYS * 86400;
+  const expiresAt = new Date(Date.now() + maxAgeSeconds * 1000).toISOString();
 
   await sql`
     INSERT INTO cloud_sessions (user_id, school_id, token_hash, client_type, device_label, display_hwid, expires_at)
@@ -111,7 +117,7 @@ export async function createCloudSession(params: {
     )
   `;
 
-  return { rawToken, expiresAt };
+  return { rawToken, expiresAt, maxAgeSeconds };
 }
 
 export async function resolveAuthenticatedAccount(rawToken: string) {
@@ -120,7 +126,8 @@ export async function resolveAuthenticatedAccount(rawToken: string) {
 
   const sessions = await sql`
     SELECT s.id AS session_id, s.user_id, s.school_id, s.client_type, s.expires_at, s.created_at AS session_created_at,
-           u.email, u.full_name, u.phone, u.role, u.status AS user_status, u.created_at AS user_created_at
+           u.email, u.full_name, u.phone, u.role, u.status AS user_status, u.email_verified,
+           u.totp_enabled, u.created_at AS user_created_at
     FROM cloud_sessions s
     JOIN users_hq u ON u.id = s.user_id
     WHERE s.token_hash = ${tokenHash}
@@ -136,7 +143,7 @@ export async function resolveAuthenticatedAccount(rawToken: string) {
   const schools = await sql`
     SELECT id, school_name, country_code, state_region, contact_email, contact_phone, status,
            ban_reason, custom_notice, custom_notice_level, feature_overrides_json,
-           force_signout_before, created_at
+           force_signout_before, last_cloud_backup_at, referral_code_used, created_at
     FROM schools
     WHERE owner_user_id = ${row.user_id}::uuid
     ORDER BY created_at ASC
@@ -189,6 +196,7 @@ export async function resolveAuthenticatedAccount(rawToken: string) {
     school_notice: school?.custom_notice || "",
     school_notice_level: school?.custom_notice_level || "info",
     feature_overrides: school?.feature_overrides_json || {},
+    last_cloud_backup_at: school?.last_cloud_backup_at ? new Date(school.last_cloud_backup_at).toISOString() : null,
   };
 
   return {
@@ -200,6 +208,8 @@ export async function resolveAuthenticatedAccount(rawToken: string) {
       phone: (row.phone as string) || "",
       role: row.role as string,
       status: row.user_status as string,
+      email_verified: Boolean(row.email_verified),
+      totp_enabled: Boolean(row.totp_enabled),
       created_at: row.user_created_at,
     },
     school: school
@@ -212,6 +222,7 @@ export async function resolveAuthenticatedAccount(rawToken: string) {
           contact_phone: school.contact_phone || "",
           status: school.status as string,
           ban_reason: school.ban_reason || null,
+          last_cloud_backup_at: school.last_cloud_backup_at ? new Date(school.last_cloud_backup_at).toISOString() : null,
         }
       : null,
     referral_code: (referral as any)?.referral_code || null,

@@ -234,6 +234,7 @@ window.CSRF_TOKEN = "{{ csrf_token() }}";
       <nav class="ct-nav" aria-label="Teaching">
         <span class="ct-nav__label">Teaching</span>
         <a class="ct-nav__link{% if active == 'dashboard' %} is-active{% endif %}" href="/teacher">{{ ico('i-home') }}<span class="ct-nav__text">Dashboard</span></a>
+        <a class="ct-nav__link{% if active == 'control' %} is-active{% endif %}" href="/teacher/exams-management">{{ ico('i-live') }}<span class="ct-nav__text">Exam Control Center</span></a>
         <a class="ct-nav__link{% if active == 'add_exam' %} is-active{% endif %}" href="/teacher/create_exam">{{ ico('i-file-plus') }}<span class="ct-nav__text">Create Exam</span></a>
         <a class="ct-nav__link{% if active == 'import' %} is-active{% endif %}" href="/teacher/import_exam">{{ ico('i-upload') }}<span class="ct-nav__text">Import Exam</span></a>
         <a class="ct-nav__link{% if active == 'support' %} is-active{% endif %}" href="/teacher/technical_support">{{ ico('i-activity') }}<span class="ct-nav__text">Live Support</span></a>
@@ -279,6 +280,7 @@ window.CSRF_TOKEN = "{{ csrf_token() }}";
           <div class="ct-menu" role="menu">
             <div class="ct-menu__head"><strong>{{ _user }}</strong><span>Teacher</span></div>
             <a class="ct-menu__item" role="menuitem" href="/teacher">{{ ico('i-home') }}Dashboard</a>
+            <a class="ct-menu__item" role="menuitem" href="/teacher/exams-management">{{ ico('i-live') }}Exam Control Center</a>
             <a class="ct-menu__item" role="menuitem" href="/teacher/analytics">{{ ico('i-chart') }}Analytics</a>
             <div class="ct-menu__sep"></div>
             <a class="ct-menu__item ct-menu__item--danger" role="menuitem" href="/logout">{{ ico('i-logout') }}Log out</a>
@@ -288,6 +290,14 @@ window.CSRF_TOKEN = "{{ csrf_token() }}";
     </header>
 
     <main class="ct-content ct-enter" id="main">
+{%- endmacro -%}
+
+{%- macro portal_shell_start(active='exams', crumb='Workspace', parent_href='/admin', parent_label='Admin') -%}
+  {%- if session.get('role') == 'Teacher' or ('teacher_id' in session and 'admin_id' not in session) -%}
+    {{ teacher_shell_start(active=active, crumb=crumb) }}
+  {%- else -%}
+    {{ admin_shell_start(active=active, crumb=crumb, parent_href=parent_href, parent_label=parent_label) }}
+  {%- endif -%}
 {%- endmacro -%}
 
 {%- macro student_topbar(crumb='Student Portal', home_href='/dashboard', badge='Student') -%}
@@ -320,8 +330,9 @@ document.addEventListener("DOMContentLoaded", function () {
   if (!window.CT || !document.getElementById("ctShellPalette")) return;
   var cmds = {% if role == 'teacher' %}[
     { label: "Teacher Dashboard", hint: "Overview", icon: "i-home", go: "/teacher" },
-    { label: "Create New Exam", hint: "Exam Builder", icon: "i-plus", go: "/teacher/add_exam" },
-    { label: "Import Exam", hint: "Word / CSV", icon: "i-upload", go: "/teacher/import_exam" },
+    { label: "Exam Control Center", hint: "Start / Stop / Questions", icon: "i-live", go: "/teacher/exams-management" },
+    { label: "Create New Exam", hint: "Exam Builder", icon: "i-plus", go: "/teacher/create_exam" },
+    { label: "Import Exam", hint: "JSON / CSV", icon: "i-upload", go: "/teacher/import_exam" },
     { label: "Class Analytics", hint: "Insights", icon: "i-chart", go: "/teacher/analytics" },
     { label: "Student Progression", hint: "Trends", icon: "i-trend", go: "/teacher/progression" },
     { label: "Live Support", hint: "Monitoring", icon: "i-activity", go: "/teacher/technical_support" },
@@ -344,4 +355,12 @@ document.addEventListener("DOMContentLoaded", function () {
   CT.palette({ root: "#ctShellPalette", input: "#ctShellPalInput", list: "#ctShellPalList", commands: cmds });
 });
 </script>
+{%- endmacro -%}
+
+{%- macro portal_shell_end() -%}
+  {%- if session.get('role') == 'Teacher' or ('teacher_id' in session and 'admin_id' not in session) -%}
+    {{ shell_end(role='teacher') }}
+  {%- else -%}
+    {{ shell_end(role='admin') }}
+  {%- endif -%}
 {%- endmacro -%}

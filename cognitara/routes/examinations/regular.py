@@ -153,15 +153,14 @@ def exam_begin(exam_id):
         import random
         random.shuffle(questions_list)
         
-        # Store question order for recovery
+        # Store question order exclusively in SQLite current_progress (never in the 4KB session cookie)
         question_order = [{
             'question_id': q['id'],
             'section_id': None,
             'section_name': 'All Questions',
             'group_data': None
         } for q in questions_list]
-        
-        session[f'exam_{exam_id}_questions'] = json.dumps(question_order)
+        session.pop(f'exam_{exam_id}_questions', None)
         
         deadline_str = (get_utc_now() + timedelta(minutes=int(exam["duration"]))).strftime('%Y-%m-%d %H:%M:%S')
         new_session_key = secrets.token_hex(16)
@@ -576,17 +575,16 @@ def exam_begin(exam_id):
     
     attempt_id = cursor.lastrowid
     
-    # Store the selected questions order in session for fast access
+    # Store question order exclusively in SQLite current_progress (never in the 4KB session cookie)
     question_order = [{
         'question_id': item['question_id'],
         'section_id': item['section_id'],
         'section_name': item['section_name'],
         'group_data': item['group_data']
     } for item in all_selected_questions]
+    session.pop(f'exam_{exam_id}_questions', None)
     
-    session[f'exam_{exam_id}_questions'] = json.dumps(question_order)
-    
-    # Also save to database for cross-device recovery
+    # Save to database for reliable server-side & cross-device recovery
     conn.execute("""
         UPDATE scores SET current_progress = ? WHERE id = ?
     """, (json.dumps({
@@ -600,6 +598,44 @@ def exam_begin(exam_id):
     conn.close()
     
     return redirect(f"/exam/{exam_id}")
+
+
+@exam_regular_bp.route("/exam_check_pause")
+def exam_check_pause_query():
+    """Poll endpoint used by exam_paused.html to detect when an invigilator resumes a regular exam."""
+    if "student_id" not in session:
+        return {"error": "Unauthorized"}, 401
+    attempt_id = request.args.get("attempt_id", type=int)
+    if not attempt_id:
+        return {"is_paused": True}
+    conn = get_db_connection()
+    row = conn.execute(
+        "SELECT is_paused, status FROM scores WHERE id=? AND student_id=?",
+        (attempt_id, session["student_id"]),
+    ).fetchone()
+    conn.close()
+    if not row:
+        return {"is_paused": True}
+    return {"is_paused": bool(row["is_paused"] == 1), "status": row["status"]}
+
+
+@exam_regular_bp.route("/ce_exam_check_pause")
+def ce_exam_check_pause():
+    """Poll endpoint used by exam_paused.html for Common Entrance candidates."""
+    if "ce_student_id" not in session:
+        return {"error": "Unauthorized"}, 401
+    attempt_id = request.args.get("attempt_id", type=int)
+    if not attempt_id:
+        return {"is_paused": True}
+    conn = get_db_connection()
+    row = conn.execute(
+        "SELECT is_paused, status FROM ce_attempts WHERE id=? AND student_id=?",
+        (attempt_id, session["ce_student_id"]),
+    ).fetchone()
+    conn.close()
+    if not row:
+        return {"is_paused": True}
+    return {"is_paused": bool(row["is_paused"] == 1), "status": row["status"]}
 
 
 @exam_regular_bp.route("/exam/<int:exam_id>", methods=["GET", "POST"])
@@ -678,23 +714,18 @@ def exam_page(exam_id):
         return redirect(f"/result/{exam_id}")
     
     # =====================================================
-    # CROSS-DEVICE RECOVERY: Check database for stored questions
+    # SERVER-SIDE RECOVERY: Read question order from SQLite (never bloat 4KB session cookie)
     # =====================================================
-    stored_questions = session.get(f'exam_{exam_id}_questions')
-    
-    # If no session data (new device), try to recover from database
-    if not stored_questions and attempt and attempt["current_progress"]:
+    stored_questions = None
+    if attempt and attempt["current_progress"]:
         try:
-            import json
             progress = json.loads(attempt["current_progress"])
-            # Check if we stored question order in progress
             if progress.get('question_order'):
-                # Restore question order from DB progress
                 stored_questions = json.dumps(progress['question_order'])
-                session[f'exam_{exam_id}_questions'] = stored_questions
-                print(f"Recovered question order from database for exam {exam_id}")
         except Exception as e:
             print(f"Could not recover question order: {e}")
+    if not stored_questions:
+        stored_questions = session.pop(f'exam_{exam_id}_questions', None)
     
     if stored_questions:
         import json

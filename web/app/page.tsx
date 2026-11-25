@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { BrandHeader } from "@/components/BrandHeader";
+import { IconCloud, IconDownload, IconGift, IconWifiOff } from "@/components/Icons";
 
 const RELEASES_URL = "https://github.com/Emmaco08/cognitarapp/releases/latest";
 
@@ -10,77 +11,79 @@ export default function HomePage() {
 
       <section className="ct-hero">
         <div>
-          <span className="ct-badge">
-            <i />
-            Neon Postgres Cloud · Offline-Ready Studio 2.1
-          </span>
-          <h1>Offline exam halls, powered by CogniTara Cloud.</h1>
+          <h1>Run reliable school exams without relying on internet.</h1>
           <p>
-            Create your school account once, activate CogniTara Studio on your Windows exam server,
-            and run 300+ concurrent LAN exams with zero internet required during sittings.
+            Set up CogniTara Studio on one Windows PC in your exam hall, connect hundreds of student
+            devices over local Wi-Fi or LAN, and keep your exam database safely backed up to the cloud.
           </p>
           <div className="ct-hero__actions">
             <Link href="/signup" className="btn btn--primary btn--lg">
               Create school account
             </Link>
-            <Link href="/signin" className="btn btn--ghost btn--lg">
-              Sign in
-            </Link>
             <a href={RELEASES_URL} target="_blank" rel="noopener noreferrer" className="btn btn--ghost btn--lg">
-              Download Windows .exe
+              <IconDownload size={16} />
+              <span>Download for Windows</span>
             </a>
           </div>
         </div>
 
         <div className="card">
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-            <strong style={{ fontSize: 15 }}>CogniTara Studio 2.1</strong>
-            <span className="pill pill--ok">Windows x64</span>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+            <strong style={{ fontSize: 15 }}>How schools get started</strong>
+            <span className="status-txt status-txt--ok">Windows 10 / 11</span>
           </div>
           <dl className="dl">
             <div>
-              <dt>Exam Engine</dt>
-              <dd>Flask + Waitress + SQLite WAL</dd>
+              <dt>1. Create school account</dt>
+              <dd>Takes under a minute</dd>
             </div>
             <div>
-              <dt>Licence Vault</dt>
-              <dd>5-Layer Ed25519 + DPAPI</dd>
+              <dt>2. Install CogniTara Studio</dt>
+              <dd>One-click Windows installer</dd>
             </div>
             <div>
-              <dt>Cloud Sign-In</dt>
-              <dd>Online sync + Offline cache</dd>
+              <dt>3. Activate your licence</dt>
+              <dd>Instant delivery after payment</dd>
             </div>
             <div>
-              <dt>Auto-Updates</dt>
-              <dd>Direct GitHub Releases delta</dd>
+              <dt>4. Run exams offline</dt>
+              <dd>300+ students over school Wi-Fi</dd>
             </div>
           </dl>
         </div>
       </section>
 
       <section className="ct-grid3">
-        <article className="card card--sm ct-feat">
-          <span className="ct-feat__pill">01 · Offline-First</span>
-          <h3>Never stops when internet drops</h3>
+        <article className="ct-feat">
+          <div className="ct-feat__icon">
+            <IconWifiOff size={17} />
+          </div>
+          <h3>Built for zero-internet exam halls</h3>
           <p>
-            Your account profile and signed hardware lease cache safely inside CogniTara Studio so exam
-            day continues seamlessly even completely disconnected.
+            Once activated, your school server runs exams smoothly even when the internet drops. Student
+            answers save in real time so nothing is ever lost.
           </p>
         </article>
-        <article className="card card--sm ct-feat">
-          <span className="ct-feat__pill">02 · 5-Layer Vault</span>
-          <h3>Hardware-bound Ed25519 security</h3>
+
+        <article className="ct-feat">
+          <div className="ct-feat__icon">
+            <IconCloud size={17} />
+          </div>
+          <h3>Automatic cloud exam backups</h3>
           <p>
-            Triple-anchor anti-tamper protection with a 15-minute graceful active-exam drain so no
-            student ever loses submitted answers.
+            Back up your entire question bank, student list, and results to CogniTara Cloud with one
+            click, backed by gentle weekly reminders.
           </p>
         </article>
-        <article className="card card--sm ct-feat">
-          <span className="ct-feat__pill">03 · Dual Referrals</span>
-          <h3>Earn commissions or bonus days</h3>
+
+        <article className="ct-feat">
+          <div className="ct-feat__icon">
+            <IconGift size={17} />
+          </div>
+          <h3>Earn rewards for every school you invite</h3>
           <p>
-            Every registered school receives a unique referral code automatically to earn cash wallet
-            credits or bonus licence days.
+            Share your school referral link to earn cash wallet commissions and extra free licence days
+            whenever another school subscribes.
           </p>
         </article>
       </section>

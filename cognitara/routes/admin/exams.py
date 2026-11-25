@@ -153,9 +153,10 @@ def add_exam():
             op4 = request.form[f"option{question_num}_4"]
             file = request.files.get(f"image{question_num}")
             if file and file.filename != "":
-                image_filename = secure_filename(file.filename)
+                safe_orig = secure_filename(file.filename) or "img.jpg"
+                image_filename = f"exam_{exam_id}_q{question_num}_{int(datetime.now().timestamp())}_{safe_orig}"
                 save_path = get_upload_path(image_filename)
-                success = compress_image(file, save_path, 50)
+                success = compress_image(file, save_path)
                 if not success:
                     conn.close()
                     return f"Image for question {question_num} could not be saved. Try another image."
@@ -183,7 +184,7 @@ def add_exam():
 
 @admin_exams_bp.route("/admin/add_question/<int:exam_id>", methods=["GET","POST"])
 def add_question(exam_id):
-    if "admin_id" not in session:
+    if "admin_id" not in session and "teacher_id" not in session:
         return redirect("/")
     if request.method == "POST":
         q = request.form["question"]
@@ -197,8 +198,8 @@ def add_question(exam_id):
                      (exam_id, q, op1, op2, op3, op4, ans))
         conn.commit()
         conn.close()
-        return redirect("/admin")
-    return render_template("add_question.html", exam_id=exam_id)
+        return redirect("/admin" if "admin_id" in session else "/teacher")
+    return redirect(f"/teacher/exam/{exam_id}/questions")
 
 
 @admin_exams_bp.route("/admin/reset_exam/<int:student_id>/<int:exam_id>", methods=["GET", "POST"])
@@ -485,6 +486,8 @@ def edit_exam(exam_id):
 def admin_exams_management():
     """Full power exams management page for admin"""
     if "admin_id" not in session:
+        if "teacher_id" in session:
+            return redirect("/teacher/exams-management")
         return redirect("/")
     
     conn = get_db_connection()

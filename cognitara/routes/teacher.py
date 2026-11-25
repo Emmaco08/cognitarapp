@@ -367,54 +367,164 @@ def teacher_exam_live_data():
     }
 
 
+@teacher_bp.route("/teacher/exams-management")
+def teacher_exams_management():
+    """Teacher-scoped Exam Control Center (prevents teachers from hitting admin-only /admin/exams-management)."""
+    if "teacher_id" not in session and "admin_id" not in session:
+        return redirect("/")
+    if "admin_id" in session and "teacher_id" not in session:
+        return redirect("/admin/exams-management")
+
+    conn = get_db_connection()
+    teacher_id = session["teacher_id"]
+    exams = conn.execute("""
+        SELECT e.*,
+               (SELECT COUNT(*) FROM questions q WHERE q.exam_id = e.id) AS question_count,
+               (SELECT COUNT(*) FROM exam_sections s WHERE s.exam_id = e.id) AS section_count,
+               (SELECT COUNT(*) FROM scores sc WHERE sc.exam_id = e.id) AS student_count,
+               (SELECT COUNT(*) FROM scores sc WHERE sc.exam_id = e.id AND sc.status = 'completed') AS completed_count,
+               (SELECT COUNT(*) FROM scores sc WHERE sc.exam_id = e.id AND sc.status = 'in_progress') AS in_progress_count,
+               (SELECT ROUND(AVG(percentage), 1) FROM scores sc WHERE sc.exam_id = e.id AND sc.status = 'completed') AS avg_score
+        FROM exams e
+        WHERE e.teacher_id = ?
+        ORDER BY e.id DESC
+    """, (teacher_id,)).fetchall()
+    conn.close()
+
+    exams_list = [dict(e) for e in exams]
+    total_exams = len(exams_list)
+    active_exams = sum(1 for e in exams_list if e.get("active") == 1)
+    inactive_exams = total_exams - active_exams
+    total_questions = sum(int(e.get("question_count") or 0) for e in exams_list)
+    classes = sorted({e.get("class") for e in exams_list if e.get("class")})
+
+    return render_template(
+        "teacher_exams_management.html",
+        exams=exams_list,
+        total_exams=total_exams,
+        active_exams=active_exams,
+        inactive_exams=inactive_exams,
+        total_questions=total_questions,
+        classes=classes,
+    )
+
+
+@teacher_bp.route("/teacher/exam/<int:exam_id>/questions")
+def teacher_exam_quick_questions(exam_id):
+    """One-click jump from an exam card directly to its question manager (auto-creates a default section if empty)."""
+    if "teacher_id" not in session and "admin_id" not in session:
+        return redirect("/")
+
+    conn = get_db_connection()
+    if "admin_id" in session:
+        exam = conn.execute("SELECT * FROM exams WHERE id=?", (exam_id,)).fetchone()
+    else:
+        exam = conn.execute("SELECT * FROM exams WHERE id=? AND teacher_id=?", (exam_id, session["teacher_id"])).fetchone()
+
+    if not exam:
+        conn.close()
+        return redirect("/teacher" if "teacher_id" in session else "/admin")
+
+    first_section = conn.execute(
+        "SELECT id FROM exam_sections WHERE exam_id=? ORDER BY section_order ASC, id ASC LIMIT 1",
+        (exam_id,),
+    ).fetchone()
+
+    if not first_section:
+        cur = conn.cursor()
+        cur.execute(
+            "INSERT INTO exam_sections (exam_id, section_name, section_order, questions_to_show, randomize, active) VALUES (?, ?, 1, 0, 1, 1)",
+            (exam_id, f"{exam['subject_tag'] or 'General'} Questions"),
+        )
+        section_id = cur.lastrowid
+        # Attach any orphan questions created via /teacher/add_exam to this default section
+        conn.execute("UPDATE questions SET section_id=? WHERE exam_id=? AND section_id IS NULL", (section_id, exam_id))
+        conn.commit()
+    else:
+        section_id = first_section["id"]
+
+    conn.close()
+    return redirect(f"/teacher/exam_section/{section_id}/questions")
+
+
 @teacher_bp.route("/teacher/exam/<int:exam_id>/settings")
 def teacher_exam_settings(exam_id):
-    """Teacher view/edit exam settings - CE style"""
-    if "teacher_id" not in session:
+    """Teacher (or Admin) view/edit exam settings"""
+    if "teacher_id" not in session and "admin_id" not in session:
         return redirect("/")
     
     conn = get_db_connection()
-    teacher_id = session["teacher_id"]
+    is_admin_viewer = "admin_id" in session and "teacher_id" not in session
+    teacher_id = session.get("teacher_id")
     
-    # Verify exam belongs to this teacher
-    exam = conn.execute("""
-        SELECT * FROM exams WHERE id=? AND teacher_id=?
-    """, (exam_id, teacher_id)).fetchone()
+    if is_admin_viewer:
+        exam = conn.execute("SELECT * FROM exams WHERE id=?", (exam_id,)).fetchone()
+    else:
+        exam = conn.execute("SELECT * FROM exams WHERE id=? AND teacher_id=?", (exam_id, teacher_id)).fetchone()
     
     if not exam:
         conn.close()
-        return "Exam not found or unauthorized", 403
+        return redirect("/admin" if is_admin_viewer else "/teacher")
     
-    # Get teacher's assigned classes for the dropdown
+    # Get assigned classes for the dropdown
     teaching_classes = []
     specialisations_by_class = {}
     
-    try:
-        class_assignments = conn.execute("""
-            SELECT DISTINCT class_name, specialisation 
-            FROM teacher_class_assignments 
-            WHERE teacher_id=?
-            ORDER BY class_name
-        """, (teacher_id,)).fetchall()
-        
-        if class_assignments:
-            for ca in class_assignments:
-                if ca["class_name"] not in specialisations_by_class:
-                    specialisations_by_class[ca["class_name"]] = []
-                    teaching_classes.append(ca["class_name"])
-                specialisations_by_class[ca["class_name"]].append(ca["specialisation"])
-    except sqlite3.OperationalError:
-        # Fallback
-        if exam["class"]:
+    if is_admin_viewer:
+        try:
+            class_rows = conn.execute("SELECT name FROM classes ORDER BY display_order ASC, name ASC").fetchall()
+            teaching_classes = [r["name"] for r in class_rows]
+        except sqlite3.OperationalError:
+            teaching_classes = [f"Grade {i}" for i in range(1, 13)]
+        if exam["class"] and exam["class"] not in teaching_classes:
+            teaching_classes.insert(0, exam["class"])
+        for c in teaching_classes:
+            specialisations_by_class[c] = ["General", "Science", "Art", "Commercial"]
+    else:
+        try:
+            class_assignments = conn.execute("""
+                SELECT DISTINCT class_name, specialisation 
+                FROM teacher_class_assignments 
+                WHERE teacher_id=?
+                ORDER BY class_name
+            """, (teacher_id,)).fetchall()
+            
+            if class_assignments:
+                for ca in class_assignments:
+                    if ca["class_name"] not in specialisations_by_class:
+                        specialisations_by_class[ca["class_name"]] = []
+                        teaching_classes.append(ca["class_name"])
+                    specialisations_by_class[ca["class_name"]].append(ca["specialisation"])
+        except sqlite3.OperationalError:
+            pass
+        if not teaching_classes and exam["class"]:
             teaching_classes = [exam["class"]]
-            specialisations_by_class[exam["class"]] = ["General"]
+            specialisations_by_class[exam["class"]] = [exam["specialisation_tag"] or "General"]
     
     # Get sections
     sections = conn.execute("""
         SELECT * FROM exam_sections 
         WHERE exam_id=? 
-        ORDER BY section_order
+        ORDER BY section_order ASC, id ASC
     """, (exam_id,)).fetchall()
+
+    # Auto-create a default section if none exist yet so teachers can add questions immediately
+    if not sections:
+        try:
+            cur = conn.cursor()
+            cur.execute(
+                "INSERT INTO exam_sections (exam_id, section_name, section_order, questions_to_show, randomize, active) VALUES (?, ?, 1, 0, 1, 1)",
+                (exam_id, f"{exam['subject_tag'] or 'General'} Questions"),
+            )
+            default_sec_id = cur.lastrowid
+            conn.execute("UPDATE questions SET section_id=? WHERE exam_id=? AND section_id IS NULL", (default_sec_id, exam_id))
+            conn.commit()
+            sections = conn.execute(
+                "SELECT * FROM exam_sections WHERE exam_id=? ORDER BY section_order ASC, id ASC",
+                (exam_id,),
+            ).fetchall()
+        except sqlite3.OperationalError:
+            pass
     
     sections_with_counts = []
     for section in sections:
@@ -428,7 +538,7 @@ def teacher_exam_settings(exam_id):
     
     conn.close()
     
-    return render_template("teacher_exam_settings.html",  # or teacher_exam_settings.html
+    return render_template("teacher_exam_settings.html",
                            exam=exam,
                            teaching_classes=teaching_classes,
                            specialisations_by_class=specialisations_by_class,
@@ -437,14 +547,16 @@ def teacher_exam_settings(exam_id):
 
 @teacher_bp.route("/teacher/exam/<int:exam_id>/settings", methods=["POST"])
 def teacher_exam_settings_update(exam_id):
-    """Teacher updates exam settings"""
-    if "teacher_id" not in session:
+    """Teacher or Admin updates exam settings"""
+    if "teacher_id" not in session and "admin_id" not in session:
         return {"error": "Unauthorized"}, 401
     
     conn = get_db_connection()
-    teacher_id = session["teacher_id"]
-    
-    exam = conn.execute("SELECT id FROM exams WHERE id=? AND teacher_id=?", (exam_id, teacher_id)).fetchone()
+    is_admin_viewer = "admin_id" in session and "teacher_id" not in session
+    if is_admin_viewer:
+        exam = conn.execute("SELECT id FROM exams WHERE id=?", (exam_id,)).fetchone()
+    else:
+        exam = conn.execute("SELECT id FROM exams WHERE id=? AND teacher_id=?", (exam_id, session["teacher_id"])).fetchone()
     if not exam:
         conn.close()
         return {"error": "Unauthorized"}, 403
@@ -469,14 +581,14 @@ def teacher_exam_settings_update(exam_id):
             WHERE id=?
         """, (name, target_class, duration, specialisation_tag, subject_tag, max_warnings, calculator_type, active, exam_id))
     except sqlite3.OperationalError:
-        # Fallback without new columns
         conn.execute("""
             UPDATE exams SET 
             name=?, class=?, duration=?, specialisation_tag=?, subject_tag=?, active=?
             WHERE id=?
         """, (name, target_class, duration, specialisation_tag, subject_tag, active, exam_id))
     
-    log_action("Teacher", session["username"], f"Updated exam settings for '{name}'", conn=conn)
+    actor_role = "Admin" if is_admin_viewer else "Teacher"
+    log_action(actor_role, session.get("username", actor_role), f"Updated exam settings for '{name}'", conn=conn)
     conn.commit()
     conn.close()
     
@@ -511,7 +623,6 @@ def teacher_create_exam():
                     teaching_classes.append(ca["class_name"])
                 specialisations_by_class[ca["class_name"]].append(ca["specialisation"])
         else:
-            # Fallback to teacher's primary class
             teacher = conn.execute("SELECT class FROM teachers WHERE id=?", (teacher_id,)).fetchone()
             if teacher and teacher["class"]:
                 teaching_classes = [teacher["class"]]
@@ -531,7 +642,7 @@ def teacher_create_exam():
 
 @teacher_bp.route("/teacher/create_exam", methods=["POST"])
 def teacher_create_exam_post():
-    """Handle exam creation from CE-style settings page"""
+    """Handle exam creation and auto-provision a ready default section so teachers can add questions right away"""
     if "teacher_id" not in session:
         return redirect("/")
     
@@ -564,6 +675,9 @@ def teacher_create_exam_post():
                 SELECT id FROM teacher_class_assignments 
                 WHERE teacher_id=? AND class_name=?
             """, (teacher_id, target_class)).fetchone()
+        if not allowed:
+            teacher_row = conn.execute("SELECT class FROM teachers WHERE id=?", (teacher_id,)).fetchone()
+            allowed = teacher_row and teacher_row["class"] == target_class
     except sqlite3.OperationalError:
         teacher = conn.execute("SELECT class FROM teachers WHERE id=?", (teacher_id,)).fetchone()
         allowed = teacher and teacher["class"] == target_class
@@ -579,7 +693,6 @@ def teacher_create_exam_post():
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, (name, target_class, duration, teacher_id, subject_tag, specialisation_tag, max_warnings, calculator_type, active))
     except sqlite3.OperationalError:
-        # Fallback if new columns don't exist
         cursor = conn.cursor()
         cursor.execute("""
             INSERT INTO exams (name, class, duration, teacher_id, subject_tag, specialisation_tag, active)
@@ -587,6 +700,15 @@ def teacher_create_exam_post():
         """, (name, target_class, duration, teacher_id, subject_tag, specialisation_tag, active))
     
     exam_id = cursor.lastrowid
+
+    # Auto-create a ready default section so teachers can immediately add questions
+    try:
+        conn.execute("""
+            INSERT INTO exam_sections (exam_id, section_name, section_order, questions_to_show, randomize, active)
+            VALUES (?, ?, 1, 0, 1, 1)
+        """, (exam_id, f"{subject_tag or 'General'} Questions"))
+    except sqlite3.OperationalError:
+        pass
     
     log_action("Teacher", session["username"], f"Created exam '{name}' for {target_class}", conn=conn)
     
@@ -597,57 +719,13 @@ def teacher_create_exam_post():
         "success": True,
         "message": f"Exam '{name}' created successfully!",
         "redirect": f"/teacher/exam/{exam_id}/settings"
-    }                 
-
-
-@teacher_bp.route("/teacher/exam/<int:exam_id>/settings")
-def exam_settings_page(exam_id):
-    """Regular exam settings page - CE style"""
-    if "teacher_id" not in session and "admin_id" not in session:
-        return redirect("/")
-    
-    conn = get_db_connection()
-    exam = conn.execute("SELECT * FROM exams WHERE id=?", (exam_id,)).fetchone()
-    
-    if not exam:
-        conn.close()
-        return redirect("/admin")
-    
-    sections = conn.execute("""
-        SELECT * FROM exam_sections 
-        WHERE exam_id=? 
-        ORDER BY section_order
-    """, (exam_id,)).fetchall()
-    
-    sections_with_counts = []
-    for section in sections:
-        section_dict = dict(section)
-        count = conn.execute(
-            "SELECT COUNT(*) as count FROM questions WHERE section_id=?", 
-            (section["id"],)
-        ).fetchone()["count"]
-        section_dict["question_count"] = count
-        sections_with_counts.append(section_dict)
-    
-    # Get all questions for display
-    questions = conn.execute("""
-        SELECT * FROM questions 
-        WHERE exam_id=? 
-        ORDER BY COALESCE(display_order, id)
-    """, (exam_id,)).fetchall()
-    
-    conn.close()
-    
-    return render_template("exam_settings.html", 
-                         exam=exam, 
-                         sections=sections_with_counts,
-                         questions=questions)
+    }
 
 
 @teacher_bp.route("/teacher/exam/<int:exam_id>/sections", methods=["POST"])
 def add_exam_section(exam_id):
     """Add a new section to regular exam"""
-    if "teacher_id" not in session:
+    if "teacher_id" not in session and "admin_id" not in session:
         return {"error": "Unauthorized"}, 401
     
     conn = get_db_connection()
@@ -763,13 +841,21 @@ def delete_exam_section(section_id):
 @teacher_bp.route("/teacher/exam_section/<int:section_id>/questions")
 def exam_section_questions(section_id):
     """View questions in a regular exam section"""
-    if "teacher_id" not in session:
+    if "teacher_id" not in session and "admin_id" not in session:
         return redirect("/")
     
     conn = get_db_connection()
-    section = conn.execute("SELECT * FROM exam_sections WHERE id=?", (section_id,)).fetchone()
+    section = conn.execute("""
+        SELECT s.*, e.teacher_id, e.name as exam_name
+        FROM exam_sections s
+        JOIN exams e ON s.exam_id = e.id
+        WHERE s.id=?
+    """, (section_id,)).fetchone()
     
     if not section:
+        conn.close()
+        return redirect("/teacher" if "teacher_id" in session else "/admin")
+    if "admin_id" not in session and section["teacher_id"] != session.get("teacher_id"):
         conn.close()
         return redirect("/teacher")
     
@@ -787,13 +873,21 @@ def exam_section_questions(section_id):
 @teacher_bp.route("/teacher/exam_section/<int:section_id>/questions", methods=["POST"])
 def add_exam_question(section_id):
     """Add a question to regular exam section"""
-    if "teacher_id" not in session:
+    if "teacher_id" not in session and "admin_id" not in session:
         return redirect("/")
     
     conn = get_db_connection()
-    section = conn.execute("SELECT exam_id FROM exam_sections WHERE id=?", (section_id,)).fetchone()
+    section = conn.execute("""
+        SELECT s.exam_id, e.teacher_id
+        FROM exam_sections s
+        JOIN exams e ON s.exam_id = e.id
+        WHERE s.id=?
+    """, (section_id,)).fetchone()
     
     if not section:
+        conn.close()
+        return redirect("/teacher" if "teacher_id" in session else "/admin")
+    if "admin_id" not in session and section["teacher_id"] != session.get("teacher_id"):
         conn.close()
         return redirect("/teacher")
     
@@ -823,9 +917,10 @@ def add_exam_question(section_id):
     file = request.files.get("image")
     image_filename = None
     if file and file.filename != "":
-        image_filename = f"exam_{exam_id}_{section_id}_{int(datetime.now().timestamp())}.jpg"
-        save_path = get_upload_path(image_filename)
-        compress_image(file, save_path, 50)
+        cand = f"exam_{exam_id}_{section_id}_{int(datetime.now().timestamp())}.jpg"
+        save_path = get_upload_path(cand)
+        if compress_image(file, save_path):
+            image_filename = cand
     
     # Get max display order
     max_order = conn.execute(
@@ -2317,7 +2412,7 @@ def teacher_add_exam():
     
     conn = get_db_connection()
     
-    # Get teacher's class assignments
+    # Get teacher's class assignments (with fallback to teachers.class)
     class_assignments = conn.execute("""
         SELECT DISTINCT class_name, specialisation 
         FROM teacher_class_assignments 
@@ -2325,25 +2420,35 @@ def teacher_add_exam():
         ORDER BY class_name
     """, (session["teacher_id"],)).fetchall()
     
-    # Organize by class for dropdown
     classes_taught = {}
     for ca in class_assignments:
         if ca["class_name"] not in classes_taught:
             classes_taught[ca["class_name"]] = []
         classes_taught[ca["class_name"]].append(ca["specialisation"])
+    if not classes_taught:
+        t_row = conn.execute("SELECT class FROM teachers WHERE id=?", (session["teacher_id"],)).fetchone()
+        if t_row and t_row["class"]:
+            classes_taught[t_row["class"]] = ["General"]
     
     if request.method == "POST":
         name = request.form["exam_name"]
-        duration = int(request.form["duration"])
+        duration = max(1, int(request.form.get("duration", 60)))
         target_class = request.form["target_class"]
         subject_tag = request.form.get("subject_tag", "General")
         specialisation_tag = request.form.get("specialisation_tag", "General")
         
-        # Strict check: teacher must have this exact class+specialisation assignment
         allowed = conn.execute("""
             SELECT id FROM teacher_class_assignments 
             WHERE teacher_id=? AND class_name=? AND specialisation=?
         """, (session["teacher_id"], target_class, specialisation_tag)).fetchone()
+        if not allowed:
+            allowed = conn.execute("""
+                SELECT id FROM teacher_class_assignments 
+                WHERE teacher_id=? AND class_name=?
+            """, (session["teacher_id"], target_class)).fetchone()
+        if not allowed:
+            t_row = conn.execute("SELECT class FROM teachers WHERE id=?", (session["teacher_id"],)).fetchone()
+            allowed = t_row and t_row["class"] == target_class
         
         if not allowed:
             conn.close()
@@ -2353,13 +2458,17 @@ def teacher_add_exam():
         
         cursor = conn.cursor()
         cursor.execute("""
-            INSERT INTO exams (name, class, duration, teacher_id, subject_tag, specialisation) 
+            INSERT INTO exams (name, class, duration, teacher_id, subject_tag, specialisation_tag) 
             VALUES (?, ?, ?, ?, ?, ?)
         """, (name, target_class, duration, teacher_id, subject_tag, specialisation_tag))
         
         exam_id = cursor.lastrowid
+        cursor.execute("""
+            INSERT INTO exam_sections (exam_id, section_name, section_order, questions_to_show, randomize, active)
+            VALUES (?, ?, 1, 0, 1, 1)
+        """, (exam_id, f"{subject_tag or 'General'} Questions"))
+        default_section_id = cursor.lastrowid
         
-        # Insert questions (same as before)
         question_num = 1
         while f"question{question_num}" in request.form:
             q = request.form[f"question{question_num}"]
@@ -2371,23 +2480,24 @@ def teacher_add_exam():
             file = request.files.get(f"image{question_num}")
             image_filename = None
             if file and file.filename != "":
-                image_filename = f"q_{exam_id}_{question_num}_{int(datetime.now().timestamp())}.jpg"
-                save_path = get_upload_path(image_filename)
-                compress_image(file, save_path, 50)
+                cand = f"q_{exam_id}_{question_num}_{int(datetime.now().timestamp())}.jpg"
+                save_path = get_upload_path(cand)
+                if compress_image(file, save_path):
+                    image_filename = cand
             
             ans_index = int(request.form[f"answer{question_num}"])
             ans = [op1, op2, op3, op4][ans_index - 1]
             
             cursor.execute("""
-                INSERT INTO questions (exam_id, question, option1, option2, option3, option4, answer, image)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-            """, (exam_id, q, op1, op2, op3, op4, ans, image_filename))
+                INSERT INTO questions (exam_id, section_id, question, option1, option2, option3, option4, answer, image, display_order)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """, (exam_id, default_section_id, q, op1, op2, op3, op4, ans, image_filename, question_num))
             
             question_num += 1
         
         conn.commit()
         conn.close()
-        return redirect("/teacher")
+        return redirect(f"/teacher/exam/{exam_id}/settings")
     
     conn.close()
     return render_template("teacher_add_exam.html", 

@@ -413,14 +413,14 @@
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    alert('<i class="fas fa-check"></i> Student approved successfully!');
+                    alert('Student approved successfully!');
                     window.location.href = '/admin/common-entrance';
                 } else {
-                    alert('<i class="fas fa-times"></i> Error: ' + data.error);
+                    alert('Error: ' + data.error);
                 }
             })
             .catch(error => {
-                alert('<i class="fas fa-times"></i> Network error. Please try again.');
+                alert('Network error. Please try again.');
             });
         }
     }
@@ -431,11 +431,11 @@
         let message = '';
         
         if (pct >= 80) {
-            message = `<i class="fas fa-exclamation-triangle"></i> WARNING: This student scored ${pct}% which is EXCELLENT. Rejecting is strongly discouraged!`;
+            message = `WARNING: This student scored ${pct}% which is EXCELLENT. Rejecting is strongly discouraged!`;
         } else if (pct >= 60) {
-            message = `<i class="fas fa-exclamation-triangle"></i> WARNING: This student scored ${pct}% which is GOOD. Consider approval instead.`;
+            message = `WARNING: This student scored ${pct}% which is GOOD. Consider approval instead.`;
         } else if (pct >= 50) {
-            message = `<i class="fas fa-exclamation-triangle"></i> CAUTION: This student scored ${pct}% which meets the passing requirement.`;
+            message = `CAUTION: This student scored ${pct}% which meets the passing requirement.`;
         } else {
             message = `This student scored ${pct}% which is below passing. Rejection may be appropriate.`;
         }
@@ -445,14 +445,14 @@
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    alert('<i class="fas fa-check"></i> Student rejected successfully!');
+                    alert('Student rejected successfully!');
                     window.location.href = '/admin/common-entrance';
                 } else {
-                    alert('<i class="fas fa-times"></i> Error: ' + data.error);
+                    alert('Error: ' + data.error);
                 }
             })
             .catch(error => {
-                alert('<i class="fas fa-times"></i> Network error. Please try again.');
+                alert('Network error. Please try again.');
             });
         }
     }

@@ -222,43 +222,45 @@ def log_action(user_role, username, action, conn):
 
 def compress_image(file, output_path, max_size_kb=None, **kwargs):
     """
-    Saves image verifying it is a genuine image with Pillow and within safe 5MB limits.
-    Preserves original image quality, resolution, transparency, and format.
+    Saves any uploaded image of unlimited file size / resolution after verifying it is
+    a genuine image with Pillow. Applies EXIF orientation, preserves quality, and safely
+    converts color modes when saving to JPEG.
     """
     try:
-        from PIL import Image
-        import io
-        
-        MAX_IMAGE_SIZE = 5 * 1024 * 1024  # 5MB per image
-        if hasattr(file, 'seek'):
-            try:
-                file.seek(0, io.SEEK_END)
-                size = file.tell()
-                file.seek(0)
-                if size > MAX_IMAGE_SIZE:
-                    return False
-            except Exception:
-                pass
-                
-        # Verify genuine image header using PIL
+        from PIL import Image, ImageOps
+
+        # Allow ultra-high-resolution images without DecompressionBombError
+        Image.MAX_IMAGE_PIXELS = None
+
         if hasattr(file, 'seek'):
             file.seek(0)
         img = Image.open(file)
         img.verify()
-        
-        # Re-open for saving because verify() invalidates file pointer
+
+        # Re-open for saving because verify() invalidates the underlying stream
         if hasattr(file, 'seek'):
             file.seek(0)
         img = Image.open(file)
-        
-        # Convert RGBA/P to RGB if saving to JPEG
-        if output_path.lower().endswith(('.jpg', '.jpeg')) and img.mode in ('RGBA', 'P'):
-            img = img.convert('RGB')
+        try:
+            img = ImageOps.exif_transpose(img)
+        except Exception:
+            pass
 
         parent_dir = os.path.dirname(os.path.abspath(output_path))
         if parent_dir:
             os.makedirs(parent_dir, exist_ok=True)
-        img.save(output_path)
+
+        lower_out = output_path.lower()
+        if lower_out.endswith(('.jpg', '.jpeg')):
+            if img.mode in ('RGBA', 'LA', 'PA'):
+                background = Image.new('RGB', img.size, (255, 255, 255))
+                background.paste(img, mask=img.split()[-1])
+                img = background
+            elif img.mode != 'RGB':
+                img = img.convert('RGB')
+            img.save(output_path, format='JPEG', quality=92, optimize=True)
+        else:
+            img.save(output_path)
         return True
     except Exception:
         return False

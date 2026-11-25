@@ -179,23 +179,18 @@
     const specSelect = document.getElementById("specialisationTag");
     const selectedClass = classSelect.value;
 
-    specSelect.innerHTML = '<option value="General">General (All students in class)</option>';
+    specSelect.innerHTML = "";
+    const specs = (selectedClass && specialisationsByClass[selectedClass] && specialisationsByClass[selectedClass].length)
+      ? specialisationsByClass[selectedClass]
+      : ["General"];
 
-    if (selectedClass && specialisationsByClass[selectedClass]) {
-      const specs = specialisationsByClass[selectedClass];
-      specs.forEach(function (spec) {
-        if (spec !== "General") {
-          const option = document.createElement("option");
-          option.value = spec;
-          option.textContent = spec;
-          specSelect.appendChild(option);
-        }
-      });
-
-      if (specs.length === 1 && specs[0] === "General") {
-        specSelect.value = "General";
-      }
-    }
+    specs.forEach(function (spec) {
+      const option = document.createElement("option");
+      option.value = spec;
+      option.textContent = spec === "General" ? "General (All students in class)" : spec;
+      specSelect.appendChild(option);
+    });
+    specSelect.value = specs[0];
 
     updateSmartOverrideHint();
   }

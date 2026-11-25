@@ -11,6 +11,7 @@ import {
 import { getPlatformSettings, toPublicPlatformDirectives } from "@/lib/platform";
 import { createAndSendEmailOtp } from "@/lib/brevo";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
+import { issuePreAuthChallenge } from "@/lib/security";
 
 export const dynamic = "force-dynamic";
 
@@ -45,7 +46,7 @@ export async function POST(req: NextRequest) {
     const phone = String(body.phone || "").trim().slice(0, 40);
     const countryCode = String(body.country_code || "NG").trim().toUpperCase().slice(0, 2) || "NG";
     const stateRegion = String(body.state_region || "").trim().slice(0, 80);
-    const referralCodeUsed = String(body.referral_code || "").trim().toUpperCase().slice(0, 32) || null;
+    const referralCodeInput = String(body.referral_code || "").trim().toUpperCase().slice(0, 32) || null;
     const clientType = body.client_type === "desktop" ? "desktop" : "web";
     const displayHwid = body.display_hwid ? String(body.display_hwid).trim().slice(0, 64) : null;
     const deviceLabel = body.device_label ? String(body.device_label).trim().slice(0, 120) : null;
@@ -65,15 +66,105 @@ export async function POST(req: NextRequest) {
     }
 
     const sql = getSql();
-    const existing = await sql`SELECT id, email_verified FROM users_hq WHERE email = ${email} LIMIT 1`;
+
+    // Validate referral code if supplied (prevent invalid codes or self-referrals)
+    let referralCodeUsed: string | null = null;
+    if (referralCodeInput) {
+      const refRows = await sql`
+        SELECT r.referral_code, u.email AS owner_email
+        FROM referrals r
+        JOIN users_hq u ON u.id = r.owner_user_id
+        WHERE UPPER(r.referral_code) = ${referralCodeInput} AND r.is_active = TRUE
+        LIMIT 1
+      `;
+      if (!refRows.length) {
+        return NextResponse.json(
+          { ok: false, error: "invalid_referral_code", message: "That referral code was not found. Clear it or check the spelling." },
+          { status: 400 }
+        );
+      }
+      if (String(refRows[0].owner_email || "").toLowerCase() === email) {
+        return NextResponse.json(
+          { ok: false, error: "self_referral_not_allowed", message: "You cannot apply your own referral code." },
+          { status: 400 }
+        );
+      }
+      referralCodeUsed = String(refRows[0].referral_code);
+    }
+
+    const otpActive = Boolean(settings.require_email_otp && settings.brevo_configured);
+    const clientMeta = {
+      client_type: clientType,
+      display_hwid: displayHwid,
+      device_label: deviceLabel,
+      app_version: appVersion,
+    };
+
+    const existing = await sql`SELECT id, email_verified, status FROM users_hq WHERE email = ${email} LIMIT 1`;
     if (existing.length > 0) {
+      const exUser = existing[0] as Record<string, any>;
+      // Allow resuming an abandoned unverified signup seamlessly!
+      if (!exUser.email_verified && exUser.status === "active" && otpActive) {
+        const passwordHash = hashPassword(password);
+        await sql`
+          UPDATE users_hq
+          SET password_hash = ${passwordHash}, full_name = ${fullName}, phone = ${phone || null}, updated_at = NOW()
+          WHERE id = ${exUser.id}::uuid
+        `;
+        await sql`
+          UPDATE schools
+          SET school_name = ${schoolName},
+              country_code = ${countryCode},
+              state_region = ${stateRegion || null},
+              contact_phone = ${phone || null},
+              referral_code_used = COALESCE(${referralCodeUsed}, referral_code_used),
+              updated_at = NOW()
+          WHERE owner_user_id = ${exUser.id}::uuid
+        `;
+        const otpRes = await createAndSendEmailOtp({
+          settings,
+          userId: String(exUser.id),
+          email,
+          fullName,
+          schoolName,
+          purpose: "signup_verify",
+          ipAddress: ip,
+          clientMeta,
+          bypassCooldown: true,
+        });
+        if (!otpRes.ok) {
+          return NextResponse.json(
+            { ok: false, error: otpRes.error || "brevo_delivery_failed", message: otpRes.message || "Could not send verification email." },
+            { status: 502 }
+          );
+        }
+        const challengeToken = issuePreAuthChallenge({
+          userId: String(exUser.id),
+          email,
+          role: "school_owner",
+          purpose: "signup_verify",
+          meta: clientMeta,
+        });
+        return NextResponse.json(
+          {
+            ok: true,
+            otp_required: true,
+            purpose: "signup_verify",
+            email,
+            challenge_token: challengeToken,
+            expires_in_seconds: otpRes.expires_in_seconds || 600,
+            message: `We sent a fresh 6-digit verification code to ${email}. Enter it below to finish registration.`,
+          },
+          { status: 200 }
+        );
+      }
+
       return NextResponse.json(
         { ok: false, error: "email_exists", message: "An account with this email already exists. Sign in instead." },
         { status: 409 }
       );
     }
 
-    const otpActive = Boolean(settings.require_email_otp && settings.brevo_configured);
     const passwordHash = hashPassword(password);
     const createdUsers = await sql`
       INSERT INTO users_hq (email, password_hash, full_name, phone, role, status, email_verified)
@@ -119,17 +210,12 @@ export async function POST(req: NextRequest) {
         fullName,
         schoolName,
         purpose: "signup_verify",
-        clientMeta: {
-          client_type: clientType,
-          display_hwid: displayHwid,
-          device_label: deviceLabel,
-          app_version: appVersion,
-        },
+        ipAddress: ip,
+        clientMeta,
         bypassCooldown: true,
       });
 
       if (!otpRes.ok) {
-        // Roll back brand-new unverified user so they aren't blocked by email_exists on retry
         await sql`DELETE FROM referrals WHERE owner_user_id = ${user.id}::uuid`;
         await sql`DELETE FROM schools WHERE id = ${school.id}::uuid`;
         await sql`DELETE FROM users_hq WHERE id = ${user.id}::uuid`;
@@ -139,12 +225,21 @@ export async function POST(req: NextRequest) {
         );
       }
 
+      const challengeToken = issuePreAuthChallenge({
+        userId: String(user.id),
+        email,
+        role: "school_owner",
+        purpose: "signup_verify",
+        meta: clientMeta,
+      });
+
       return NextResponse.json(
         {
           ok: true,
           otp_required: true,
           purpose: "signup_verify",
           email,
+          challenge_token: challengeToken,
           expires_in_seconds: otpRes.expires_in_seconds || 600,
           message: `We sent a 6-digit verification code to ${email}. Enter it below to complete registration.`,
         },
@@ -152,7 +247,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { rawToken, expiresAt } = await createCloudSession({
+    const { rawToken, expiresAt, maxAgeSeconds } = await createCloudSession({
       userId: user.id,
       schoolId: school.id,
       clientType,
@@ -167,6 +262,7 @@ export async function POST(req: NextRequest) {
       school_notice: "",
       school_notice_level: "info",
       feature_overrides: {},
+      last_cloud_backup_at: null,
     };
 
     const payload = {
@@ -198,7 +294,7 @@ export async function POST(req: NextRequest) {
     };
 
     const res = NextResponse.json(payload, { status: 201 });
-    attachSessionCookie(res, rawToken);
+    attachSessionCookie(res, rawToken, maxAgeSeconds);
     return res;
   } catch (err) {
     console.error("Sign-up error:", err);

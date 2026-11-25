@@ -69,7 +69,7 @@
       var examId = {{ attempt.exam_id if attempt.exam_id else 0 }};
       var isCe = {{ 1 if is_ce else 0 }};
       var checkUrl = isCe ? "/ce_exam_check_pause" : "/exam_check_pause";
-      var resumeUrl = isCe ? ("/ce_exam/" + examId) : ("/take_exam/" + examId);
+      var resumeUrl = isCe ? ("/ce_exam/" + attemptId) : ("/exam/" + examId);
       setInterval(function () {
         fetch(checkUrl + "?attempt_id=" + attemptId, { headers: { "X-Requested-With": "XMLHttpRequest" } })
           .then(function (r) { return r.json(); })

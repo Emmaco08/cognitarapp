@@ -3,7 +3,7 @@ import { getSql } from "@/lib/db";
 import { requireHqAdmin } from "@/lib/auth";
 import { signRevocationTombstone } from "@/lib/crypto";
 import { getPlatformSettings, logDeveloperAudit, paystackRequest } from "@/lib/platform";
-import { fulfillConfirmedPaystackPayment } from "@/lib/paystack-fulfill";
+import { fulfillConfirmedPaystackPayment, reverseReferralOnRefund } from "@/lib/paystack-fulfill";
 import { getClientIp } from "@/lib/rate-limit";
 
 export const dynamic = "force-dynamic";
@@ -12,33 +12,67 @@ export async function GET(req: NextRequest) {
   try {
     const hq = await requireHqAdmin(req);
     if (!hq) {
-      return NextResponse.json({ ok: false, error: "forbidden", message: "Developer HQ access required." }, { status: 403 });
+      return NextResponse.json({ ok: false, error: "forbidden", message: "HQ admin access required." }, { status: 403 });
     }
 
-    const status = (req.nextUrl.searchParams.get("status") || "all").trim().toLowerCase();
+    const filter = (req.nextUrl.searchParams.get("filter") || req.nextUrl.searchParams.get("status") || "all").trim().toLowerCase();
     const q = (req.nextUrl.searchParams.get("q") || "").trim().toLowerCase();
     const sql = getSql();
 
-    const rows = await sql`
-      SELECT
-        sp.id, sp.paystack_reference, sp.paystack_transaction_id, sp.currency,
-        sp.amount_minor, sp.original_amount_minor, sp.discount_amount_minor,
-        sp.promo_code_text, sp.payment_channel, sp.status, sp.paid_at, sp.created_at, sp.notes,
-        s.id AS school_id, s.school_name,
-        u.full_name, u.email,
-        p.display_name AS plan_name, p.slug AS plan_slug,
-        l.id AS license_id, l.license_key, l.status AS license_status
-      FROM subscriptions_payments sp
-      JOIN schools s ON s.id = sp.school_id
-      JOIN users_hq u ON u.id = sp.user_id
-      JOIN plans p ON p.id = sp.plan_id
-      LEFT JOIN licenses l ON l.latest_payment_id = sp.id
-      ORDER BY sp.created_at DESC
-      LIMIT 300
-    `;
+    const [rows, kpiRows] = await Promise.all([
+      sql`
+        SELECT
+          sp.id, sp.paystack_reference, sp.paystack_transaction_id, sp.currency,
+          sp.amount_minor, sp.original_amount_minor, sp.discount_amount_minor,
+          sp.fee_minor, sp.customer_paid_minor, sp.is_test,
+          sp.promo_code_text, sp.payment_channel, sp.paystack_sub_channel,
+          sp.verification_checks_json, sp.status, sp.paid_at, sp.refunded_at, sp.refund_reason,
+          sp.created_at, sp.notes,
+          s.id AS school_id, s.school_name,
+          u.full_name, u.email,
+          p.display_name AS plan_name, p.slug AS plan_slug,
+          l.id AS license_id, l.license_key, l.status AS license_status
+        FROM subscriptions_payments sp
+        JOIN schools s ON s.id = sp.school_id
+        JOIN users_hq u ON u.id = sp.user_id
+        JOIN plans p ON p.id = sp.plan_id
+        LEFT JOIN licenses l ON l.latest_payment_id = sp.id
+        ORDER BY sp.created_at DESC
+        LIMIT 300
+      `,
+      // Real revenue KPIs STRICTLY EXCLUDE test payments (`is_test = FALSE`)
+      sql`
+        SELECT
+          COALESCE(SUM(amount_minor) FILTER (
+            WHERE status = 'success' AND is_test = FALSE AND currency = 'NGN'
+              AND COALESCE(paid_at, created_at) >= DATE_TRUNC('day', NOW())
+          ), 0)::bigint AS paid_today_ngn_minor,
+          COALESCE(SUM(amount_minor) FILTER (
+            WHERE status = 'success' AND is_test = FALSE AND currency = 'NGN'
+              AND COALESCE(paid_at, created_at) >= DATE_TRUNC('month', NOW())
+          ), 0)::bigint AS paid_month_ngn_minor,
+          COUNT(*) FILTER (
+            WHERE status = 'initialized' AND created_at >= NOW() - INTERVAL '24 hours'
+          )::int AS waiting_24h_count,
+          COALESCE(SUM(amount_minor) FILTER (
+            WHERE status = 'refunded' AND is_test = FALSE AND currency = 'NGN'
+              AND COALESCE(refunded_at, created_at) >= DATE_TRUNC('month', NOW())
+          ), 0)::bigint AS refunded_month_ngn_minor,
+          COUNT(*) FILTER (WHERE is_test = TRUE)::int AS test_payments_count
+        FROM subscriptions_payments
+      `,
+    ]);
 
     const filtered = rows.filter((r: Record<string, any>) => {
-      if (status !== "all" && r.status !== status) return false;
+      if (filter === "paystack" && r.payment_channel !== "paystack") return false;
+      if (filter === "redeem_code" && r.payment_channel !== "redeem_code") return false;
+      if (filter === "pending" && r.status !== "initialized") return false;
+      if (filter === "initialized" && r.status !== "initialized") return false;
+      if (filter === "success" && r.status !== "success") return false;
+      if (filter === "paid" && r.status !== "success") return false;
+      if (filter === "failed" && r.status !== "failed") return false;
+      if (filter === "refunded" && r.status !== "refunded") return false;
+      if (filter === "test" && !r.is_test) return false;
       if (!q) return true;
       return (
         String(r.paystack_reference || "").toLowerCase().includes(q) ||
@@ -49,7 +83,20 @@ export async function GET(req: NextRequest) {
       );
     });
 
-    return NextResponse.json({ ok: true, count: filtered.length, purchases: filtered });
+    const kpi = (kpiRows[0] || {}) as Record<string, any>;
+
+    return NextResponse.json({
+      ok: true,
+      count: filtered.length,
+      kpis: {
+        paid_today_ngn_minor: Number(kpi.paid_today_ngn_minor || 0),
+        paid_month_ngn_minor: Number(kpi.paid_month_ngn_minor || 0),
+        waiting_24h_count: Number(kpi.waiting_24h_count || 0),
+        refunded_month_ngn_minor: Number(kpi.refunded_month_ngn_minor || 0),
+        test_payments_count: Number(kpi.test_payments_count || 0),
+      },
+      purchases: filtered,
+    });
   } catch (err) {
     console.error("HQ purchases GET error:", err);
     return NextResponse.json({ ok: false, error: "hq_purchases_failed" }, { status: 500 });
@@ -60,7 +107,7 @@ export async function POST(req: NextRequest) {
   try {
     const hq = await requireHqAdmin(req);
     if (!hq) {
-      return NextResponse.json({ ok: false, error: "forbidden", message: "Developer HQ access required." }, { status: 403 });
+      return NextResponse.json({ ok: false, error: "forbidden", message: "HQ admin access required." }, { status: 403 });
     }
 
     const body = (await req.json().catch(() => null)) as Record<string, unknown> | null;
@@ -81,23 +128,42 @@ export async function POST(req: NextRequest) {
 
     if (action === "verify_paystack") {
       const settings = await getPlatformSettings();
+      const secretKey = pay.is_test
+        ? settings.paystack_test_secret_key || settings.paystack_secret_key
+        : settings.paystack_live_secret_key || settings.paystack_secret_key;
+
       const psRes = await paystackRequest(
-        settings.paystack_secret_key,
+        secretKey,
         `/transaction/verify/${encodeURIComponent(pay.paystack_reference)}`,
         "GET"
       );
-      if (!psRes.ok || psRes.data?.data?.status !== "success") {
+      const tx = psRes.data?.data;
+      if (!psRes.ok || !tx || tx.status !== "success") {
         return NextResponse.json(
-          { ok: false, message: `Paystack reports: ${psRes.data?.data?.status || psRes.data?.message || "not paid"}` },
+          { ok: false, message: `Paystack reports: ${tx?.status || psRes.data?.message || "not paid"}` },
           { status: 400 }
         );
       }
       const fulfilled = await fulfillConfirmedPaystackPayment({
         paymentId: pay.id,
-        paystackTransactionId: psRes.data.data.id ? Number(psRes.data.data.id) : null,
-        customerCode: psRes.data.data.customer?.customer_code || null,
-        rawPayload: psRes.data.data,
+        paystackTransactionId: tx.id ? Number(tx.id) : null,
+        customerCode: tx.customer?.customer_code || null,
+        authorizationSig: tx.authorization?.signature || null,
+        paystackSubChannel: tx.channel || null,
+        paystackFeeMinor: tx.fees !== undefined ? Number(tx.fees) : null,
+        customerPaidMinor: tx.amount !== undefined ? Number(tx.amount) : null,
+        isTest: tx.domain === "test" || Boolean(pay.is_test),
+        verificationChecks: [
+          {
+            step: "Manual HQ Paystack re-verify",
+            ok: true,
+            detail: `Verified by ${hq.user.email} · #${tx.id} (${tx.channel || "paystack"})`,
+            at: new Date().toISOString(),
+          },
+        ],
+        rawPayload: tx,
         ipAddress: ip,
+        originUrl: req.nextUrl.origin,
       });
       return NextResponse.json({
         ok: true,
@@ -107,7 +173,20 @@ export async function POST(req: NextRequest) {
     }
 
     if (action === "force_fulfill") {
-      const fulfilled = await fulfillConfirmedPaystackPayment({ paymentId: pay.id, ipAddress: ip });
+      const fulfilled = await fulfillConfirmedPaystackPayment({
+        paymentId: pay.id,
+        isTest: Boolean(pay.is_test),
+        verificationChecks: [
+          {
+            step: "Manual HQ fulfillment",
+            ok: true,
+            detail: `Manually confirmed by ${hq.user.email}`,
+            at: new Date().toISOString(),
+          },
+        ],
+        ipAddress: ip,
+        originUrl: req.nextUrl.origin,
+      });
       return NextResponse.json({
         ok: true,
         message: `Manually marked paid & issued licence ${fulfilled.license.license_key}.`,
@@ -116,13 +195,18 @@ export async function POST(req: NextRequest) {
     }
 
     if (action === "mark_refunded") {
-      await sql`UPDATE subscriptions_payments SET status = 'refunded' WHERE id = ${pay.id}::uuid`;
+      const reason = String(body?.reason || "Order refunded by CogniTara HQ").trim().slice(0, 240);
+      await sql`
+        UPDATE subscriptions_payments
+        SET status = 'refunded', refunded_at = NOW(), refund_reason = ${reason}
+        WHERE id = ${pay.id}::uuid
+      `;
       const lics = await sql`SELECT id FROM licenses WHERE latest_payment_id = ${pay.id}::uuid AND status != 'revoked'`;
       for (const lic of lics) {
         const tomb = signRevocationTombstone({
           licenseId: lic.id,
           reasonCode: "PAYMENT_REFUNDED",
-          reasonDetail: "Order refunded by CogniTara HQ",
+          reasonDetail: reason,
         });
         await sql`
           UPDATE licenses
@@ -130,6 +214,7 @@ export async function POST(req: NextRequest) {
           WHERE id = ${lic.id}::uuid
         `;
       }
+      await reverseReferralOnRefund(pay.id);
       await logDeveloperAudit({
         actorUserId: hq.user.id,
         actorEmail: hq.user.email,
@@ -137,9 +222,9 @@ export async function POST(req: NextRequest) {
         targetType: "payment",
         targetId: pay.id,
         ipAddress: ip,
-        details: { reference: pay.paystack_reference, revoked_licenses: lics.length },
+        details: { reference: pay.paystack_reference, reason, revoked_licenses: lics.length },
       });
-      return NextResponse.json({ ok: true, message: `Marked refunded and revoked ${lics.length} linked licence(s).` });
+      return NextResponse.json({ ok: true, message: `Marked refunded, revoked ${lics.length} licence(s), and reversed any referral credit.` });
     }
 
     return NextResponse.json({ ok: false, message: "Unsupported payment action." }, { status: 400 });

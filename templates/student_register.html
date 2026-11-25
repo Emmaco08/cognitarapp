@@ -147,16 +147,16 @@
             </div>
 
             <div class="ed-field">
-              <label class="ed-label" for="photo">Passport photo</label>
+              <label class="ed-label" for="photo">Passport photo <span style="opacity:.65;font-weight:400">(optional)</span></label>
               <label class="ed-drop">
-                <input type="file" name="photo" id="photo" accept="image/*" required onchange="previewAndValidate(this)">
+                <input type="file" name="photo" id="photo" accept="image/*" onchange="previewAndValidate(this)">
                 <span class="ed-drop__avatar">
                   <span id="dropIcon">{{ ico('i-upload', 'ct-ico--sm') }}</span>
                   <img id="preview" alt="Preview">
                 </span>
                 <span class="ed-drop__txt">
-                  <strong>Upload student passport photo</strong>
-                  <span id="imageStatus">PNG, JPG, or WEBP · full quality preserved</span>
+                  <strong>Upload student passport photo (optional)</strong>
+                  <span id="imageStatus">PNG, JPG, or WEBP · any size supported, full quality preserved</span>
                 </span>
               </label>
             </div>

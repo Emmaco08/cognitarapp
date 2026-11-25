@@ -801,6 +801,39 @@
         });
     }
 
+    async function openAddClassModal() {
+        const res = await Swal.fire({
+            title: 'Add Custom Class',
+            html:
+                '<input id="swalClassName" class="swal2-input" placeholder="e.g., Grade 13, SS 3 Science, Reception">' +
+                '<select id="swalClassLevel" class="swal2-select" style="width:82%;margin-top:8px;">' +
+                '<option value="primary">Primary</option>' +
+                '<option value="junior_secondary">Junior Secondary</option>' +
+                '<option value="senior_secondary" selected>Senior Secondary</option>' +
+                '<option value="custom">Custom</option>' +
+                '</select>',
+            showCancelButton: true,
+            confirmButtonText: 'Add Class',
+            focusConfirm: false,
+            preConfirm: () => {
+                const name = (document.getElementById('swalClassName')?.value || '').trim();
+                const level_category = document.getElementById('swalClassLevel')?.value || 'custom';
+                if (!name) {
+                    Swal.showValidationMessage('Please enter a class name');
+                    return false;
+                }
+                return { name, level_category };
+            }
+        });
+        if (!res.isConfirmed || !res.value) return;
+        await CogniTaraActions.execute({
+            url: '/admin/school-settings/classes/add',
+            method: 'POST',
+            data: res.value,
+            onSuccess: () => setTimeout(() => location.reload(), 500)
+        });
+    }
+
     async function deleteClass(classId, className) {
         await CogniTaraActions.execute({
             url: `/admin/school-settings/classes/${classId}/delete`,

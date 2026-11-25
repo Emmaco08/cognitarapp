@@ -6,7 +6,15 @@ import math
 import re
 import json
 import io
+from io import StringIO, BytesIO
 import csv
+try:
+    import openpyxl
+    from openpyxl.styles import Font, PatternFill
+except ImportError:
+    openpyxl = None
+    Font = None
+    PatternFill = None
 from datetime import datetime, timedelta, timezone
 from flask import Blueprint, render_template, request, redirect, session, url_for, send_file, Response, jsonify
 from werkzeug.utils import secure_filename

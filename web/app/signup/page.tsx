@@ -21,21 +21,54 @@ export default function SignUpPage() {
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
+  const [showPw, setShowPw] = useState(false);
   const [referralCode, setReferralCode] = useState("");
+  const [refStatus, setRefStatus] = useState<{ state: "idle" | "valid" | "invalid"; message: string }>({
+    state: "idle",
+    message: "",
+  });
+
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
-  // OTP verification state
-  const [otpStep, setOtpStep] = useState<{ email: string; purpose: string } | null>(null);
+  // OTP verification state with signed challenge token
+  const [otpStep, setOtpStep] = useState<{ email: string; challengeToken: string } | null>(null);
   const [otpCode, setOtpCode] = useState("");
   const [resendCooldown, setResendCooldown] = useState(0);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const refParam = (params.get("ref") || "").trim().toUpperCase();
+    if (refParam) {
+      setReferralCode(refParam);
+      void checkReferralCode(refParam);
+    }
+  }, []);
 
   useEffect(() => {
     if (resendCooldown <= 0) return;
     const t = setInterval(() => setResendCooldown((v) => Math.max(0, v - 1)), 1000);
     return () => clearInterval(t);
   }, [resendCooldown]);
+
+  async function checkReferralCode(code: string) {
+    const clean = code.trim().toUpperCase();
+    if (!clean) {
+      setRefStatus({ state: "idle", message: "" });
+      return;
+    }
+    try {
+      const res = await fetch(`/api/v1/referrals/validate?code=${encodeURIComponent(clean)}`).then((r) => r.json());
+      if (res?.valid) {
+        setRefStatus({ state: "valid", message: res.message || "Valid referral code!" });
+      } else {
+        setRefStatus({ state: "invalid", message: res?.message || "Referral code not found." });
+      }
+    } catch {
+      setRefStatus({ state: "idle", message: "" });
+    }
+  }
 
   const score = passwordScore(password);
 
@@ -54,7 +87,7 @@ export default function SignUpPage() {
           email,
           phone,
           password,
-          referral_code: referralCode || undefined,
+          referral_code: referralCode.trim() || undefined,
           client_type: "web",
         }),
       });
@@ -65,15 +98,18 @@ export default function SignUpPage() {
         return;
       }
       if (data.otp_required) {
-        setOtpStep({ email: data.email || email, purpose: data.purpose || "signup_verify" });
-        setNotice(data.message || `Enter the 6-digit code sent to ${data.email || email}.`);
+        setOtpStep({
+          email: String(data.email || email),
+          challengeToken: String(data.challenge_token || ""),
+        });
+        setNotice(data.message || `Enter the 6-digit verification code sent to ${data.email || email}.`);
         setResendCooldown(45);
         setSubmitting(false);
         return;
       }
       router.push("/dashboard");
     } catch {
-      setError("Network error while reaching CogniTara Cloud. Please try again.");
+      setError("Could not reach CogniTara right now. Please try again.");
       setSubmitting(false);
     }
   }
@@ -90,7 +126,8 @@ export default function SignUpPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           email: otpStep.email,
-          purpose: otpStep.purpose,
+          challenge_token: otpStep.challengeToken,
+          method: "email_otp",
           code: otpCode.trim(),
           client_type: "web",
         }),
@@ -116,7 +153,7 @@ export default function SignUpPage() {
       const res = await fetch("/api/v1/auth/otp/send", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: otpStep.email, purpose: otpStep.purpose }),
+        body: JSON.stringify({ email: otpStep.email, challenge_token: otpStep.challengeToken }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok || !data.ok) {
@@ -140,7 +177,7 @@ export default function SignUpPage() {
             <>
               <div className="auth-head">
                 <h1>Verify your email</h1>
-                <p>Enter the 6-digit Brevo security code sent to <strong>{otpStep.email}</strong>.</p>
+                <p>Enter the 6-digit verification code sent to <strong>{otpStep.email}</strong>.</p>
               </div>
 
               {error ? <div className="alert alert--bad" role="alert">{error}</div> : null}
@@ -148,7 +185,7 @@ export default function SignUpPage() {
 
               <form className="form-grid" onSubmit={onVerifyOtp}>
                 <div className="field">
-                  <label htmlFor="otpCode">6-Digit Verification Code</label>
+                  <label htmlFor="otpCode">6-digit verification code</label>
                   <input
                     id="otpCode"
                     className="mono"
@@ -159,7 +196,7 @@ export default function SignUpPage() {
                     value={otpCode}
                     onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
                     placeholder="000000"
-                    style={{ textAlign: "center", fontSize: 22, letterSpacing: "0.35em", height: 50 }}
+                    style={{ textAlign: "center", fontSize: 20, letterSpacing: "0.32em", height: 48 }}
                   />
                 </div>
                 <button type="submit" className="btn btn--primary btn--lg" disabled={submitting || otpCode.length < 6}>
@@ -176,7 +213,7 @@ export default function SignUpPage() {
                       setNotice("");
                     }}
                   >
-                    ← Back
+                    Back
                   </button>
                   <button
                     type="button"
@@ -193,7 +230,7 @@ export default function SignUpPage() {
             <>
               <div className="auth-head">
                 <h1>Create your school account</h1>
-                <p>Sign up once to sync your school profile, licences, and CogniTara Studio desktop app.</p>
+                <p>One account connects your Windows exam server, licences, and cloud exam backups.</p>
               </div>
 
               {error ? <div className="alert alert--bad" role="alert">{error}</div> : null}
@@ -201,7 +238,7 @@ export default function SignUpPage() {
               <form className="form-grid" onSubmit={onSubmit}>
                 <div className="form-row">
                   <div className="field">
-                    <label htmlFor="fullName">Full name</label>
+                    <label htmlFor="fullName">Your full name</label>
                     <input
                       id="fullName"
                       required
@@ -226,7 +263,7 @@ export default function SignUpPage() {
 
                 <div className="form-row">
                   <div className="field">
-                    <label htmlFor="email">Work or school email</label>
+                    <label htmlFor="email">School email</label>
                     <input
                       id="email"
                       type="email"
@@ -252,22 +289,27 @@ export default function SignUpPage() {
 
                 <div className="field">
                   <label htmlFor="password">Password</label>
-                  <input
-                    id="password"
-                    type="password"
-                    required
-                    minLength={8}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="At least 8 characters"
-                    autoComplete="new-password"
-                  />
+                  <div className="pw-wrap">
+                    <input
+                      id="password"
+                      type={showPw ? "text" : "password"}
+                      required
+                      minLength={8}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="At least 8 characters"
+                      autoComplete="new-password"
+                    />
+                    <button type="button" className="pw-toggle" onClick={() => setShowPw((v) => !v)}>
+                      {showPw ? "Hide" : "Show"}
+                    </button>
+                  </div>
                   <div className="meter" data-score={score} aria-hidden="true">
                     <i /><i /><i /><i />
                   </div>
                   <span className="field-hint">
                     {score === 0
-                      ? "Use 8+ characters with letters and numbers."
+                      ? "Use 8 or more characters with letters and numbers."
                       : ["", "Too weak", "Fair password", "Strong password", "Very strong password"][score]}
                   </span>
                 </div>
@@ -278,10 +320,20 @@ export default function SignUpPage() {
                     id="referralCode"
                     className="mono"
                     value={referralCode}
-                    onChange={(e) => setReferralCode(e.target.value.toUpperCase())}
+                    onChange={(e) => {
+                      const val = e.target.value.toUpperCase();
+                      setReferralCode(val);
+                      if (!val.trim()) setRefStatus({ state: "idle", message: "" });
+                    }}
+                    onBlur={() => void checkReferralCode(referralCode)}
                     placeholder="CT-XXXX-XXXXXX"
                     autoComplete="off"
                   />
+                  {refStatus.state === "valid" ? (
+                    <span className="field-hint" style={{ color: "var(--ok)" }}>{refStatus.message}</span>
+                  ) : refStatus.state === "invalid" ? (
+                    <span className="field-hint" style={{ color: "var(--bad)" }}>{refStatus.message}</span>
+                  ) : null}
                 </div>
 
                 <button type="submit" className="btn btn--primary btn--lg" disabled={submitting}>
@@ -289,8 +341,8 @@ export default function SignUpPage() {
                 </button>
               </form>
 
-              <p style={{ marginTop: 18, fontSize: 13.5, color: "var(--ink-2)", textAlign: "center" }}>
-                Already have a CogniTara Cloud account? <Link href="/signin">Sign in</Link>
+              <p style={{ marginTop: 18, marginBottom: 0, fontSize: 13.5, color: "var(--ink-2)", textAlign: "center" }}>
+                Already have an account? <Link href="/signin">Sign in</Link>
               </p>
             </>
           )}

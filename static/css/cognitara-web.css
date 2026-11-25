@@ -2547,7 +2547,57 @@ html.ct-motion .ct-lift.is-settled { transition: transform var(--ct-d-3) var(--c
   .ct-list__item { flex-wrap: wrap; }
 }
 
-/* ---------- 12. Reduced motion ---------- */
+/* ---------- 12. Universal Screen Adaptation (Laptops 1280/1366 -> Large Monitors 1920/2560+) & Craft Floor ---------- */
+.ct-app ::selection, .ct-auth-body ::selection { background: rgba(59, 130, 246, 0.28); color: var(--ct-ink); }
+.ct-app input, .ct-app textarea, .ct-auth-body input, .ct-auth-body textarea { caret-color: var(--ct-primary); }
+.ct-app h1, .ct-app h2, .ct-auth-body h1, .ct-auth-body h2 { text-wrap: balance; }
+.ct-app .tc-kpi__val, .ct-app .ct-stat__value, .ct-app .ct-mono, .ct-app .tc-mono { font-variant-numeric: tabular-nums; }
+.ct-app ::-webkit-scrollbar { width: 8px; height: 8px; }
+.ct-app ::-webkit-scrollbar-track { background: transparent; }
+.ct-app ::-webkit-scrollbar-thumb { background: var(--ct-line-2); border-radius: 999px; }
+.ct-app ::-webkit-scrollbar-thumb:hover { background: var(--ct-ink-3); }
+
+/* Keep sticky sidebar/topbar functional & prevent 1280px/1366px cramping */
+@media (max-width: 1400px) and (min-width: 961px) {
+  :root { --ct-sidebar-w: 232px; }
+  .ct-content { padding: 22px 24px 56px; }
+  .ct-topbar { padding: 0 22px; }
+  .ct-search-trigger { width: min(260px, 24vw); }
+  body.ad-studio.ad-ecc .stats-row { grid-template-columns: repeat(auto-fit, minmax(175px, 1fr)) !important; }
+  body.ad-studio.ad-ecc .exams-grid { grid-template-columns: repeat(auto-fill, minmax(420px, 1fr)) !important; }
+  .tc-table--exams th, .tc-table--exams td { padding: 11px 12px; }
+}
+
+/* Fluid wide-screen & large-monitor adaptation (1600px, 1920px, 2560px+) */
+@media (min-width: 1600px) {
+  :root { --ct-content-max: 1520px; --ct-sidebar-w: 264px; }
+  .ct-content,
+  body.tc-studio .ct-content,
+  body.ad-studio .ct-content {
+    max-width: min(1520px, 100%) !important;
+    margin-inline: auto;
+    padding-inline: 36px;
+  }
+  .st-main,
+  body.ct-exam-studio .main-content {
+    max-width: min(1420px, 94vw) !important;
+    margin-inline: auto;
+  }
+  body.ad-studio.ad-ecc .exams-grid {
+    grid-template-columns: repeat(auto-fill, minmax(460px, 1fr)) !important;
+  }
+}
+
+@media (min-width: 2100px) {
+  :root { --ct-content-max: 1760px; }
+  .ct-content,
+  body.tc-studio .ct-content,
+  body.ad-studio .ct-content {
+    max-width: min(1760px, 100%) !important;
+  }
+}
+
+/* ---------- 13. Reduced motion ---------- */
 @media (prefers-reduced-motion: reduce) {
   .ct-app *, .ct-app *::before, .ct-app *::after,
   .ct-auth-body *, .ct-auth-body *::before, .ct-auth-body *::after {
@@ -2562,7 +2612,7 @@ html.ct-motion .ct-lift.is-settled { transition: transform var(--ct-d-3) var(--c
   html:has(body.ct-app), html:has(body.ct-auth-body) { scroll-behavior: auto; }
 }
 
-/* ---------- 13. Print ---------- */
+/* ---------- 14. Print ---------- */
 @media print {
   .ct-sidebar, .ct-topbar, .ct-scrim, .ct-toasts { display: none !important; }
   .ct-shell { grid-template-columns: 1fr !important; }

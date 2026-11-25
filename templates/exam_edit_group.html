@@ -1,4 +1,4 @@
-{%- from '_ct_shell.html' import ico, ct_boot_script, admin_shell_start, teacher_shell_start, student_topbar, shell_end -%}
+{%- from '_ct_shell.html' import ico, ct_boot_script, admin_shell_start, teacher_shell_start, portal_shell_start, portal_shell_end, student_topbar, shell_end -%}
 <!DOCTYPE html>
 <html lang="en" data-theme="dark">
 <head>
@@ -89,7 +89,7 @@
   {{ ct_boot_script() }}
 </head>
 <body class="ct-app ct-bs tc-studio">
-{{ admin_shell_start(active='exams', crumb='Edit Question Group') }}
+{{ portal_shell_start(active='exams', crumb='Edit Question Group') }}
 
     <div class="edit-container">
         <div class="card-custom">
@@ -112,6 +112,6 @@
         </div>
     </div>
 
-{{ shell_end(role='admin') }}
+{{ portal_shell_end() }}
 </body>
 </html>

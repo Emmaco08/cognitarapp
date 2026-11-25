@@ -348,6 +348,81 @@ CREATE TABLE IF NOT EXISTS email_otp_codes (
 );
 CREATE INDEX IF NOT EXISTS idx_email_otp_lookup ON email_otp_codes(email, purpose, created_at DESC);
 
+-- 19. v2.2.3 Upgrades: Live/Test Paystack Keys, Fee Modes, HQ 2FA (TOTP + Email OTP), Brute-Force Lockouts & Cloud Exam Backups
+ALTER TABLE platform_settings ADD COLUMN IF NOT EXISTS paystack_live_public_key TEXT NOT NULL DEFAULT '';
+ALTER TABLE platform_settings ADD COLUMN IF NOT EXISTS paystack_live_secret_enc TEXT NOT NULL DEFAULT '';
+ALTER TABLE platform_settings ADD COLUMN IF NOT EXISTS paystack_test_public_key TEXT NOT NULL DEFAULT '';
+ALTER TABLE platform_settings ADD COLUMN IF NOT EXISTS paystack_test_secret_enc TEXT NOT NULL DEFAULT '';
+ALTER TABLE platform_settings ADD COLUMN IF NOT EXISTS paystack_fee_mode TEXT NOT NULL DEFAULT 'merchant';
+ALTER TABLE platform_settings ADD COLUMN IF NOT EXISTS paystack_fee_pct NUMERIC(5,2) NOT NULL DEFAULT 1.50;
+ALTER TABLE platform_settings ADD COLUMN IF NOT EXISTS paystack_fee_flat_ngn INTEGER NOT NULL DEFAULT 100;
+ALTER TABLE platform_settings ADD COLUMN IF NOT EXISTS paystack_fee_cap_ngn INTEGER NOT NULL DEFAULT 2000;
+ALTER TABLE platform_settings ADD COLUMN IF NOT EXISTS paystack_fee_flat_threshold_ngn INTEGER NOT NULL DEFAULT 2500;
+ALTER TABLE platform_settings ADD COLUMN IF NOT EXISTS test_mode_staff_only BOOLEAN NOT NULL DEFAULT FALSE;
+ALTER TABLE platform_settings ADD COLUMN IF NOT EXISTS backup_reminder_days INTEGER NOT NULL DEFAULT 7;
+ALTER TABLE platform_settings ADD COLUMN IF NOT EXISTS require_hq_2fa BOOLEAN NOT NULL DEFAULT TRUE;
+
+-- Non-destructively copy existing Paystack key pair into live or test slot ONLY if target slot is empty
+UPDATE platform_settings
+SET paystack_live_public_key = CASE
+      WHEN paystack_live_public_key = '' AND (paystack_mode = 'live' OR paystack_public_key LIKE 'pk_live_%') THEN paystack_public_key
+      ELSE paystack_live_public_key
+    END,
+    paystack_live_secret_enc = CASE
+      WHEN paystack_live_secret_enc = '' AND (paystack_mode = 'live' OR paystack_public_key LIKE 'pk_live_%') THEN paystack_secret_key_enc
+      ELSE paystack_live_secret_enc
+    END,
+    paystack_test_public_key = CASE
+      WHEN paystack_test_public_key = '' AND paystack_mode != 'live' AND paystack_public_key NOT LIKE 'pk_live_%' THEN paystack_public_key
+      ELSE paystack_test_public_key
+    END,
+    paystack_test_secret_enc = CASE
+      WHEN paystack_test_secret_enc = '' AND paystack_mode != 'live' AND paystack_public_key NOT LIKE 'pk_live_%' THEN paystack_secret_key_enc
+      ELSE paystack_test_secret_enc
+    END
+WHERE id = 1;
+
+ALTER TABLE subscriptions_payments ADD COLUMN IF NOT EXISTS is_test BOOLEAN NOT NULL DEFAULT FALSE;
+ALTER TABLE subscriptions_payments ADD COLUMN IF NOT EXISTS fee_minor BIGINT NOT NULL DEFAULT 0;
+ALTER TABLE subscriptions_payments ADD COLUMN IF NOT EXISTS customer_paid_minor BIGINT NOT NULL DEFAULT 0;
+ALTER TABLE subscriptions_payments ADD COLUMN IF NOT EXISTS paystack_sub_channel TEXT;
+ALTER TABLE subscriptions_payments ADD COLUMN IF NOT EXISTS verification_checks_json JSONB NOT NULL DEFAULT '[]'::jsonb;
+ALTER TABLE subscriptions_payments ADD COLUMN IF NOT EXISTS refunded_at TIMESTAMPTZ;
+ALTER TABLE subscriptions_payments ADD COLUMN IF NOT EXISTS refund_reason TEXT;
+
+ALTER TABLE users_hq ADD COLUMN IF NOT EXISTS totp_secret_enc TEXT;
+ALTER TABLE users_hq ADD COLUMN IF NOT EXISTS totp_enabled BOOLEAN NOT NULL DEFAULT FALSE;
+ALTER TABLE users_hq ADD COLUMN IF NOT EXISTS totp_recovery_hashes_json JSONB NOT NULL DEFAULT '[]'::jsonb;
+
+ALTER TABLE schools ADD COLUMN IF NOT EXISTS last_cloud_backup_at TIMESTAMPTZ;
+
+ALTER TABLE email_otp_codes DROP CONSTRAINT IF EXISTS email_otp_codes_purpose_check;
+ALTER TABLE email_otp_codes ADD CONSTRAINT email_otp_codes_purpose_check CHECK (purpose IN ('signup_verify', 'signin_otp', 'password_reset', 'hq_2fa'));
+
+CREATE TABLE IF NOT EXISTS auth_lockouts (
+    lock_key TEXT PRIMARY KEY,
+    attempts INTEGER NOT NULL DEFAULT 0,
+    locked_until TIMESTAMPTZ,
+    last_attempt_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_auth_lockouts_until ON auth_lockouts(locked_until);
+
+CREATE TABLE IF NOT EXISTS cloud_exam_backups (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    school_id UUID NOT NULL REFERENCES schools(id) ON DELETE CASCADE,
+    user_id UUID REFERENCES users_hq(id) ON DELETE SET NULL,
+    filename TEXT NOT NULL,
+    label TEXT NOT NULL DEFAULT '',
+    app_version TEXT,
+    raw_size_bytes BIGINT NOT NULL DEFAULT 0,
+    compressed_bytes BIGINT NOT NULL DEFAULT 0,
+    sha256 CHAR(64) NOT NULL,
+    stats_json JSONB NOT NULL DEFAULT '{}'::jsonb,
+    payload_b64 TEXT NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_cloud_backups_school_time ON cloud_exam_backups(school_id, created_at DESC);
+
 -- Seed Default Commercial Plans (Idempotent)
 INSERT INTO plans (slug, display_name, description, badge, sort_order, billing_cycle, plan_tier, duration_days, lease_days, price_ngn_kobo, price_usd_cents, max_devices, default_commission_pct, default_bonus_days, features_json)
 VALUES

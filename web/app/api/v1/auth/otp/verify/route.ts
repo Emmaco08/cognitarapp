@@ -6,9 +6,17 @@ import {
   isValidEmail,
   normalizeEmail,
 } from "@/lib/auth";
-import { OtpPurpose, verifyStoredEmailOtp } from "@/lib/brevo";
-import { getPlatformSettings, toPublicPlatformDirectives } from "@/lib/platform";
+import { verifyStoredEmailOtp } from "@/lib/brevo";
+import { decryptSecret } from "@/lib/crypto";
+import { getPlatformSettings, logDeveloperAudit, toPublicPlatformDirectives } from "@/lib/platform";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
+import {
+  checkDbLockout,
+  clearDbAuthLockout,
+  recordDbAuthFailure,
+  verifyPreAuthChallenge,
+} from "@/lib/security";
+import { consumeRecoveryCode, verifyTotpCode } from "@/lib/totp";
 
 export const dynamic = "force-dynamic";
 
@@ -28,31 +36,50 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: false, error: "invalid_json", message: "Invalid JSON body." }, { status: 400 });
     }
 
-    const email = normalizeEmail(String(body.email || ""));
-    const code = String(body.code || "").trim();
-    const rawPurpose = body.purpose ? String(body.purpose) : undefined;
-    const purpose: OtpPurpose | undefined =
-      rawPurpose === "signup_verify" || rawPurpose === "signin_otp" || rawPurpose === "password_reset"
-        ? rawPurpose
-        : undefined;
-
-    if (!isValidEmail(email)) {
-      return NextResponse.json({ ok: false, error: "invalid_email", message: "Invalid email address." }, { status: 400 });
-    }
-
-    const verification = await verifyStoredEmailOtp({ email, code, purpose });
-    if (!verification.ok || !verification.userId) {
+    const challengeToken = String(body.challenge_token || "").trim();
+    const challenge = verifyPreAuthChallenge(challengeToken);
+    if (!challenge) {
       return NextResponse.json(
-        { ok: false, error: verification.error || "otp_invalid", message: verification.message || "Invalid verification code." },
-        { status: 400 }
+        {
+          ok: false,
+          error: "challenge_expired",
+          message: "Your verification session expired. Please sign in with your password again.",
+        },
+        { status: 401 }
       );
     }
 
+    const email = normalizeEmail(String(body.email || challenge.email));
+    if (!isValidEmail(email) || email !== challenge.email) {
+      return NextResponse.json(
+        { ok: false, error: "challenge_mismatch", message: "Verification token does not match this account." },
+        { status: 403 }
+      );
+    }
+
+    const lockKey = `otp-verify:${ip}:${email}`;
+    const lock = await checkDbLockout(lockKey);
+    if (lock.locked) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error: "verification_locked",
+          retry_after_sec: lock.retryAfterSec,
+          message: `Too many invalid codes. Try again in ${Math.max(1, Math.ceil(lock.retryAfterSec / 60))} minute(s).`,
+        },
+        { status: 429 }
+      );
+    }
+
+    const code = String(body.code || "").trim();
+    const method = String(body.method || "email_otp").trim().toLowerCase();
+
     const sql = getSql();
     const users = await sql`
-      SELECT id, email, full_name, phone, role, status, email_verified, created_at
+      SELECT id, email, full_name, phone, role, status, email_verified,
+             totp_enabled, totp_secret_enc, totp_recovery_hashes_json, created_at
       FROM users_hq
-      WHERE id = ${verification.userId}::uuid
+      WHERE id = ${challenge.uid}::uuid AND email = ${email}
       LIMIT 1
     `;
     if (!users.length || users[0].status !== "active") {
@@ -62,10 +89,63 @@ export async function POST(req: NextRequest) {
       );
     }
     const user = users[0] as Record<string, any>;
+    const isHqAdmin = user.role === "hq_super_admin" || user.role === "hq_admin";
+
+    // Verify 2nd factor according to method (TOTP, recovery code, or Brevo email OTP)
+    if (method === "totp") {
+      if (!user.totp_enabled || !user.totp_secret_enc) {
+        return NextResponse.json(
+          { ok: false, error: "totp_not_enabled", message: "Authenticator app 2FA is not enabled on this account." },
+          { status: 400 }
+        );
+      }
+      const secret = decryptSecret(user.totp_secret_enc);
+      if (!verifyTotpCode(secret, code)) {
+        await recordDbAuthFailure(lockKey);
+        if (isHqAdmin) {
+          await logDeveloperAudit({ actorUserId: user.id, actorEmail: user.email, action: "hq_2fa_failed", ipAddress: ip, details: { method: "totp" } });
+        }
+        return NextResponse.json(
+          { ok: false, error: "invalid_totp", message: "Incorrect 6-digit authenticator code. Check your device clock and try again." },
+          { status: 400 }
+        );
+      }
+    } else if (method === "recovery_code") {
+      const hashes: string[] = Array.isArray(user.totp_recovery_hashes_json) ? user.totp_recovery_hashes_json : [];
+      const remaining = consumeRecoveryCode(code, hashes);
+      if (!remaining) {
+        await recordDbAuthFailure(lockKey);
+        if (isHqAdmin) {
+          await logDeveloperAudit({ actorUserId: user.id, actorEmail: user.email, action: "hq_2fa_failed", ipAddress: ip, details: { method: "recovery_code" } });
+        }
+        return NextResponse.json(
+          { ok: false, error: "invalid_recovery_code", message: "Invalid or already-used recovery code." },
+          { status: 400 }
+        );
+      }
+      await sql`
+        UPDATE users_hq SET totp_recovery_hashes_json = ${JSON.stringify(remaining)}::jsonb, updated_at = NOW()
+        WHERE id = ${user.id}::uuid
+      `;
+    } else {
+      const verification = await verifyStoredEmailOtp({ email, code, purpose: challenge.purpose });
+      if (!verification.ok || verification.userId !== String(user.id)) {
+        await recordDbAuthFailure(lockKey);
+        if (isHqAdmin) {
+          await logDeveloperAudit({ actorUserId: user.id, actorEmail: user.email, action: "hq_2fa_failed", ipAddress: ip, details: { method: "email_otp" } });
+        }
+        return NextResponse.json(
+          { ok: false, error: verification.error || "otp_invalid", message: verification.message || "Invalid verification code." },
+          { status: 400 }
+        );
+      }
+    }
+
+    await clearDbAuthLockout(lockKey);
 
     const schools = await sql`
       SELECT id, school_name, country_code, state_region, contact_email, contact_phone, status,
-             ban_reason, custom_notice, custom_notice_level, feature_overrides_json, created_at
+             ban_reason, custom_notice, custom_notice_level, feature_overrides_json, last_cloud_backup_at, created_at
       FROM schools
       WHERE owner_user_id = ${user.id}::uuid
       ORDER BY created_at ASC
@@ -86,7 +166,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const meta = verification.clientMeta || {};
+    const meta = (challenge.meta || {}) as Record<string, any>;
     const clientType = body.client_type === "desktop" || meta.client_type === "desktop" ? "desktop" : "web";
     const displayHwid = body.display_hwid
       ? String(body.display_hwid).trim().slice(0, 64)
@@ -134,13 +214,24 @@ export async function POST(req: NextRequest) {
         `
       : [];
 
-    const { rawToken, expiresAt } = await createCloudSession({
+    const { rawToken, expiresAt, maxAgeSeconds } = await createCloudSession({
       userId: user.id,
       schoolId: school ? school.id : null,
       clientType,
       deviceLabel,
       displayHwid,
+      isHqAdmin,
     });
+
+    if (isHqAdmin) {
+      await logDeveloperAudit({
+        actorUserId: user.id,
+        actorEmail: user.email,
+        action: "hq_signin_2fa_success",
+        ipAddress: ip,
+        details: { client_type: clientType, method },
+      });
+    }
 
     const settings = await getPlatformSettings();
     const directives = {
@@ -150,6 +241,7 @@ export async function POST(req: NextRequest) {
       school_notice: school?.custom_notice || "",
       school_notice_level: school?.custom_notice_level || "info",
       feature_overrides: school?.feature_overrides_json || {},
+      last_cloud_backup_at: school?.last_cloud_backup_at ? new Date(school.last_cloud_backup_at).toISOString() : null,
     };
 
     const res = NextResponse.json({
@@ -166,6 +258,7 @@ export async function POST(req: NextRequest) {
         role: user.role,
         status: user.status,
         email_verified: true,
+        totp_enabled: Boolean(user.totp_enabled),
       },
       school: school
         ? {
@@ -176,13 +269,14 @@ export async function POST(req: NextRequest) {
             contact_email: school.contact_email,
             contact_phone: school.contact_phone || "",
             status: school.status,
+            last_cloud_backup_at: school.last_cloud_backup_at ? new Date(school.last_cloud_backup_at).toISOString() : null,
           }
         : null,
       referral_code: referralCode,
       licenses,
       directives,
     });
-    attachSessionCookie(res, rawToken);
+    attachSessionCookie(res, rawToken, maxAgeSeconds);
     return res;
   } catch (err) {
     console.error("OTP verify error:", err);

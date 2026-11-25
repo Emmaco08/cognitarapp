@@ -7,18 +7,45 @@ import {
   signLicenseLease,
 } from "./crypto";
 
+export type PaystackFeeMode = "merchant" | "customer_added" | "paystack_checkout";
+
 export interface PlatformSettingsRow {
+  // Active resolved Paystack keys (based on paystack_mode)
   paystack_public_key: string;
   paystack_secret_key: string;
   paystack_secret_masked: string;
   paystack_secret_configured: boolean;
   paystack_mode: "test" | "live";
+
+  // Dedicated Live & Test Paystack slots (SolutionTee-grade dual slot)
+  paystack_live_public_key: string;
+  paystack_live_secret_key: string;
+  paystack_live_secret_masked: string;
+  paystack_live_configured: boolean;
+  paystack_test_public_key: string;
+  paystack_test_secret_key: string;
+  paystack_test_secret_masked: string;
+  paystack_test_configured: boolean;
+
+  // Paystack fee bearer settings
+  paystack_fee_mode: PaystackFeeMode;
+  paystack_fee_pct: number;
+  paystack_fee_flat_ngn: number;
+  paystack_fee_cap_ngn: number;
+  paystack_fee_flat_threshold_ngn: number;
+  test_mode_staff_only: boolean;
+
+  // Brevo & 2FA settings
   brevo_api_key: string;
   brevo_api_key_masked: string;
   brevo_configured: boolean;
   brevo_sender_email: string;
   brevo_sender_name: string;
   require_email_otp: boolean;
+  require_hq_2fa: boolean;
+
+  // Global directives & Cloud Exam Backups
+  backup_reminder_days: number;
   default_currency: string;
   maintenance_mode: boolean;
   maintenance_message: string;
@@ -36,24 +63,71 @@ export async function getPlatformSettings(): Promise<PlatformSettingsRow> {
   await sql`INSERT INTO platform_settings (id) VALUES (1) ON CONFLICT (id) DO NOTHING`;
   const rows = await sql`SELECT * FROM platform_settings WHERE id = 1 LIMIT 1`;
   const r = (rows[0] || {}) as Record<string, any>;
-  const decryptedSecret = decryptSecret(r.paystack_secret_key_enc) || (process.env.PAYSTACK_SECRET_KEY || "").trim();
-  const publicKey = String(r.paystack_public_key || process.env.PAYSTACK_PUBLIC_KEY || "").trim();
+
+  const mode: "test" | "live" = r.paystack_mode === "live" ? "live" : "test";
+
+  // Legacy fallback columns
+  const legacySecret = decryptSecret(r.paystack_secret_key_enc) || (process.env.PAYSTACK_SECRET_KEY || "").trim();
+  const legacyPublic = String(r.paystack_public_key || process.env.PAYSTACK_PUBLIC_KEY || "").trim();
+
+  const liveSecret =
+    decryptSecret(r.paystack_live_secret_enc) ||
+    (legacySecret.startsWith("sk_live_") ? legacySecret : "");
+  const livePublic =
+    String(r.paystack_live_public_key || "").trim() ||
+    (legacyPublic.startsWith("pk_live_") ? legacyPublic : "");
+
+  const testSecret =
+    decryptSecret(r.paystack_test_secret_enc) ||
+    (legacySecret.startsWith("sk_test_") ? legacySecret : "");
+  const testPublic =
+    String(r.paystack_test_public_key || "").trim() ||
+    (legacyPublic.startsWith("pk_test_") ? legacyPublic : "");
+
+  const activeSecret = mode === "live" ? liveSecret : testSecret;
+  const activePublic = mode === "live" ? livePublic : testPublic;
+
   const decryptedBrevo = decryptSecret(r.brevo_api_key_enc) || (process.env.BREVO_API_KEY || "").trim();
   const brevoSenderEmail = String(r.brevo_sender_email || process.env.BREVO_SENDER_EMAIL || "noreply@cognitara.net").trim();
   const brevoSenderName = String(r.brevo_sender_name || process.env.BREVO_SENDER_NAME || "CogniTara Cloud").trim();
 
+  const rawFeeMode = String(r.paystack_fee_mode || "merchant");
+  const paystackFeeMode: PaystackFeeMode =
+    rawFeeMode === "customer_added" || rawFeeMode === "paystack_checkout" ? rawFeeMode : "merchant";
+
   return {
-    paystack_public_key: publicKey,
-    paystack_secret_key: decryptedSecret,
-    paystack_secret_masked: maskSecretKey(decryptedSecret),
-    paystack_secret_configured: Boolean(decryptedSecret),
-    paystack_mode: r.paystack_mode === "live" ? "live" : "test",
+    paystack_public_key: activePublic,
+    paystack_secret_key: activeSecret,
+    paystack_secret_masked: maskSecretKey(activeSecret),
+    paystack_secret_configured: Boolean(activeSecret),
+    paystack_mode: mode,
+
+    paystack_live_public_key: livePublic,
+    paystack_live_secret_key: liveSecret,
+    paystack_live_secret_masked: maskSecretKey(liveSecret),
+    paystack_live_configured: Boolean(liveSecret && livePublic),
+
+    paystack_test_public_key: testPublic,
+    paystack_test_secret_key: testSecret,
+    paystack_test_secret_masked: maskSecretKey(testSecret),
+    paystack_test_configured: Boolean(testSecret && testPublic),
+
+    paystack_fee_mode: paystackFeeMode,
+    paystack_fee_pct: Number(r.paystack_fee_pct ?? 1.5),
+    paystack_fee_flat_ngn: Number(r.paystack_fee_flat_ngn ?? 100),
+    paystack_fee_cap_ngn: Number(r.paystack_fee_cap_ngn ?? 2000),
+    paystack_fee_flat_threshold_ngn: Number(r.paystack_fee_flat_threshold_ngn ?? 2500),
+    test_mode_staff_only: Boolean(r.test_mode_staff_only),
+
     brevo_api_key: decryptedBrevo,
     brevo_api_key_masked: maskSecretKey(decryptedBrevo),
     brevo_configured: Boolean(decryptedBrevo),
     brevo_sender_email: brevoSenderEmail,
     brevo_sender_name: brevoSenderName,
     require_email_otp: Boolean(r.require_email_otp),
+    require_hq_2fa: r.require_hq_2fa !== false,
+
+    backup_reminder_days: Math.max(1, Math.min(365, Number(r.backup_reminder_days ?? 7) || 7)),
     default_currency: String(r.default_currency || "NGN").trim().toUpperCase(),
     maintenance_mode: Boolean(r.maintenance_mode),
     maintenance_message: String(r.maintenance_message || ""),
@@ -64,6 +138,79 @@ export async function getPlatformSettings(): Promise<PlatformSettingsRow> {
     allow_paystack_checkout: r.allow_paystack_checkout !== false,
     allow_trial_activation: r.allow_trial_activation !== false,
     updated_at: r.updated_at ? new Date(r.updated_at).toISOString() : null,
+  };
+}
+
+/**
+ * Computes Paystack processing fee and customer total based on the active HQ fee mode.
+ */
+export function computePaystackFeeBreakdown(params: {
+  baseMinor: number;
+  currency: string;
+  settings: Pick<
+    PlatformSettingsRow,
+    "paystack_fee_mode" | "paystack_fee_pct" | "paystack_fee_flat_ngn" | "paystack_fee_cap_ngn" | "paystack_fee_flat_threshold_ngn"
+  >;
+}): {
+  base_minor: number;
+  added_fee_minor: number;
+  charge_minor: number;
+  estimated_paystack_fee_minor: number;
+  fee_mode: PaystackFeeMode;
+  fee_note: string;
+} {
+  const baseMinor = Math.max(0, Math.round(params.baseMinor));
+  const cur = String(params.currency || "NGN").toUpperCase();
+  const mode = params.settings.paystack_fee_mode;
+
+  let estFeeMinor = 0;
+  if (cur === "NGN") {
+    const pct = Math.max(0, Number(params.settings.paystack_fee_pct || 1.5)) / 100;
+    const flatMinor = Math.max(0, Number(params.settings.paystack_fee_flat_ngn ?? 100)) * 100;
+    const capMinor = Math.max(0, Number(params.settings.paystack_fee_cap_ngn ?? 2000)) * 100;
+    const thresholdMinor = Math.max(0, Number(params.settings.paystack_fee_flat_threshold_ngn ?? 2500)) * 100;
+    const appliesFlat = baseMinor >= thresholdMinor ? flatMinor : 0;
+    if (mode === "customer_added") {
+      // Gross-up formula so merchant nets the full plan price after Paystack takes its cut
+      const grossed = Math.ceil((baseMinor + appliesFlat) / Math.max(0.5, 1 - pct)) - baseMinor;
+      estFeeMinor = capMinor > 0 ? Math.min(capMinor, Math.max(0, grossed)) : Math.max(0, grossed);
+    } else {
+      const raw = Math.round(baseMinor * pct) + appliesFlat;
+      estFeeMinor = capMinor > 0 ? Math.min(capMinor, Math.max(0, raw)) : Math.max(0, raw);
+    }
+  } else {
+    // International USD card (~3.9% + $1.00)
+    const raw = Math.round(baseMinor * 0.039) + 100;
+    estFeeMinor = Math.max(0, raw);
+  }
+
+  if (mode === "customer_added") {
+    return {
+      base_minor: baseMinor,
+      added_fee_minor: estFeeMinor,
+      charge_minor: baseMinor + estFeeMinor,
+      estimated_paystack_fee_minor: estFeeMinor,
+      fee_mode: mode,
+      fee_note: "Processing fee added transparently before checkout",
+    };
+  }
+  if (mode === "paystack_checkout") {
+    return {
+      base_minor: baseMinor,
+      added_fee_minor: 0,
+      charge_minor: baseMinor,
+      estimated_paystack_fee_minor: estFeeMinor,
+      fee_mode: mode,
+      fee_note: "+ Paystack processing fee calculated at checkout",
+    };
+  }
+  return {
+    base_minor: baseMinor,
+    added_fee_minor: 0,
+    charge_minor: baseMinor,
+    estimated_paystack_fee_minor: estFeeMinor,
+    fee_mode: "merchant",
+    fee_note: "No extra fees — covered by CogniTara",
   };
 }
 
@@ -80,6 +227,13 @@ export function toPublicPlatformDirectives(s: PlatformSettingsRow) {
     require_email_otp: s.require_email_otp && s.brevo_configured,
     paystack_public_key: s.paystack_public_key,
     paystack_mode: s.paystack_mode,
+    paystack_fee_mode: s.paystack_fee_mode,
+    paystack_fee_pct: s.paystack_fee_pct,
+    paystack_fee_flat_ngn: s.paystack_fee_flat_ngn,
+    paystack_fee_cap_ngn: s.paystack_fee_cap_ngn,
+    paystack_fee_flat_threshold_ngn: s.paystack_fee_flat_threshold_ngn,
+    test_mode_staff_only: s.test_mode_staff_only,
+    backup_reminder_days: s.backup_reminder_days,
     default_currency: s.default_currency,
   };
 }
@@ -123,7 +277,7 @@ export async function paystackRequest<T = any>(
     return {
       ok: false,
       status: 400,
-      data: { status: false, message: "Paystack secret key is not configured yet. Add it in HQ Developer Settings." } as any,
+      data: { status: false, message: "Paystack secret key is not configured yet. Add it in HQ Payment Settings." } as any,
     };
   }
   const controller = new AbortController();

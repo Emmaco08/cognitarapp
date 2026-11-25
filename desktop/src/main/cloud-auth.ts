@@ -1,6 +1,6 @@
 /**
- * CogniTara Studio — Neon Postgres + Vercel Cloud Auth, Paystack Billing,
- * Promo/Redeem Codes & Live Developer Directives (with Offline Encrypted Cache)
+ * CogniTara Studio — Hardened Cloud Auth, Paystack Billing,
+ * Promo/Redeem Codes, Cloud Exam Database Backups & Live Directives
  */
 
 import fs from "fs";
@@ -9,8 +9,13 @@ import path from "path";
 import { app, safeStorage } from "electron";
 import { CloudAccountSession, CloudDirectives } from "./types";
 
-export const DEFAULT_CLOUD_API_URL =
-  process.env.COGNITARA_CLOUD_URL || "https://cognitara-cloud.vercel.app";
+const PRODUCTION_CLOUD_URL = "https://cognitara-cloud.vercel.app";
+
+export function resolveCloudApiUrl(): string {
+  // Packaged builds lock strictly to the official HTTPS endpoint to block local MITM spoofing
+  if (app && app.isPackaged) return PRODUCTION_CLOUD_URL;
+  return (process.env.COGNITARA_CLOUD_URL || PRODUCTION_CLOUD_URL).replace(/\/+$/, "");
+}
 
 const CACHE_FILENAME = "studio-cloud-account.json";
 
@@ -34,7 +39,7 @@ export class CloudAuthManager {
   private lastOffline = false;
 
   constructor(cloudUrl?: string) {
-    this.cloudUrl = (cloudUrl || DEFAULT_CLOUD_API_URL).replace(/\/+$/, "");
+    this.cloudUrl = (app && app.isPackaged ? PRODUCTION_CLOUD_URL : cloudUrl || resolveCloudApiUrl()).replace(/\/+$/, "");
     this.cached = this.readCacheFile();
   }
 
@@ -52,7 +57,11 @@ export class CloudAuthManager {
         return { tokenEnc: safeStorage.encryptString(raw).toString("base64") };
       }
     } catch {
-      // Fallback on headless Linux environments without keyring
+      // Handled below
+    }
+    // Never write plaintext bearer tokens on packaged Windows builds
+    if (app && app.isPackaged && process.platform === "win32") {
+      return {};
     }
     return { tokenPlain: raw };
   }
@@ -67,6 +76,9 @@ export class CloudAuthManager {
       } catch {
         return null;
       }
+    }
+    if (app && app.isPackaged && process.platform === "win32") {
+      return null;
     }
     return file.tokenPlain || null;
   }
@@ -135,12 +147,13 @@ export class CloudAuthManager {
 
   private async requestJson(
     urlPath: string,
-    method: "GET" | "POST",
+    method: "GET" | "POST" | "DELETE",
     body?: Record<string, unknown>,
-    token?: string | null
+    token?: string | null,
+    timeoutMs = 20_000
   ): Promise<{ ok: boolean; status: number; data: any; networkError?: boolean }> {
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 15_000);
+    const timeout = setTimeout(() => controller.abort(), timeoutMs);
     try {
       const res = await fetch(`${this.cloudUrl}${urlPath}`, {
         method,
@@ -188,6 +201,7 @@ export class CloudAuthManager {
     otp_required?: boolean;
     email?: string;
     purpose?: string;
+    challenge_token?: string;
     session?: CloudAccountSession;
     message?: string;
     error?: string;
@@ -213,6 +227,7 @@ export class CloudAuthManager {
         otp_required: true,
         email: res.data.email || payload.email,
         purpose: res.data.purpose || "signup_verify",
+        challenge_token: res.data.challenge_token || "",
         message: res.data.message || "Enter the 6-digit verification code sent to your email.",
       };
     }
@@ -243,6 +258,7 @@ export class CloudAuthManager {
     otp_required?: boolean;
     email?: string;
     purpose?: string;
+    challenge_token?: string;
     session?: CloudAccountSession;
     message?: string;
     error?: string;
@@ -268,6 +284,7 @@ export class CloudAuthManager {
         otp_required: true,
         email: res.data.email || payload.email,
         purpose: res.data.purpose || "signin_otp",
+        challenge_token: res.data.challenge_token || "",
         message: res.data.message || "Enter the 6-digit security code sent to your email.",
       };
     }
@@ -293,12 +310,16 @@ export class CloudAuthManager {
     email: string;
     code: string;
     purpose?: string;
+    challenge_token?: string;
+    method?: string;
     display_hwid?: string;
   }): Promise<{ ok: boolean; session?: CloudAccountSession; message?: string; error?: string }> {
     const res = await this.requestJson("/api/v1/auth/otp/verify", "POST", {
       email: payload.email,
       code: payload.code,
       purpose: payload.purpose,
+      challenge_token: payload.challenge_token || "",
+      method: payload.method || "email_otp",
       client_type: "desktop",
       device_label: os.hostname(),
       display_hwid: payload.display_hwid,
@@ -333,10 +354,12 @@ export class CloudAuthManager {
   public async resendOtp(payload: {
     email: string;
     purpose?: string;
+    challenge_token?: string;
   }): Promise<{ ok: boolean; retry_after_sec?: number; message?: string; error?: string }> {
     const res = await this.requestJson("/api/v1/auth/otp/send", "POST", {
       email: payload.email,
       purpose: payload.purpose || "signup_verify",
+      challenge_token: payload.challenge_token || "",
     });
     if (!res.ok) {
       return {
@@ -455,7 +478,12 @@ export class CloudAuthManager {
     if (!token) {
       return { ok: false, error: "unauthorized", message: "Sign in to your CogniTara Cloud account first." };
     }
-    const res = await this.requestJson("/api/v1/payments/paystack/initialize", "POST", payload, token);
+    const res = await this.requestJson(
+      "/api/v1/payments/paystack/initialize",
+      "POST",
+      { ...payload, source: "desktop" },
+      token
+    );
     return res.ok ? res.data : { ok: false, error: res.data?.error, message: res.data?.message || "Checkout failed." };
   }
 
@@ -480,5 +508,72 @@ export class CloudAuthManager {
       token
     );
     return res.ok ? res.data : { ok: false, error: res.data?.error, message: res.data?.message || "Verification failed." };
+  }
+
+  // ---- Cloud Exam Database Backups & 7-Day Configurable Reminder ----
+
+  public async listCloudBackups(): Promise<any> {
+    const token = this.getAccessToken();
+    if (!token) {
+      return { ok: false, error: "unauthorized", message: "Sign in to CogniTara Cloud to view cloud backups." };
+    }
+    const res = await this.requestJson("/api/v1/backups", "GET", undefined, token);
+    return res.ok ? res.data : { ok: false, error: res.data?.error, message: res.data?.message || "Could not load cloud backups." };
+  }
+
+  public async uploadCloudBackup(payload: {
+    filename: string;
+    label?: string;
+    raw_size_bytes: number;
+    stats?: Record<string, unknown>;
+    payload_b64: string;
+  }): Promise<any> {
+    const token = this.getAccessToken();
+    if (!token) {
+      return { ok: false, error: "unauthorized", message: "Sign in to CogniTara Cloud before backing up online." };
+    }
+    const res = await this.requestJson(
+      "/api/v1/backups",
+      "POST",
+      {
+        ...payload,
+        app_version: app.getVersion(),
+      },
+      token,
+      60_000
+    );
+    if (res.ok && this.cached && this.cached.school) {
+      const nowIso = new Date().toISOString();
+      this.writeCacheFile({
+        ...this.cached,
+        school: { ...this.cached.school, last_cloud_backup_at: nowIso },
+        directives: this.cached.directives
+          ? { ...this.cached.directives, last_cloud_backup_at: nowIso }
+          : { last_cloud_backup_at: nowIso },
+      });
+    }
+    return res.ok ? res.data : { ok: false, error: res.data?.error, message: res.data?.message || "Cloud backup upload failed." };
+  }
+
+  public async downloadCloudBackup(backupId: string): Promise<any> {
+    const token = this.getAccessToken();
+    if (!token) {
+      return { ok: false, error: "unauthorized", message: "Sign in required." };
+    }
+    const res = await this.requestJson(
+      `/api/v1/backups/${encodeURIComponent(backupId)}/download?format=json`,
+      "GET",
+      undefined,
+      token,
+      60_000
+    );
+    return res.ok ? res.data : { ok: false, error: res.data?.error, message: res.data?.message || "Could not download cloud backup." };
+  }
+
+  public async deleteCloudBackup(backupId: string): Promise<any> {
+    const token = this.getAccessToken();
+    if (!token) return { ok: false, error: "unauthorized" };
+    const res = await this.requestJson(`/api/v1/backups?id=${encodeURIComponent(backupId)}`, "DELETE", undefined, token);
+    return res.ok ? res.data : { ok: false, message: res.data?.message || "Could not delete cloud backup." };
   }
 }

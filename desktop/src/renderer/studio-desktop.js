@@ -32,6 +32,9 @@
     liveExams: [],
     attention: [],
     backups: [],
+    cloudBackups: [],
+    backupReminderDays: 7,
+    backupReminderDismissed: false,
     backupDir: "C:\\ProgramData\\CogniTara\\Backups",
     settings: {
       theme: "dark",
@@ -48,7 +51,7 @@
     writing: 0,
     samples: new Array(120).fill(0),
     stopArmed: false,
-    version: "2.2.2",
+    version: "2.2.3",
     activeView: "home",
     cloudAccount: null,
     updateState: null
@@ -228,6 +231,7 @@
     }
     if (prev === "boot" && mode !== "boot") playHeaderIn();
     if (mode !== "onboarding") setProgress(null);
+    if (mode === "app" && typeof checkBackupReminder === "function") checkBackupReminder();
   }
 
   /* ------------------------------------------------------------------ lock mapping */
@@ -437,8 +441,8 @@
     setOnbCloudMsg("", "");
   }
 
-  function showOnbOtpStep(email, purpose, msg) {
-    onbPendingOtp = { email: email, purpose: purpose || "signup_verify" };
+  function showOnbOtpStep(email, purpose, msg, challengeToken) {
+    onbPendingOtp = { email: email, purpose: purpose || "signup_verify", challenge_token: challengeToken || "" };
     if ($("#onbCloudTabs")) $("#onbCloudTabs").hidden = true;
     if ($("#onbSignUpForm")) $("#onbSignUpForm").hidden = true;
     if ($("#onbSignInForm")) $("#onbSignInForm").hidden = true;
@@ -448,7 +452,7 @@
       $("#onbOtpCode").value = "";
       setTimeout(function () { $("#onbOtpCode").focus(); }, 60);
     }
-    setOnbCloudMsg("", msg || ("Enter the 6-digit Brevo verification code sent to " + email + "."));
+    setOnbCloudMsg("", msg || ("Enter the 6-digit verification code sent to " + email + "."));
     if (onbResendTimer) clearInterval(onbResendTimer);
     startOtpCountdown($("#onbOtpResendBtn"), 45, function (id) { onbResendTimer = id; });
   }
@@ -518,7 +522,7 @@
           : { ok: false, message: "Cloud IPC requires CogniTara Studio desktop." };
 
         if (res && res.ok && res.otp_required) {
-          showOnbOtpStep(res.email || $("#ocuEmail").value.trim(), res.purpose || "signup_verify", res.message);
+          showOnbOtpStep(res.email || $("#ocuEmail").value.trim(), res.purpose || "signup_verify", res.message, res.challenge_token);
         } else if (res && res.ok && res.session) {
           renderCloudAccount(res.session);
           setOnbCloudMsg("", "Cloud school account created and cached offline.");
@@ -549,7 +553,7 @@
           : { ok: false, message: "Cloud IPC requires CogniTara Studio desktop." };
 
         if (res && res.ok && res.otp_required) {
-          showOnbOtpStep(res.email || $("#ociEmail").value.trim(), res.purpose || "signin_otp", res.message);
+          showOnbOtpStep(res.email || $("#ociEmail").value.trim(), res.purpose || "signin_otp", res.message, res.challenge_token);
         } else if (res && res.ok && res.session) {
           renderCloudAccount(res.session);
           setOnbCloudMsg("", "Signed in and cached locally for offline exams.");
@@ -578,6 +582,7 @@
       btn.textContent = "Sending…";
       var res = await bridge.cloudResendOtp(onbPendingOtp).catch(function () { return null; });
       if (res && res.ok) {
+        if (res.challenge_token) onbPendingOtp.challenge_token = res.challenge_token;
         setOnbCloudMsg("", res.message || "Fresh 6-digit verification code sent.");
         startOtpCountdown(btn, 45, function (id) { onbResendTimer = id; });
       } else {
@@ -605,6 +610,7 @@
           ? await bridge.cloudVerifyOtp({
               email: onbPendingOtp.email,
               purpose: onbPendingOtp.purpose,
+              challenge_token: onbPendingOtp.challenge_token,
               code: code
             })
           : { ok: false, message: "Cloud IPC requires CogniTara Studio desktop." };
@@ -612,9 +618,9 @@
           onbPendingOtp = null;
           if (onbResendTimer) { clearInterval(onbResendTimer); onbResendTimer = null; }
           renderCloudAccount(res.session);
-          setOnbCloudMsg("", "Email verified via Brevo OTP! You can continue to school setup.");
+          setOnbCloudMsg("", "Email verified! You can continue to school setup.");
           toast("Email verified — CogniTara Cloud account active!");
-          logEvent("licence", "ok", "i-shield", "<b>Cloud account verified via Brevo OTP</b> (" + esc(res.session.user.email) + ")");
+          logEvent("licence", "ok", "i-shield", "<b>Cloud account verified via OTP</b> (" + esc(res.session.user.email) + ")");
         } else {
           setOnbCloudMsg((res && res.message) || "Invalid or expired 6-digit code. Try again or resend.", "");
         }
@@ -1156,7 +1162,12 @@
   }
   $("#finishBtn").addEventListener("click", async function () {
     if (bridge) {
-      await bridge.completeOnboarding({ selectedLanIp: state.ip }).catch(function () {});
+      var finRes = await bridge.completeOnboarding({ selectedLanIp: state.ip }).catch(function () { return { ok: false, message: "Could not finish setup." }; });
+      if (finRes && finRes.ok === false) {
+        toast(finRes.message || "Please verify your CogniTara Cloud account before finishing setup.");
+        if (finRes.error === "cloud_account_required") goStep(1);
+        return;
+      }
     }
     state.onboardingComplete = true;
     win.classList.add("is-handoff");
@@ -1175,6 +1186,8 @@
     setServer(state.server);
     showView("home");
     startTelemetryPolling();
+    checkBackupReminder();
+    refreshCloudBackups();
   }
   function showView(name) {
     state.activeView = name;
@@ -1203,7 +1216,8 @@
     { label: "Go to Server", icon: "i-home", hint: "Page", run: function () { enterAppIfNeeded(); showView("home"); } },
     { label: "Go to Live exams", icon: "i-live", hint: "Page", run: function () { enterAppIfNeeded(); showView("live"); } },
     { label: "Go to Licence", icon: "i-key", hint: "Page", run: function () { enterAppIfNeeded(); showView("licence"); } },
-    { label: "Back up now", icon: "i-backup", hint: "Backups", run: function () { enterAppIfNeeded(); showView("backups"); setTimeout(function () { $("#backupBtn").click(); }, 250); } },
+    { label: "Back up locally now", icon: "i-backup", hint: "Backups", run: function () { if (state.mode !== "app") return; showView("backups"); setTimeout(function () { $("#backupBtn").click(); }, 250); } },
+    { label: "Back up exam database to Cloud", icon: "i-backup", hint: "Cloud", run: function () { if (state.mode !== "app") return; showView("backups"); setTimeout(function () { if ($("#cloudBackupBtn")) $("#cloudBackupBtn").click(); }, 250); } },
     { label: "Go to Activity", icon: "i-activity", hint: "Page", run: function () { enterAppIfNeeded(); showView("activity"); } },
     { label: "Go to Settings", icon: "i-settings", hint: "Page", run: function () { enterAppIfNeeded(); showView("settings"); } },
     { label: "Sign in or manage CogniTara Cloud account", icon: "i-users", hint: "Cloud", run: function () { openCloudModal(); } },
@@ -1213,10 +1227,13 @@
     { label: "Switch light or dark theme", icon: "i-sun", hint: "Appearance", run: function () { applyTheme(state.theme === "dark" ? "light" : "dark", true, true); } },
     { label: "Check licence with cognitara.net", icon: "i-shield", hint: "Licence", run: function () { enterAppIfNeeded(); showView("licence"); $("#checkInBtn").click(); } }
   ];
-  function enterAppIfNeeded() { if (state.mode !== "app") enterApp(); }
+  function enterAppIfNeeded() {
+    if (state.mode === "onboarding" || state.mode === "lock" || state.mode === "boot") return;
+    if (state.mode !== "app") enterApp();
+  }
   var palSel = 0, palItems = [];
   function openPalette() {
-    if (state.mode === "boot") return;
+    if (state.mode !== "app") return;
     $("#palette").hidden = false; $("#palInput").value = ""; filterPalette(); $("#palInput").focus();
   }
   function closePalette() { $("#palette").hidden = true; }
@@ -1699,20 +1716,152 @@
     }
   });
 
-  /* ---- backups (real hot SQLite backups) ---- */
+  /* ---- backups (real hot SQLite backups + CogniTara Cloud snapshots) ---- */
   function renderBackups() {
     $("#bkDirPath").textContent = state.backupDir;
     var tbody = $("#bkTable tbody");
     if (!state.backups.length) {
-      tbody.innerHTML = "<tr><td colspan='5' style='text-align:center;color:var(--ink-3);padding:24px'>No backups yet. Click Back up now to create a verified copy.</td></tr>";
+      tbody.innerHTML = "<tr><td colspan='5' style='text-align:center;color:var(--ink-3);padding:24px'>No local backups yet. Click Local backup to create a verified copy.</td></tr>";
       return;
     }
     tbody.innerHTML = state.backups.map(function (b, i) {
       return "<tr><td><strong>" + esc(b.created_label) + "</strong><em class='mono'>" + esc(b.filename) + "</em></td>" +
         "<td>" + esc(b.type) + "</td><td class='mono'>" + esc(b.size_label) + "</td>" +
         "<td><span class='pill pill--ok'>" + (b.verified ? "Verified" : "Unchecked") + "</span></td>" +
-        "<td><div class='row-actions'><button class='btn btn--ghost btn--sm' data-restore='" + i + "'><svg><use href='#i-restore'/></svg>Restore</button></div></td></tr>";
+        "<td><div class='row-actions'>" +
+        "<button class='btn btn--ghost btn--sm' data-restore='" + i + "'><svg><use href='#i-restore'/></svg>Restore</button>" +
+        "<button class='btn btn--ghost btn--sm' data-del-local='" + i + "' style='color:var(--bad)'>Delete</button>" +
+        "</div></td></tr>";
     }).join("");
+  }
+
+  function renderCloudBackups() {
+    var table = $("#cloudBkTable");
+    if (!table) return;
+    var tbody = table.querySelector("tbody");
+    var meta = $("#cloudBkMeta");
+    var days = Number(state.backupReminderDays || 7);
+    if (meta) {
+      meta.textContent = days > 0 ? ("Reminder every " + days + " day" + (days === 1 ? "" : "s")) : "Reminders paused by HQ";
+    }
+    var signedIn = Boolean(state.cloudAccount && state.cloudAccount.signedIn);
+    if (!signedIn) {
+      tbody.innerHTML = "<tr><td colspan='5' style='text-align:center;color:var(--ink-3);padding:18px'>Sign in to CogniTara Cloud to sync encrypted exam database backups.</td></tr>";
+      return;
+    }
+    if (!state.cloudBackups.length) {
+      tbody.innerHTML = "<tr><td colspan='5' style='text-align:center;color:var(--ink-3);padding:18px'>No cloud backups yet. Click <b>Back up to Cloud</b> above to safeguard your exams, questions, and results online.</td></tr>";
+      return;
+    }
+    tbody.innerHTML = state.cloudBackups.map(function (b) {
+      var statsText = (b.exams_count || 0) + " exams · " + (b.questions_count || 0) + " Qs · " + (b.students_count || 0) + " students · " + (b.results_count || 0) + " scores";
+      var sizeLabel = fmtBytes(b.compressed_size_bytes || b.raw_size_bytes || 0);
+      var when = b.created_at ? fmtDateShort(b.created_at) : "—";
+      return "<tr>" +
+        "<td><strong>" + esc(b.label || b.filename) + "</strong><em class='mono'>" + esc(b.filename) + "</em></td>" +
+        "<td style='font-size:12px;color:var(--ink-2)'>" + esc(statsText) + "</td>" +
+        "<td class='mono'>" + esc(sizeLabel) + "</td>" +
+        "<td style='font-size:12px;color:var(--ink-2)'>" + esc(when) + "</td>" +
+        "<td><div class='row-actions'>" +
+        "<button class='btn btn--ghost btn--sm' data-cloud-restore='" + esc(b.id) + "'><svg><use href='#i-restore'/></svg>Restore</button>" +
+        "<button class='btn btn--ghost btn--sm' data-cloud-del='" + esc(b.id) + "' style='color:var(--bad)'>Delete</button>" +
+        "</div></td></tr>";
+    }).join("");
+  }
+
+  function checkBackupReminder() {
+    var banner = $("#homeBackupReminder");
+    if (!banner) return;
+    if (state.backupReminderDismissed) { banner.hidden = true; return; }
+    var s = state.cloudAccount;
+    var signedIn = Boolean(s && s.signedIn);
+    if (!signedIn || state.mode !== "app") { banner.hidden = true; return; }
+    var reminderDays = Number(
+      (s && s.directives && s.directives.backup_reminder_days != null)
+        ? s.directives.backup_reminder_days
+        : state.backupReminderDays
+    );
+    if (!isFinite(reminderDays)) reminderDays = 7;
+    state.backupReminderDays = reminderDays;
+    if (reminderDays <= 0) { banner.hidden = true; return; }
+
+    var lastIso = (s && s.school && s.school.last_cloud_backup_at) ||
+      (state.cloudBackups && state.cloudBackups[0] && state.cloudBackups[0].created_at) ||
+      null;
+    var msgEl = $("#homeBackupReminderText");
+    if (!lastIso) {
+      if (msgEl) msgEl.textContent = "You haven't backed up your exam database to CogniTara Cloud yet. Create a cloud snapshot so your exams, questions, and results stay safe.";
+      banner.hidden = false;
+      return;
+    }
+    var lastMs = new Date(lastIso).getTime();
+    if (isNaN(lastMs)) { banner.hidden = true; return; }
+    var ageDays = Math.floor((Date.now() - lastMs) / 86400000);
+    if (ageDays >= reminderDays) {
+      if (msgEl) msgEl.textContent = "Your last cloud exam backup was " + ageDays + " day" + (ageDays === 1 ? "" : "s") + " ago (reminder every " + reminderDays + " days). Back up now to protect recent exams and scores.";
+      banner.hidden = false;
+    } else {
+      banner.hidden = true;
+    }
+  }
+
+  async function refreshCloudBackups() {
+    if (!bridge || !bridge.listCloudBackups) { renderCloudBackups(); return; }
+    if (!state.cloudAccount || !state.cloudAccount.signedIn) {
+      state.cloudBackups = [];
+      renderCloudBackups();
+      checkBackupReminder();
+      return;
+    }
+    var res = await bridge.listCloudBackups().catch(function () { return null; });
+    if (res && res.ok) {
+      state.cloudBackups = Array.isArray(res.backups) ? res.backups : [];
+      if (res.backup_reminder_days != null) state.backupReminderDays = Number(res.backup_reminder_days);
+      renderCloudBackups();
+      checkBackupReminder();
+    }
+  }
+
+  async function runCloudBackupNow(triggerBtn) {
+    if (!state.cloudAccount || !state.cloudAccount.signedIn) {
+      openCloudModal("signin");
+      toast("Sign in to your CogniTara Cloud account to back up online.");
+      return;
+    }
+    var prog = $("#backupProg"), bar = prog ? prog.querySelector("i") : null, label = prog ? prog.querySelector("span") : null;
+    if (prog && bar && label) {
+      prog.hidden = false;
+      bar.style.setProperty("--p", "0.35");
+      label.textContent = "Compressing & uploading exam database to CogniTara Cloud…";
+    }
+    var origText = triggerBtn ? triggerBtn.innerHTML : "";
+    if (triggerBtn) { triggerBtn.disabled = true; triggerBtn.textContent = "Backing up…"; }
+    try {
+      var res = bridge && bridge.backupToCloudNow
+        ? await bridge.backupToCloudNow().catch(function (err) { return { ok: false, message: String(err) }; })
+        : { ok: false, message: "Desktop cloud backup IPC unavailable." };
+      if (bar && label) {
+        bar.style.setProperty("--p", "1");
+        label.textContent = res && res.ok ? "Cloud backup saved & verified" : "Cloud backup failed";
+      }
+      if (res && res.ok) {
+        if (state.cloudAccount && state.cloudAccount.school) {
+          state.cloudAccount.school.last_cloud_backup_at = new Date().toISOString();
+        }
+        state.backupReminderDismissed = false;
+        checkBackupReminder();
+        await refreshCloudBackups();
+        toast("Exam database backed up to CogniTara Cloud!");
+        logEvent("backup", "ok", "i-backup", "<b>Cloud exam backup</b> uploaded and verified");
+      } else {
+        toast((res && (res.message || res.error)) || "Cloud backup failed — check your internet connection.");
+      }
+    } finally {
+      if (prog && bar) {
+        setTimeout(function () { prog.hidden = true; bar.style.setProperty("--p", "0"); }, 650);
+      }
+      if (triggerBtn) { triggerBtn.disabled = false; triggerBtn.innerHTML = origText; }
+    }
   }
 
   async function refreshBackups() {
@@ -1723,6 +1872,86 @@
       if (res.backup_dir) state.backupDir = res.backup_dir;
       renderBackups();
     }
+    refreshCloudBackups();
+  }
+
+  if ($("#cloudBackupBtn")) {
+    $("#cloudBackupBtn").addEventListener("click", function () { runCloudBackupNow(this); });
+  }
+  if ($("#homeBackupNowBtn")) {
+    $("#homeBackupNowBtn").addEventListener("click", function () { runCloudBackupNow(this); });
+  }
+  if ($("#homeBackupDismiss")) {
+    $("#homeBackupDismiss").addEventListener("click", function () {
+      state.backupReminderDismissed = true;
+      if ($("#homeBackupReminder")) $("#homeBackupReminder").hidden = true;
+    });
+  }
+
+  if ($("#cloudBkTable")) {
+    $("#cloudBkTable").addEventListener("click", async function (e) {
+      var rBtn = e.target.closest("[data-cloud-restore]");
+      if (rBtn) {
+        var bId = rBtn.dataset.cloudRestore;
+        if (!rBtn.dataset.armed) {
+          rBtn.dataset.armed = "1";
+          rBtn.textContent = "Click to confirm";
+          setTimeout(function () {
+            if (rBtn.dataset.armed) { delete rBtn.dataset.armed; rBtn.innerHTML = "<svg><use href='#i-restore'/></svg>Restore"; }
+          }, 4000);
+          return;
+        }
+        delete rBtn.dataset.armed;
+        rBtn.disabled = true;
+        rBtn.textContent = "Restoring…";
+        try {
+          var res = bridge && bridge.restoreCloudBackup
+            ? await bridge.restoreCloudBackup(bId).catch(function () { return null; })
+            : null;
+          if (res && res.ok) {
+            toast("Cloud snapshot restored cleanly (local safety copy saved).");
+            logEvent("backup", "warn", "i-restore", "<b>Database restored</b> from CogniTara Cloud snapshot");
+            await refreshBackups();
+          } else {
+            toast((res && (res.message || res.error)) || "Could not restore cloud backup.");
+          }
+        } finally {
+          rBtn.disabled = false;
+          rBtn.innerHTML = "<svg><use href='#i-restore'/></svg>Restore";
+        }
+        return;
+      }
+
+      var dBtn = e.target.closest("[data-cloud-del]");
+      if (dBtn) {
+        var delId = dBtn.dataset.cloudDel;
+        if (!dBtn.dataset.armed) {
+          dBtn.dataset.armed = "1";
+          dBtn.textContent = "Confirm delete";
+          setTimeout(function () {
+            if (dBtn.dataset.armed) { delete dBtn.dataset.armed; dBtn.textContent = "Delete"; }
+          }, 3800);
+          return;
+        }
+        delete dBtn.dataset.armed;
+        dBtn.disabled = true;
+        dBtn.textContent = "Deleting…";
+        try {
+          var delRes = bridge && bridge.deleteCloudBackup
+            ? await bridge.deleteCloudBackup(delId).catch(function () { return null; })
+            : null;
+          if (delRes && delRes.ok) {
+            toast("Cloud backup deleted");
+            await refreshCloudBackups();
+          } else {
+            toast((delRes && (delRes.message || delRes.error)) || "Could not delete cloud backup.");
+          }
+        } finally {
+          dBtn.disabled = false;
+          dBtn.textContent = "Delete";
+        }
+      }
+    });
   }
 
   $("#backupBtn").addEventListener("click", async function () {
@@ -1751,6 +1980,35 @@
   });
 
   $("#bkTable").addEventListener("click", async function (e) {
+    var delBtn = e.target.closest("[data-del-local]");
+    if (delBtn) {
+      var delEntry = state.backups[+delBtn.dataset.delLocal];
+      if (!delEntry) return;
+      if (!delBtn.dataset.armed) {
+        delBtn.dataset.armed = "1";
+        delBtn.textContent = "Confirm delete";
+        setTimeout(function () {
+          if (delBtn.dataset.armed) { delete delBtn.dataset.armed; delBtn.textContent = "Delete"; }
+        }, 3800);
+        return;
+      }
+      delete delBtn.dataset.armed;
+      delBtn.disabled = true;
+      delBtn.textContent = "Deleting…";
+      if (bridge && bridge.deleteLocalBackup) {
+        var delRes = await bridge.deleteLocalBackup(delEntry.filename).catch(function () { return null; });
+        if (delRes && delRes.ok) {
+          toast("Deleted " + delEntry.filename);
+          await refreshBackups();
+        } else {
+          toast("Delete failed: " + ((delRes && (delRes.message || delRes.error)) || "error"));
+        }
+      }
+      delBtn.disabled = false;
+      delBtn.textContent = "Delete";
+      return;
+    }
+
     var b = e.target.closest("[data-restore]"); if (!b) return;
     var entry = state.backups[+b.dataset.restore];
     if (!entry) return;
@@ -1791,6 +2049,7 @@
     if (res && res.ok && res.backupDir) {
       state.backupDir = res.backupDir;
       renderBackups();
+      await refreshBackups();
       toast("Backup folder updated");
     }
   });
@@ -2011,9 +2270,15 @@
     }
     renderHqDirectives(s && s.directives ? s.directives : null);
     syncOnboardingCloudUi();
+    renderCloudBackups();
+    checkBackupReminder();
   }
 
   function renderHqDirectives(d) {
+    if (d && d.backup_reminder_days != null) {
+      state.backupReminderDays = Number(d.backup_reminder_days);
+      checkBackupReminder();
+    }
     var banner = $("#hqNoticeBanner");
     if (!banner) return;
     if (!d) { banner.hidden = true; return; }
@@ -2048,8 +2313,8 @@
 
   var pendingCloudOtp = null;
   var modalOtpResendTimer = null;
-  function showCloudOtpStep(email, purpose, msg) {
-    pendingCloudOtp = { email: email, purpose: purpose || "signup_verify" };
+  function showCloudOtpStep(email, purpose, msg, challengeToken) {
+    pendingCloudOtp = { email: email, purpose: purpose || "signup_verify", challenge_token: challengeToken || "" };
     $("#cloudTabs").hidden = true;
     $("#cloudSignInForm").hidden = true;
     $("#cloudSignUpForm").hidden = true;
@@ -2119,7 +2384,7 @@
         ? await bridge.cloudSignIn({ email: $("#ciEmail").value.trim(), password: $("#ciPass").value })
         : { ok: false, message: "Cloud IPC requires CogniTara Studio desktop." };
       if (res && res.ok && res.otp_required) {
-        showCloudOtpStep(res.email || $("#ciEmail").value.trim(), res.purpose || "signin_otp", res.message);
+        showCloudOtpStep(res.email || $("#ciEmail").value.trim(), res.purpose || "signin_otp", res.message, res.challenge_token);
       } else if (res && res.ok && res.session) {
         renderCloudAccount(res.session);
         setCloudMsg("", "Signed in and cached locally for offline exam days.");
@@ -2157,7 +2422,7 @@
           })
         : { ok: false, message: "Cloud IPC requires CogniTara Studio desktop." };
       if (res && res.ok && res.otp_required) {
-        showCloudOtpStep(res.email || $("#cuEmail").value.trim(), res.purpose || "signup_verify", res.message);
+        showCloudOtpStep(res.email || $("#cuEmail").value.trim(), res.purpose || "signup_verify", res.message, res.challenge_token);
       } else if (res && res.ok && res.session) {
         renderCloudAccount(res.session);
         setCloudMsg("", "School account created on Neon Cloud and cached offline.");
@@ -2190,6 +2455,7 @@
       btn.textContent = "Sending…";
       var res = await bridge.cloudResendOtp(pendingCloudOtp).catch(function () { return null; });
       if (res && res.ok) {
+        if (res.challenge_token) pendingCloudOtp.challenge_token = res.challenge_token;
         setCloudMsg("", res.message || "Fresh 6-digit code sent.");
         startOtpCountdown(btn, 45, function (id) { modalOtpResendTimer = id; });
       } else {
@@ -2213,7 +2479,12 @@
       btn.textContent = "Verifying…";
       try {
         var res = bridge
-          ? await bridge.cloudVerifyOtp({ email: pendingCloudOtp.email, purpose: pendingCloudOtp.purpose, code: code })
+          ? await bridge.cloudVerifyOtp({
+              email: pendingCloudOtp.email,
+              purpose: pendingCloudOtp.purpose,
+              challenge_token: pendingCloudOtp.challenge_token,
+              code: code
+            })
           : { ok: false, message: "Cloud IPC requires CogniTara Studio desktop." };
         if (res && res.ok && res.session) {
           pendingCloudOtp = null;
@@ -2291,11 +2562,78 @@
   }
 
   function switchBillingTab(tab) {
+    if ($("#billingTabBar")) $("#billingTabBar").hidden = false;
+    if ($("#billingReceiptPane")) $("#billingReceiptPane").hidden = true;
     $$("#billingTabs button").forEach(function (b) { b.classList.toggle("is-active", b.dataset.btab === tab); });
     $("#billingPlansPane").hidden = tab !== "plans";
     $("#billingRedeemPane").hidden = tab !== "redeem";
     $("#billingCurrencySeg").hidden = tab !== "plans";
     setBillingMsg("", "");
+  }
+
+  var activeReceiptRef = null;
+  var activeReceiptKey = null;
+  function showBillingReceipt(evt) {
+    if (!$("#billingModal") || !$("#billingReceiptPane")) return;
+    var receipt = (evt && evt.receipt) || {};
+    var lic = (evt && evt.license) || {};
+    var planObj = billingState.plans.find(function (p) { return p.id === billingState.selectedPlanId; });
+    var planLabel = receipt.plan_name || (lic.plan_tier ? planDisplayName(lic.plan_tier) : (planObj ? planObj.display_name : "CogniTara Licence"));
+    var curr = receipt.currency || billingState.currency || "NGN";
+    var paidMinor = receipt.customer_paid_minor != null ? receipt.customer_paid_minor : receipt.amount_minor;
+    var amountText = evt && evt.source === "redeem"
+      ? "Redeemed voucher (Free)"
+      : (paidMinor != null ? fmtMoney(paidMinor, curr) : (planObj ? fmtMoney(curr === "USD" ? planObj.price_usd_cents : planObj.price_ngn_kobo, curr) : "Paid"));
+    var ref = (evt && evt.reference) || receipt.reference || "";
+    var licKey = (evt && evt.license_key) || receipt.license_key || lic.license_key || "";
+    var expText = receipt.expires_at || lic.expires_at ? ("Active · expires " + fmtDateShort(receipt.expires_at || lic.expires_at)) : "Active on this PC";
+
+    activeReceiptRef = ref || null;
+    activeReceiptKey = licKey || null;
+
+    if ($("#billingTabBar")) $("#billingTabBar").hidden = true;
+    if ($("#billingPlansPane")) $("#billingPlansPane").hidden = true;
+    if ($("#billingRedeemPane")) $("#billingRedeemPane").hidden = true;
+    setBillingMsg("", "");
+
+    $("#brTitle").textContent = evt && evt.source === "redeem"
+      ? "Voucher redeemed & licence activated"
+      : "Payment confirmed & licence activated";
+    $("#brSub").textContent = (evt && evt.message) ||
+      "Your signed Ed25519 licence is now active on this computer and a payment receipt has been sent to your school email.";
+    $("#brPlan").textContent = planLabel;
+    $("#brAmount").textContent = amountText + (receipt.is_test ? " (Test Mode)" : "");
+
+    if ($("#brRefRow")) $("#brRefRow").hidden = !ref;
+    if ($("#brRef")) $("#brRef").textContent = ref || "—";
+    if ($("#brKeyRow")) $("#brKeyRow").hidden = !licKey;
+    if ($("#brKey")) $("#brKey").textContent = licKey || "—";
+    if ($("#brStatus")) $("#brStatus").textContent = expText;
+    if ($("#brOpenWebReceiptBtn")) $("#brOpenWebReceiptBtn").hidden = !ref;
+
+    $("#billingReceiptPane").hidden = false;
+    $("#billingModal").hidden = false;
+  }
+
+  if ($("#brCopyKeyBtn")) {
+    $("#brCopyKeyBtn").addEventListener("click", function () {
+      if (!activeReceiptKey) return;
+      if (navigator.clipboard) navigator.clipboard.writeText(activeReceiptKey).catch(function () {});
+      toast("Licence key copied to clipboard");
+    });
+  }
+  if ($("#brOpenWebReceiptBtn")) {
+    $("#brOpenWebReceiptBtn").addEventListener("click", function () {
+      if (!activeReceiptRef) return;
+      var base = (state.cloudAccount && state.cloudAccount.cloudUrl) || "https://cognitara-cloud.vercel.app";
+      openExternalUrl(base + "/pay/done?reference=" + encodeURIComponent(activeReceiptRef));
+    });
+  }
+  if ($("#brDoneBtn")) {
+    $("#brDoneBtn").addEventListener("click", function () {
+      closeBillingModal();
+      if (state.mode === "app") showView("licence");
+    });
   }
 
   function renderBillingPlans() {
@@ -2462,9 +2800,15 @@
           currency: billingState.currency
         });
         if (rFree && rFree.ok) {
-          setBillingMsg("", rFree.message || "Licence activated!");
           toast("Licence activated!");
           await refreshLicenceFromEngine();
+          showBillingReceipt({
+            ok: true,
+            source: "redeem",
+            license: rFree.license,
+            license_key: rFree.license_key,
+            message: rFree.message || "Promo redeemed & licence activated!"
+          });
         } else {
           setBillingMsg((rFree && rFree.message) || "Could not activate free order.", "");
         }
@@ -2502,13 +2846,22 @@
       btn.disabled = true;
       btn.textContent = "Verifying…";
       try {
-        var res = await bridge.verifyPaystackReference(billingState.pendingRef);
+        var refToVerify = billingState.pendingRef;
+        var res = await bridge.verifyPaystackReference(refToVerify);
         if (res && res.ok) {
           billingState.pendingRef = null;
           $("#billingPendingRefBox").hidden = true;
-          setBillingMsg("", res.message || "Payment verified & licence activated!");
           toast("Paystack payment verified & licence active!");
           await refreshLicenceFromEngine();
+          showBillingReceipt({
+            ok: true,
+            source: "paystack",
+            reference: refToVerify,
+            receipt: res.receipt || null,
+            license: res.license,
+            license_key: res.license_key,
+            message: res.message || "Payment confirmed and licence activated!"
+          });
         } else {
           setBillingMsg((res && res.message) || "Payment not confirmed yet. Complete checkout and try again.", "");
         }
@@ -2538,9 +2891,15 @@
         var res = await bridge.redeemVoucherCode({ code: code });
         if (res && res.ok) {
           $("#billingRedeemInput").value = "";
-          setBillingMsg("", res.message || "Voucher redeemed & licence activated!");
           toast("Licence activated via redeem code!");
           await refreshLicenceFromEngine();
+          showBillingReceipt({
+            ok: true,
+            source: "redeem",
+            license: res.license,
+            license_key: res.license_key,
+            message: res.message || "Voucher redeemed & licence activated!"
+          });
         } else {
           setBillingMsg((res && res.message) || "Could not redeem code.", "");
         }
@@ -2578,10 +2937,10 @@
       if (evt && evt.ok) {
         billingState.pendingRef = null;
         if ($("#billingPendingRefBox")) $("#billingPendingRefBox").hidden = true;
-        setBillingMsg("", evt.message || "Licence activated!");
         toast(evt.message || "Licence activated!");
         logEvent("licence", "ok", "i-key", "<b>Licence activated</b> (" + esc(evt.license_key || evt.source || "cloud") + ")");
         refreshLicenceFromEngine();
+        showBillingReceipt(evt);
       }
     });
   }

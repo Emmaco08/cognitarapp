@@ -42,12 +42,26 @@ def inject_csrf_from_body():
             request.environ["HTTP_X_CSRFTOKEN"] = str(token)
 
 def handle_csrf_error(e):
+    from flask import session, redirect, url_for
     if request.is_json or request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         return {
             "error": "CSRF validation failed",
             "reason": getattr(e, 'description', 'Invalid token'),
-            "message": "Your security token is invalid or expired. Please refresh the page."
+            "message": "Your security token expired. Please refresh the page and try again."
         }, 400
+    # Never display the login screen to an already authenticated user — keep them in their portal
+    if "admin_id" in session or "teacher_id" in session or "student_id" in session or "ce_student_id" in session:
+        ref = request.referrer
+        if ref and request.host in ref and ref != request.url:
+            return redirect(ref)
+        if "admin_id" in session:
+            return redirect("/admin")
+        if "teacher_id" in session:
+            return redirect("/teacher")
+        if "student_id" in session:
+            return redirect("/dashboard")
+        if "ce_student_id" in session:
+            return redirect("/ce_dashboard")
     if request.path.startswith("/ce_login"):
         return render_template("ce_login.html", error="Security verification failed (token invalid or expired). Please try again."), 400
     return render_template("login.html", error="Security verification failed (token invalid or expired). Please try again."), 400

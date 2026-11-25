@@ -1,4 +1,4 @@
-{%- from '_ct_shell.html' import ico, ct_boot_script, admin_shell_start, teacher_shell_start, student_topbar, shell_end -%}
+{%- from '_ct_shell.html' import ico, ct_boot_script, admin_shell_start, teacher_shell_start, portal_shell_start, portal_shell_end, student_topbar, shell_end -%}
 <!DOCTYPE html>
 <html lang="en" data-theme="dark">
 <head>
@@ -244,7 +244,7 @@
   {{ ct_boot_script() }}
 </head>
 <body class="ct-app ct-bs tc-studio">
-{{ admin_shell_start(active='exams', crumb='Manage Questions') }}
+{{ portal_shell_start(active='exams', crumb='Manage Questions') }}
 
 
     <div class="bg-shape bg-shape-1"></div>
@@ -253,16 +253,16 @@
         <div class="page-header">
             <div class="logo-icon"><i class="fas fa-folder-open"></i></div>
             <h1>{{ section.section_name }}</h1>
-            <p>Manage questions for this section</p>
+            <p>Author questions with live KaTeX math preview, optional high-res diagrams, or CSV import</p>
         </div>
 
         <div class="top-bar">
             <a href="/teacher/exam/{{ section.exam_id }}/settings" class="btn-back"><i class="fas fa-arrow-left"></i> Back to Settings</a>
-            <div style="display:flex; gap:10px; align-items:center;">
-                <button class="btn-add" style="background: linear-gradient(135deg, #3b82f6, #1d4ed8);" onclick="openCsvModal()">
+            <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+                <button type="button" class="btn-add" style="background: var(--ct-surface); color: var(--ct-ink); border: 1px solid var(--ct-line-2); box-shadow: none;" onclick="openCsvModal()">
                     <i class="fas fa-file-csv"></i> Import CSV
                 </button>
-                <button class="btn-add" onclick="openAddQuestionModal()"><i class="fas fa-plus"></i> Add Question</button>
+                <button type="button" class="btn-add" onclick="openAddQuestionModal()"><i class="fas fa-plus"></i> Add Question</button>
             </div>
         </div>
 
@@ -274,7 +274,7 @@
                     {% if q.mandatory %}<span class="mandatory-badge"><i class="fas fa-star"></i> Mandatory</span>{% endif %}
                 </div>
                 <div class="q-display">{{ q.question | sanitize | safe }}</div>
-                {% if q.image %}<img src="/static/images/{{ q.image }}" class="q-image">{% endif %}
+                {% if q.image %}<img src="/static/images/{{ q.image }}" class="q-image" alt="Question diagram">{% endif %}
                 <div class="q-options">
                     <div class="q-opt {% if q.answer == q.option1 %}correct{% endif %}"><strong>A.</strong> {{ q.option1 | sanitize | safe }}</div>
                     <div class="q-opt {% if q.answer == q.option2 %}correct{% endif %}"><strong>B.</strong> {{ q.option2 | sanitize | safe }}</div>
@@ -282,32 +282,32 @@
                     <div class="q-opt {% if q.answer == q.option4 %}correct{% endif %}"><strong>D.</strong> {{ q.option4 | sanitize | safe }}</div>
                 </div>
                 {% if q.explanation %}
-                <div class="mt-2 text-muted" style="font-size:12px; background:#fffbeb; padding:8px 12px; border-radius:8px; border:1px solid #fef3c7;">
-                    <i class="fas fa-lightbulb text-warning"></i> <strong>Explanation:</strong> {{ q.explanation | sanitize | safe }}
+                <div class="mt-2" style="font-size:12.5px; background:var(--ct-surface-2); color:var(--ct-ink-2); padding:10px 12px; border-radius:8px; border:1px solid var(--ct-line);">
+                    <i class="fas fa-lightbulb text-warning"></i> <strong style="color:var(--ct-ink);">Explanation:</strong> {{ q.explanation | sanitize | safe }}
                 </div>
                 {% endif %}
                 <div class="q-actions">
-                    <button class="btn-act btn-edit" onclick="editQuestion({{ q.id }})"><i class="fas fa-edit"></i> Edit</button>
-                    <button class="btn-act btn-delete" onclick="deleteQuestion({{ q.id }}, this)"><i class="fas fa-trash"></i> Delete</button>
+                    <button type="button" class="btn-act btn-edit" onclick="editQuestion({{ q.id }})"><i class="fas fa-edit"></i> Edit</button>
+                    <button type="button" class="btn-act btn-delete" onclick="deleteQuestion({{ q.id }}, this)"><i class="fas fa-trash"></i> Delete</button>
                 </div>
             </div>
             {% endfor %}
         {% else %}
-            <div class="question-card"><div class="empty-state"><i class="fas fa-inbox"></i><h3>No Questions Yet</h3><p>Click "Add Question" to get started</p></div></div>
+            <div class="question-card"><div class="empty-state"><i class="fas fa-inbox"></i><h3>No Questions Yet</h3><p>Click "Add Question" to author your first question or import from CSV.</p></div></div>
         {% endif %}
     </div>
 
     <!-- Add Question Modal -->
     <div id="addQuestionModal" class="modal fade" tabindex="-1">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content" style="border-radius: 18px; overflow: hidden; border: none; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.2);">
-                <div class="modal-header" style="background: linear-gradient(135deg, #4f46e5, #3730a3); color: white; border: none; padding: 16px 22px;">
-                    <h5 class="modal-title"><i class="fas fa-plus-circle"></i> Add New Question</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+            <div class="modal-content" style="border-radius: 16px; overflow: hidden;">
+                <div class="modal-header" style="padding: 16px 22px; border-bottom: 1px solid var(--ct-line);">
+                    <h5 class="modal-title" style="font-weight:700; font-size:16px; color:var(--ct-ink);"><i class="fas fa-plus-circle me-2" style="color:var(--ct-accent);"></i>Add New Question</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <form method="POST" action="/teacher/exam_section/{{ section.id }}/questions" enctype="multipart/form-data" id="addQuestionForm" onsubmit="return prepareSubmit()">
+                <form method="POST" action="/teacher/exam_section/{{ section.id }}/questions" enctype="multipart/form-data" id="addQuestionForm" onsubmit="return prepareSubmit()" style="display:flex;flex-direction:column;min-height:0;flex:1;">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                    <div class="modal-body" style="padding: 18px 22px;">
+                    <div class="modal-body" style="padding: 18px 22px; overflow-y:auto;">
                         
                         <!-- SHARED TOOLBAR - used by all editors -->
                         <div class="shared-toolbar" id="sharedToolbar">
@@ -325,10 +325,14 @@
                                 <button type="button" class="t-btn" data-cmd="insertOrderedList" title="Numbered List"><i class="fas fa-list-ol"></i></button>
                             </div>
                             <div class="t-group f-btn-group">
-                                <button type="button" class="f-btn" onclick="CogniTaraKaTeX.openBuilderWithTemplate()" title="Insert Math &amp; Science Formulas"><i class="fas fa-square-root-alt"></i> Formulas</button>
+                                <button type="button" class="f-btn" onclick="CogniTaraKaTeX.openBuilderWithTemplate('fraction')" title="Insert Fraction">a/b</button>
+                                <button type="button" class="f-btn" onclick="CogniTaraKaTeX.openBuilderWithTemplate('root')" title="Insert Root">√x</button>
+                                <button type="button" class="f-btn" onclick="CogniTaraKaTeX.openBuilderWithTemplate('power')" title="Insert Power">xⁿ</button>
+                                <button type="button" class="f-btn" onclick="CogniTaraKaTeX.openBuilderWithTemplate('chemistry', 'H2O')" title="Insert Chemistry Formula">H₂O</button>
+                                <button type="button" class="f-btn" onclick="CogniTaraKaTeX.openBuilderWithTemplate()" title="Open Visual Formula Builder"><i class="fas fa-square-root-alt"></i> Formula Builder</button>
                             </div>
                             <div class="t-group">
-                                <button type="button" class="t-btn math-toggle" id="mathToggleBtn" title="More Math Symbols" style="color: var(--ct-accent);font-weight:700;"><i class="fas fa-calculator"></i></button>
+                                <button type="button" class="t-btn math-toggle" id="mathToggleBtn" title="More Math &amp; Science Symbols" style="color: var(--ct-accent);font-weight:700;"><i class="fas fa-omega"></i></button>
                             </div>
                         </div>
 
@@ -347,7 +351,7 @@
                             <button type="button" class="m-btn" onclick="insertAtCursor('>')">&gt;</button>
                             <button type="button" class="m-btn" onclick="insertAtCursor('≤')">≤</button>
                             <button type="button" class="m-btn" onclick="insertAtCursor('≥')">≥</button>
-                            <span class="math-label">Roots & Powers (Visual Builder)</span>
+                            <span class="math-label">Roots &amp; Powers (Visual Builder)</span>
                             <button type="button" class="m-btn" onclick="CogniTaraKaTeX.openBuilderWithTemplate('root')" title="Square Root">√</button>
                             <button type="button" class="m-btn" onclick="CogniTaraKaTeX.openBuilderWithTemplate('root', '3')" title="Cube Root">∛</button>
                             <button type="button" class="m-btn" onclick="CogniTaraKaTeX.openBuilderWithTemplate('power')" title="Power xⁿ">xⁿ</button>
@@ -371,7 +375,7 @@
                             <button type="button" class="m-btn" onclick="insertAtCursor('°')">°</button>
                             <button type="button" class="m-btn" onclick="insertAtCursor('∞')">∞</button>
                             <button type="button" class="m-btn" onclick="insertAtCursor('%')">%</button>
-                            <span class="math-label">LaTeX Formulas & Fractions (Visual Preview in Box)</span>
+                            <span class="math-label">LaTeX Formulas &amp; Fractions</span>
                             <button type="button" class="m-btn wide" onclick="CogniTaraKaTeX.openBuilderWithTemplate('fraction')">$\frac{a}{b}$ Fraction</button>
                             <button type="button" class="m-btn wide" onclick="CogniTaraKaTeX.openBuilderWithTemplate('root')">$\sqrt{x}$ Root</button>
                             <button type="button" class="m-btn wide" onclick="CogniTaraKaTeX.openBuilderWithTemplate('root', '3')">$\sqrt[n]{x}$ n-th Root</button>
@@ -380,8 +384,7 @@
                             <button type="button" class="m-btn wide" onclick="CogniTaraKaTeX.openBuilderWithTemplate('general', '\\int_{a}^{b} f(x) dx')">$\int$ Integral</button>
                             <button type="button" class="m-btn wide" onclick="CogniTaraKaTeX.openBuilderWithTemplate('general', '\\sum_{i=1}^{n} x_i')">$\sum$ Sum</button>
                             <button type="button" class="m-btn wide" onclick="CogniTaraKaTeX.openBuilderWithTemplate('general')"><i class="fas fa-edit"></i> Custom Formula...</button>
-                            <button type="button" class="m-btn wide" onclick="CogniTaraKaTeX.openBuilderWithTemplate('fraction')"><i class="fas fa-divide"></i> a/b Fraction</button>
-                            <span class="math-label">Chemistry & Reactions (\ce)</span>
+                            <span class="math-label">Chemistry &amp; Reactions</span>
                             <button type="button" class="m-btn wide" onclick="CogniTaraKaTeX.openBuilderWithTemplate('chemistry', 'H2O')">H₂O</button>
                             <button type="button" class="m-btn wide" onclick="CogniTaraKaTeX.openBuilderWithTemplate('chemistry', 'CO2')">CO₂</button>
                             <button type="button" class="m-btn wide" onclick="CogniTaraKaTeX.openBuilderWithTemplate('chemistry', 'NaCl')">NaCl</button>
@@ -395,12 +398,12 @@
                         <!-- QUESTION -->
                         <div class="editor-section">
                             <div class="editor-label"><i class="fas fa-question-circle"></i> Question</div>
-                            <div class="editor-area" id="qEditor" contenteditable="true" placeholder="Type your question here (LaTeX between $...$ or $$...$$ supported)..."></div>
+                            <div class="editor-area" id="qEditor" contenteditable="true" placeholder="Type your question here — click Formula Builder above or wrap math in $...$"></div>
                             <textarea name="question" id="qEditorHidden" style="display:none;"></textarea>
                         </div>
 
                         <div class="mb-3">
-                            <label class="form-label" style="font-size:12px;">Question Image (optional)</label>
+                            <label class="form-label" style="font-size:12px; color:var(--ct-ink-2);">Question Image (optional · any size supported)</label>
                             <input type="file" name="image" class="form-control form-control-sm" accept="image/*">
                         </div>
 
@@ -418,47 +421,47 @@
 
                         <!-- EXPLANATION FIELD -->
                         <div class="editor-section mt-2">
-                            <div class="editor-label"><i class="fas fa-lightbulb text-warning"></i> Question Explanation / Solution Guide (optional)</div>
-                            <div class="editor-area" id="expEditor" contenteditable="true" placeholder="Provide step-by-step working, solution, or teacher notes..." style="min-height:50px;max-height:100px;font-size:13px;"></div>
+                            <div class="editor-label"><i class="fas fa-lightbulb text-warning"></i> Explanation / Solution Guide (optional)</div>
+                            <div class="editor-area" id="expEditor" contenteditable="true" placeholder="Step-by-step working or solution notes shown on review..." style="min-height:50px;max-height:100px;font-size:13px;"></div>
                             <input type="hidden" name="explanation" id="expEditorHidden">
                         </div>
 
-                        <!-- LIVE STUDENT PREVIEW CARD -->
-                        <div class="mt-3 p-3" style="background: var(--ct-surface-2); border:1px solid #e2e8f0; border-radius:12px;" id="studentPreviewContainer">
+                        <!-- LIVE STUDENT PREVIEW CARD (Dark + Light theme native) -->
+                        <div class="mt-3 p-3" style="background: var(--ct-surface-2); border:1px solid var(--ct-line-2); border-radius:12px;" id="studentPreviewContainer">
                             <div class="d-flex justify-content-between align-items-center mb-2">
-                                <span style="font-size:12px; font-weight:700; color:#475569;"><i class="fas fa-eye text-primary"></i> Live Student Preview (KaTeX Formatted)</span>
-                                <span class="badge bg-light text-muted" style="font-size:10px;">Instant Auto-Render</span>
+                                <span style="font-size:12px; font-weight:700; color:var(--ct-ink-2);"><i class="fas fa-eye me-1" style="color:var(--ct-accent);"></i> Live Student Preview</span>
+                                <span style="font-size:11px; color:var(--ct-ink-3);">Auto-rendered math &amp; chemistry</span>
                             </div>
-                            <div id="livePreviewContent" style="background: var(--ct-surface-2); padding:14px; border-radius:8px; border:1px solid #cbd5e1; font-size:14px;">
-                                <div id="previewQuestion" style="font-weight:600; margin-bottom:10px; color:#1e293b;">Question text will appear here...</div>
+                            <div id="livePreviewContent" style="background: var(--ct-surface); padding:14px; border-radius:10px; border:1px solid var(--ct-line); font-size:14px; color:var(--ct-ink);">
+                                <div id="previewQuestion" style="font-weight:600; margin-bottom:10px; color:var(--ct-ink);">Question text will appear here…</div>
                                 <div class="row g-2" id="previewOptions">
-                                    <div class="col-md-6"><div style="padding:6px 10px; background: var(--ct-surface-2); border-radius:6px; font-size:12px;"><strong class="text-primary">A.</strong> <span id="previewOptA">Option A</span></div></div>
-                                    <div class="col-md-6"><div style="padding:6px 10px; background: var(--ct-surface-2); border-radius:6px; font-size:12px;"><strong class="text-primary">B.</strong> <span id="previewOptB">Option B</span></div></div>
-                                    <div class="col-md-6"><div style="padding:6px 10px; background: var(--ct-surface-2); border-radius:6px; font-size:12px;"><strong class="text-primary">C.</strong> <span id="previewOptC">Option C</span></div></div>
-                                    <div class="col-md-6"><div style="padding:6px 10px; background: var(--ct-surface-2); border-radius:6px; font-size:12px;"><strong class="text-primary">D.</strong> <span id="previewOptD">Option D</span></div></div>
+                                    <div class="col-md-6"><div style="padding:7px 11px; background: var(--ct-surface-2); border:1px solid var(--ct-line); border-radius:8px; font-size:12.5px; color:var(--ct-ink);"><strong style="color:var(--ct-accent);">A.</strong> <span id="previewOptA">Option A</span></div></div>
+                                    <div class="col-md-6"><div style="padding:7px 11px; background: var(--ct-surface-2); border:1px solid var(--ct-line); border-radius:8px; font-size:12.5px; color:var(--ct-ink);"><strong style="color:var(--ct-accent);">B.</strong> <span id="previewOptB">Option B</span></div></div>
+                                    <div class="col-md-6"><div style="padding:7px 11px; background: var(--ct-surface-2); border:1px solid var(--ct-line); border-radius:8px; font-size:12.5px; color:var(--ct-ink);"><strong style="color:var(--ct-accent);">C.</strong> <span id="previewOptC">Option C</span></div></div>
+                                    <div class="col-md-6"><div style="padding:7px 11px; background: var(--ct-surface-2); border:1px solid var(--ct-line); border-radius:8px; font-size:12.5px; color:var(--ct-ink);"><strong style="color:var(--ct-accent);">D.</strong> <span id="previewOptD">Option D</span></div></div>
                                 </div>
-                                <div id="previewExplanation" class="mt-2 text-muted" style="font-size:12px; display:none; border-top:1px dashed #cbd5e1; padding-top:6px;">
-                                    <i class="fas fa-lightbulb text-warning"></i> <strong>Explanation:</strong> <span id="previewExpText"></span>
+                                <div id="previewExplanation" class="mt-2" style="font-size:12px; display:none; border-top:1px dashed var(--ct-line-2); padding-top:8px; color:var(--ct-ink-2);">
+                                    <i class="fas fa-lightbulb text-warning"></i> <strong style="color:var(--ct-ink);">Explanation:</strong> <span id="previewExpText"></span>
                                 </div>
                             </div>
                         </div>
 
                         <div class="row mt-3">
                             <div class="col-md-6 mb-2">
-                                <label class="form-label fw-bold" style="font-size:13px;">Correct Answer</label>
+                                <label class="form-label fw-bold" style="font-size:13px; color:var(--ct-ink);">Correct Answer</label>
                                 <select name="answer" class="form-select form-select-sm" required>
-                                    <option value="">Select...</option>
+                                    <option value="">Select…</option>
                                     <option value="1">A</option><option value="2">B</option><option value="3">C</option><option value="4">D</option>
                                 </select>
                             </div>
                             <div class="col-md-6 mb-2 d-flex align-items-end">
-                                <label style="font-size:13px;cursor:pointer;"><input type="checkbox" name="mandatory" value="1" style="width:16px;height:16px;margin-right:6px;"> Mandatory Question</label>
+                                <label style="font-size:13px;cursor:pointer;color:var(--ct-ink);"><input type="checkbox" name="mandatory" value="1" style="width:16px;height:16px;margin-right:6px;"> Mandatory Question</label>
                             </div>
                         </div>
                     </div>
-                    <div class="modal-footer" style="background: #fafbfc; border-top: 1px solid #e5e7eb;">
-                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
-                        <button type="submit" class="btn btn-primary" style="background: var(--primary); border: none;"><i class="fas fa-save"></i> Save Question</button>
+                    <div class="modal-footer" style="border-top: 1px solid var(--ct-line); padding: 14px 22px;">
+                        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-save me-1"></i>Save Question</button>
                     </div>
                 </form>
             </div>
@@ -926,6 +929,6 @@
         }
 </script>
 
-{{ shell_end(role='admin') }}
+{{ portal_shell_end() }}
 </body>
 </html>

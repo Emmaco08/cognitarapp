@@ -181,6 +181,7 @@
                     {% else %}
                     <button type="button" class="tc-btn tc-btn--danger-soft tc-btn--sm" onclick="toggleExam({{ exam.id }}, 1, {{ exam.name|tojson|forceescape }})">{{ ico('i-stop', 'ct-ico--xs') }}Stop</button>
                     {% endif %}
+                    <a class="tc-btn tc-btn--primary tc-btn--sm" href="/teacher/exam/{{ exam.id }}/questions">{{ ico('i-plus', 'ct-ico--xs') }}Questions</a>
                     <a class="tc-btn tc-btn--secondary tc-btn--sm" href="/teacher/exam/{{ exam.id }}/settings">Settings</a>
                     <a class="tc-btn tc-btn--secondary tc-btn--sm" href="/teacher/exam/{{ exam.id }}/analytics">Analytics</a>
                     <a class="tc-btn tc-btn--ghost tc-btn--sm" href="/teacher/results/{{ exam.id }}">Results</a>

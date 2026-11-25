@@ -1,0 +1,206 @@
+{%- from '_ct_shell.html' import ico, ct_boot_script, teacher_shell_start, shell_end -%}
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+  <meta name="color-scheme" content="dark light">
+  <title>Exam Control Center — {{ school_branding.school_name if school_branding is defined else 'CogniTara' }}</title>
+  <link rel="icon" href="{{ url_for('static', filename='images/cognitara-favicon.ico') }}">
+  <link rel="preload" href="{{ url_for('static', filename='fonts/ui/PlusJakartaSans-Variable.woff2') }}" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="{{ url_for('static', filename='fonts/ui/GeistMono-Variable.woff2') }}" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/cognitara-web.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/cognitara-teacher-studio.css') }}">
+  {{ ct_boot_script() }}
+  <style>
+    .tcc-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; justify-content: space-between; margin-bottom: 18px; }
+    .tcc-filters { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+    .tcc-chip {
+      height: 34px; padding: 0 13px; border-radius: 999px; font-size: 12.5px; font-weight: 600;
+      border: 1px solid var(--tc-line-2); background: var(--tc-surface); color: var(--tc-ink-2);
+      cursor: pointer; transition: all 160ms ease;
+    }
+    .tcc-chip:hover { color: var(--tc-ink); border-color: var(--tc-ink-3); }
+    .tcc-chip.is-active { background: var(--tc-ink); color: var(--tc-bg); border-color: var(--tc-ink); }
+    .tcc-search {
+      height: 36px; min-width: 240px; padding: 0 12px; border-radius: 10px;
+      border: 1px solid var(--tc-line-2); background: var(--tc-surface); color: var(--tc-ink);
+      font-size: 13px; outline: none;
+    }
+    .tcc-search:focus { border-color: var(--tc-accent); box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.16); }
+    .tcc-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 360px), 1fr)); gap: 16px; }
+    .tcc-exam {
+      background: var(--tc-surface); border: 1px solid var(--tc-line); border-radius: 16px;
+      padding: 18px 20px; display: flex; flex-direction: column; gap: 14px;
+      transition: border-color 180ms ease, transform 180ms ease;
+    }
+    .tcc-exam:hover { border-color: var(--tc-line-2); transform: translateY(-2px); }
+    .tcc-exam__top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+    .tcc-exam__title { font-size: 16px; font-weight: 700; color: var(--tc-ink); line-height: 1.3; margin: 0 0 4px; }
+    .tcc-exam__sub { font-size: 12.5px; color: var(--tc-ink-3); display: flex; flex-wrap: wrap; gap: 8px; }
+    .tcc-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; padding: 10px 12px; border-radius: 11px; background: var(--tc-well); border: 1px solid var(--tc-line); }
+    .tcc-stat span { display: block; font-size: 11px; color: var(--tc-ink-3); }
+    .tcc-stat strong { font-family: var(--ct-font-mono); font-size: 15px; font-weight: 700; color: var(--tc-ink); font-variant-numeric: tabular-nums; }
+    .tcc-actions { display: flex; flex-wrap: wrap; gap: 8px; padding-top: 4px; border-top: 1px solid var(--tc-line); }
+    .tcc-actions .tc-btn { flex: 1 1 auto; justify-content: center; }
+  </style>
+</head>
+<body class="ct-app tc-studio">
+{{ teacher_shell_start(active='control', crumb='Exam Control Center') }}
+
+  <header class="tc-head">
+    <div class="tc-head__txt">
+      <h1>Exam Control Center</h1>
+      <p>Start or pause your examinations, add questions directly, and jump to settings or results.</p>
+    </div>
+    <div class="tc-head__actions">
+      <a class="tc-btn tc-btn--secondary" href="/teacher/technical_support">{{ ico('i-activity', 'ct-ico--sm') }}Live Support</a>
+      <a class="tc-btn tc-btn--primary" href="/teacher/create_exam">{{ ico('i-plus', 'ct-ico--sm') }}Create Exam</a>
+    </div>
+  </header>
+
+  <section class="tc-kpi-strip" aria-label="Exam control summary">
+    <div class="tc-kpi">
+      <span class="tc-kpi__label">My Exams</span>
+      <strong class="tc-kpi__val" data-ct-count>{{ total_exams }}</strong>
+      <span class="tc-kpi__meta">Assigned papers you authored</span>
+    </div>
+    <div class="tc-kpi">
+      <span class="tc-kpi__label">Active Live</span>
+      <strong class="tc-kpi__val" data-ct-count>{{ active_exams }}</strong>
+      <span class="tc-kpi__meta">Currently open to students</span>
+    </div>
+    <div class="tc-kpi">
+      <span class="tc-kpi__label">Inactive / Draft</span>
+      <strong class="tc-kpi__val" data-ct-count>{{ inactive_exams }}</strong>
+      <span class="tc-kpi__meta">Hidden from student dashboard</span>
+    </div>
+    <div class="tc-kpi">
+      <span class="tc-kpi__label">Total Questions</span>
+      <strong class="tc-kpi__val" data-ct-count>{{ total_questions }}</strong>
+      <span class="tc-kpi__meta">Items across all your papers</span>
+    </div>
+  </section>
+
+  <section class="tc-card">
+    <div class="tc-card__body">
+      <div class="tcc-bar">
+        <div class="tcc-filters" role="group" aria-label="Filter exams">
+          <button type="button" class="tcc-chip is-active" data-status="all">All ({{ total_exams }})</button>
+          <button type="button" class="tcc-chip" data-status="active">Active ({{ active_exams }})</button>
+          <button type="button" class="tcc-chip" data-status="inactive">Inactive ({{ inactive_exams }})</button>
+          {% if classes %}
+          <select id="classFilter" class="tcc-search" style="min-width:150px" aria-label="Filter by class">
+            <option value="">All classes</option>
+            {% for c in classes %}
+            <option value="{{ c|lower }}">{{ c }}</option>
+            {% endfor %}
+          </select>
+          {% endif %}
+        </div>
+        <input id="examSearch" type="search" class="tcc-search" placeholder="Search exam name or subject…" aria-label="Search exams">
+      </div>
+
+      {% if exams %}
+      <div class="tcc-grid" id="examGrid">
+        {% for exam in exams %}
+        <article class="tcc-exam"
+                 data-status="{{ 'active' if exam.active else 'inactive' }}"
+                 data-class="{{ (exam.class or '')|lower }}"
+                 data-search="{{ (exam.name ~ ' ' ~ (exam.subject_tag or '') ~ ' ' ~ (exam.class or ''))|lower }}">
+          <div class="tcc-exam__top">
+            <div>
+              <h2 class="tcc-exam__title">{{ exam.name }}</h2>
+              <div class="tcc-exam__sub">
+                <span>{{ exam.class }}</span>
+                <span>·</span>
+                <span>{{ exam.subject_tag or 'General' }}</span>
+                <span>·</span>
+                <span>{{ exam.duration }} min</span>
+              </div>
+            </div>
+            {% if exam.active %}
+            <span class="tc-pill tc-pill--ok"><i class="tc-dot"></i>Active</span>
+            {% else %}
+            <span class="tc-pill"><i class="tc-dot"></i>Inactive</span>
+            {% endif %}
+          </div>
+
+          <div class="tcc-stats">
+            <div class="tcc-stat">
+              <span>Questions</span>
+              <strong>{{ exam.question_count or 0 }}</strong>
+            </div>
+            <div class="tcc-stat">
+              <span>Attempts</span>
+              <strong>{{ exam.student_count or 0 }}</strong>
+            </div>
+            <div class="tcc-stat">
+              <span>Avg Score</span>
+              <strong>{{ "%.1f"|format(exam.avg_score or 0) }}%</strong>
+            </div>
+          </div>
+
+          <div class="tcc-actions">
+            {% if exam.active %}
+            <button type="button" class="tc-btn tc-btn--danger-soft tc-btn--sm" onclick="toggleExam({{ exam.id }}, 1, {{ exam.name|tojson|forceescape }})">{{ ico('i-stop', 'ct-ico--xs') }}Stop</button>
+            {% else %}
+            <button type="button" class="tc-btn tc-btn--ok tc-btn--sm" onclick="toggleExam({{ exam.id }}, 0, {{ exam.name|tojson|forceescape }})">{{ ico('i-play', 'ct-ico--xs') }}Start</button>
+            {% endif %}
+            <a class="tc-btn tc-btn--primary tc-btn--sm" href="/teacher/exam/{{ exam.id }}/questions">{{ ico('i-plus', 'ct-ico--xs') }}Questions</a>
+            <a class="tc-btn tc-btn--secondary tc-btn--sm" href="/teacher/exam/{{ exam.id }}/settings">Settings</a>
+            <a class="tc-btn tc-btn--ghost tc-btn--sm" href="/teacher/exam/{{ exam.id }}/analytics">Analytics</a>
+            <a class="tc-btn tc-btn--ghost tc-btn--sm" href="/teacher/results/{{ exam.id }}">Results</a>
+          </div>
+        </article>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="tc-empty">
+        <span class="tc-empty__ico">{{ ico('i-folder') }}</span>
+        <strong>No examinations created yet</strong>
+        <p>Create your first examination paper to start authoring questions and scheduling sessions.</p>
+        <a href="/teacher/create_exam" class="tc-btn tc-btn--primary" style="margin-top:8px">{{ ico('i-plus', 'ct-ico--sm') }}Create First Exam</a>
+      </div>
+      {% endif %}
+    </div>
+  </section>
+
+{{ shell_end(role='teacher') }}
+<script>
+(function () {
+  var statusFilter = "all";
+  var searchEl = document.getElementById("examSearch");
+  var classEl = document.getElementById("classFilter");
+  var cards = Array.prototype.slice.call(document.querySelectorAll("#examGrid .tcc-exam"));
+
+  function applyFilters() {
+    var q = (searchEl && searchEl.value || "").trim().toLowerCase();
+    var cls = (classEl && classEl.value || "").trim().toLowerCase();
+    cards.forEach(function (card) {
+      var okStatus = statusFilter === "all" || card.dataset.status === statusFilter;
+      var okClass = !cls || card.dataset.class === cls;
+      var okSearch = !q || (card.dataset.search || "").indexOf(q) > -1;
+      card.style.display = (okStatus && okClass && okSearch) ? "" : "none";
+    });
+  }
+
+  document.querySelectorAll(".tcc-chip").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      document.querySelectorAll(".tcc-chip").forEach(function (b) { b.classList.remove("is-active"); });
+      btn.classList.add("is-active");
+      statusFilter = btn.dataset.status || "all";
+      applyFilters();
+    });
+  });
+  if (searchEl) searchEl.addEventListener("input", applyFilters);
+  if (classEl) classEl.addEventListener("change", applyFilters);
+
+  window.toggleExam = function (examId, isActive, name) {
+    window.location.href = "/teacher/toggle_exam/" + examId;
+  };
+})();
+</script>
+</body>
+</html>

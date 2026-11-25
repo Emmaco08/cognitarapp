@@ -2,6 +2,7 @@ import os
 import secrets
 import sys
 import tempfile
+from datetime import timedelta
 
 
 def _ensure_writable_dir(candidate: str) -> bool:
@@ -132,9 +133,13 @@ def get_or_create_secret_key():
 
 class Config:
     SECRET_KEY = get_or_create_secret_key()
+    SESSION_COOKIE_NAME = "cognitara_session"
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = 'Lax'
     SESSION_COOKIE_SECURE = os.environ.get('COGNITARA_COOKIE_SECURE', 'false').lower() in ('true', '1', 'yes')
+    PERMANENT_SESSION_LIFETIME = timedelta(days=14)
+    SESSION_REFRESH_EACH_REQUEST = True
+    WTF_CSRF_TIME_LIMIT = None
 
     ROOT_DIR = resolve_data_dir()
     LOGS_DIR = resolve_logs_dir()
@@ -146,7 +151,8 @@ class Config:
     else:
         DATABASE_NAME = os.path.abspath(os.path.join(ROOT_DIR, raw_db))
 
-    # Safe request body limit: 16MB permits large uncompressed high-resolution images while preventing memory exhaustion DoS
-    MAX_CONTENT_LENGTH = int(os.environ.get("COGNITARA_MAX_CONTENT_LENGTH", 16 * 1024 * 1024))
+    # Unlimited image/upload payload size by default unless explicitly configured via env var
+    _max_len_env = os.environ.get("COGNITARA_MAX_CONTENT_LENGTH", "").strip()
+    MAX_CONTENT_LENGTH = int(_max_len_env) if _max_len_env.isdigit() and int(_max_len_env) > 0 else None
     TEMPLATES_AUTO_RELOAD = True
 
