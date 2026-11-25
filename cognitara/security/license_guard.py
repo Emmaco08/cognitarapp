@@ -520,7 +520,7 @@ class LicenseGuard:
             "hw_component_hashes": fp["component_hashes"],
             "machine_hostname": fp["hostname"],
             "os_version": fp["os_version"],
-            "app_version": "2.2.0",
+            "app_version": "2.2.1",
         }).encode("utf-8")
         req = urllib.request.Request(
             f"{base}/api/v1/licenses/activate",
@@ -564,7 +564,7 @@ class LicenseGuard:
         req_body = json.dumps({
             "license_id": status["license_id"],
             "hwid_hash": fp["hwid_hash"],
-            "app_version": "2.2.0",
+            "app_version": "2.2.1",
             "client_utc": datetime.fromtimestamp(self._clock_utc(), tz=timezone.utc).isoformat(),
             "used_seconds": status.get("used_seconds", 0),
             "lock_state": status["lock_state"],

@@ -57,6 +57,8 @@ export interface CogniTaraDesktopBridge {
   cloudSignIn: (payload: { email: string; password: string }) => Promise<any>;
   cloudSync: () => Promise<any>;
   cloudSignOut: () => Promise<any>;
+  cloudVerifyOtp: (payload: { email: string; code: string; purpose?: string }) => Promise<any>;
+  cloudResendOtp: (payload: { email: string; purpose?: string }) => Promise<any>;
   // Paystack In-App Billing, Plans, Discount & Redeem Codes
   getBillingPlans: () => Promise<any>;
   validatePromoCode: (payload: { code: string; plan_id?: string | null; currency?: string }) => Promise<any>;
@@ -108,6 +110,8 @@ const api: CogniTaraDesktopBridge = {
   getCloudSession: () => ipcRenderer.invoke("cloud:getSession"),
   cloudSignUp: (payload) => ipcRenderer.invoke("cloud:signUp", payload),
   cloudSignIn: (payload) => ipcRenderer.invoke("cloud:signIn", payload),
+  cloudVerifyOtp: (payload) => ipcRenderer.invoke("cloud:verifyOtp", payload),
+  cloudResendOtp: (payload) => ipcRenderer.invoke("cloud:resendOtp", payload),
   cloudSync: () => ipcRenderer.invoke("cloud:sync"),
   cloudSignOut: () => ipcRenderer.invoke("cloud:signOut"),
   getBillingPlans: () => ipcRenderer.invoke("billing:getPlans"),

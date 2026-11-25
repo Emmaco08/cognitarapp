@@ -99,6 +99,17 @@
   !macroend
 
   ; ---------------------------------------------------------------------------
+  ; Silent-mode pre-flight: stop any stray cognitara-engine.exe before files
+  ; are replaced so in-app updates & repairs never hit Windows file locks.
+  ; ---------------------------------------------------------------------------
+  !macro customInit
+    ${If} ${Silent}
+      nsExec::Exec 'taskkill /F /IM cognitara-engine.exe'
+      Pop $0
+    ${EndIf}
+  !macroend
+
+  ; ---------------------------------------------------------------------------
   ; Install: shortcut switches + writable %ProgramData%\CogniTara\data
   ; ---------------------------------------------------------------------------
   !macro customInstall

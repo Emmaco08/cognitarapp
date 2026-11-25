@@ -549,7 +549,7 @@
               <h2>Software Updates & About</h2>
               <div class="set-row">
                 <span>
-                  <strong id="aboutVersion">CogniTara Studio 2.2.0</strong>
+                  <strong id="aboutVersion">CogniTara Studio 2.2.1</strong>
                   <em id="updSubtitle">5-layer licence vault active · Direct GitHub Releases auto-updater ready.</em>
                 </span>
                 <button class="btn btn--ghost btn--sm" id="setCheckUpdateBtn">Check for updates</button>
@@ -662,6 +662,21 @@
             </div>
             <div class="cloud-modal__actions">
               <button type="submit" class="btn btn--primary" id="cuSubmitBtn">Create account &amp; sync</button>
+            </div>
+          </form>
+
+          <form class="form" id="cloudOtpForm" hidden>
+            <p style="margin:0;font-size:13px;color:var(--ink-2)">Enter the 6-digit Brevo verification code sent to <strong id="coEmailLabel">—</strong>.</p>
+            <label class="field">
+              <span>6-Digit Verification Code</span>
+              <input id="coCode" class="mono" inputmode="numeric" maxlength="6" required placeholder="000000" autocomplete="one-time-code" style="text-align:center;font-size:20px;letter-spacing:0.32em">
+            </label>
+            <div class="cloud-modal__actions" style="justify-content:space-between">
+              <button type="button" class="btn btn--ghost btn--sm" id="coBackBtn">← Back</button>
+              <div style="display:flex;gap:8px">
+                <button type="button" class="btn btn--ghost btn--sm" id="coResendBtn">Resend code</button>
+                <button type="submit" class="btn btn--primary" id="coSubmitBtn">Verify &amp; continue</button>
+              </div>
             </div>
           </form>
         </div>

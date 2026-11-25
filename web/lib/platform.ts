@@ -13,6 +13,12 @@ export interface PlatformSettingsRow {
   paystack_secret_masked: string;
   paystack_secret_configured: boolean;
   paystack_mode: "test" | "live";
+  brevo_api_key: string;
+  brevo_api_key_masked: string;
+  brevo_configured: boolean;
+  brevo_sender_email: string;
+  brevo_sender_name: string;
+  require_email_otp: boolean;
   default_currency: string;
   maintenance_mode: boolean;
   maintenance_message: string;
@@ -32,6 +38,9 @@ export async function getPlatformSettings(): Promise<PlatformSettingsRow> {
   const r = (rows[0] || {}) as Record<string, any>;
   const decryptedSecret = decryptSecret(r.paystack_secret_key_enc) || (process.env.PAYSTACK_SECRET_KEY || "").trim();
   const publicKey = String(r.paystack_public_key || process.env.PAYSTACK_PUBLIC_KEY || "").trim();
+  const decryptedBrevo = decryptSecret(r.brevo_api_key_enc) || (process.env.BREVO_API_KEY || "").trim();
+  const brevoSenderEmail = String(r.brevo_sender_email || process.env.BREVO_SENDER_EMAIL || "noreply@cognitara.net").trim();
+  const brevoSenderName = String(r.brevo_sender_name || process.env.BREVO_SENDER_NAME || "CogniTara Cloud").trim();
 
   return {
     paystack_public_key: publicKey,
@@ -39,6 +48,12 @@ export async function getPlatformSettings(): Promise<PlatformSettingsRow> {
     paystack_secret_masked: maskSecretKey(decryptedSecret),
     paystack_secret_configured: Boolean(decryptedSecret),
     paystack_mode: r.paystack_mode === "live" ? "live" : "test",
+    brevo_api_key: decryptedBrevo,
+    brevo_api_key_masked: maskSecretKey(decryptedBrevo),
+    brevo_configured: Boolean(decryptedBrevo),
+    brevo_sender_email: brevoSenderEmail,
+    brevo_sender_name: brevoSenderName,
+    require_email_otp: Boolean(r.require_email_otp),
     default_currency: String(r.default_currency || "NGN").trim().toUpperCase(),
     maintenance_mode: Boolean(r.maintenance_mode),
     maintenance_message: String(r.maintenance_message || ""),
@@ -62,6 +77,7 @@ export function toPublicPlatformDirectives(s: PlatformSettingsRow) {
     allow_self_signup: s.allow_self_signup,
     allow_paystack_checkout: s.allow_paystack_checkout && Boolean(s.paystack_public_key && s.paystack_secret_configured),
     allow_trial_activation: s.allow_trial_activation,
+    require_email_otp: s.require_email_otp && s.brevo_configured,
     paystack_public_key: s.paystack_public_key,
     paystack_mode: s.paystack_mode,
     default_currency: s.default_currency,

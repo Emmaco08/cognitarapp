@@ -109,3 +109,8 @@ desktop/setup/src-tauri/target/
 desktop/setup/payload/payload.exe
 desktop/setup/payload/manifest.json
 
+# MCP servers
+mcp/*/node_modules/
+mcp/*/dist/
+
+

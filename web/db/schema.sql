@@ -326,6 +326,28 @@ CREATE TABLE IF NOT EXISTS cloud_sessions (
 );
 CREATE INDEX IF NOT EXISTS idx_cloud_sessions_user ON cloud_sessions(user_id, expires_at DESC);
 
+-- 18. Brevo Transactional Email & 6-Digit OTP Verification
+ALTER TABLE users_hq ADD COLUMN IF NOT EXISTS email_verified BOOLEAN NOT NULL DEFAULT FALSE;
+ALTER TABLE platform_settings ADD COLUMN IF NOT EXISTS brevo_api_key_enc TEXT;
+ALTER TABLE platform_settings ADD COLUMN IF NOT EXISTS brevo_sender_email TEXT NOT NULL DEFAULT 'noreply@cognitara.net';
+ALTER TABLE platform_settings ADD COLUMN IF NOT EXISTS brevo_sender_name TEXT NOT NULL DEFAULT 'CogniTara Cloud';
+ALTER TABLE platform_settings ADD COLUMN IF NOT EXISTS require_email_otp BOOLEAN NOT NULL DEFAULT FALSE;
+
+CREATE TABLE IF NOT EXISTS email_otp_codes (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES users_hq(id) ON DELETE CASCADE,
+    email TEXT NOT NULL,
+    purpose TEXT NOT NULL CHECK (purpose IN ('signup_verify', 'signin_otp', 'password_reset')),
+    code_hash TEXT NOT NULL,
+    attempts INT NOT NULL DEFAULT 0,
+    max_attempts INT NOT NULL DEFAULT 5,
+    expires_at TIMESTAMPTZ NOT NULL,
+    consumed_at TIMESTAMPTZ,
+    client_meta_json JSONB NOT NULL DEFAULT '{}'::jsonb,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_email_otp_lookup ON email_otp_codes(email, purpose, created_at DESC);
+
 -- Seed Default Commercial Plans (Idempotent)
 INSERT INTO plans (slug, display_name, description, badge, sort_order, billing_cycle, plan_tier, duration_days, lease_days, price_ngn_kobo, price_usd_cents, max_devices, default_commission_pct, default_bonus_days, features_json)
 VALUES

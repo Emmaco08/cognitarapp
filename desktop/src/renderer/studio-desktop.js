@@ -1754,7 +1754,23 @@
     $("#hqNoticeDismiss").addEventListener("click", function () { $("#hqNoticeBanner").hidden = true; });
   }
 
+  var pendingCloudOtp = null;
+  function showCloudOtpStep(email, purpose, msg) {
+    pendingCloudOtp = { email: email, purpose: purpose || "signup_verify" };
+    $("#cloudTabs").hidden = true;
+    $("#cloudSignInForm").hidden = true;
+    $("#cloudSignUpForm").hidden = true;
+    $("#cloudOtpForm").hidden = false;
+    $("#coEmailLabel").textContent = email;
+    $("#coCode").value = "";
+    setCloudMsg("", msg || ("Enter the 6-digit code sent to " + email + "."));
+    setTimeout(function () { $("#coCode").focus(); }, 60);
+  }
+
   function switchCloudTab(tab) {
+    pendingCloudOtp = null;
+    $("#cloudTabs").hidden = false;
+    $("#cloudOtpForm").hidden = true;
     $$("#cloudTabs button").forEach(function (b) { b.classList.toggle("is-active", b.dataset.ctab === tab); });
     $("#cloudSignInForm").hidden = tab !== "signin";
     $("#cloudSignUpForm").hidden = tab !== "signup";
@@ -1799,7 +1815,9 @@
       var res = bridge
         ? await bridge.cloudSignIn({ email: $("#ciEmail").value.trim(), password: $("#ciPass").value })
         : { ok: false, message: "Cloud IPC requires CogniTara Studio desktop." };
-      if (res && res.ok && res.session) {
+      if (res && res.ok && res.otp_required) {
+        showCloudOtpStep(res.email || $("#ciEmail").value.trim(), res.purpose || "signin_otp", res.message);
+      } else if (res && res.ok && res.session) {
         renderCloudAccount(res.session);
         setCloudMsg("", "Signed in and cached locally for offline exam days.");
         toast("Signed in to CogniTara Cloud");
@@ -1835,7 +1853,9 @@
             referral_code: $("#cuRef").value.trim() || undefined
           })
         : { ok: false, message: "Cloud IPC requires CogniTara Studio desktop." };
-      if (res && res.ok && res.session) {
+      if (res && res.ok && res.otp_required) {
+        showCloudOtpStep(res.email || $("#cuEmail").value.trim(), res.purpose || "signup_verify", res.message);
+      } else if (res && res.ok && res.session) {
         renderCloudAccount(res.session);
         setCloudMsg("", "School account created on Neon Cloud and cached offline.");
         toast("CogniTara Cloud account created!");
@@ -1853,6 +1873,59 @@
       btn.textContent = "Create account & sync";
     }
   });
+
+  if ($("#coBackBtn")) {
+    $("#coBackBtn").addEventListener("click", function () { switchCloudTab("signin"); });
+  }
+  if ($("#coResendBtn")) {
+    $("#coResendBtn").addEventListener("click", async function () {
+      if (!pendingCloudOtp || !bridge) return;
+      var btn = $("#coResendBtn");
+      btn.disabled = true;
+      try {
+        var res = await bridge.cloudResendOtp(pendingCloudOtp);
+        if (res && res.ok) setCloudMsg("", res.message || "Fresh 6-digit code sent.");
+        else setCloudMsg((res && res.message) || "Wait a moment before resending.", "");
+      } finally {
+        setTimeout(function () { btn.disabled = false; }, 12000);
+      }
+    });
+  }
+  if ($("#cloudOtpForm")) {
+    $("#cloudOtpForm").addEventListener("submit", async function (e) {
+      e.preventDefault();
+      if (!pendingCloudOtp) return;
+      setCloudMsg("", "");
+      var btn = $("#coSubmitBtn");
+      btn.disabled = true;
+      btn.textContent = "Verifying…";
+      try {
+        var code = $("#coCode").value.replace(/\D/g, "").slice(0, 6);
+        var res = bridge
+          ? await bridge.cloudVerifyOtp({ email: pendingCloudOtp.email, purpose: pendingCloudOtp.purpose, code: code })
+          : { ok: false, message: "Cloud IPC requires CogniTara Studio desktop." };
+        if (res && res.ok && res.session) {
+          pendingCloudOtp = null;
+          $("#cloudTabs").hidden = false;
+          $("#cloudOtpForm").hidden = true;
+          renderCloudAccount(res.session);
+          setCloudMsg("", "Email verified & cached locally for offline exam days.");
+          toast("Email verified — signed in to CogniTara Cloud");
+          logEvent("licence", "ok", "i-shield", "<b>Cloud account verified via OTP</b> (" + esc(res.session.user.email) + ")");
+          if (reopenBillingAfterAuth) {
+            reopenBillingAfterAuth = false;
+            closeCloudModal();
+            openBillingModal("plans");
+          }
+        } else {
+          setCloudMsg((res && res.message) || "Invalid or expired 6-digit code.", "");
+        }
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "Verify & continue";
+      }
+    });
+  }
 
   async function runCloudSync() {
     if (!bridge) { toast("Cloud profile is up to date"); return; }

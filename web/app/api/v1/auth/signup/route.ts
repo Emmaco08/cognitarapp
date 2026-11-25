@@ -9,6 +9,7 @@ import {
   normalizeEmail,
 } from "@/lib/auth";
 import { getPlatformSettings, toPublicPlatformDirectives } from "@/lib/platform";
+import { createAndSendEmailOtp } from "@/lib/brevo";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 
 export const dynamic = "force-dynamic";
@@ -64,7 +65,7 @@ export async function POST(req: NextRequest) {
     }
 
     const sql = getSql();
-    const existing = await sql`SELECT id FROM users_hq WHERE email = ${email} LIMIT 1`;
+    const existing = await sql`SELECT id, email_verified FROM users_hq WHERE email = ${email} LIMIT 1`;
     if (existing.length > 0) {
       return NextResponse.json(
         { ok: false, error: "email_exists", message: "An account with this email already exists. Sign in instead." },
@@ -72,11 +73,12 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const otpActive = Boolean(settings.require_email_otp && settings.brevo_configured);
     const passwordHash = hashPassword(password);
     const createdUsers = await sql`
-      INSERT INTO users_hq (email, password_hash, full_name, phone, role, status)
-      VALUES (${email}, ${passwordHash}, ${fullName}, ${phone || null}, 'school_owner', 'active')
-      RETURNING id, email, full_name, phone, role, status, created_at
+      INSERT INTO users_hq (email, password_hash, full_name, phone, role, status, email_verified)
+      VALUES (${email}, ${passwordHash}, ${fullName}, ${phone || null}, 'school_owner', 'active', ${!otpActive})
+      RETURNING id, email, full_name, phone, role, status, email_verified, created_at
     `;
     const user = createdUsers[0] as Record<string, any>;
 
@@ -109,6 +111,45 @@ export async function POST(req: NextRequest) {
       ON CONFLICT (referral_code) DO NOTHING
     `;
 
+    if (otpActive) {
+      const otpRes = await createAndSendEmailOtp({
+        settings,
+        userId: String(user.id),
+        email,
+        fullName,
+        schoolName,
+        purpose: "signup_verify",
+        clientMeta: {
+          client_type: clientType,
+          display_hwid: displayHwid,
+          device_label: deviceLabel,
+          app_version: appVersion,
+        },
+        bypassCooldown: true,
+      });
+
+      if (!otpRes.ok) {
+        // Roll back brand-new unverified user so they aren't blocked by email_exists on retry
+        await sql`DELETE FROM users_hq WHERE id = ${user.id}::uuid`;
+        return NextResponse.json(
+          { ok: false, error: otpRes.error || "brevo_delivery_failed", message: otpRes.message || "Could not send verification email." },
+          { status: 502 }
+        );
+      }
+
+      return NextResponse.json(
+        {
+          ok: true,
+          otp_required: true,
+          purpose: "signup_verify",
+          email,
+          expires_in_seconds: otpRes.expires_in_seconds || 600,
+          message: `We sent a 6-digit verification code to ${email}. Enter it below to complete registration.`,
+        },
+        { status: 201 }
+      );
+    }
+
     const { rawToken, expiresAt } = await createCloudSession({
       userId: user.id,
       schoolId: school.id,
@@ -138,6 +179,7 @@ export async function POST(req: NextRequest) {
         phone: user.phone || "",
         role: user.role,
         status: user.status,
+        email_verified: Boolean(user.email_verified),
       },
       school: {
         id: school.id,

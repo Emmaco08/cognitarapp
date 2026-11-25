@@ -264,6 +264,75 @@ jobs:
           & $signtool.FullName sign /fd SHA256 /tr http://timestamp.digicert.com /td SHA256 /f $pfx /p $env:WIN_CSC_KEY_PASSWORD $setupExe
           Remove-Item $pfx -Force -ErrorAction SilentlyContinue
 
+      - name: End-to-End Windows Silent Install Smoke Test (Program Files, Custom Spaced Dir & Per-User)
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $pkgVer = (Get-Content "desktop/package.json" | ConvertFrom-Json).version
+          $updateExe = (Resolve-Path "desktop/release/CogniTara-Studio-Update-$pkgVer-x64.exe").Path
+          Write-Host "Smoke-testing silent NSIS payload: $updateExe"
+
+          # 1. Exact per-machine command invoked by CogniTara-Studio-Setup (path with spaces!)
+          $defaultDir = "C:\Program Files\CogniTara Studio"
+          $p1 = Start-Process -FilePath $updateExe -ArgumentList "/S /allusers /D=$defaultDir" -Wait -PassThru
+          if ($p1.ExitCode -ne 0) { throw "Per-machine silent install failed with exit code $($p1.ExitCode)" }
+          if (-not (Test-Path "$defaultDir\CogniTara Studio.exe")) {
+            throw "CRITICAL: Missing $defaultDir\CogniTara Studio.exe after silent install!"
+          }
+          if (-not (Test-Path "$defaultDir\resources\engine\cognitara-engine.exe")) {
+            throw "CRITICAL: Missing $defaultDir\resources\engine\cognitara-engine.exe after silent install!"
+          }
+          if (Test-Path "C:\Program\CogniTara Studio.exe") {
+            throw "CRITICAL REGRESSION: /D= truncated to C:\Program!"
+          }
+          if (-not (Test-Path "C:\ProgramData\CogniTara\data\logs")) {
+            throw "CRITICAL: Missing C:\ProgramData\CogniTara\data\logs!"
+          }
+          Write-Host "PASS [1/3]: Installed cleanly into $defaultDir"
+
+          # Verify HKLM uninstall entry + InstallLocation matches $defaultDir
+          $foundReg = $false
+          Get-ChildItem "HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall" -ErrorAction SilentlyContinue | ForEach-Object {
+            $props = Get-ItemProperty $_.PSPath -ErrorAction SilentlyContinue
+            if ($props.DisplayName -and $props.DisplayName.StartsWith("CogniTara Studio")) {
+              $guid = $_.PSChildName
+              $loc = (Get-ItemProperty "HKLM:\Software\$guid" -ErrorAction SilentlyContinue).InstallLocation
+              Write-Host "HKLM Uninstall DisplayName=$($props.DisplayName) Version=$($props.DisplayVersion) InstallLocation=$loc"
+              if ($loc -ne $defaultDir) { throw "Unexpected HKLM InstallLocation: '$loc' (expected '$defaultDir')" }
+              $foundReg = $true
+            }
+          }
+          if (-not $foundReg) { throw "HKLM Uninstall entry for CogniTara Studio not found!" }
+
+          # Uninstall test 1 cleanly (NSIS _?= runs synchronously so -Wait truly waits for completion)
+          $un1 = "$defaultDir\Uninstall CogniTara Studio.exe"
+          if (-not (Test-Path $un1)) { throw "Missing uninstaller: $un1" }
+          $u1 = Start-Process -FilePath $un1 -ArgumentList "/S /allusers _?=$defaultDir" -Wait -PassThru
+          if ($u1.ExitCode -ne 0) { throw "Per-machine silent uninstall failed with exit code $($u1.ExitCode)" }
+          Remove-Item $defaultDir -Recurse -Force -ErrorAction SilentlyContinue
+
+          # 2. Custom per-machine directory with multiple spaces
+          $customDir = "C:\CogniTara Smoke Test\CogniTara Studio"
+          $p2 = Start-Process -FilePath $updateExe -ArgumentList "/S /allusers /D=$customDir" -Wait -PassThru
+          if ($p2.ExitCode -ne 0) { throw "Custom-path silent install failed with exit code $($p2.ExitCode)" }
+          if (-not (Test-Path "$customDir\CogniTara Studio.exe")) {
+            throw "CRITICAL: Missing $customDir\CogniTara Studio.exe!"
+          }
+          Write-Host "PASS [2/3]: Installed cleanly into $customDir"
+          Start-Process -FilePath "$customDir\Uninstall CogniTara Studio.exe" -ArgumentList "/S /allusers _?=$customDir" -Wait -PassThru | Out-Null
+          Remove-Item "C:\CogniTara Smoke Test" -Recurse -Force -ErrorAction SilentlyContinue
+
+          # 3. Per-user directory with spaces (non-elevated path)
+          $userDir = Join-Path $env:LOCALAPPDATA "Programs\CogniTara Studio"
+          $p3 = Start-Process -FilePath $updateExe -ArgumentList "/S /currentuser /D=$userDir" -Wait -PassThru
+          if ($p3.ExitCode -ne 0) { throw "Per-user silent install failed with exit code $($p3.ExitCode)" }
+          if (-not (Test-Path "$userDir\CogniTara Studio.exe")) {
+            throw "CRITICAL: Missing $userDir\CogniTara Studio.exe!"
+          }
+          Write-Host "PASS [3/3]: Installed cleanly into $userDir"
+          Start-Process -FilePath "$userDir\Uninstall CogniTara Studio.exe" -ArgumentList "/S /currentuser _?=$userDir" -Wait -PassThru | Out-Null
+          Remove-Item $userDir -Recurse -Force -ErrorAction SilentlyContinue
+
       - name: Verify release artifacts (Setup .exe + Update .exe + .blockmap + latest.yml) & generate SHA-256 checksums
         working-directory: desktop/release
         shell: pwsh
@@ -295,7 +364,7 @@ jobs:
           if-no-files-found: error
           retention-days: 30
 
-      - name: Publish Direct-Download Windows Installer Release (v2.2.0 + electron-updater feed)
+      - name: Publish Direct-Download Windows Installer Release (+ electron-updater feed)
         shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
@@ -308,16 +377,16 @@ jobs:
           $latestYml = (Resolve-Path "desktop/release/latest.yml").Path
           $sums = (Resolve-Path "desktop/release/SHA256SUMS.txt").Path
           $notes = @'
-          CogniTara Studio __VER__ — Custom Portrait Installer & Full Opus Studio Web Portal Redesign
+          CogniTara Studio __VER__ — Verified Custom Windows Setup, Cloud Paystack Billing & Neutral Carbon v5 Portal
 
           ### Downloads
-          - **Recommended Direct Installer:** `CogniTara-Studio-Setup-__VER__-x64.exe` — Borderless Adobe/CorelDRAW-style custom setup wizard with install-path picker, shortcut toggles, live progress ring, and Dark/Light themes.
+          - **Recommended Direct Installer:** `CogniTara-Studio-Setup-__VER__-x64.exe` — Borderless custom portrait Windows setup wizard with install-path picker, shortcut toggles, animated progress ring, and Dark/Light themes.
           - **In-App Auto-Updater Channel:** `CogniTara-Studio-Update-__VER__-x64.exe` + `.blockmap` + `latest.yml` (used automatically by CogniTara Studio's built-in updater).
 
-          ### What's New in __VER__
-          - **Custom Tauri v2 Windows Setup Experience:** Replaces the old clipped NSIS UI with a crisp 460×620 portrait installer featuring animated progress ring, feature cards, shortcut toggles, UAC handling, and clean NSIS fallback.
-          - **Ready-to-Activate Code Signing Pipeline:** Automatic Authenticode signing for Azure Trusted Signing and OV `.pfx` certificates (see `docs/CODE_SIGNING.md`).
-          - **Full Web Portal Redesign (Student · Teacher · Admin · Exam · Calculator · Common Entrance):** Unified Opus Studio v3 design system across every web page with Dark & Light themes, smooth GPU motion, sticky headers, command palette, and 100% feature parity.
+          ### What's New & Fixed in __VER__
+          - **Fixed Windows Installer `/D=` Whitespace Bug (`Missing: C:\Program Files\CogniTara Studio\CogniTara Studio.exe`):** Upgraded `electron-builder` to `26.18.0` (with `GetDParameter` whitespace-safe `/D=` handling), added automatic recovery from prior truncated `C:\Program` registry entries, added silent `cognitara-engine.exe` pre-flight stop on upgrade, and added automated 3-path Windows silent install/uninstall smoke verification in CI.
+          - **Cloud Auth, In-App Paystack Checkout & Redeem Codes:** Schools register/sign in directly against CogniTara Cloud (Neon Postgres + Vercel), buy licences via sandboxed in-app Paystack checkout with dynamic plans & discount codes, redeem licence vouchers instantly, and receive live Developer HQ notices.
+          - **Neutral Carbon v5 Web Portal & Security Hardening:** Complete Neutral Carbon Dark/Light UI across every Student, Teacher, Admin, Exam, Calculator, Common Entrance, and Technical Support page, plus stored-XSS sanitization, security headers, password-bypass protection, and upload bug fixes.
           '@.Replace("__VER__", $pkgVer)
           gh release view $tag 2>$null
           if ($LASTEXITCODE -eq 0) {

@@ -8,6 +8,7 @@ import {
   verifyPassword,
 } from "@/lib/auth";
 import { getPlatformSettings, logDeveloperAudit, toPublicPlatformDirectives } from "@/lib/platform";
+import { createAndSendEmailOtp } from "@/lib/brevo";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 
 export const dynamic = "force-dynamic";
@@ -52,7 +53,7 @@ export async function POST(req: NextRequest) {
 
     const sql = getSql();
     const users = await sql`
-      SELECT id, email, password_hash, full_name, phone, role, status, created_at
+      SELECT id, email, password_hash, full_name, phone, role, status, email_verified, created_at
       FROM users_hq
       WHERE email = ${email}
       LIMIT 1
@@ -111,6 +112,43 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const settings = await getPlatformSettings();
+    const isHqAdmin = user.role === "hq_super_admin" || user.role === "hq_admin";
+    if (!isHqAdmin && settings.require_email_otp && settings.brevo_configured) {
+      const purpose = user.email_verified ? "signin_otp" : "signup_verify";
+      const otpRes = await createAndSendEmailOtp({
+        settings,
+        userId: String(user.id),
+        email,
+        fullName: user.full_name || "",
+        schoolName: school?.school_name || "",
+        purpose,
+        clientMeta: {
+          client_type: clientType,
+          display_hwid: displayHwid,
+          device_label: deviceLabel,
+          app_version: appVersion,
+        },
+        bypassCooldown: true,
+      });
+
+      if (!otpRes.ok) {
+        return NextResponse.json(
+          { ok: false, error: otpRes.error || "brevo_delivery_failed", message: otpRes.message || "Could not send verification code." },
+          { status: 502 }
+        );
+      }
+
+      return NextResponse.json({
+        ok: true,
+        otp_required: true,
+        purpose,
+        email,
+        expires_in_seconds: otpRes.expires_in_seconds || 600,
+        message: `We sent a 6-digit security code to ${email}. Enter it to finish signing in.`,
+      });
+    }
+
     if (school) {
       await sql`
         UPDATE schools
@@ -149,7 +187,7 @@ export async function POST(req: NextRequest) {
       displayHwid,
     });
 
-    if (user.role === "hq_super_admin" || user.role === "hq_admin") {
+    if (isHqAdmin) {
       await logDeveloperAudit({
         actorUserId: user.id,
         actorEmail: user.email,
@@ -159,7 +197,6 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    const settings = await getPlatformSettings();
     const directives = {
       ...toPublicPlatformDirectives(settings),
       school_status: school?.status || "active",

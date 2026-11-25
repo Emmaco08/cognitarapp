@@ -184,6 +184,20 @@ pub fn location_info(path: &str, required: u64) -> LocationInfo {
     }
 }
 
+/// Returns false for empty paths or known corrupted/truncated paths (such as
+/// `C:\Program` produced by older NSIS `/D=` whitespace truncation bugs).
+pub fn is_valid_install_dir(dir: &str) -> bool {
+    let clean = dir.trim().trim_matches('"').trim_end_matches(['\\', '/']);
+    if clean.is_empty() {
+        return false;
+    }
+    let last = clean.rsplit(['\\', '/']).next().unwrap_or("");
+    if last.eq_ignore_ascii_case("program") && clean.len() <= 12 {
+        return false;
+    }
+    true
+}
+
 /// Detect an existing CogniTara Studio installation (electron-builder writes an
 /// Uninstall key named after the app GUID and `Software\<GUID>\InstallLocation`).
 pub fn find_existing_install() -> Option<ExistingInstall> {
@@ -210,6 +224,7 @@ pub fn find_existing_install() -> Option<ExistingInstall> {
                     .open_subkey_with_flags(format!(r"Software\{name}"), KEY_READ | KEY_WOW64_64KEY)
                     .and_then(|s| s.get_value("InstallLocation"))
                     .unwrap_or_default();
+                dir = dir.trim().trim_matches('"').trim_end_matches('\\').to_string();
                 if dir.is_empty() {
                     let icon: String = k.get_value("DisplayIcon").unwrap_or_default();
                     let exe = icon.split(',').next().unwrap_or("").trim_matches('"');
@@ -225,6 +240,21 @@ pub fn find_existing_install() -> Option<ExistingInstall> {
     #[cfg(not(windows))]
     {
         None
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn rejects_truncated_program_dir() {
+        assert!(!is_valid_install_dir(""));
+        assert!(!is_valid_install_dir(r"C:\Program"));
+        assert!(!is_valid_install_dir(r"C:\Program\"));
+        assert!(!is_valid_install_dir(r#""C:\Program""#));
+        assert!(is_valid_install_dir(r"C:\Program Files\CogniTara Studio"));
+        assert!(is_valid_install_dir(r"D:\Apps\CogniTara Studio"));
     }
 }
 

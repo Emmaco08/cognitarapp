@@ -95,6 +95,12 @@ export default function DeveloperHqPage() {
     paystack_secret_masked: "",
     paystack_secret_configured: false,
     paystack_mode: "test",
+    brevo_api_key: "",
+    brevo_api_key_masked: "",
+    brevo_configured: false,
+    brevo_sender_email: "noreply@cognitara.net",
+    brevo_sender_name: "CogniTara Cloud",
+    require_email_otp: false,
     default_currency: "NGN",
     maintenance_mode: false,
     maintenance_message: "",
@@ -107,6 +113,7 @@ export default function DeveloperHqPage() {
     webhook_url: "",
     ed25519_public_key: "",
   });
+  const [brevoTestEmail, setBrevoTestEmail] = useState("");
   const [auditLogs, setAuditLogs] = useState<any[]>([]);
 
   // Power Drawer action states
@@ -176,6 +183,7 @@ export default function DeveloperHqPage() {
         ...prev,
         ...sRes.settings,
         paystack_secret_key: "",
+        brevo_api_key: "",
       }));
     }
     if (aRes?.ok) setAuditLogs(aRes.logs || []);
@@ -353,8 +361,26 @@ export default function DeveloperHqPage() {
   }
 
   async function testPaystackConnection() {
-    const res = await fetch("/api/v1/hq/settings", { method: "POST", credentials: "include" }).then((r) => r.json());
+    const res = await fetch("/api/v1/hq/settings", {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ provider: "paystack" }),
+    }).then((r) => r.json());
     showToast(res?.message || "Test finished.");
+  }
+
+  async function testBrevoConnection(sendEmail = false) {
+    const res = await fetch("/api/v1/hq/settings", {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        provider: "brevo",
+        test_email: sendEmail ? brevoTestEmail.trim() : undefined,
+      }),
+    }).then((r) => r.json());
+    showToast(res?.message || "Brevo check finished.");
   }
 
   // ---- AUTH GATE ----
@@ -1079,71 +1105,150 @@ export default function DeveloperHqPage() {
           </>
         ) : null}
 
-        {/* ===== TAB 6: PAYSTACK KEYS & GLOBAL KILL-SWITCHES ===== */}
+        {/* ===== TAB 6: PAYSTACK, BREVO OTP & GLOBAL KILL-SWITCHES ===== */}
         {tab === "settings" ? (
           <>
             <header className="hq-head">
               <div>
-                <span className="hq-eyebrow">Gateway &amp; Fleet Controls</span>
-                <h1>Paystack Keys, Broadcast &amp; Kill-Switches</h1>
+                <span className="hq-eyebrow">Gateway, Brevo OTP &amp; Fleet Controls</span>
+                <h1>Paystack Keys, Brevo OTP &amp; Kill-Switches</h1>
                 <p>Secret keys are encrypted at rest with AES-256-GCM in Neon Postgres and never exposed to desktop clients or browsers.</p>
               </div>
-              <button type="button" className="btn btn--ghost btn--sm" onClick={testPaystackConnection}>
-                Test Paystack Connection
-              </button>
+              <div style={{ display: "flex", gap: 8 }}>
+                <button type="button" className="btn btn--ghost btn--sm" onClick={testPaystackConnection}>
+                  Test Paystack
+                </button>
+                <button type="button" className="btn btn--ghost btn--sm" onClick={() => testBrevoConnection(false)}>
+                  Test Brevo Key
+                </button>
+              </div>
             </header>
 
             <form className="hq-grid-equal" onSubmit={savePlatformSettings}>
-              <section className="card">
-                <h2 style={{ margin: "0 0 14px", fontSize: 16 }}>Paystack Payment Gateway</h2>
-                <div className="form-grid">
-                  <div className="form-row">
-                    <div className="field">
-                      <label>Paystack Mode</label>
-                      <select value={settingsForm.paystack_mode} onChange={(e) => setSettingsForm({ ...settingsForm, paystack_mode: e.target.value })}>
-                        <option value="test">Test Mode (Sandbox)</option>
-                        <option value="live">Live Mode (Production)</option>
-                      </select>
+              <div style={{ display: "grid", gap: 18, alignContent: "start" }}>
+                <section className="card">
+                  <h2 style={{ margin: "0 0 14px", fontSize: 16 }}>Paystack Payment Gateway</h2>
+                  <div className="form-grid">
+                    <div className="form-row">
+                      <div className="field">
+                        <label>Paystack Mode</label>
+                        <select value={settingsForm.paystack_mode} onChange={(e) => setSettingsForm({ ...settingsForm, paystack_mode: e.target.value })}>
+                          <option value="test">Test Mode (Sandbox)</option>
+                          <option value="live">Live Mode (Production)</option>
+                        </select>
+                      </div>
+                      <div className="field">
+                        <label>Default Currency</label>
+                        <select value={settingsForm.default_currency} onChange={(e) => setSettingsForm({ ...settingsForm, default_currency: e.target.value })}>
+                          <option value="NGN">NGN (Nigerian Naira ₦)</option>
+                          <option value="USD">USD (US Dollar $)</option>
+                          <option value="GHS">GHS (Ghana Cedi)</option>
+                          <option value="KES">KES (Kenyan Shilling)</option>
+                          <option value="ZAR">ZAR (South African Rand)</option>
+                        </select>
+                      </div>
                     </div>
                     <div className="field">
-                      <label>Default Currency</label>
-                      <select value={settingsForm.default_currency} onChange={(e) => setSettingsForm({ ...settingsForm, default_currency: e.target.value })}>
-                        <option value="NGN">NGN (Nigerian Naira ₦)</option>
-                        <option value="USD">USD (US Dollar $)</option>
-                        <option value="GHS">GHS (Ghana Cedi)</option>
-                        <option value="KES">KES (Kenyan Shilling)</option>
-                        <option value="ZAR">ZAR (South African Rand)</option>
-                      </select>
+                      <label>Paystack Public Key</label>
+                      <input className="mono" value={settingsForm.paystack_public_key} onChange={(e) => setSettingsForm({ ...settingsForm, paystack_public_key: e.target.value })} placeholder="pk_live_... or pk_test_..." />
+                    </div>
+                    <div className="field">
+                      <label>
+                        Paystack Secret Key{" "}
+                        <span className="mono" style={{ color: settingsForm.paystack_secret_configured ? "var(--ok)" : "var(--warn)" }}>
+                          ({settingsForm.paystack_secret_configured ? `Encrypted: ${settingsForm.paystack_secret_masked}` : "Not set"})
+                        </span>
+                      </label>
+                      <input type="password" className="mono" value={settingsForm.paystack_secret_key} onChange={(e) => setSettingsForm({ ...settingsForm, paystack_secret_key: e.target.value })} placeholder="Leave blank to keep existing encrypted secret key" />
+                    </div>
+                    <div className="field">
+                      <label>Paystack Webhook URL (paste in Paystack Dashboard → API Keys &amp; Webhooks)</label>
+                      <div style={{ display: "flex", gap: 6 }}>
+                        <input className="mono" readOnly value={settingsForm.webhook_url || ""} style={{ flex: 1 }} />
+                        <button type="button" className="btn btn--ghost btn--sm" onClick={() => { navigator.clipboard?.writeText(settingsForm.webhook_url || ""); showToast("Webhook URL copied!"); }}>Copy</button>
+                      </div>
+                    </div>
+                    <div className="field">
+                      <label>Ed25519 Licence Signing Authority Public Key (Embedded in Desktop App)</label>
+                      <input className="mono" readOnly value={settingsForm.ed25519_public_key || ""} />
                     </div>
                   </div>
-                  <div className="field">
-                    <label>Paystack Public Key</label>
-                    <input className="mono" value={settingsForm.paystack_public_key} onChange={(e) => setSettingsForm({ ...settingsForm, paystack_public_key: e.target.value })} placeholder="pk_live_... or pk_test_..." />
-                  </div>
-                  <div className="field">
-                    <label>
-                      Paystack Secret Key{" "}
-                      <span className="mono" style={{ color: settingsForm.paystack_secret_configured ? "var(--ok)" : "var(--warn)" }}>
-                        ({settingsForm.paystack_secret_configured ? `Encrypted: ${settingsForm.paystack_secret_masked}` : "Not set"})
-                      </span>
-                    </label>
-                    <input type="password" className="mono" value={settingsForm.paystack_secret_key} onChange={(e) => setSettingsForm({ ...settingsForm, paystack_secret_key: e.target.value })} placeholder="Leave blank to keep existing encrypted secret key" />
-                  </div>
-                  <div className="field">
-                    <label>Paystack Webhook URL (paste in Paystack Dashboard → API Keys &amp; Webhooks)</label>
-                    <div style={{ display: "flex", gap: 6 }}>
-                      <input className="mono" readOnly value={settingsForm.webhook_url || ""} style={{ flex: 1 }} />
-                      <button type="button" className="btn btn--ghost btn--sm" onClick={() => { navigator.clipboard?.writeText(settingsForm.webhook_url || ""); showToast("Webhook URL copied!"); }}>Copy</button>
-                    </div>
-                  </div>
-                  <div className="field">
-                    <label>Ed25519 Licence Signing Authority Public Key (Embedded in Desktop App)</label>
-                    <input className="mono" readOnly value={settingsForm.ed25519_public_key || ""} />
-                  </div>
-                </div>
-              </section>
+                </section>
 
-              <section className="card">
+                <section className="card">
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14, gap: 10 }}>
+                    <h2 style={{ margin: 0, fontSize: 16 }}>Brevo Transactional Email &amp; 6-Digit OTP</h2>
+                    <a href="https://app.brevo.com/settings/keys/api" target="_blank" rel="noreferrer" className="btn btn--ghost btn--xs">
+                      Get Brevo API Key →
+                    </a>
+                  </div>
+                  <div className="form-grid">
+                    <div className="field">
+                      <label>
+                        Brevo v3 API Key{" "}
+                        <span className="mono" style={{ color: settingsForm.brevo_configured ? "var(--ok)" : "var(--warn)" }}>
+                          ({settingsForm.brevo_configured ? `Encrypted: ${settingsForm.brevo_api_key_masked}` : "Not set"})
+                        </span>
+                      </label>
+                      <input
+                        type="password"
+                        className="mono"
+                        value={settingsForm.brevo_api_key}
+                        onChange={(e) => setSettingsForm({ ...settingsForm, brevo_api_key: e.target.value })}
+                        placeholder="xkeysib-... (leave blank to keep existing encrypted key)"
+                      />
+                    </div>
+                    <div className="form-row">
+                      <div className="field">
+                        <label>Verified Sender Email</label>
+                        <input
+                          type="email"
+                          className="mono"
+                          value={settingsForm.brevo_sender_email}
+                          onChange={(e) => setSettingsForm({ ...settingsForm, brevo_sender_email: e.target.value })}
+                          placeholder="noreply@yourdomain.com"
+                        />
+                      </div>
+                      <div className="field">
+                        <label>Sender Display Name</label>
+                        <input
+                          value={settingsForm.brevo_sender_name}
+                          onChange={(e) => setSettingsForm({ ...settingsForm, brevo_sender_name: e.target.value })}
+                          placeholder="CogniTara Cloud"
+                        />
+                      </div>
+                    </div>
+                    <div className="hq-switch-row">
+                      <div>
+                        <strong>Require 6-Digit Brevo Email OTP on Auth</strong>
+                        <span>Enforces email OTP verification for school sign-up &amp; sign-in across Web and Desktop Studio</span>
+                      </div>
+                      <input
+                        type="checkbox"
+                        checked={Boolean(settingsForm.require_email_otp)}
+                        onChange={(e) => setSettingsForm({ ...settingsForm, require_email_otp: e.target.checked })}
+                      />
+                    </div>
+                    <div className="field">
+                      <label>Send Live Test OTP Email (after saving key)</label>
+                      <div style={{ display: "flex", gap: 6 }}>
+                        <input
+                          type="email"
+                          value={brevoTestEmail}
+                          onChange={(e) => setBrevoTestEmail(e.target.value)}
+                          placeholder="you@example.com"
+                          style={{ flex: 1 }}
+                        />
+                        <button type="button" className="btn btn--ghost btn--sm" onClick={() => testBrevoConnection(true)}>
+                          Send Test OTP
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </section>
+              </div>
+
+              <section className="card" style={{ alignSelf: "start" }}>
                 <h2 style={{ margin: "0 0 14px", fontSize: 16 }}>Global Broadcast &amp; Platform Kill-Switches</h2>
                 <div className="form-grid">
                   <div className="field">
@@ -1162,7 +1267,7 @@ export default function DeveloperHqPage() {
                     </div>
                     <div className="field">
                       <label>Minimum Desktop App Version</label>
-                      <input className="mono" value={settingsForm.min_desktop_version} onChange={(e) => setSettingsForm({ ...settingsForm, min_desktop_version: e.target.value })} placeholder="2.2.0" />
+                      <input className="mono" value={settingsForm.min_desktop_version} onChange={(e) => setSettingsForm({ ...settingsForm, min_desktop_version: e.target.value })} placeholder="2.2.1" />
                     </div>
                   </div>
 

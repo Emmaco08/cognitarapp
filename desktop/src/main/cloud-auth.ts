@@ -183,7 +183,15 @@ export class CloudAuthManager {
     phone?: string;
     referral_code?: string;
     display_hwid?: string;
-  }): Promise<{ ok: boolean; session?: CloudAccountSession; message?: string; error?: string }> {
+  }): Promise<{
+    ok: boolean;
+    otp_required?: boolean;
+    email?: string;
+    purpose?: string;
+    session?: CloudAccountSession;
+    message?: string;
+    error?: string;
+  }> {
     const res = await this.requestJson("/api/v1/auth/signup", "POST", {
       ...payload,
       client_type: "desktop",
@@ -196,6 +204,16 @@ export class CloudAuthManager {
         ok: false,
         error: res.data?.error || "signup_failed",
         message: res.data?.message || "Could not create your cloud account.",
+      };
+    }
+
+    if (res.data?.otp_required) {
+      return {
+        ok: true,
+        otp_required: true,
+        email: res.data.email || payload.email,
+        purpose: res.data.purpose || "signup_verify",
+        message: res.data.message || "Enter the 6-digit verification code sent to your email.",
       };
     }
 
@@ -220,7 +238,15 @@ export class CloudAuthManager {
     email: string;
     password: string;
     display_hwid?: string;
-  }): Promise<{ ok: boolean; session?: CloudAccountSession; message?: string; error?: string }> {
+  }): Promise<{
+    ok: boolean;
+    otp_required?: boolean;
+    email?: string;
+    purpose?: string;
+    session?: CloudAccountSession;
+    message?: string;
+    error?: string;
+  }> {
     const res = await this.requestJson("/api/v1/auth/signin", "POST", {
       ...payload,
       client_type: "desktop",
@@ -233,6 +259,16 @@ export class CloudAuthManager {
         ok: false,
         error: res.data?.error || "signin_failed",
         message: res.data?.message || "Invalid email address or password.",
+      };
+    }
+
+    if (res.data?.otp_required) {
+      return {
+        ok: true,
+        otp_required: true,
+        email: res.data.email || payload.email,
+        purpose: res.data.purpose || "signin_otp",
+        message: res.data.message || "Enter the 6-digit security code sent to your email.",
       };
     }
 
@@ -251,6 +287,66 @@ export class CloudAuthManager {
     });
 
     return { ok: true, session: this.getSession() };
+  }
+
+  public async verifyOtp(payload: {
+    email: string;
+    code: string;
+    purpose?: string;
+    display_hwid?: string;
+  }): Promise<{ ok: boolean; session?: CloudAccountSession; message?: string; error?: string }> {
+    const res = await this.requestJson("/api/v1/auth/otp/verify", "POST", {
+      email: payload.email,
+      code: payload.code,
+      purpose: payload.purpose,
+      client_type: "desktop",
+      device_label: os.hostname(),
+      display_hwid: payload.display_hwid,
+      app_version: app.getVersion(),
+    });
+
+    if (!res.ok) {
+      return {
+        ok: false,
+        error: res.data?.error || "otp_invalid",
+        message: res.data?.message || "Invalid or expired verification code.",
+      };
+    }
+
+    const enc = this.encryptToken(String(res.data.token || ""));
+    this.writeCacheFile({
+      version: 1,
+      cloudUrl: this.cloudUrl,
+      ...enc,
+      expiresAt: res.data.expires_at || null,
+      lastSyncedAt: Date.now(),
+      user: res.data.user,
+      school: res.data.school || null,
+      referralCode: res.data.referral_code || null,
+      licenses: res.data.licenses || [],
+      directives: res.data.directives || null,
+    });
+
+    return { ok: true, session: this.getSession() };
+  }
+
+  public async resendOtp(payload: {
+    email: string;
+    purpose?: string;
+  }): Promise<{ ok: boolean; retry_after_sec?: number; message?: string; error?: string }> {
+    const res = await this.requestJson("/api/v1/auth/otp/send", "POST", {
+      email: payload.email,
+      purpose: payload.purpose || "signup_verify",
+    });
+    if (!res.ok) {
+      return {
+        ok: false,
+        error: res.data?.error || "otp_send_failed",
+        retry_after_sec: res.data?.retry_after_sec,
+        message: res.data?.message || "Could not resend verification code yet.",
+      };
+    }
+    return { ok: true, message: res.data?.message || "Fresh 6-digit code sent to your inbox." };
   }
 
   public async syncProfile(): Promise<{ ok: boolean; offline?: boolean; session: CloudAccountSession; message?: string }> {

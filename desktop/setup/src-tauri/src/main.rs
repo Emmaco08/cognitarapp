@@ -78,7 +78,7 @@ fn get_setup_info(app: tauri::AppHandle) -> SetupInfo {
     let default_dir = existing
         .as_ref()
         .map(|e| e.install_dir.clone())
-        .filter(|d| !d.is_empty())
+        .filter(|d| sys::is_valid_install_dir(d))
         .unwrap_or_else(|| sys::default_install_dir().to_string_lossy().into_owned());
     let location = sys::location_info(&default_dir, m.installed_bytes);
     SetupInfo {

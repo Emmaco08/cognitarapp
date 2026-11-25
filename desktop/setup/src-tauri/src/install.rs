@@ -273,7 +273,12 @@ mod windows_impl {
     }
 
     pub fn run_real(rep: &mut Reporter, opts: &InstallOptions) -> Finished {
-        let dir = opts.install_dir.trim().trim_end_matches('\\').to_string();
+        let dir = opts
+            .install_dir
+            .trim()
+            .trim_matches('"')
+            .trim_end_matches(['\\', '/'])
+            .to_string();
         let dir_path = PathBuf::from(&dir);
         let detail = format!("Installing to {dir}");
         let m = crate::manifest();
@@ -304,7 +309,7 @@ mod windows_impl {
         if !opts.start_menu_shortcut {
             params.push_str(" --no-start-menu-shortcut");
         }
-        // NSIS requires /D= to be last and unquoted (spaces allowed).
+        // NSIS requires /D= to be last and unquoted (spaces allowed; handled by electron-builder 26 GetDParameter).
         params.push_str(&format!(" /D={dir}"));
 
         if per_machine {
@@ -407,19 +412,36 @@ mod windows_impl {
         let _ = std::fs::remove_dir_all(&work_dir);
 
         let app_exe = dir_path.join(APP_EXE_NAME);
+        if code == 0 && !app_exe.is_file() {
+            // Brief grace wait in case Windows Defender or filesystem flush is still finishing.
+            for _ in 0..15 {
+                std::thread::sleep(Duration::from_millis(200));
+                if app_exe.is_file() {
+                    break;
+                }
+            }
+        }
         match code {
             0 if app_exe.is_file() => {
                 rep.emit(100.0, "Installation complete", &detail);
                 std::thread::sleep(Duration::from_millis(300));
                 Finished::success(&dir)
             }
-            0 => Finished::error(
-                0,
-                "Installation is incomplete",
-                format!("The installer finished but {APP_EXE_NAME} was not found in the selected folder. Try again, or choose a different location."),
-                format!("Missing: {}", app_exe.display()),
-                &dir,
-            ),
+            0 => {
+                let mut diag = format!("Missing: {}", app_exe.display());
+                if let Some(reg) = crate::sys::find_existing_install() {
+                    if !reg.install_dir.is_empty() {
+                        diag.push_str(&format!("\nRegistry InstallLocation: {}", reg.install_dir));
+                    }
+                }
+                Finished::error(
+                    0,
+                    "Installation is incomplete",
+                    format!("The installer finished but {APP_EXE_NAME} was not found in the selected folder. Try again, or choose a different location."),
+                    diag,
+                    &dir,
+                )
+            }
             1 => Finished::error(
                 1,
                 "Installation was cancelled",

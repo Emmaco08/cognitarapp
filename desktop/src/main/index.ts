@@ -626,6 +626,24 @@ function registerIpcHandlers(): void {
     return res;
   });
 
+  ipcMain.handle("cloud:verifyOtp", async (_evt, payload) => {
+    if (!cloudAuth) return { ok: false, error: "cloud_unavailable" };
+    const lic = await engine?.getLicenseStatus().catch(() => null);
+    const res = await cloudAuth.verifyOtp({
+      ...payload,
+      display_hwid: lic?.display_hwid || undefined,
+    });
+    if (res.ok && res.session && mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send("cloud:sessionChanged", res.session);
+    }
+    return res;
+  });
+
+  ipcMain.handle("cloud:resendOtp", async (_evt, payload) => {
+    if (!cloudAuth) return { ok: false, error: "cloud_unavailable" };
+    return cloudAuth.resendOtp(payload);
+  });
+
   ipcMain.handle("cloud:sync", async () => {
     if (!cloudAuth) return { ok: false, error: "cloud_unavailable" };
     const res = await cloudAuth.syncProfile();

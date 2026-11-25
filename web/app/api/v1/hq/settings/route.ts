@@ -3,6 +3,7 @@ import { getSql } from "@/lib/db";
 import { requireHqAdmin } from "@/lib/auth";
 import { encryptSecret, getEd25519PublicKeyB64Url } from "@/lib/crypto";
 import { getPlatformSettings, logDeveloperAudit, paystackRequest } from "@/lib/platform";
+import { brevoSendTransactionalEmail, buildOtpEmailHtml } from "@/lib/brevo";
 import { getClientIp } from "@/lib/rate-limit";
 
 export const dynamic = "force-dynamic";
@@ -29,6 +30,11 @@ export async function GET(req: NextRequest) {
         paystack_secret_masked: s.paystack_secret_masked,
         paystack_secret_configured: s.paystack_secret_configured,
         paystack_mode: s.paystack_mode,
+        brevo_api_key_masked: s.brevo_api_key_masked,
+        brevo_configured: s.brevo_configured,
+        brevo_sender_email: s.brevo_sender_email,
+        brevo_sender_name: s.brevo_sender_name,
+        require_email_otp: s.require_email_otp,
         default_currency: s.default_currency,
         maintenance_mode: s.maintenance_mode,
         maintenance_message: s.maintenance_message,
@@ -64,6 +70,10 @@ export async function PUT(req: NextRequest) {
 
     const publicKey = body.paystack_public_key !== undefined ? String(body.paystack_public_key || "").trim() : undefined;
     const secretKeyRaw = body.paystack_secret_key !== undefined ? String(body.paystack_secret_key || "").trim() : undefined;
+    const brevoKeyRaw = body.brevo_api_key !== undefined ? String(body.brevo_api_key || "").trim() : undefined;
+    const brevoSenderEmail = body.brevo_sender_email !== undefined ? String(body.brevo_sender_email || "").trim().slice(0, 160) : undefined;
+    const brevoSenderName = body.brevo_sender_name !== undefined ? String(body.brevo_sender_name || "").trim().slice(0, 120) : undefined;
+    const requireEmailOtp = body.require_email_otp !== undefined ? Boolean(body.require_email_otp) : undefined;
 
     if (publicKey && !publicKey.startsWith("pk_")) {
       return NextResponse.json(
@@ -74,6 +84,12 @@ export async function PUT(req: NextRequest) {
     if (secretKeyRaw && !secretKeyRaw.startsWith("sk_")) {
       return NextResponse.json(
         { ok: false, message: "Paystack Secret Key should start with sk_test_ or sk_live_." },
+        { status: 400 }
+      );
+    }
+    if (brevoKeyRaw && !brevoKeyRaw.startsWith("xkeysib-")) {
+      return NextResponse.json(
+        { ok: false, message: "Brevo API v3 Key should start with xkeysib- (from app.brevo.com/settings/keys/api)." },
         { status: 400 }
       );
     }
@@ -97,12 +113,17 @@ export async function PUT(req: NextRequest) {
     const allowTrialActivation = body.allow_trial_activation !== false;
 
     const encryptedSecret = secretKeyRaw ? encryptSecret(secretKeyRaw) : null;
+    const encryptedBrevo = brevoKeyRaw ? encryptSecret(brevoKeyRaw) : null;
 
     await sql`
       UPDATE platform_settings
       SET paystack_public_key = COALESCE(${publicKey ?? null}, paystack_public_key),
           paystack_secret_key_enc = CASE WHEN ${encryptedSecret !== null} THEN ${encryptedSecret || ""} ELSE paystack_secret_key_enc END,
           paystack_mode = ${mode},
+          brevo_api_key_enc = CASE WHEN ${encryptedBrevo !== null} THEN ${encryptedBrevo || ""} ELSE brevo_api_key_enc END,
+          brevo_sender_email = COALESCE(${brevoSenderEmail && brevoSenderEmail.includes("@") ? brevoSenderEmail : null}, brevo_sender_email),
+          brevo_sender_name = COALESCE(${brevoSenderName || null}, brevo_sender_name),
+          require_email_otp = COALESCE(${requireEmailOtp ?? null}, require_email_otp),
           default_currency = ${currency},
           maintenance_mode = ${maintenanceMode},
           maintenance_message = ${maintenanceMsg},
@@ -126,6 +147,8 @@ export async function PUT(req: NextRequest) {
       ipAddress: getClientIp(req),
       details: {
         updated_secret_key: Boolean(secretKeyRaw),
+        updated_brevo_key: Boolean(brevoKeyRaw),
+        require_email_otp: requireEmailOtp,
         paystack_mode: mode,
         currency,
         maintenance_mode: maintenanceMode,
@@ -140,14 +163,20 @@ export async function PUT(req: NextRequest) {
     const refreshed = await getPlatformSettings();
     return NextResponse.json({
       ok: true,
-      message: secretKeyRaw
-        ? "Settings saved & Paystack Secret Key encrypted with AES-256-GCM."
-        : "Platform settings & global directives updated live.",
+      message:
+        secretKeyRaw || brevoKeyRaw
+          ? "Settings saved & secret keys encrypted with AES-256-GCM."
+          : "Platform settings & global directives updated live.",
       settings: {
         paystack_public_key: refreshed.paystack_public_key,
         paystack_secret_masked: refreshed.paystack_secret_masked,
         paystack_secret_configured: refreshed.paystack_secret_configured,
         paystack_mode: refreshed.paystack_mode,
+        brevo_api_key_masked: refreshed.brevo_api_key_masked,
+        brevo_configured: refreshed.brevo_configured,
+        brevo_sender_email: refreshed.brevo_sender_email,
+        brevo_sender_name: refreshed.brevo_sender_name,
+        require_email_otp: refreshed.require_email_otp,
         default_currency: refreshed.default_currency,
         maintenance_mode: refreshed.maintenance_mode,
         maintenance_message: refreshed.maintenance_message,
@@ -170,7 +199,63 @@ export async function POST(req: NextRequest) {
     const hq = await requireHqAdmin(req);
     if (!hq) return NextResponse.json({ ok: false, error: "forbidden" }, { status: 403 });
 
+    const body = (await req.json().catch(() => ({}))) as Record<string, unknown>;
+    const provider = String(body.provider || "paystack").toLowerCase();
     const s = await getPlatformSettings();
+
+    if (provider === "brevo") {
+      if (!s.brevo_api_key) {
+        return NextResponse.json(
+          { ok: false, message: "No Brevo API key saved yet. Paste your xkeysib-... key and click Save first." },
+          { status: 400 }
+        );
+      }
+      const testEmail = String(body.test_email || "").trim();
+      if (testEmail && testEmail.includes("@")) {
+        const sent = await brevoSendTransactionalEmail({
+          apiKey: s.brevo_api_key,
+          senderEmail: s.brevo_sender_email,
+          senderName: s.brevo_sender_name,
+          toEmail: testEmail,
+          toName: hq.user.full_name,
+          subject: "123456 is your CogniTara Cloud test OTP",
+          htmlContent: buildOtpEmailHtml({
+            code: "123456",
+            fullName: hq.user.full_name,
+            schoolName: "CogniTara Developer HQ",
+            purpose: "signup_verify",
+            expiresMinutes: 10,
+          }),
+          textContent: "Your CogniTara Cloud test OTP is 123456.",
+          tags: ["hq-test"],
+        });
+        if (!sent.ok) {
+          return NextResponse.json({ ok: false, message: `Brevo test email failed: ${sent.error}` }, { status: 400 });
+        }
+        return NextResponse.json({
+          ok: true,
+          messageId: sent.messageId,
+          message: `Live test OTP email sent to ${testEmail} via Brevo!`,
+        });
+      }
+
+      const accRes = await fetch("https://api.brevo.com/v3/account", {
+        headers: { "api-key": s.brevo_api_key, Accept: "application/json" },
+      });
+      const accData = await accRes.json().catch(() => ({}));
+      if (!accRes.ok) {
+        return NextResponse.json(
+          { ok: false, message: `Brevo rejected the API key: ${accData?.message || `HTTP ${accRes.status}`}` },
+          { status: 400 }
+        );
+      }
+      return NextResponse.json({
+        ok: true,
+        account: { email: accData?.email, companyName: accData?.companyName, plan: accData?.plan },
+        message: `Connected to Brevo account (${accData?.email || "verified"}) successfully!`,
+      });
+    }
+
     if (!s.paystack_secret_key) {
       return NextResponse.json(
         { ok: false, message: "No Paystack Secret Key saved yet. Enter your sk_test_ or sk_live_ key and click Save first." },
@@ -193,7 +278,7 @@ export async function POST(req: NextRequest) {
       message: `Connected to Paystack (${s.paystack_secret_key.startsWith("sk_live_") ? "LIVE" : "TEST"} mode) successfully!`,
     });
   } catch (err) {
-    console.error("Paystack test error:", err);
-    return NextResponse.json({ ok: false, message: "Could not test Paystack connection." }, { status: 500 });
+    console.error("Provider test error:", err);
+    return NextResponse.json({ ok: false, message: "Could not test provider connection." }, { status: 500 });
   }
 }
