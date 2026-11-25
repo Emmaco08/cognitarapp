@@ -108,6 +108,12 @@ def get_db_connection(db_name=None, db_path=None):
     conn.execute("PRAGMA journal_mode = WAL")
     conn.execute("PRAGMA synchronous = NORMAL")
     conn.execute("PRAGMA busy_timeout = 30000")
+    conn.execute("PRAGMA cache_size = -16000")
+    conn.execute("PRAGMA temp_store = MEMORY")
+    try:
+        conn.execute("PRAGMA mmap_size = 67108864")
+    except sqlite3.OperationalError:
+        pass
     
     ensure_deadline_columns(conn)
     return conn

@@ -1,716 +1,561 @@
-{%- from '_ct_shell.html' import ico, ct_boot_script, admin_shell_start, teacher_shell_start, student_topbar, shell_end -%}
+{%- from '_ct_shell.html' import ico, ct_boot_script, admin_shell_start, shell_end with context -%}
+{%- set total_q_ns = namespace(count=0) -%}
+{%- for section_data in sections -%}
+  {%- set total_q_ns.count = total_q_ns.count + section_data.standalone_questions|length -%}
+  {%- for g in section_data.groups -%}
+    {%- set total_q_ns.count = total_q_ns.count + g.questions|length -%}
+  {%- endfor -%}
+{%- endfor -%}
 <!DOCTYPE html>
 <html lang="en" data-theme="dark">
 <head>
-    <meta charset="UTF-8">
-    <title>Exam Preview | {{ exam.name }}</title>
-    <link href="{{ url_for('static', filename='vendor/bootstrap/css/bootstrap.min.css') }}" rel="stylesheet">
-    <link href="{{ url_for('static', filename='vendor/fontawesome/css/all.min.css') }}" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='vendor/katex/katex.min.css') }}">
-    <script src="{{ url_for('static', filename='vendor/katex/katex.min.js') }}"></script>
-    <script src="{{ url_for('static', filename='vendor/katex/contrib/mhchem.min.js') }}"></script>
-    <script src="{{ url_for('static', filename='vendor/katex/contrib/auto-render.min.js') }}"></script>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <style>
-        :root {
-            --bg: var(--ct-surface-2);
-            --surface: var(--ct-surface);
-            --border: var(--ct-line-2);
-            --text: var(--ct-ink);
-            --text2: #475569;
-            --text3: #94a3b8;
-            --primary: var(--ct-primary);
-            --primary2: var(--ct-primary);
-            --green: #10b981;
-            --amber: #f59e0b;
-            --red: #ef4444;
-            --radius: 18px;
-            --radius-sm: 12px;
-            --shadow-sm: 0 1px 3px rgba(0,0,0,0.04);
-            --shadow: 0 4px 16px rgba(0,0,0,0.05);
-            --shadow-lg: 0 12px 32px rgba(0,0,0,0.08);
-        }
-
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            background: var(--ct-surface-2);
-            font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            color: var(--text);
-            min-height: 100vh;
-            -webkit-font-smoothing: antialiased;
-        }
-
-        .preview-container {
-            max-width: 1300px;
-            margin: 0 auto;
-            padding: 28px 24px 80px;
-        }
-
-        /* HEADER */
-        .preview-header {
-            background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
-            border-radius: var(--radius);
-            padding: 0;
-            margin-bottom: 28px;
-            display: flex;
-            align-items: stretch;
-            overflow: hidden;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.12);
-            position: relative;
-        }
-        .preview-header::after {
-            content: '';
-            position: absolute;
-            top: -30%;
-            right: -5%;
-            width: 350px;
-            height: 350px;
-            background: radial-gradient(circle, rgba(99,102,241,0.12) 0%, transparent 70%);
-            pointer-events: none;
-        }
-        .header-icon-col {
-            width: 110px;
-            min-height: 130px;
-            background: linear-gradient(180deg, var(--primary) 0%, var(--primary2) 100%);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 40px;
-            color: white;
-            flex-shrink: 0;
-            position: relative;
-            z-index: 1;
-        }
-        .header-content {
-            padding: 26px 30px;
-            flex: 1;
-            position: relative;
-            z-index: 1;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-        }
-        .header-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 7px;
-            background: rgba(255,255,255,0.08);
-            color: #a5b4fc;
-            padding: 6px 16px;
-            border-radius: 50px;
-            font-size: 11px;
-            font-weight: 600;
-            letter-spacing: 0.4px;
-            margin-bottom: 12px;
-            border: 1px solid rgba(255,255,255,0.06);
-            width: fit-content;
-        }
-        .header-content h1 {
-            font-size: 27px;
-            font-weight: 800;
-            color: white;
-            margin: 0 0 6px;
-            letter-spacing: -0.5px;
-        }
-        .header-content .subtitle {
-            font-size: 13px;
-            color: #94a3b8;
-            margin: 0;
-            line-height: 1.5;
-        }
-
-        /* INFO STRIP */
-        .info-strip {
-            background: var(--surface);
-            border-radius: var(--radius);
-            padding: 20px 28px;
-            margin-bottom: 24px;
-            border: 1px solid var(--border);
-            box-shadow: var(--shadow-sm);
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0;
-        }
-        .info-strip-item {
-            flex: 1;
-            min-width: 140px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 8px 16px;
-            border-right: 1px solid #f1f5f9;
-        }
-        .info-strip-item:last-child { border-right: none; }
-        .strip-icon {
-            width: 40px;
-            height: 40px;
-            border-radius: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 16px;
-            flex-shrink: 0;
-        }
-        .strip-icon.blue { background: var(--ct-surface); color: #3b82f6; }
-        .strip-icon.purple { background: #faf5ff; color: var(--ct-primary); }
-        .strip-icon.amber { background: #fff7ed; color: #f97316; }
-        .strip-icon.green { background: var(--ct-ok-soft); color: #10b981; }
-        .strip-info small {
-            font-size: 10px;
-            color: var(--text3);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            font-weight: 600;
-            display: block;
-        }
-        .strip-info strong {
-            font-size: 14px;
-            font-weight: 700;
-            color: var(--text);
-            display: block;
-            margin-top: 1px;
-        }
-
-        /* SECTION */
-        .section-block {
-            background: var(--surface);
-            border-radius: var(--radius);
-            margin-bottom: 20px;
-            border: 1px solid var(--border);
-            box-shadow: var(--shadow-sm);
-            overflow: hidden;
-            transition: all 0.3s ease;
-        }
-        .section-block:hover {
-            box-shadow: var(--shadow-lg);
-        }
-        .section-title-bar {
-            padding: 16px 24px;
-            background: var(--ct-surface-2);
-            border-bottom: 1px solid var(--border);
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        .section-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: var(--primary);
-            box-shadow: 0 0 0 4px rgba(99,102,241,0.15);
-        }
-        .section-title-bar h3 {
-            font-size: 16px;
-            font-weight: 700;
-            color: var(--text);
-            margin: 0;
-        }
-        .section-count {
-            margin-left: auto;
-            font-size: 11px;
-            color: var(--text3);
-            font-weight: 600;
-            background: var(--ct-surface);
-            padding: 4px 14px;
-            border-radius: 50px;
-        }
-
-        /* QUESTION */
-        .question-item {
-            padding: 24px 28px;
-            border-bottom: 1px solid #f1f5f9;
-            transition: background 0.2s ease;
-        }
-        .question-item:last-child { border-bottom: none; }
-        .question-item:hover {
-            background: #fafcff;
-        }
-        .q-header-row {
-            display: flex;
-            align-items: flex-start;
-            gap: 14px;
-            margin-bottom: 16px;
-        }
-        .q-number-badge {
-            width: 42px;
-            height: 42px;
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 800;
-            font-size: 15px;
-            flex-shrink: 0;
-            color: white;
-            background: linear-gradient(135deg, var(--primary), var(--ct-primary));
-            box-shadow: 0 4px 14px rgba(99,102,241,0.2);
-        }
-        .q-text-box {
-            flex: 1;
-            font-size: 15px;
-            font-weight: 500;
-            line-height: 1.8;
-            color: var(--text);
-            padding-top: 9px;
-            word-wrap: break-word;
-            overflow-wrap: break-word;
-            word-break: break-word;
-        }
-        .q-text-box p { margin: 0 0 10px; }
-        .q-text-box ul, .q-text-box ol { margin: 8px 0; padding-left: 24px; }
-        .q-text-box li { margin-bottom: 5px; }
-        .q-text-box strong, .q-text-box b { color: var(--ct-ink); font-weight: 700; }
-        .q-text-box em, .q-text-box i { color: var(--ct-primary); }
-        .q-text-box sup { font-size: 0.7em; vertical-align: super; }
-        .q-text-box sub { font-size: 0.7em; vertical-align: sub; }
-        .q-text-box table {
-            border-collapse: collapse;
-            margin: 10px 0;
-            width: auto;
-            max-width: 100%;
-        }
-        .q-text-box td, .q-text-box th {
-            border: 1px solid var(--ct-line-2);
-            padding: 6px 12px;
-            font-size: 13px;
-        }
-
-        .q-image {
-            max-width: 100%;
-            max-height: 350px;
-            border-radius: 12px;
-            margin-bottom: 14px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.04);
-            display: block;
-            margin-left: 56px;
-        }
-
-        /* OPTIONS - Clean Grid */
-        .options-wrapper {
-            padding-left: 56px;
-        }
-        .options-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-        }
-        @media (max-width: 650px) {
-            .options-grid { grid-template-columns: 1fr; }
-        }
-        .option-cell {
-            display: flex;
-            align-items: flex-start;
-            gap: 12px;
-            padding: 14px 18px;
-            border-radius: 12px;
-            border: 2px solid var(--ct-line-2);
-            background: #fafbfc;
-            transition: all 0.2s ease;
-            cursor: default;
-            word-wrap: break-word;
-            overflow-wrap: break-word;
-            min-width: 0;
-        }
-        .option-cell:hover {
-            border-color: var(--ct-line-2);
-            background: var(--ct-surface);
-        }
-        .option-cell.correct {
-            background: var(--ct-ok-soft);
-            border-color: #86efac;
-            box-shadow: 0 0 0 3px rgba(16,185,129,0.06);
-        }
-        .option-letter-badge {
-            width: 30px;
-            height: 30px;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 700;
-            font-size: 13px;
-            flex-shrink: 0;
-            background: var(--ct-line-2);
-            color: var(--text2);
-            transition: all 0.2s;
-        }
-        .option-cell.correct .option-letter-badge {
-            background: var(--green);
-            color: white;
-            box-shadow: 0 3px 10px rgba(16,185,129,0.25);
-        }
-        .option-text-content {
-            font-size: 14px;
-            color: var(--ct-ink-2);
-            line-height: 1.6;
-            word-wrap: break-word;
-            overflow-wrap: break-word;
-            min-width: 0;
-            flex: 1;
-        }
-        .option-cell.correct .option-text-content {
-            color: #065f46;
-            font-weight: 500;
-        }
-        .correct-indicator {
-            color: var(--green);
-            font-size: 17px;
-            flex-shrink: 0;
-            opacity: 0;
-            transition: all 0.2s;
-            align-self: center;
-        }
-        .option-cell.correct .correct-indicator {
-            opacity: 1;
-        }
-
-        /* GROUP */
-        .group-container {
-            margin: 8px 0;
-        }
-        .group-header-block {
-            background: linear-gradient(135deg, #faf5ff, #f3f0ff);
-            border: 1px solid #ddd6fe;
-            border-radius: 14px;
-            padding: 18px 22px;
-            margin-bottom: 18px;
-        }
-        .group-name-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 7px;
-            font-size: 11px;
-            color: var(--ct-primary);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            font-weight: 700;
-            margin-bottom: 10px;
-            background: var(--ct-surface);
-            padding: 5px 12px;
-            border-radius: 50px;
-            border: 1px solid #ede9fe;
-        }
-        .group-content-area {
-            font-size: 14px;
-            line-height: 1.9;
-            color: var(--ct-ink-2);
-            padding: 16px;
-            background: var(--ct-surface);
-            border-radius: 10px;
-            border: 1px solid #f3f0ff;
-            word-wrap: break-word;
-            overflow-wrap: break-word;
-        }
-        .group-image {
-            max-width: 100%;
-            border-radius: 10px;
-            margin-bottom: 10px;
-        }
-        .group-instruction {
-            font-size: 12px;
-            color: var(--ct-primary);
-            margin-bottom: 10px;
-            display: flex;
-            align-items: flex-start;
-            gap: 6px;
-            line-height: 1.5;
-        }
-        .group-question {
-            padding-left: 20px;
-            margin-top: 20px;
-            border-left: 4px solid var(--ct-line-2);
-            padding-left: 24px;
-        }
-
-        /* EMPTY */
-        .empty-block {
-            text-align: center;
-            padding: 80px 40px;
-            background: var(--surface);
-            border-radius: var(--radius);
-            border: 2px dashed var(--ct-line-2);
-        }
-        .empty-block i {
-            font-size: 60px;
-            color: var(--ct-line-2);
-            display: block;
-            margin-bottom: 16px;
-        }
-        .empty-block h3 {
-            font-size: 18px;
-            color: var(--text);
-            margin-bottom: 6px;
-        }
-        .empty-block p {
-            color: var(--text3);
-            font-size: 13px;
-        }
-
-        /* CLOSE BUTTON */
-        .floating-close {
-            position: fixed;
-            bottom: 28px;
-            right: 28px;
-            z-index: 100;
-        }
-        .close-circle {
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            background: var(--surface);
-            border: 2px solid var(--border);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            font-size: 19px;
-            color: var(--text2);
-            box-shadow: 0 8px 24px rgba(0,0,0,0.08);
-            transition: all 0.3s ease;
-            text-decoration: none;
-        }
-        .close-circle:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 14px 32px rgba(0,0,0,0.14);
-            border-color: var(--primary);
-            color: var(--primary);
-            background: #fafbff;
-        }
-    </style>
-    <!-- CSRF Protection Shield -->
-    <meta name="csrf-token" content="{{ csrf_token() }}">
-    <script>
-    window.CSRF_TOKEN = "{{ csrf_token() }}";
-    (function() {
-        if (window.fetch) {
-            const _origFetch = window.fetch;
-            window.fetch = function(url, options) {
-                options = options || {};
-                const method = (options.method || 'GET').toUpperCase();
-                if (!['GET', 'HEAD', 'OPTIONS', 'TRACE'].includes(method)) {
-                    options.headers = options.headers || {};
-                    const token = window.CSRF_TOKEN || (document.querySelector('meta[name="csrf-token"]') && document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
-                    if (token) {
-                        if (typeof Headers !== 'undefined' && options.headers instanceof Headers) {
-                            if (!options.headers.has('X-CSRFToken')) options.headers.set('X-CSRFToken', token);
-                        } else if (Array.isArray(options.headers)) {
-                            options.headers.push(['X-CSRFToken', token]);
-                        } else {
-                            if (!options.headers['X-CSRFToken']) options.headers['X-CSRFToken'] = token;
-                        }
-                    }
-                }
-                return _origFetch(url, options);
-            };
-        }
-        if (window.$ && $.ajaxSetup) {
-            $.ajaxSetup({
-                beforeSend: function(xhr, settings) {
-                    if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type)) {
-                        xhr.setRequestHeader("X-CSRFToken", window.CSRF_TOKEN);
-                    }
-                }
-            });
-        }
-        if (navigator.sendBeacon) {
-            const _origBeacon = navigator.sendBeacon.bind(navigator);
-            navigator.sendBeacon = function(url, data) {
-                if (data instanceof FormData) {
-                    if (!data.has('csrf_token')) data.append('csrf_token', window.CSRF_TOKEN);
-                } else if (typeof data === 'string') {
-                    try {
-                        const obj = JSON.parse(data);
-                        if (typeof obj === 'object' && obj !== null && !obj.csrf_token) {
-                            obj.csrf_token = window.CSRF_TOKEN;
-                            data = JSON.stringify(obj);
-                        }
-                    } catch(e) {}
-                }
-                return _origBeacon(url, data);
-            };
-        }
-        document.addEventListener('DOMContentLoaded', function() {
-            document.querySelectorAll('form[method="POST"], form[method="post"]').forEach(function(form) {
-                if (!form.querySelector('input[name="csrf_token"]')) {
-                    var input = document.createElement('input');
-                    input.type = 'hidden';
-                    input.name = 'csrf_token';
-                    input.value = window.CSRF_TOKEN;
-                    form.appendChild(input);
-                }
-            });
-        });
-    })();
-    </script>
-
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+  <meta name="color-scheme" content="dark light">
+  <title>Exam Preview — {{ exam.name }} | CogniTara</title>
+  <link rel="icon" href="{{ url_for('static', filename='images/cognitara-favicon.ico') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='vendor/katex/katex.min.css') }}">
+  <script src="{{ url_for('static', filename='vendor/katex/katex.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='vendor/katex/contrib/mhchem.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='vendor/katex/contrib/auto-render.min.js') }}"></script>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/cognitara-web.css') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/cognitara-portal-unified.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/cognitara-teacher-studio.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/cognitara-admin-studio.css') }}">
   {{ ct_boot_script() }}
+  <style>
+    .ep-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+      padding: 14px 18px;
+      background: var(--tc-surface);
+      border: 1px solid var(--tc-line-2);
+      border-radius: 14px;
+      margin-bottom: 18px;
+    }
+    .ep-toolbar__group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .ep-sec-pills {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin-bottom: 18px;
+    }
+    .ep-sec-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      border-radius: 999px;
+      font-size: 12.5px;
+      font-weight: 580;
+      color: var(--tc-ink-2);
+      background: var(--tc-surface);
+      border: 1px solid var(--tc-line-2);
+      text-decoration: none;
+      transition: border-color 140ms ease, color 140ms ease, background-color 140ms ease;
+    }
+    .ep-sec-pill:hover {
+      border-color: var(--ct-accent-line);
+      color: var(--tc-ink);
+      background: var(--tc-surface-2);
+    }
+    .ep-section {
+      background: var(--tc-surface);
+      border: 1px solid var(--tc-line-2);
+      border-radius: 16px;
+      margin-bottom: 20px;
+      overflow: hidden;
+    }
+    .ep-section__head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 16px 22px;
+      background: var(--tc-surface-2);
+      border-bottom: 1px solid var(--tc-line);
+    }
+    .ep-section__head h2 {
+      margin: 0;
+      font-size: 15.5px;
+      font-weight: 700;
+      color: var(--tc-ink);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .ep-section__dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--ct-accent);
+      box-shadow: 0 0 0 4px var(--ct-accent-soft);
+    }
+    .ep-q {
+      padding: 22px 24px;
+      border-bottom: 1px solid var(--tc-line);
+      transition: background-color 150ms ease;
+    }
+    .ep-q:last-child { border-bottom: 0; }
+    .ep-q:hover { background: var(--ct-hover); }
+    .ep-q__head {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      margin-bottom: 14px;
+    }
+    .ep-q__num {
+      min-width: 34px;
+      height: 34px;
+      padding: 0 8px;
+      border-radius: 9px;
+      background: var(--tc-surface-2);
+      border: 1px solid var(--tc-line-2);
+      color: var(--tc-ink);
+      font-family: var(--ct-mono);
+      font-size: 13px;
+      font-weight: 700;
+      display: inline-grid;
+      place-items: center;
+      flex: none;
+    }
+    .ep-q__text {
+      flex: 1;
+      min-width: 0;
+      font-size: 14.5px;
+      line-height: 1.72;
+      color: var(--tc-ink);
+      padding-top: 4px;
+      overflow-wrap: break-word;
+    }
+    .ep-q__text p { margin: 0 0 8px; }
+    .ep-q__text p:last-child { margin-bottom: 0; }
+    .ep-q__text table { border-collapse: collapse; margin: 10px 0; max-width: 100%; }
+    .ep-q__text td, .ep-q__text th { border: 1px solid var(--tc-line-2); padding: 6px 10px; font-size: 13px; }
+    .ep-q__media {
+      margin: 0 0 14px 48px;
+    }
+    .ep-q__img {
+      max-width: 100%;
+      max-height: 250px;
+      object-fit: contain;
+      border-radius: 10px;
+      border: 1px solid var(--tc-line-2);
+      background: var(--tc-surface-2);
+      cursor: zoom-in;
+      transition: transform 180ms ease, border-color 180ms ease;
+    }
+    .ep-q__img:hover { border-color: var(--ct-accent-line); }
+    .ep-opts {
+      padding-left: 48px;
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+    @media (max-width: 720px) {
+      .ep-opts { padding-left: 0; grid-template-columns: 1fr; }
+      .ep-q__media { margin-left: 0; }
+    }
+    .ep-opt {
+      display: flex;
+      align-items: flex-start;
+      gap: 11px;
+      padding: 12px 14px;
+      border-radius: 11px;
+      border: 1px solid var(--tc-line-2);
+      background: var(--tc-surface-2);
+      transition: border-color 160ms ease, background-color 160ms ease;
+      min-width: 0;
+    }
+    .ep-opt__letter {
+      width: 26px;
+      height: 26px;
+      border-radius: 7px;
+      background: var(--tc-surface);
+      border: 1px solid var(--tc-line-2);
+      color: var(--tc-ink-2);
+      font-family: var(--ct-mono);
+      font-size: 12px;
+      font-weight: 700;
+      display: inline-grid;
+      place-items: center;
+      flex: none;
+    }
+    .ep-opt__body {
+      flex: 1;
+      min-width: 0;
+      font-size: 13.8px;
+      line-height: 1.55;
+      color: var(--tc-ink-2);
+      overflow-wrap: break-word;
+    }
+    .ep-opt__check {
+      display: none;
+      color: var(--ct-ok);
+      flex: none;
+      margin-top: 2px;
+    }
+    body.show-answer-key .ep-opt.is-correct {
+      background: var(--ct-ok-soft);
+      border-color: var(--ct-ok-line);
+    }
+    body.show-answer-key .ep-opt.is-correct .ep-opt__letter {
+      background: var(--ct-ok);
+      border-color: var(--ct-ok);
+      color: #FFFFFF;
+    }
+    body.show-answer-key .ep-opt.is-correct .ep-opt__body {
+      color: var(--tc-ink);
+      font-weight: 560;
+    }
+    body.show-answer-key .ep-opt.is-correct .ep-opt__check {
+      display: inline-flex;
+    }
+    .ep-group-box {
+      padding: 16px 18px;
+      border-radius: 12px;
+      border: 1px solid var(--tc-line-2);
+      background: var(--tc-surface-2);
+      margin-bottom: 18px;
+    }
+    .ep-group-passage {
+      margin-top: 10px;
+      padding: 14px 16px;
+      border-radius: 10px;
+      border: 1px solid var(--tc-line);
+      background: var(--tc-surface);
+      font-size: 14px;
+      line-height: 1.75;
+      color: var(--tc-ink-2);
+    }
+    .ep-group-child {
+      padding: 16px 0 16px 20px;
+      border-left: 2px solid var(--ct-accent-line);
+      margin-left: 6px;
+      margin-top: 12px;
+    }
+    .ep-lightbox {
+      position: fixed;
+      inset: 0;
+      z-index: 1300;
+      background: rgba(8, 10, 14, 0.86);
+      backdrop-filter: blur(8px);
+      display: grid;
+      place-items: center;
+      padding: 24px;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 200ms ease, visibility 0s linear 200ms;
+    }
+    .ep-lightbox.is-open {
+      opacity: 1;
+      visibility: visible;
+      transition: opacity 200ms ease, visibility 0s;
+    }
+    .ep-lightbox img {
+      max-width: min(94vw, 1040px);
+      max-height: 86vh;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      box-shadow: 0 24px 64px rgba(0, 0, 0, 0.5);
+    }
+    @media print {
+      .ep-toolbar, .ep-sec-pills, .tc-head__actions { display: none !important; }
+      .ep-section, .ep-q { break-inside: avoid; }
+    }
+  </style>
 </head>
-<body class="ct-app ct-bs ad-studio">
-{{ admin_shell_start(active='exams', crumb='Exam Preview') }}
+<body class="ct-app ad-studio show-answer-key">
+{{ admin_shell_start(active='exams', crumb='Exam Preview', parent_href='/admin/exams-management', parent_label='Exams') }}
 
-    <div class="preview-container">
-        <!-- HEADER -->
-        <div class="preview-header">
-            <div class="header-icon-col">
-                <i class="fas fa-flask"></i>
-            </div>
-            <div class="header-content">
-                <div class="header-badge">
-                    <i class="fas fa-shield-halved"></i> ADMIN PREVIEW MODE
-                </div>
-                <h1>{{ exam.name }}</h1>
-                <p class="subtitle">Read-only examination preview · Correct answers are highlighted in green · No modifications allowed</p>
-            </div>
+  <header class="tc-head ct-animate-rise">
+    <div class="tc-head__txt">
+      <h1>{{ exam.name }}</h1>
+      <div class="tc-head__tags">
+        <span class="tc-pill tc-pill--accent">{{ ico('i-shield', 'ct-ico--xs') }}Read-Only Preview</span>
+        <span class="tc-pill">{{ exam.class }}</span>
+        <span class="tc-pill">{{ exam.subject_tag or 'General' }} · {{ exam.specialisation_tag or 'General' }}</span>
+        <span class="tc-pill">{{ ico('i-clock', 'ct-ico--xs') }}{{ exam.duration }} min</span>
+      </div>
+    </div>
+    <div class="tc-head__actions">
+      <a class="tc-btn tc-btn--secondary" href="/admin/exams-management">{{ ico('i-arrow-left', 'ct-ico--sm') }}Control Center</a>
+      <button type="button" class="tc-btn tc-btn--secondary" id="toggleAnswerKeyBtn" onclick="toggleAnswerKey()">
+        {{ ico('i-eye-off', 'ct-ico--sm') }}<span id="answerKeyLabel">Hide Answer Key</span>
+      </button>
+      <button type="button" class="tc-btn tc-btn--primary" onclick="window.print()">
+        {{ ico('i-print', 'ct-ico--sm') }}Print Paper
+      </button>
+    </div>
+  </header>
+
+  <!-- 4-Column Summary Strip -->
+  <section class="tc-kpi-strip" data-ct-stagger>
+    <div class="tc-kpi">
+      <span class="tc-kpi__label">Total Questions</span>
+      <strong class="tc-kpi__val" data-ct-count>{{ total_q_ns.count }}</strong>
+      <span class="tc-kpi__meta">Across {{ sections|length }} section{% if sections|length != 1 %}s{% endif %}</span>
+    </div>
+    <div class="tc-kpi">
+      <span class="tc-kpi__label">Target Class</span>
+      <strong class="tc-kpi__val" style="font-size:24px">{{ exam.class }}</strong>
+      <span class="tc-kpi__meta">{{ exam.specialisation_tag or 'General' }} track</span>
+    </div>
+    <div class="tc-kpi">
+      <span class="tc-kpi__label">Subject</span>
+      <strong class="tc-kpi__val" style="font-size:22px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ exam.subject_tag or 'General' }}</strong>
+      <span class="tc-kpi__meta">Exam ID #{{ exam.id }}</span>
+    </div>
+    <div class="tc-kpi">
+      <span class="tc-kpi__label">Duration</span>
+      <strong class="tc-kpi__val">{{ exam.duration }}<small style="font-size:15px;font-weight:600;color:var(--tc-ink-3);margin-left:3px">min</small></strong>
+      <span class="tc-kpi__meta">Read-only administrative review</span>
+    </div>
+  </section>
+
+  <!-- Filter + Pagination Toolbar -->
+  <div class="ep-toolbar">
+    <div class="ep-toolbar__group" style="flex:1;min-width:300px">
+      <label class="tc-search" style="max-width:100%">
+        {{ ico('i-search', 'ct-ico--sm') }}
+        <input type="search" id="previewSearch" style="width:295px;max-width:100%" placeholder="Search question text or options…" oninput="filterPreviewQuestions()" aria-label="Search questions">
+      </label>
+      <span id="previewCountMeta" class="tc-mono" style="font-size:12.5px;color:var(--tc-ink-3);white-space:nowrap">{{ total_q_ns.count }} questions</span>
+    </div>
+    <div class="ep-toolbar__group">
+      <select id="previewPageSize" class="ct-pager__select" onchange="setPreviewPageSize(this.value)" aria-label="Questions per page">
+        <option value="15" selected>15 / page</option>
+        <option value="30">30 / page</option>
+        <option value="9999">Show all</option>
+      </select>
+      <div class="ct-pagination" id="previewPagination"></div>
+    </div>
+  </div>
+
+  {% if sections|length > 1 %}
+  <nav class="ep-sec-pills" aria-label="Jump to section">
+    {% for section_data in sections %}
+    <a class="ep-sec-pill" href="#ep-sec-{{ loop.index }}">{{ section_data.section.section_name }}</a>
+    {% endfor %}
+  </nav>
+  {% endif %}
+
+  <!-- SECTIONS & QUESTIONS -->
+  {% if sections %}
+    {% set global_q = namespace(value=0) %}
+    {% for section_data in sections %}
+    {% set sec_ns = namespace(total=section_data.standalone_questions|length) %}
+    {% for g in section_data.groups %}
+      {% set sec_ns.total = sec_ns.total + (g.questions|length) %}
+    {% endfor %}
+
+    <section class="ep-section" id="ep-sec-{{ loop.index }}" data-ep-section>
+      <div class="ep-section__head">
+        <h2><span class="ep-section__dot"></span>{{ section_data.section.section_name }}</h2>
+        <span class="tc-pill">{{ sec_ns.total }} question{% if sec_ns.total != 1 %}s{% endif %}</span>
+      </div>
+
+      {% for q in section_data.standalone_questions %}
+      {% set global_q.value = global_q.value + 1 %}
+      <article class="ep-q" data-ep-q data-search="{{ (q.question or '')|striptags|lower }} {{ (q.option1 or '')|striptags|lower }} {{ (q.option2 or '')|striptags|lower }} {{ (q.option3 or '')|striptags|lower }} {{ (q.option4 or '')|striptags|lower }}">
+        <div class="ep-q__head">
+          <span class="ep-q__num">{{ global_q.value }}</span>
+          <div class="ep-q__text">{{ q.question|sanitize|safe if q.question else '' }}</div>
         </div>
-
-        <!-- INFO STRIP -->
-        <div class="info-strip">
-            <div class="info-strip-item">
-                <div class="strip-icon blue"><i class="fas fa-graduation-cap"></i></div>
-                <div class="strip-info"><small>Class</small><strong>{{ exam.class }}</strong></div>
-            </div>
-            <div class="info-strip-item">
-                <div class="strip-icon purple"><i class="fas fa-book-open"></i></div>
-                <div class="strip-info"><small>Subject</small><strong>{{ exam.subject_tag or 'General' }}</strong></div>
-            </div>
-            <div class="info-strip-item">
-                <div class="strip-icon amber"><i class="fas fa-flask"></i></div>
-                <div class="strip-info"><small>Specialisation</small><strong>{{ exam.specialisation_tag or 'General' }}</strong></div>
-            </div>
-            <div class="info-strip-item">
-                <div class="strip-icon green"><i class="fas fa-clock"></i></div>
-                <div class="strip-info"><small>Duration</small><strong>{{ exam.duration }} min</strong></div>
-            </div>
+        {% if q.image and q.image != 'default.png' %}
+        <div class="ep-q__media">
+          <img src="{{ url_for('static', filename='images/' + q.image) }}" class="ep-q__img" alt="Question {{ global_q.value }} diagram" onclick="openLightbox(this.src)" loading="lazy">
         </div>
-
-        <!-- SECTIONS -->
-        {% if sections %}
-            {% set global_q = namespace(value=0) %}
-            
-            {% for section_data in sections %}
-            {% set section_total = section_data.standalone_questions|length %}
-            {% for g in section_data.groups %}
-                {% set section_total = section_total + g.questions|length %}
-            {% endfor %}
-            
-            <div class="section-block">
-                <div class="section-title-bar">
-                    <div class="section-dot"></div>
-                    <h3>{{ section_data.section.section_name }}</h3>
-                    <span class="section-count">{{ section_total }} question{% if section_total != 1 %}s{% endif %}</span>
-                </div>
-
-                <!-- Standalone Questions -->
-                {% for q in section_data.standalone_questions %}
-                {% set global_q.value = global_q.value + 1 %}
-                <div class="question-item">
-                    <div class="q-header-row">
-                        <div class="q-number-badge">{{ global_q.value }}</div>
-                        <div class="q-text-box">{{ q.question|sanitize|safe if q.question else '' }}</div>
-                    </div>
-                    {% if q.image %}
-                    <img src="{{ url_for('static', filename='images/' + q.image) }}" class="q-image" alt="Question image">
-                    {% endif %}
-                    <div class="options-wrapper">
-                        <div class="options-grid">
-                            {% set letters = ['A', 'B', 'C', 'D'] %}
-                            {% set opts = [q.option1, q.option2, q.option3, q.option4] %}
-                            {% for opt in opts %}
-                            {% if opt and opt|string|trim != '' %}
-                            <div class="option-cell {% if opt|string == q.answer|string %}correct{% endif %}">
-                                <div class="option-letter-badge">{{ letters[loop.index0] }}</div>
-                                <div class="option-text-content">{{ opt|sanitize|safe }}</div>
-                                <div class="correct-indicator"><i class="fas fa-check-circle"></i></div>
-                            </div>
-                            {% endif %}
-                            {% endfor %}
-                        </div>
-                    </div>
-                </div>
-                {% endfor %}
-
-                <!-- Groups -->
-                {% for group in section_data.groups %}
-                <div class="question-item">
-                    <div class="group-container">
-                        <div class="group-header-block">
-                            <div class="group-name-badge">
-                                <i class="fas fa-layer-group"></i> {{ group.group_name or 'Group' }}
-                            </div>
-                            {% if group.group_image %}
-                            <img src="{{ url_for('static', filename='images/' + group.group_image) }}" class="group-image">
-                            {% endif %}
-                            {% if group.instruction_text %}
-                            <div class="group-instruction"><i class="fas fa-circle-info"></i> {{ group.instruction_text }}</div>
-                            {% endif %}
-                            {% if group.group_content %}
-                            <div class="group-content-area">{{ group.group_content }}</div>
-                            {% endif %}
-                        </div>
-                        
-                        {% for gq in group.questions %}
-                        {% set global_q.value = global_q.value + 1 %}
-                        <div class="group-question">
-                            <div class="q-header-row" style="margin-bottom:12px;">
-                                <div class="q-number-badge" style="background:linear-gradient(135deg,#7c3aed,#6d28d9);box-shadow:0 4px 14px rgba(124,58,237,0.2);">{{ global_q.value }}</div>
-                                <div class="q-text-box" style="font-size:14px;">{{ gq.question|sanitize|safe if gq.question else '' }}</div>
-                            </div>
-                            <div class="options-wrapper" style="padding-left:56px;">
-                                <div class="options-grid">
-                                    {% set letters = ['A', 'B', 'C', 'D'] %}
-                                    {% set opts = [gq.option1, gq.option2, gq.option3, gq.option4] %}
-                                    {% for opt in opts %}
-                                    {% if opt and opt|string|trim != '' %}
-                                    <div class="option-cell {% if opt|string == gq.answer|string %}correct{% endif %}">
-                                        <div class="option-letter-badge">{{ letters[loop.index0] }}</div>
-                                        <div class="option-text-content">{{ opt|sanitize|safe }}</div>
-                                        <div class="correct-indicator"><i class="fas fa-check-circle"></i></div>
-                                    </div>
-                                    {% endif %}
-                                    {% endfor %}
-                                </div>
-                            </div>
-                        </div>
-                        {% endfor %}
-                    </div>
-                </div>
-                {% endfor %}
-            </div>
-            {% endfor %}
-        {% else %}
-            <div class="empty-block">
-                <i class="fas fa-folder-open"></i>
-                <h3>No Questions Yet</h3>
-                <p>This exam doesn't have any questions or sections.</p>
-            </div>
         {% endif %}
-    </div>
+        <div class="ep-opts">
+          {% set letters = ['A', 'B', 'C', 'D'] %}
+          {% set opts = [q.option1, q.option2, q.option3, q.option4] %}
+          {% for opt in opts %}
+          {% if opt and opt|string|trim != '' %}
+          {% set is_ans = (opt|string|trim == q.answer|string|trim) or (letters[loop.index0] == q.answer|string|trim) or ((loop.index)|string == q.answer|string|trim) %}
+          <div class="ep-opt{% if is_ans %} is-correct{% endif %}">
+            <span class="ep-opt__letter">{{ letters[loop.index0] }}</span>
+            <div class="ep-opt__body">{{ opt|sanitize|safe }}</div>
+            <span class="ep-opt__check" title="Correct Answer">{{ ico('i-check-circle', 'ct-ico--sm') }}</span>
+          </div>
+          {% endif %}
+          {% endfor %}
+        </div>
+      </article>
+      {% endfor %}
 
-    <div class="floating-close">
-        <a href="javascript:window.close()" class="close-circle" title="Close Preview">
-            <i class="fas fa-xmark"></i>
-        </a>
-    </div>
+      {% for group in section_data.groups %}
+      <div class="ep-q" data-ep-group>
+        <div class="ep-group-box">
+          <span class="tc-pill tc-pill--accent">{{ ico('i-layers', 'ct-ico--xs') }}{{ group.group_name or 'Passage / Group' }}</span>
+          {% if group.instruction_text %}
+          <p style="margin:10px 0 0;font-size:13px;color:var(--tc-ink-2)">{{ group.instruction_text }}</p>
+          {% endif %}
+          {% if group.group_image and group.group_image != 'default.png' %}
+          <div style="margin-top:12px">
+            <img src="{{ url_for('static', filename='images/' + group.group_image) }}" class="ep-q__img" alt="Passage illustration" onclick="openLightbox(this.src)" loading="lazy">
+          </div>
+          {% endif %}
+          {% if group.group_content %}
+          <div class="ep-group-passage">{{ group.group_content|sanitize|safe }}</div>
+          {% endif %}
+        </div>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            if (typeof renderMathInElement === 'function') {
-                renderMathInElement(document.body, {
-                    delimiters: [
-                        {left: '$$', right: '$$', display: true},
-                        {left: '$', right: '$', display: false},
-                        {left: '\\(', right: '\\)', display: false},
-                        {left: '\\[', right: '\\]', display: true}
-                    ],
-                    throwOnError: false
-                });
-            }
+        {% for gq in group.questions %}
+        {% set global_q.value = global_q.value + 1 %}
+        <article class="ep-group-child" data-ep-q data-search="{{ (gq.question or '')|striptags|lower }} {{ (gq.option1 or '')|striptags|lower }} {{ (gq.option2 or '')|striptags|lower }} {{ (gq.option3 or '')|striptags|lower }} {{ (gq.option4 or '')|striptags|lower }}">
+          <div class="ep-q__head">
+            <span class="ep-q__num">{{ global_q.value }}</span>
+            <div class="ep-q__text">{{ gq.question|sanitize|safe if gq.question else '' }}</div>
+          </div>
+          <div class="ep-opts">
+            {% set letters = ['A', 'B', 'C', 'D'] %}
+            {% set opts = [gq.option1, gq.option2, gq.option3, gq.option4] %}
+            {% for opt in opts %}
+            {% if opt and opt|string|trim != '' %}
+            {% set is_ans = (opt|string|trim == gq.answer|string|trim) or (letters[loop.index0] == gq.answer|string|trim) or ((loop.index)|string == gq.answer|string|trim) %}
+            <div class="ep-opt{% if is_ans %} is-correct{% endif %}">
+              <span class="ep-opt__letter">{{ letters[loop.index0] }}</span>
+              <div class="ep-opt__body">{{ opt|sanitize|safe }}</div>
+              <span class="ep-opt__check" title="Correct Answer">{{ ico('i-check-circle', 'ct-ico--sm') }}</span>
+            </div>
+            {% endif %}
+            {% endfor %}
+          </div>
+        </article>
+        {% endfor %}
+      </div>
+      {% endfor %}
+    </section>
+    {% endfor %}
+  {% else %}
+    <div class="tc-card">
+      <div class="tc-empty">
+        <span class="tc-empty__ico">{{ ico('i-doc') }}</span>
+        <strong>No questions added yet</strong>
+        <p>The assigned subject teacher has not added questions to this examination yet.</p>
+      </div>
+    </div>
+  {% endif %}
+
+  <!-- Image Lightbox -->
+  <div class="ep-lightbox" id="epLightbox" onclick="closeLightbox()" aria-hidden="true">
+    <img id="epLightboxImg" src="" alt="Enlarged question diagram">
+  </div>
+
+  <script>
+    var _epPage = 1;
+    var _epSize = 15;
+
+    function toggleAnswerKey() {
+      var on = document.body.classList.toggle("show-answer-key");
+      var btn = document.getElementById("toggleAnswerKeyBtn");
+      btn.innerHTML = CT.icon(on ? "i-eye-off" : "i-eye", "ct-ico--sm") + '<span>' + (on ? "Hide Answer Key" : "Show Answer Key") + '</span>';
+    }
+
+    function openLightbox(src) {
+      var lb = document.getElementById("epLightbox");
+      document.getElementById("epLightboxImg").src = src;
+      lb.classList.add("is-open");
+      lb.setAttribute("aria-hidden", "false");
+    }
+    function closeLightbox() {
+      var lb = document.getElementById("epLightbox");
+      lb.classList.remove("is-open");
+      lb.setAttribute("aria-hidden", "true");
+    }
+    document.addEventListener("keydown", function (e) { if (e.key === "Escape") closeLightbox(); });
+
+    function setPreviewPageSize(val) {
+      _epSize = parseInt(val, 10) || 15;
+      _epPage = 1;
+      renderPreviewPagination();
+    }
+
+    function filterPreviewQuestions() {
+      _epPage = 1;
+      renderPreviewPagination();
+    }
+
+    function renderPreviewPagination() {
+      var q = (document.getElementById("previewSearch").value || "").trim().toLowerCase();
+      var items = Array.prototype.slice.call(document.querySelectorAll("[data-ep-q]"));
+      var matched = items.filter(function (el) {
+        var hay = el.getAttribute("data-search") || el.textContent.toLowerCase();
+        return !q || hay.indexOf(q) > -1;
+      });
+      var total = matched.length;
+      var totalPages = Math.max(1, Math.ceil(total / _epSize));
+      if (_epPage > totalPages) _epPage = totalPages;
+      var start = (_epPage - 1) * _epSize;
+      var end = Math.min(total, start + _epSize);
+
+      items.forEach(function (el) { el.style.display = "none"; });
+      matched.slice(start, end).forEach(function (el) { el.style.display = ""; });
+
+      // Hide sections with zero visible items
+      document.querySelectorAll("[data-ep-section]").forEach(function (sec) {
+        var visibleInSec = Array.prototype.slice.call(sec.querySelectorAll("[data-ep-q]")).some(function (el) {
+          return el.style.display !== "none";
         });
-    </script>
+        sec.style.display = visibleInSec ? "" : "none";
+      });
+
+      var meta = document.getElementById("previewCountMeta");
+      if (meta) {
+        meta.textContent = total === 0
+          ? "No matching questions"
+          : ("Showing " + (start + 1) + "–" + end + " of " + total + " questions");
+      }
+
+      var pag = document.getElementById("previewPagination");
+      if (!pag) return;
+      if (totalPages <= 1) {
+        pag.innerHTML = '<span class="ct-pager__single">Page 1 of 1</span>';
+        return;
+      }
+      var html = '<button type="button" class="ct-page-btn" ' + (_epPage <= 1 ? "disabled" : "") + ' onclick="goEpPage(' + (_epPage - 1) + ')" aria-label="Previous">' + CT.icon("i-chevron-left", "ct-ico--sm") + '</button>';
+      for (var p = 1; p <= totalPages; p++) {
+        if (p === 1 || p === totalPages || (p >= _epPage - 1 && p <= _epPage + 1)) {
+          html += '<button type="button" class="ct-page-btn' + (p === _epPage ? " is-active" : "") + '" onclick="goEpPage(' + p + ')">' + p + '</button>';
+        } else if (p === _epPage - 2 || p === _epPage + 2) {
+          html += '<span class="ct-page-ellipsis">&hellip;</span>';
+        }
+      }
+      html += '<button type="button" class="ct-page-btn" ' + (_epPage >= totalPages ? "disabled" : "") + ' onclick="goEpPage(' + (_epPage + 1) + ')" aria-label="Next">' + CT.icon("i-chevron-right", "ct-ico--sm") + '</button>';
+      pag.innerHTML = html;
+    }
+
+    function goEpPage(p) {
+      _epPage = p;
+      renderPreviewPagination();
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    document.addEventListener("DOMContentLoaded", function () {
+      if (typeof renderMathInElement === "function") {
+        renderMathInElement(document.body, {
+          delimiters: [
+            { left: "$$", right: "$$", display: true },
+            { left: "$", right: "$", display: false },
+            { left: "\\(", right: "\\)", display: false },
+            { left: "\\[", right: "\\]", display: true }
+          ],
+          throwOnError: false
+        });
+      }
+      renderPreviewPagination();
+    });
+  </script>
 
 {{ shell_end(role='admin') }}
 </body>

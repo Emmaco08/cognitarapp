@@ -1,4 +1,4 @@
-{%- from '_ct_shell.html' import ico, ct_boot_script -%}
+{%- from '_ct_shell.html' import ico, ct_boot_script with context -%}
 {%- set ICONS = url_for('static', filename='icons/cognitara-icons.svg') -%}
 {%- set _school = school_branding if school_branding is defined and school_branding else {'school_name': 'CogniTara School'} -%}
 <!DOCTYPE html>

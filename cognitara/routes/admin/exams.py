@@ -130,61 +130,27 @@ def toggle_exam(exam_id):
 def add_exam():
     if "admin_id" not in session:
         return redirect("/")
-    
+    # Administrators oversee examinations; subject teachers author and edit examinations.
     if request.method == "POST":
-        name = request.form["exam_name"]
-        class_name = request.form["class"]
-        duration = max(1, int(request.form.get("duration", 60)))
-        
-        conn = get_db_connection()
-        
-        conn.execute(
-            "INSERT INTO exams (name, class, duration, teacher_id) VALUES (?, ?, ?, ?)",
-            (name, class_name, duration, session["admin_id"])
-        )
-        exam_id = conn.execute("SELECT last_insert_rowid()").fetchone()[0]
-        
-        question_num = 1
-        while f"question{question_num}" in request.form:
-            q = request.form[f"question{question_num}"]
-            op1 = request.form[f"option{question_num}_1"]
-            op2 = request.form[f"option{question_num}_2"]
-            op3 = request.form[f"option{question_num}_3"]
-            op4 = request.form[f"option{question_num}_4"]
-            file = request.files.get(f"image{question_num}")
-            if file and file.filename != "":
-                safe_orig = secure_filename(file.filename) or "img.jpg"
-                image_filename = f"exam_{exam_id}_q{question_num}_{int(datetime.now().timestamp())}_{safe_orig}"
-                save_path = get_upload_path(image_filename)
-                success = compress_image(file, save_path)
-                if not success:
-                    conn.close()
-                    return f"Image for question {question_num} could not be saved. Try another image."
-            else:
-                image_filename = None
-            
-            ans_index = int(request.form[f"answer{question_num}"])
-            ans = [op1, op2, op3, op4][ans_index - 1]
-            
-            conn.execute(
-                "INSERT INTO questions (exam_id, question, option1, option2, option3, option4, answer, image) "
-                "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-                (exam_id, q, op1, op2, op3, op4, ans, image_filename)
-            )
-            
-            question_num += 1
-        
-        log_action("Admin", session["username"], f"Created exam '{name}' for {class_name}", conn=conn)
-        conn.commit()
-        conn.close()
-        return redirect("/admin")
-    
-    return render_template("add_exam.html")
+        return jsonify({
+            "ok": False,
+            "error": "forbidden",
+            "message": "Administrators cannot create examinations. Subject teachers create examinations.",
+        }), 403
+    return redirect("/admin/exams-management")
 
 
 @admin_exams_bp.route("/admin/add_question/<int:exam_id>", methods=["GET","POST"])
 def add_question(exam_id):
-    if "admin_id" not in session and "teacher_id" not in session:
+    if "teacher_id" not in session:
+        if "admin_id" in session:
+            if request.method == "POST":
+                return jsonify({
+                    "ok": False,
+                    "error": "forbidden",
+                    "message": "Administrators cannot add or modify examination questions.",
+                }), 403
+            return redirect(f"/admin/exam/{exam_id}/preview")
         return redirect("/")
     if request.method == "POST":
         q = request.form["question"]
@@ -198,7 +164,7 @@ def add_question(exam_id):
                      (exam_id, q, op1, op2, op3, op4, ans))
         conn.commit()
         conn.close()
-        return redirect("/admin" if "admin_id" in session else "/teacher")
+        return redirect("/teacher")
     return redirect(f"/teacher/exam/{exam_id}/questions")
 
 
@@ -312,174 +278,14 @@ def delete_exam(exam_id):
 def edit_exam(exam_id):
     if "admin_id" not in session:
         return redirect("/")
-    
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    
+    # Administrators have read-only preview access; only teachers edit exam questions.
     if request.method == "POST":
-        print("=" * 50)
-        print("FORM DATA RECEIVED:")
-        for key, value in request.form.items():
-            print(f"{key}: {value}")
-        print("=" * 50)
-        
-        # ============ UPDATE EXISTING QUESTIONS ============
-        i = 1
-        while True:
-            question = request.form.get(f"question_{i}")
-            
-            if not question:
-                break
-            
-            q_id = request.form.get(f"question_id_{i}")
-            
-            if not q_id:
-                i += 1
-                continue
-            
-            option1 = request.form.get(f"option_{i}_1")
-            option2 = request.form.get(f"option_{i}_2")
-            option3 = request.form.get(f"option_{i}_3")
-            option4 = request.form.get(f"option_{i}_4")
-            answer_index = request.form.get(f"answer_{i}")
-            
-            # Convert answer from option number to actual text
-            if answer_index == "1":
-                answer_text = option1
-            elif answer_index == "2":
-                answer_text = option2
-            elif answer_index == "3":
-                answer_text = option3
-            elif answer_index == "4":
-                answer_text = option4
-            else:
-                answer_text = answer_index
-            
-            file = request.files.get(f"image_{i}")
-            
-            # Get old image
-            cursor.execute("SELECT image FROM questions WHERE id=?", (q_id,))
-            old_row = cursor.fetchone()
-            old_image = old_row["image"] if old_row else None
-            
-            image_filename = old_image
-            
-            # If new image uploaded
-            if file and file.filename != "":
-                image_filename = f"q{exam_id}_{i}_{int(datetime.now().timestamp())}.jpg"
-                save_path = get_upload_path(image_filename)
-                compress_image(file, save_path, 50)
-                
-                if old_image and old_image != "default.png":
-                    old_path = get_upload_path(old_image)
-                    if os.path.exists(old_path):
-                        os.remove(old_path)
-            
-            # UPDATE EXISTING QUESTION
-            cursor.execute("""
-                UPDATE questions SET
-                question=?,
-                option1=?,
-                option2=?,
-                option3=?,
-                option4=?,
-                answer=?,
-                image=?
-                WHERE id=?
-            """, (question, option1, option2, option3, option4, answer_text, image_filename, q_id))
-            
-            print(f"Updated question ID: {q_id}")
-            i += 1
-        
-        # ============ ADD NEW QUESTIONS ============
-        # Loop through all possible new question numbers (1-50)
-        for new_id in range(1, 51):
-            new_question = request.form.get(f"new_question_{new_id}")
-            
-            if new_question:
-                print(f"Found new question {new_id}: {new_question[:50]}...")
-                
-                option1 = request.form.get(f"new_option_{new_id}_1")
-                option2 = request.form.get(f"new_option_{new_id}_2")
-                option3 = request.form.get(f"new_option_{new_id}_3")
-                option4 = request.form.get(f"new_option_{new_id}_4")
-                answer_index = request.form.get(f"new_answer_{new_id}")
-                
-                # Convert answer from option number to actual text
-                if answer_index == "1":
-                    answer_text = option1
-                elif answer_index == "2":
-                    answer_text = option2
-                elif answer_index == "3":
-                    answer_text = option3
-                elif answer_index == "4":
-                    answer_text = option4
-                else:
-                    answer_text = answer_index
-                
-                # Handle image upload
-                file = request.files.get(f"new_image_{new_id}")
-                image_filename = None
-                
-                if file and file.filename != "":
-                    image_filename = f"new_{exam_id}_{new_id}_{int(datetime.now().timestamp())}.jpg"
-                    save_path = get_upload_path(image_filename)
-                    compress_image(file, save_path, 50)
-                    print(f"Saved image: {image_filename}")
-                
-                # INSERT NEW QUESTION
-                cursor.execute("""
-                    INSERT INTO questions
-                    (exam_id, question, option1, option2, option3, option4, answer, image)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-                """, (exam_id, new_question, option1, option2, option3, option4, answer_text, image_filename))
-                
-                print(f"Inserted new question {new_id} into database")
-        
-        # ============ DELETE REMOVED QUESTIONS ============
-        # Get all current question IDs from database
-        cursor.execute("SELECT id FROM questions WHERE exam_id=?", (exam_id,))
-        db_question_ids = [row["id"] for row in cursor.fetchall()]
-        
-        # Get all question IDs from form
-        kept_question_ids = []
-        j = 1
-        while True:
-            q_id = request.form.get(f"question_id_{j}")
-            if not q_id:
-                break
-            kept_question_ids.append(int(q_id))
-            j += 1
-        
-        # Delete removed questions
-        removed_ids = [qid for qid in db_question_ids if qid not in kept_question_ids]
-        for removed_id in removed_ids:
-            cursor.execute("SELECT image FROM questions WHERE id=?", (removed_id,))
-            img_row = cursor.fetchone()
-            if img_row and img_row["image"] and img_row["image"] != "default.png":
-                img_path = get_upload_path(img_row["image"])
-                if os.path.exists(img_path):
-                    os.remove(img_path)
-                    print(f"Deleted image: {img_path}")
-            
-            cursor.execute("DELETE FROM exam_question_responses WHERE question_id=?", (removed_id,))
-            cursor.execute("DELETE FROM questions WHERE id=?", (removed_id,))
-            print(f"Deleted question ID: {removed_id}")
-        
-        log_action("Admin", session["username"], f"Updated exam ID {exam_id} ", conn=conn)
-        conn.commit()
-        conn.close()
-        
-        return redirect("/admin")
-    
-    # GET request - load questions
-    try:
-        cursor.execute("SELECT * FROM questions WHERE exam_id=? ORDER BY id", (exam_id,))
-        questions = cursor.fetchall()
-    finally:
-        conn.close()
-    
-    return render_template("edit_exam.html", questions=questions)
+        return jsonify({
+            "ok": False,
+            "error": "forbidden",
+            "message": "Administrators cannot edit or modify examination questions.",
+        }), 403
+    return redirect(f"/admin/exam/{exam_id}/preview")
 
 
 @admin_exams_bp.route("/admin/exams-management")
@@ -589,22 +395,24 @@ def admin_exam_preview(exam_id):
         SELECT * FROM exam_sections WHERE exam_id = ? ORDER BY section_order
     """, (exam_id,)).fetchall()
     
-    # Get ALL questions for this exam (including ungrouped)
+    # Get ALL questions for this exam (including ungrouped and legacy unsectioned questions)
     all_questions = conn.execute("""
         SELECT q.*, es.section_name, es.section_order,
                g.group_name, g.group_type, g.group_content, g.group_image, g.instruction_text
         FROM questions q
-        JOIN exam_sections es ON q.section_id = es.id
+        LEFT JOIN exam_sections es ON q.section_id = es.id
         LEFT JOIN exam_question_groups g ON q.group_id = g.id
         WHERE q.exam_id = ?
-        ORDER BY es.section_order, q.group_id, q.display_order, q.id
+        ORDER BY COALESCE(es.section_order, 9999), q.group_id, q.display_order, q.id
     """, (exam_id,)).fetchall()
     
     # Organize by sections
     sections_with_data = []
     
     if sections:
+        section_ids = set()
         for section in sections:
+            section_ids.add(section["id"])
             section_dict = dict(section)
             
             # Get questions for this section
@@ -637,6 +445,15 @@ def admin_exam_preview(exam_id):
                     "standalone_questions": standalone_questions,
                     "groups": list(groups_dict.values())
                 })
+
+        # Also preserve any legacy/unsectioned questions whose section_id is NULL or unmapped
+        orphan_qs = [dict(q) for q in all_questions if q["section_id"] not in section_ids]
+        if orphan_qs:
+            sections_with_data.append({
+                "section": {"section_name": "General Questions", "id": 0},
+                "standalone_questions": orphan_qs,
+                "groups": []
+            })
     else:
         # No sections - get all questions directly
         questions = conn.execute("""

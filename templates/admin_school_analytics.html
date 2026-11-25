@@ -1,4 +1,4 @@
-{%- from '_ct_shell.html' import ico, ct_boot_script, admin_shell_start, shell_end -%}
+{%- from '_ct_shell.html' import ico, person_avatar, ct_boot_script, admin_shell_start, shell_end with context -%}
 <!DOCTYPE html>
 <html lang="en" data-theme="dark">
 <head>
@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="csrf-token" content="{{ csrf_token() }}">
   <meta name="color-scheme" content="dark light">
-  <title>School Analytics — Admin Console</title>
+  <title>School Analytics — {{ school_branding.school_name }} | CogniTara</title>
   <link rel="icon" href="{{ url_for('static', filename='images/cognitara-favicon.ico') }}">
   <link rel="preload" href="{{ url_for('static', filename='fonts/ui/PlusJakartaSans-Variable.woff2') }}" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="{{ url_for('static', filename='fonts/ui/GeistMono-Variable.woff2') }}" as="font" type="font/woff2" crossorigin>
@@ -15,16 +15,63 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='css/cognitara-admin-studio.css') }}">
   <script src="{{ url_for('static', filename='vendor/chartjs/chart.umd.min.js') }}"></script>
   {{ ct_boot_script() }}
+  <style>
+    .an-scroll-stage {
+      max-height: 430px;
+      overflow-y: auto;
+      overflow-x: hidden;
+      padding-right: 4px;
+    }
+    .an-scroll-stage::-webkit-scrollbar { width: 6px; }
+    .an-scroll-stage::-webkit-scrollbar-thumb { background: var(--tc-line-2); border-radius: 99px; }
+    .an-seg {
+      display: inline-flex;
+      padding: 3px;
+      border-radius: 9px;
+      background: var(--tc-surface-2);
+      border: 1px solid var(--tc-line-2);
+      gap: 2px;
+    }
+    .an-seg button {
+      border: 0;
+      background: transparent;
+      color: var(--tc-ink-3);
+      font-size: 11.5px;
+      font-weight: 600;
+      padding: 5px 10px;
+      border-radius: 7px;
+      cursor: pointer;
+      transition: background-color 140ms ease, color 140ms ease;
+      white-space: nowrap;
+    }
+    .an-seg button.is-active {
+      background: var(--tc-surface);
+      color: var(--tc-ink);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+    }
+    .an-table th {
+      text-align: left;
+      height: 40px;
+      padding: 0 16px;
+      font-size: 11px;
+      font-weight: 650;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--tc-ink-3);
+      white-space: nowrap;
+    }
+    .an-table td { padding: 12px 16px; vertical-align: middle; }
+    .an-table th.is-center, .an-table td.is-center { text-align: center; }
+    .an-table th.is-right, .an-table td.is-right { text-align: right; }
+  </style>
 </head>
 <body class="ct-app ad-studio">
 {{ admin_shell_start(active='analytics', crumb='School Analytics') }}
 
-  <!-- Editorial Header -->
-  <header class="tc-head">
+  <header class="tc-head ct-animate-rise">
     <div class="tc-head__txt">
-      <span class="tc-eyebrow">Institutional Intelligence</span>
       <h1>School-Wide Analytics</h1>
-      <p>Grade distribution, class performance benchmarks, subject mastery, and top-performing scholars across all departments.</p>
+      <p>Grade distribution, class benchmarks, normalized subject mastery, and ranked scholars across {{ school_branding.school_name }}.</p>
     </div>
     <div class="tc-head__actions">
       <button type="button" class="tc-btn tc-btn--secondary" onclick="window.print()">{{ ico('i-print', 'ct-ico--sm') }}Print Report</button>
@@ -34,7 +81,7 @@
   </header>
 
   <!-- 5-Column Typographic KPI Strip -->
-  <section class="tc-kpi-strip ad-kpi-5" aria-label="School performance summary">
+  <section class="tc-kpi-strip ad-kpi-5" data-ct-stagger aria-label="School performance summary">
     <div class="tc-kpi">
       <span class="tc-kpi__label">Total Students</span>
       <strong class="tc-kpi__val" data-ct-count>{{ total_students }}</strong>
@@ -64,14 +111,14 @@
         {% elif school_average >= 50 %}
         <span class="tc-pill tc-pill--warn"><i class="tc-dot"></i>Passing</span>
         {% else %}
-        <span class="tc-pill tc-pill--bad"><i class="tc-dot"></i>Review</span>
+        <span class="tc-pill tc-pill--bad"><i class="tc-dot"></i>Needs review</span>
         {% endif %}
       </span>
     </div>
   </section>
 
   <!-- Row 1: Grade Distribution Ring + Class Average Scores -->
-  <section class="tc-grid-analytics">
+  <section class="tc-grid-analytics" data-ct-reveal>
     <div class="tc-card">
       <div class="tc-card__head">
         <div class="tc-card__title">
@@ -99,26 +146,32 @@
         <span class="tc-pill">Mean {{ school_average }}%</span>
       </div>
       <div class="tc-card__body">
-        <div class="tc-chart-stage">
+        <div class="tc-chart-stage" style="min-height:280px">
           <canvas id="classBar" aria-label="Class average scores chart"></canvas>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- Row 2: Subject Performance + Pass Rate by Class -->
-  <section class="tc-grid-2">
+  <!-- Row 2: Subject Performance (Normalized & Non-Overlapping) + Pass Rate by Class -->
+  <section class="tc-grid-2" data-ct-reveal>
     <div class="tc-card">
       <div class="tc-card__head">
         <div class="tc-card__title">
           <h2>Subject Performance</h2>
-          <p>Mean achievement across academic subjects</p>
+          <p id="subjChartSub">Mean achievement across normalized subjects</p>
         </div>
-        <span class="tc-pill">50% Benchmark</span>
+        <div class="an-seg" id="subjectModeSeg" role="tablist" aria-label="Filter subjects shown">
+          <button type="button" class="is-active" data-mode="top10" onclick="renderSubjectChart('top10', this)">Top 10</button>
+          <button type="button" data-mode="low" onclick="renderSubjectChart('low', this)">Needs Support</button>
+          <button type="button" data-mode="all" onclick="renderSubjectChart('all', this)">All</button>
+        </div>
       </div>
       <div class="tc-card__body">
-        <div class="tc-chart-stage">
-          <canvas id="subjectBar" aria-label="Subject performance chart"></canvas>
+        <div class="an-scroll-stage" id="subjectStageWrap">
+          <div class="tc-chart-stage" id="subjectCanvasBox" style="position:relative">
+            <canvas id="subjectBar" aria-label="Subject performance chart"></canvas>
+          </div>
         </div>
       </div>
     </div>
@@ -127,58 +180,59 @@
       <div class="tc-card__head">
         <div class="tc-card__title">
           <h2>Pass Rate by Class</h2>
-          <p>Share of completed attempts achieving ≥ 50%</p>
+          <p>Share of completed attempts achieving &ge; 50%</p>
         </div>
-        <span class="tc-pill tc-pill--ok">Pass Ratio</span>
+        <span class="tc-pill tc-pill--ok">50% Target</span>
       </div>
       <div class="tc-card__body">
-        <div class="tc-chart-stage">
-          <canvas id="passRateBar" aria-label="Pass rate by class chart"></canvas>
+        <div class="an-scroll-stage">
+          <div class="tc-chart-stage" style="position:relative">
+            <canvas id="passRateBar" aria-label="Pass rate by class chart"></canvas>
+          </div>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- Top 20 Students (School-Wide) -->
-  <section class="tc-card">
+  <!-- Top Students (School-Wide, Paginated) -->
+  <section class="tc-card" data-ct-reveal>
     <div class="tc-card__head">
       <div class="tc-card__title">
         <h2>{{ ico('i-trophy', 'ct-ico--sm') }}Top Students (School-Wide)</h2>
         <p>Highest rolling averages across all classes and subjects</p>
       </div>
-      <span class="tc-pill tc-pill--ok">{{ top_students|length }} ranked</span>
+      <div class="tc-card__tools">
+        <label class="tc-search" style="width:210px">
+          {{ ico('i-search', 'ct-ico--sm') }}
+          <input type="search" data-ct-filter="#topStudentsTable" placeholder="Search scholar or class…" aria-label="Search top students">
+        </label>
+        <span class="tc-pill tc-pill--ok">{{ top_students|length }} ranked</span>
+      </div>
     </div>
     {% if top_students %}
-    <div class="tc-table-wrap">
-      <table class="tc-table">
+    <div class="tc-table-wrap ct-table-wrap">
+      <table class="tc-table an-table" id="topStudentsTable" data-ct-paginate="10" data-ct-paginate-sizes="10,20,50">
         <thead>
           <tr>
-            <th style="width:52px">#</th>
+            <th style="width:58px">Rank</th>
             <th>Student</th>
-            <th>Class</th>
-            <th>Average Score</th>
-            <th>Best</th>
-            <th>Exams</th>
-            <th style="text-align:right">Profile</th>
+            <th style="width:120px">Class</th>
+            <th style="min-width:190px">Average Score</th>
+            <th class="is-center" style="width:90px">Best</th>
+            <th class="is-center" style="width:85px">Exams</th>
+            <th class="is-right" style="width:120px">Profile</th>
           </tr>
         </thead>
         <tbody>
           {% for s in top_students %}
           {% set st_name = s.full_name or s.username %}
-          {% set st_has_photo = s.photo and s.photo != 'default.png' %}
           {% set avg_val = (s.avg_score or 0)|float %}
-          <tr>
+          <tr data-search="{{ st_name|lower }} {{ (s.username or '')|lower }} {{ (s.class or '')|lower }}">
             <td><span class="tc-rank {% if loop.index == 1 %}tc-rank--1{% elif loop.index == 2 %}tc-rank--2{% elif loop.index == 3 %}tc-rank--3{% endif %}">{{ loop.index }}</span></td>
             <td>
               <a class="tc-user-cell" href="/admin/student/{{ s.id }}">
-                <span class="tc-avatar tc-avatar--sm">
-                  {% if st_has_photo %}
-                  <img src="{{ url_for('static', filename='images/' + s.photo) }}" alt="" onerror="this.parentElement.textContent='{{ st_name[:2]|upper }}'">
-                  {% else %}
-                  {{ st_name[:2]|upper }}
-                  {% endif %}
-                </span>
-                <span><strong>{{ st_name }}</strong><span>@{{ s.username }}</span></span>
+                {{ person_avatar(s.photo, st_name, 'sm', '', 'static') }}
+                <span><strong>{{ st_name }}</strong><span class="tc-mono" style="font-size:11.5px;color:var(--tc-ink-3)">@{{ s.username }}</span></span>
               </a>
             </td>
             <td><span class="tc-pill">{{ s.class }}</span></td>
@@ -190,9 +244,9 @@
                 <span class="tc-mono" style="font-weight:650">{{ "%.1f"|format(avg_val) }}%</span>
               </div>
             </td>
-            <td class="tc-mono" style="color:var(--tc-ok);font-weight:640">{{ "%.0f"|format(s.best_score or 0) }}%</td>
-            <td class="tc-mono" style="color:var(--tc-ink-2)">{{ s.exam_count }}</td>
-            <td style="text-align:right">
+            <td class="tc-mono is-center" style="color:var(--tc-ok);font-weight:640">{{ "%.0f"|format(s.best_score or 0) }}%</td>
+            <td class="tc-mono is-center" style="color:var(--tc-ink-2)">{{ s.exam_count }}</td>
+            <td class="is-right">
               <a href="/admin/student/{{ s.id }}" class="tc-btn tc-btn--secondary tc-btn--sm">View {{ ico('i-arrow-right', 'ct-ico--xs') }}</a>
             </td>
           </tr>
@@ -209,35 +263,41 @@
     {% endif %}
   </section>
 
-  <!-- Recent Exam Performance -->
-  <section class="tc-card">
+  <!-- Recent Exam Performance (Paginated) -->
+  <section class="tc-card" data-ct-reveal>
     <div class="tc-card__head">
       <div class="tc-card__title">
         <h2>Recent Exam Performance</h2>
-        <p>Submission counts, average achievement, and high/low range across recent papers</p>
+        <p>Submission counts, average achievement, and high/low range across papers</p>
       </div>
-      <span class="tc-pill">{{ recent_exams|length }} papers</span>
+      <div class="tc-card__tools">
+        <label class="tc-search" style="width:210px">
+          {{ ico('i-search', 'ct-ico--sm') }}
+          <input type="search" data-ct-filter="#recentExamsTable" placeholder="Filter exam or class…" aria-label="Filter recent exams">
+        </label>
+        <span class="tc-pill">{{ recent_exams|length }} papers</span>
+      </div>
     </div>
     {% if recent_exams %}
-    <div class="tc-table-wrap">
-      <table class="tc-table">
+    <div class="tc-table-wrap ct-table-wrap">
+      <table class="tc-table an-table" id="recentExamsTable" data-ct-paginate="10" data-ct-paginate-sizes="10,25,50">
         <thead>
           <tr>
             <th>Examination</th>
-            <th>Class</th>
-            <th>Attempts</th>
-            <th>Average</th>
-            <th>Highest</th>
-            <th>Lowest</th>
+            <th style="width:120px">Class</th>
+            <th class="is-center" style="width:100px">Attempts</th>
+            <th style="min-width:190px">Average</th>
+            <th class="is-center" style="width:100px">Highest</th>
+            <th class="is-center" style="width:100px">Lowest</th>
           </tr>
         </thead>
         <tbody>
           {% for e in recent_exams %}
           {% set avg_val = (e.avg_score or 0)|float %}
-          <tr>
+          <tr data-search="{{ (e.exam_name or '')|lower }} {{ (e.class or '')|lower }}">
             <td><strong style="font-weight:650">{{ e.exam_name }}</strong></td>
             <td><span class="tc-pill">{{ e.class }}</span></td>
-            <td class="tc-mono">{{ e.attempt_count or 0 }}</td>
+            <td class="tc-mono is-center">{{ e.attempt_count or 0 }}</td>
             <td>
               <div class="tc-bar-cell">
                 <span class="tc-bar {% if avg_val >= 75 %}{% elif avg_val >= 60 %}tc-bar--accent{% elif avg_val >= 50 %}tc-bar--warn{% else %}tc-bar--bad{% endif %}" style="width:92px">
@@ -246,8 +306,8 @@
                 <span class="tc-mono" style="font-weight:650">{{ "%.1f"|format(avg_val) }}%</span>
               </div>
             </td>
-            <td class="tc-mono" style="color:var(--tc-ok);font-weight:640">{{ "%.0f"|format(e.highest or 0) }}%</td>
-            <td class="tc-mono" style="color:var(--tc-bad);font-weight:640">{{ "%.0f"|format(e.lowest or 0) }}%</td>
+            <td class="tc-mono is-center" style="color:var(--tc-ok);font-weight:640">{{ "%.0f"|format(e.highest or 0) }}%</td>
+            <td class="tc-mono is-center" style="color:var(--tc-bad);font-weight:640">{{ "%.0f"|format(e.lowest or 0) }}%</td>
           </tr>
           {% endfor %}
         </tbody>
@@ -265,8 +325,49 @@
 {{ shell_end(role='admin') }}
 <script src="{{ url_for('static', filename='js/cognitara-charts.js') }}"></script>
 <script>
+  var ALL_SUBJECT_LABELS = {{ subject_labels|safe }};
+  var ALL_SUBJECT_SCORES = {{ subject_scores|safe }};
+
+  function renderSubjectChart(mode, btn) {
+    if (!window.CogniTaraCharts) return;
+    if (btn) {
+      document.querySelectorAll("#subjectModeSeg button").forEach(function (b) { b.classList.remove("is-active"); });
+      btn.classList.add("is-active");
+    }
+    var pairs = ALL_SUBJECT_LABELS.map(function (lbl, i) {
+      return { label: lbl, score: Number(ALL_SUBJECT_SCORES[i] || 0) };
+    });
+    var filtered = pairs;
+    var subText = "Showing all " + pairs.length + " normalized subjects";
+    if (mode === "top10") {
+      filtered = pairs.slice().sort(function (a, b) { return b.score - a.score; }).slice(0, 10);
+      subText = "Top " + filtered.length + " highest-performing subjects (out of " + pairs.length + ")";
+    } else if (mode === "low") {
+      var below = pairs.filter(function (p) { return p.score < 50; }).sort(function (a, b) { return a.score - b.score; });
+      filtered = below.length ? below : pairs.slice().sort(function (a, b) { return a.score - b.score; }).slice(0, 10);
+      subText = below.length
+        ? (below.length + " subject" + (below.length === 1 ? "" : "s") + " below 50% pass benchmark")
+        : "Lowest 10 subjects by average score (all currently passing)";
+    }
+    var subEl = document.getElementById("subjChartSub");
+    if (subEl) subEl.textContent = subText;
+
+    CogniTaraCharts.horizontalBars("subjectBar", {
+      labels: filtered.map(function (p) { return p.label; }),
+      values: filtered.map(function (p) { return p.score; }),
+      seriesLabel: "Subject Mean",
+      passMark: 50,
+      passLabel: "50% PASS",
+      rowHeight: 36,
+      minHeight: 260
+    });
+  }
+
   document.addEventListener("DOMContentLoaded", function () {
     if (!window.CogniTaraCharts) return;
+
+    var allBtn = document.querySelector('#subjectModeSeg button[data-mode="all"]');
+    if (allBtn) allBtn.textContent = "All (" + ALL_SUBJECT_LABELS.length + ")";
 
     CogniTaraCharts.gradeRing("gradeDonut", "gradeLegend", {
       labels: {{ grade_labels|safe }},
@@ -285,20 +386,16 @@
       avgLabel: "SCHOOL {{ school_average }}%"
     });
 
-    CogniTaraCharts.horizontalBars("subjectBar", {
-      labels: {{ subject_labels|safe }},
-      values: {{ subject_scores|safe }},
-      seriesLabel: "Subject Mean",
-      passMark: 50,
-      passLabel: "50% PASS"
-    });
+    renderSubjectChart(ALL_SUBJECT_LABELS.length > 10 ? "top10" : "all", document.querySelector('#subjectModeSeg button[data-mode="' + (ALL_SUBJECT_LABELS.length > 10 ? "top10" : "all") + '"]'));
 
     CogniTaraCharts.horizontalBars("passRateBar", {
       labels: {{ pass_rate_labels|safe }},
       values: {{ pass_rate_data|safe }},
       seriesLabel: "Pass Rate",
       passMark: 50,
-      passLabel: "50% TARGET"
+      passLabel: "50% TARGET",
+      rowHeight: 36,
+      minHeight: 260
     });
   });
 </script>

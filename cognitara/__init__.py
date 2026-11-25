@@ -94,11 +94,87 @@ def create_app(config_class=Config):
     app.register_error_handler(CSRFError, handle_csrf_error)
     app.register_error_handler(429, ratelimit_handler)
 
+    # Resilient session interface: skips static/upload requests (zero Set-Cookie spam on assets)
+    # and tolerates minor negative NTP/Windows clock skew while strictly preserving HMAC verification.
+    from flask.sessions import SecureCookieSessionInterface
+    from itsdangerous import BadSignature, SignatureExpired
+    import time as _time
+
+    class _ResilientSessionInterface(SecureCookieSessionInterface):
+        @staticmethod
+        def _is_asset_path(path):
+            return bool(path) and (
+                path.startswith("/static/")
+                or path.startswith("/uploads/")
+                or path == "/favicon.ico"
+            )
+
+        def open_session(self, app_obj, req):
+            if self._is_asset_path(req.path):
+                return self.session_class()
+            s = self.get_signing_serializer(app_obj)
+            if s is None:
+                return None
+            val = req.cookies.get(self.get_cookie_name(app_obj))
+            if not val:
+                return self.session_class()
+            max_age = int(app_obj.permanent_session_lifetime.total_seconds())
+            try:
+                data = s.loads(val, max_age=max_age)
+                return self.session_class(data)
+            except SignatureExpired:
+                try:
+                    data, ts = s.loads(val, max_age=None, return_timestamp=True)
+                    age = _time.time() - ts.timestamp()
+                    if -600 <= age <= max_age:
+                        return self.session_class(data)
+                except BadSignature:
+                    pass
+                return self.session_class()
+            except BadSignature:
+                return self.session_class()
+
+        def should_set_cookie(self, app_obj, sess):
+            from flask import request as _req
+            if self._is_asset_path(_req.path):
+                return False
+            return bool(sess.modified)
+
+        def save_session(self, app_obj, sess, response):
+            from flask import request as _req
+            if self._is_asset_path(_req.path):
+                return
+            return super().save_session(app_obj, sess, response)
+
+    app.session_interface = _ResilientSessionInterface()
+
+    def _has_avatar_file(filename):
+        if not filename:
+            return False
+        norm = str(filename).strip().replace("\\", "/")
+        if not norm or norm in ("default.png", "None", "null") or "/" in norm or ".." in norm or norm.startswith("."):
+            return False
+        upload_dir = app.config.get("UPLOAD_FOLDER") or Config.UPLOAD_FOLDER
+        if upload_dir and os.path.isfile(os.path.join(upload_dir, norm)):
+            return True
+        if os.path.isfile(os.path.join(static_dir, "images", norm)):
+            return True
+        return False
+
+    app.jinja_env.globals["has_avatar_file"] = _has_avatar_file
+
     @app.before_request
     def keep_authenticated_session_alive():
-        from flask import session as _sess
+        from flask import request, session as _sess
+        if request.path.startswith("/static/") or request.path.startswith("/uploads/") or request.path == "/favicon.ico":
+            return
         if any(k in _sess for k in ("admin_id", "teacher_id", "student_id", "ce_student_id")):
-            _sess.permanent = True
+            if not _sess.permanent:
+                _sess.permanent = True
+            now_ts = int(_time.time())
+            last_refresh = int(_sess.get("_refreshed_at") or 0)
+            if now_ts - last_refresh >= 43200:
+                _sess["_refreshed_at"] = now_ts
 
     @app.errorhandler(413)
     def handle_large_payload(error):
@@ -163,7 +239,29 @@ def create_app(config_class=Config):
             pass
         parts = [w[0].upper() for w in str(branding["school_name"]).split() if w]
         branding["initials"] = "".join(parts[:2]) or "CT"
-        return {"school_branding": branding}
+        is_class_teacher = False
+        teacher_form_class = ""
+        try:
+            from flask import session as _sess
+            if "teacher_id" in _sess:
+                t_conn = get_db_connection()
+                try:
+                    t_row = t_conn.execute(
+                        "SELECT COALESCE(class_teacher_of, '') AS class_teacher_of FROM teachers WHERE id = ?",
+                        (_sess["teacher_id"],),
+                    ).fetchone()
+                    if t_row and str(t_row["class_teacher_of"] or "").strip():
+                        is_class_teacher = True
+                        teacher_form_class = str(t_row["class_teacher_of"]).strip()
+                finally:
+                    t_conn.close()
+        except Exception:
+            pass
+        return {
+            "school_branding": branding,
+            "is_class_teacher": is_class_teacher,
+            "teacher_form_class": teacher_form_class,
+        }
 
     # Serve user-uploaded logos/photos from writable UPLOAD_FOLDER (path-traversal hardened)
     @app.route("/uploads/images/<path:filename>")

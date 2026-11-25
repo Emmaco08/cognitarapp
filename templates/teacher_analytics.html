@@ -1,4 +1,4 @@
-{%- from '_ct_shell.html' import ico, ct_boot_script, teacher_shell_start, shell_end -%}
+{%- from '_ct_shell.html' import ico, person_avatar, ct_boot_script, teacher_shell_start, shell_end with context -%}
 {%- set attention_students = namespace(items=[]) -%}
 {%- for s in bottom_students -%}
   {%- if (s.avg_score or 0) < 70 -%}
@@ -164,7 +164,7 @@
       </div>
       {% if display_top %}
       <div class="tc-table-wrap">
-        <table class="tc-table">
+        <table class="tc-table" data-ct-paginate="8">
           <thead>
             <tr>
               <th style="width:52px">#</th>
@@ -177,7 +177,6 @@
           <tbody>
             {% for s in display_top %}
             {% set st_name = s.full_name or s.username %}
-            {% set st_has_photo = s.photo and s.photo != 'default.png' %}
             {% set avg_val = (s.avg_score or 0)|float %}
             <tr>
               <td>
@@ -185,13 +184,7 @@
               </td>
               <td>
                 <a class="tc-user-cell" href="/teacher/student/{{ s.id }}">
-                  <span class="tc-avatar tc-avatar--sm">
-                    {% if st_has_photo %}
-                    <img src="{{ url_for('static', filename='images/' + s.photo) }}" alt="" onerror="this.parentElement.textContent='{{ st_name[:2]|upper }}'">
-                    {% else %}
-                    {{ st_name[:2]|upper }}
-                    {% endif %}
-                  </span>
+                  {{ person_avatar(s.photo, st_name, 'sm') }}
                   <span><strong>{{ st_name }}</strong><span>{{ s.class }}</span></span>
                 </a>
               </td>
@@ -236,7 +229,7 @@
       </div>
       {% if attention_students.items %}
       <div class="tc-table-wrap">
-        <table class="tc-table">
+        <table class="tc-table" data-ct-paginate="8">
           <thead>
             <tr>
               <th style="width:52px">#</th>
@@ -249,19 +242,12 @@
           <tbody>
             {% for s in attention_students.items %}
             {% set st_name = s.full_name or s.username %}
-            {% set st_has_photo = s.photo and s.photo != 'default.png' %}
             {% set avg_val = (s.avg_score or 0)|float %}
             <tr>
               <td><span class="tc-rank">{{ loop.index }}</span></td>
               <td>
                 <a class="tc-user-cell" href="/teacher/student/{{ s.id }}">
-                  <span class="tc-avatar tc-avatar--sm">
-                    {% if st_has_photo %}
-                    <img src="{{ url_for('static', filename='images/' + s.photo) }}" alt="" onerror="this.parentElement.textContent='{{ st_name[:2]|upper }}'">
-                    {% else %}
-                    {{ st_name[:2]|upper }}
-                    {% endif %}
-                  </span>
+                  {{ person_avatar(s.photo, st_name, 'sm') }}
                   <span><strong>{{ st_name }}</strong><span>{{ s.class }}</span></span>
                 </a>
               </td>
@@ -303,7 +289,7 @@
     </div>
     {% if section_performance %}
     <div class="tc-table-wrap">
-      <table class="tc-table">
+      <table class="tc-table" data-ct-paginate="10">
         <thead>
           <tr>
             <th>Section</th>

@@ -1,4 +1,4 @@
-{%- from '_ct_shell.html' import ico, ct_boot_script, admin_shell_start, teacher_shell_start, student_topbar, shell_end -%}
+{%- from '_ct_shell.html' import ico, ct_boot_script, admin_shell_start, teacher_shell_start, student_topbar, shell_end with context -%}
 <!DOCTYPE html>
 <html lang="en" data-theme="dark">
 <head>
@@ -627,8 +627,8 @@
                     Showing {{ logs|length }} entries
                 </div>
             </div>
-            <div class="scrollable-table">
-                <table class="audit-table" id="auditTable">
+            <div class="scrollable-table ct-table-wrap">
+                <table class="audit-table" id="auditTable" data-ct-paginate="15" data-ct-paginate-sizes="15,30,50,100">
                     <thead>
                         <tr>
                             <th>ID</th>

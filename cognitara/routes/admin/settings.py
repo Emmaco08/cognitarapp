@@ -102,6 +102,11 @@ def admin_update_school_settings():
         active_scheme_id = None
 
     conn = get_db_connection()
+    if active_scheme_id is None:
+        cur_row = conn.execute("SELECT active_grading_scheme_id FROM school_settings WHERE id=1").fetchone()
+        if cur_row:
+            active_scheme_id = cur_row["active_grading_scheme_id"]
+
     conn.execute("""
         UPDATE school_settings SET
             school_name=?, school_motto=?, school_address=?, school_phone=?, school_email=?,
@@ -300,7 +305,12 @@ def admin_save_grading_scheme():
                 idx + 1
             ))
 
-        log_action("Admin", session.get("username", "admin"), f"Saved grading scheme '{scheme_name}'", conn=conn)
+        if scheme_type == "school":
+            conn.execute("UPDATE school_settings SET active_grading_scheme_id=? WHERE id=1", (scheme_id,))
+        else:
+            conn.execute("UPDATE ce_settings SET active_ce_grading_scheme_id=? WHERE id=1", (scheme_id,))
+
+        log_action("Admin", session.get("username", "admin"), f"Saved and activated grading scheme '{scheme_name}'", conn=conn)
         conn.commit()
     except Exception as e:
         conn.rollback()
@@ -313,7 +323,7 @@ def admin_save_grading_scheme():
         "ok": True,
         "success": True,
         "scheme_id": scheme_id,
-        "message": f"Grading scheme '{scheme_name}' validated and saved successfully."
+        "message": f"Grading scheme '{scheme_name}' validated, saved, and activated."
     }
 
 @admin_settings_bp.route("/admin/school-settings/grading/set-active", methods=["POST"])
@@ -350,14 +360,15 @@ def admin_batch_release_results():
     exam_ids = data.get("exam_ids", [])
     action = data.get("action", "release") # 'release' or 'withhold'
     released_val = 1 if action == "release" else 0
+    policy_val = "immediate" if released_val == 1 else "withheld"
 
     conn = get_db_connection()
     if exam_ids:
         placeholders = ",".join("?" * len(exam_ids))
-        conn.execute(f"UPDATE exams SET results_released=? WHERE id IN ({placeholders})", [released_val] + exam_ids)
+        conn.execute(f"UPDATE exams SET results_released=?, result_release_policy=? WHERE id IN ({placeholders})", [released_val, policy_val] + exam_ids)
         conn.execute(f"UPDATE scores SET results_released=? WHERE exam_id IN ({placeholders})", [released_val] + exam_ids)
     elif data.get("release_all"):
-        conn.execute("UPDATE exams SET results_released=?", (released_val,))
+        conn.execute("UPDATE exams SET results_released=?, result_release_policy=?", (released_val, policy_val))
         conn.execute("UPDATE scores SET results_released=?", (released_val,))
 
     log_action("Admin", session.get("username", "admin"), f"{action.capitalize()}d results for {len(exam_ids)} exams", conn=conn)
@@ -562,4 +573,68 @@ def admin_import_legacy_db():
         logger.warning("Post-legacy-import session sync note: %s", exc)
 
     return jsonify(res), 200
+
+
+@admin_settings_bp.route("/admin/school-settings/db-health", methods=["GET"])
+def admin_db_health():
+    """Return live SQLite database size, WAL status, integrity check, and table counts."""
+    if "admin_id" not in session:
+        return jsonify({"ok": False, "error": "Unauthorized"}), 401
+
+    db_path = _resolve_active_db_path_for_admin()
+    size_bytes = os.path.getsize(db_path) if os.path.isfile(db_path) else 0
+    conn = get_db_connection()
+    try:
+        jmode = conn.execute("PRAGMA journal_mode").fetchone()[0]
+        ic = conn.execute("PRAGMA quick_check").fetchone()[0]
+        table_cnt = conn.execute("SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'").fetchone()[0]
+        idx_cnt = conn.execute("SELECT COUNT(*) FROM sqlite_master WHERE type='index'").fetchone()[0]
+        counts = {}
+        for tbl in ("students", "teachers", "exams", "questions", "scores", "exam_question_responses"):
+            try:
+                counts[tbl] = int(conn.execute(f'SELECT COUNT(*) FROM "{tbl}"').fetchone()[0] or 0)
+            except Exception:
+                counts[tbl] = 0
+    finally:
+        conn.close()
+
+    return jsonify({
+        "ok": True,
+        "size_bytes": size_bytes,
+        "journal_mode": str(jmode),
+        "integrity": str(ic),
+        "table_count": int(table_cnt),
+        "index_count": int(idx_cnt),
+        "counts": counts,
+    }), 200
+
+
+@admin_settings_bp.route("/admin/school-settings/db-optimize", methods=["POST"])
+def admin_db_optimize():
+    """Run safe online SQLite WAL checkpoint, ANALYZE, PRAGMA optimize, and integrity check."""
+    if "admin_id" not in session:
+        return jsonify({"ok": False, "error": "Unauthorized"}), 401
+
+    db_path = _resolve_active_db_path_for_admin()
+    before_bytes = os.path.getsize(db_path) if os.path.isfile(db_path) else 0
+    conn = get_db_connection()
+    try:
+        conn.execute("PRAGMA wal_checkpoint(TRUNCATE)")
+        conn.execute("ANALYZE")
+        conn.execute("PRAGMA optimize")
+        ic = conn.execute("PRAGMA integrity_check").fetchone()[0]
+        log_action("Admin", session.get("username", "admin"), f"Optimized database (integrity: {ic})", conn=conn)
+        conn.commit()
+    finally:
+        conn.close()
+    after_bytes = os.path.getsize(db_path) if os.path.isfile(db_path) else 0
+
+    return jsonify({
+        "ok": True,
+        "integrity": str(ic),
+        "before_bytes": before_bytes,
+        "after_bytes": after_bytes,
+        "message": f"Database optimized and verified ({ic}). Query planner statistics refreshed.",
+    }), 200
+
 

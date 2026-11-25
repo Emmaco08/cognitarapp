@@ -1,4 +1,4 @@
-{%- from '_ct_shell.html' import ico, ct_boot_script, teacher_shell_start, shell_end -%}
+{%- from '_ct_shell.html' import ico, person_avatar, ct_boot_script, teacher_shell_start, shell_end with context -%}
 <!DOCTYPE html>
 <html lang="en" data-theme="dark">
 <head>
@@ -98,7 +98,7 @@
 
     {% if students %}
     <div class="tc-table-wrap">
-      <table class="tc-table">
+      <table class="tc-table" data-ct-paginate="12">
         <thead>
           <tr>
             <th style="width:44px"><input type="checkbox" id="thSelectAll" checked style="display:none" aria-hidden="true"></th>
@@ -114,20 +114,13 @@
         <tbody id="studentRosterBody">
           {% for st in students %}
           {% set st_name = st.full_name or st.username %}
-          {% set st_has_photo = st.photo and st.photo != 'default.png' %}
           <tr data-student-id="{{ st.id }}" data-student-name="{{ st_name }}">
             <td>
               <input type="checkbox" class="tc-check student-select-cb" checked aria-label="Select {{ st_name }}">
             </td>
             <td>
               <div class="tc-user-cell">
-                <span class="tc-avatar tc-avatar--sm">
-                  {% if st_has_photo %}
-                  <img src="{{ url_for('static', filename='images/' + st.photo) }}" alt="" onerror="this.parentElement.textContent='{{ st_name[:2]|upper }}'">
-                  {% else %}
-                  {{ st_name[:2]|upper }}
-                  {% endif %}
-                </span>
+                {{ person_avatar(st.photo, st_name, 'sm') }}
                 <span>
                   <strong>{{ st_name }}</strong>
                   <span class="tc-mono">@{{ st.username }} · #{{ st.id }}</span>

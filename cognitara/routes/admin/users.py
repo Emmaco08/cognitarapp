@@ -445,39 +445,90 @@ def check_admin_username():
     return {"exists": existing is not None}
 
 
+def _fetch_existing_admins(conn):
+    try:
+        return conn.execute("SELECT id, username FROM admin ORDER BY id ASC").fetchall()
+    except sqlite3.OperationalError:
+        return []
+
+
 @admin_users_bp.route("/admin/add_admin", methods=["GET", "POST"])
 def add_admin():
     if "admin_id" not in session:
         return redirect("/")
-    
+
+    conn = get_db_connection()
+    current_admin_id = session.get("admin_id")
+
     if request.method == "POST":
         if not validate_csrf():
-            return render_template("add_admin.html", error="Security session expired. Please refresh and try again.")
+            admins = _fetch_existing_admins(conn)
+            conn.close()
+            return render_template("add_admin.html", error="Security session expired. Please refresh and try again.", success=None, existing_admins=admins, current_admin_id=current_admin_id)
         username = request.form.get("username", "").strip()
         password = request.form.get("password", "")
         confirm_password = request.form.get("confirm_password", "")
 
         if not username or len(username) < 3:
-            return render_template("add_admin.html", error="Username must be at least 3 characters.")
+            admins = _fetch_existing_admins(conn)
+            conn.close()
+            return render_template("add_admin.html", error="Username must be at least 3 characters.", success=None, existing_admins=admins, current_admin_id=current_admin_id)
         if not password or len(password) < 6:
-            return render_template("add_admin.html", error="Password must be at least 6 characters.")
+            admins = _fetch_existing_admins(conn)
+            conn.close()
+            return render_template("add_admin.html", error="Password must be at least 6 characters.", success=None, existing_admins=admins, current_admin_id=current_admin_id)
         if password != confirm_password:
-            return render_template("add_admin.html", error="Passwords do not match.")
+            admins = _fetch_existing_admins(conn)
+            conn.close()
+            return render_template("add_admin.html", error="Passwords do not match.", success=None, existing_admins=admins, current_admin_id=current_admin_id)
 
-        conn = get_db_connection()
         existing = conn.execute("SELECT id FROM admin WHERE LOWER(username) = LOWER(?)", (username,)).fetchone()
         if existing:
+            admins = _fetch_existing_admins(conn)
             conn.close()
-            return render_template("add_admin.html", error=f"Administrator username '{username}' already exists!")
+            return render_template("add_admin.html", error=f"Administrator username '{username}' already exists.", success=None, existing_admins=admins, current_admin_id=current_admin_id)
 
         hashed_pw = generate_password_hash(password)
         conn.execute("INSERT INTO admin (username, password) VALUES (?, ?)", (username, hashed_pw))
         log_action("Admin", session.get("username", "admin"), f"Created new admin account '{username}'", conn=conn)
         conn.commit()
+        admins = _fetch_existing_admins(conn)
         conn.close()
-        return redirect("/admin")
+        return render_template(
+            "add_admin.html",
+            error=None,
+            success=f"Administrator '{username}' created successfully.",
+            existing_admins=admins,
+            current_admin_id=current_admin_id,
+        )
 
-    return render_template("add_admin.html", error=None)
+    admins = _fetch_existing_admins(conn)
+    conn.close()
+    return render_template("add_admin.html", error=None, success=None, existing_admins=admins, current_admin_id=current_admin_id)
+
+
+@admin_users_bp.route("/admin/delete_admin/<int:target_id>", methods=["POST"])
+def delete_admin(target_id):
+    if "admin_id" not in session:
+        return {"error": "Unauthorized"}, 401
+    if not validate_csrf():
+        return {"error": "Invalid CSRF token"}, 403
+    if target_id == session.get("admin_id"):
+        return {"error": "You cannot remove your own currently active administrator account."}, 400
+    conn = get_db_connection()
+    try:
+        total = conn.execute("SELECT COUNT(*) FROM admin").fetchone()[0]
+        if total <= 1:
+            return {"error": "At least one administrator account must remain active."}, 400
+        row = conn.execute("SELECT id, username FROM admin WHERE id=?", (target_id,)).fetchone()
+        if not row:
+            return {"error": "Administrator not found."}, 404
+        conn.execute("DELETE FROM admin WHERE id=?", (target_id,))
+        log_action("Admin", session.get("username", "admin"), f"Removed administrator account '{row['username']}'", conn=conn)
+        conn.commit()
+        return {"success": True, "message": f"Administrator '{row['username']}' removed."}
+    finally:
+        conn.close()
 
 
 @admin_users_bp.route("/admin/delete_teacher/<int:teacher_id>", methods=["POST"])

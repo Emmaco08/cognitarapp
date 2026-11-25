@@ -1,4 +1,4 @@
-{%- from '_ct_shell.html' import ico, ct_boot_script, admin_shell_start, shell_end -%}
+{%- from '_ct_shell.html' import ico, person_avatar, ct_boot_script, admin_shell_start, shell_end with context -%}
 <!DOCTYPE html>
 <html lang="en" data-theme="dark">
 <head>
@@ -104,8 +104,8 @@
       <span class="tc-pill">{{ student_results|length }} students</span>
     </div>
     {% if student_results %}
-    <div class="tc-table-wrap">
-      <table class="tc-table">
+    <div class="tc-table-wrap ct-table-wrap">
+      <table class="tc-table" data-ct-paginate="10" data-ct-paginate-sizes="10,25,50">
         <thead>
           <tr>
             <th>Student</th>
@@ -122,13 +122,10 @@
           {% for s in sr.scores %}{% if s.percentage and s.percentage > best_ns.pct %}{% set best_ns.name = s.exam_name %}{% set best_ns.pct = s.percentage %}{% endif %}{% endfor %}
           {% set worst_ns = namespace(name='—', pct=999) %}
           {% for s in sr.scores %}{% if s.percentage is not none and s.percentage < worst_ns.pct %}{% set worst_ns.name = s.exam_name %}{% set worst_ns.pct = s.percentage %}{% endif %}{% endfor %}
-          {% set st_has_photo = sr.photo and sr.photo != 'default.png' %}
           <tr>
             <td>
               <a class="tc-user-cell" href="/admin/student/{{ sr.id }}">
-                <span class="tc-avatar tc-avatar--sm">
-                  {% if st_has_photo %}<img src="{{ url_for('static', filename='images/' + sr.photo) }}" alt="" onerror="this.parentElement.textContent='{{ sr.full_name[:2]|upper }}'">{% else %}{{ sr.full_name[:2]|upper }}{% endif %}
-                </span>
+                {{ person_avatar(sr.photo, sr.full_name or 'Student', 'sm', '', 'static') }}
                 <span><strong>{{ sr.full_name }}</strong></span>
               </a>
             </td>
@@ -169,8 +166,8 @@
       </div>
       <span class="tc-pill">{{ exams|length }} exams</span>
     </div>
-    <div class="tc-table-wrap">
-      <table class="tc-table">
+    <div class="tc-table-wrap ct-table-wrap">
+      <table class="tc-table" data-ct-paginate="10" data-ct-paginate-sizes="10,25,50">
         <thead>
           <tr>
             <th>Examination</th>

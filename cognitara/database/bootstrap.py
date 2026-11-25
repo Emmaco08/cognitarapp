@@ -485,6 +485,16 @@ def ensure_core_database_initialized(
             "CREATE INDEX IF NOT EXISTS idx_questions_group ON questions(group_id)",
             "CREATE INDEX IF NOT EXISTS idx_exam_sections_exam ON exam_sections(exam_id)",
             "CREATE INDEX IF NOT EXISTS idx_exam_groups_section ON exam_question_groups(section_id)",
+            "CREATE INDEX IF NOT EXISTS idx_scores_student_exam ON scores(student_id, exam_id)",
+            "CREATE INDEX IF NOT EXISTS idx_scores_exam_status ON scores(exam_id, status)",
+            "CREATE INDEX IF NOT EXISTS idx_scores_status_heartbeat ON scores(status, last_heartbeat)",
+            "CREATE INDEX IF NOT EXISTS idx_questions_exam_order ON questions(exam_id, display_order)",
+            "CREATE INDEX IF NOT EXISTS idx_exams_class_active ON exams(class, active)",
+            "CREATE INDEX IF NOT EXISTS idx_exams_teacher ON exams(teacher_id)",
+            "CREATE INDEX IF NOT EXISTS idx_students_class_status ON students(class, status)",
+            "CREATE INDEX IF NOT EXISTS idx_warning_logs_student_exam ON warning_logs(student_id, exam_id)",
+            "CREATE INDEX IF NOT EXISTS idx_audit_logs_timestamp ON audit_logs(timestamp DESC)",
+            "PRAGMA optimize",
         ):
             _safe_exec(c, idx_sql)
 

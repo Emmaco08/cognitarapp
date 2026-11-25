@@ -1,4 +1,4 @@
-{%- from '_ct_shell.html' import ico, ct_boot_script, admin_shell_start, shell_end -%}
+{%- from '_ct_shell.html' import ico, person_avatar, ct_boot_script, admin_shell_start, shell_end with context -%}
 {%- set total_studs = namespace(count=0) -%}
 {%- set total_ex = namespace(count=0) -%}
 {%- for class_name, students in results_by_class.items() -%}
@@ -105,7 +105,7 @@
         <div class="ad-stu-acc student-card" data-student-name="{{ st_name|lower }}">
           <div class="ad-stu-acc__head student-header" onclick="toggleStudent(this)">
             <div class="tc-user-cell">
-              <span class="tc-avatar tc-avatar--sm">{{ (st_name[:2] if st_name else 'ST')|upper }}</span>
+              {{ person_avatar('', st_name or 'Student', 'sm') }}
               <span>
                 <strong>{{ st_name }}</strong>
                 <span>{{ student_data.scores|length }} {{ 'exam' if student_data.scores|length == 1 else 'exams' }} completed</span>
@@ -129,8 +129,8 @@
 
           <div class="ad-stu-acc__body student-results">
             {% if student_data.scores %}
-            <div class="tc-table-wrap">
-              <table class="tc-table">
+            <div class="tc-table-wrap ct-table-wrap">
+              <table class="tc-table" data-ct-paginate="8" data-ct-paginate-sizes="8,15,30">
                 <thead>
                   <tr>
                     <th>Examination</th>

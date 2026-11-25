@@ -28,9 +28,15 @@ def app_client(tmp_path, monkeypatch):
             (generate_password_hash("Admin#2026"),),
         )
         conn.execute(
-            "INSERT OR IGNORE INTO teachers (id, username, password, class, teaching_classes) VALUES (1, 'teacher1', ?, 'SSS 1', '[\"SSS 1\"]')",
+            "INSERT OR IGNORE INTO teachers (id, username, password, class, teaching_classes, class_teacher_of) VALUES (1, 'teacher1', ?, 'SSS 1', '[\"SSS 1\"]', 'SSS 1')",
             (generate_password_hash("Teach#2026"),),
         )
+        conn.execute("UPDATE teachers SET class_teacher_of = 'SSS 1' WHERE id = 1")
+        conn.execute(
+            "INSERT OR IGNORE INTO teachers (id, username, password, class, teaching_classes, class_teacher_of) VALUES (2, 'teacher2', ?, 'SSS 1', '[\"SSS 1\"]', NULL)",
+            (generate_password_hash("Teach#2026"),),
+        )
+        conn.execute("UPDATE teachers SET class_teacher_of = NULL WHERE id = 2")
         conn.commit()
     finally:
         conn.close()
@@ -161,7 +167,7 @@ def test_all_major_portal_pages_render_200_with_v5_ui(app_client):
         "/admin/warning_logs",
         "/admin/exam_attempts",
         "/admin/ce-settings",
-        "/admin/add_exam",
+        "/admin/add_admin",
         "/admin/add_teacher",
         "/admin/add_student",
     ]
@@ -171,7 +177,19 @@ def test_all_major_portal_pages_render_200_with_v5_ui(app_client):
         html = r.get_data(as_text=True)
         assert "cognitara-admin-studio.css" in html, f"{path} missing v5 admin studio CSS"
 
-    # Teacher pages (including teacher technical support!)
+    # Admin must NOT be able to create exams or edit/add regular exam questions
+    assert client.get("/admin/add_exam").status_code == 302
+    assert client.post("/admin/add_exam", data={"name": "Blocked"}).status_code == 403
+    assert client.get("/edit_exam/1").status_code == 302
+    assert client.post("/edit_exam/1", data={"name": "Blocked"}).status_code == 403
+    assert client.get("/admin/add_question/1").status_code == 302
+    assert client.post("/admin/add_question/1", data={"question": "Blocked"}).status_code == 403
+    assert client.get("/teacher/exam/1/questions").status_code == 302
+    assert client.get("/teacher/exam/1/settings").status_code == 302
+    assert client.post("/teacher/exam/1/settings", data={"name": "Blocked"}).status_code == 403
+    assert client.post("/teacher/exam/1/sections", data={"section_name": "Blocked"}).status_code == 403
+
+    # Class Teacher pages (teacher1 is assigned class_teacher_of='SSS 1')
     with client.session_transaction() as sess:
         sess.clear()
         sess["teacher_id"] = 1
@@ -192,3 +210,18 @@ def test_all_major_portal_pages_render_200_with_v5_ui(app_client):
         assert r.status_code == 200, f"Teacher route {path} failed with {r.status_code}"
         html = r.get_data(as_text=True)
         assert "cognitara-teacher-studio.css" in html, f"{path} missing v5 teacher studio CSS"
+
+    # Subject-only Teacher (teacher2 has class_teacher_of=NULL) must NOT access /teacher/progression
+    with client.session_transaction() as sess:
+        sess.clear()
+        sess["teacher_id"] = 2
+        sess["username"] = "teacher2"
+        sess["class"] = "SSS 1"
+        sess["role"] = "Teacher"
+
+    r_prog = client.get("/teacher/progression")
+    assert r_prog.status_code == 302, "Non-class-teacher should be redirected away from /teacher/progression"
+    assert r_prog.headers.get("Location", "").endswith("/teacher")
+    r_tdash = client.get("/teacher")
+    assert r_tdash.status_code == 200
+    assert "/teacher/progression" not in r_tdash.get_data(as_text=True)

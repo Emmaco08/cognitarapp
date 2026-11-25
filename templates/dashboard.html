@@ -1,4 +1,4 @@
-{%- from '_ct_shell.html' import ico, ct_boot_script -%}
+{%- from '_ct_shell.html' import ico, person_avatar, ct_boot_script with context -%}
 {%- set ICONS = url_for('static', filename='icons/cognitara-icons.svg') -%}
 {%- set _school = school_branding if school_branding is defined and school_branding else {'school_name': 'CogniTara School', 'current_term': 'First Term', 'academic_session': '2026/2027'} -%}
 {%- set warning_count = session.get('warning_count', 0) -%}
@@ -18,8 +18,6 @@
 {%- endfor -%}
 {%- set avg_score = (total_pct.value / count.value)|round(1) if count.value > 0 else 0 -%}
 {%- set display_name = full_name or username -%}
-{%- set name_parts = display_name.split() -%}
-{%- set initials = ((name_parts[0][0] + name_parts[-1][0]) if name_parts|length >= 2 else display_name[:2])|upper -%}
 {%- set has_real_photo = photo and photo != 'default.png' and photo != 'None' -%}
 <!DOCTYPE html>
 <html lang="en" data-theme="dark">
@@ -61,7 +59,7 @@
             {% if has_real_photo %}
             <img class="st-user-btn__img" src="{{ url_for('static', filename='images/' + photo) }}" alt="" onerror="this.style.display='none'">
             {% else %}
-            <span class="st-user-btn__img" style="display:grid;place-items:center;font-size:11px;font-weight:720;color:var(--st-ink)">{{ initials }}</span>
+            <span class="st-user-btn__img" style="display:grid;place-items:center;color:var(--st-ink-2)"><svg class="ct-ico ct-ico--xs" aria-hidden="true"><use href="{{ ICONS }}#i-person-avatar"/></svg></span>
             {% endif %}
             <span>{{ display_name }}</span>
             {{ ico('i-chevron-down', 'ct-ico--xs') }}
@@ -85,7 +83,7 @@
             {% if has_real_photo %}
             <img src="{{ url_for('static', filename='images/' + photo) }}" alt="{{ display_name }}" onerror="this.remove()">
             {% else %}
-            {{ initials }}
+            <svg style="width:30px;height:30px;color:var(--st-ink-2)" aria-hidden="true"><use href="{{ ICONS }}#i-person-avatar"/></svg>
             {% endif %}
           </div>
           <div class="st-greeting">
@@ -202,7 +200,7 @@
 
             {% if completed %}
             <div class="st-table-wrap">
-              <table class="st-table">
+              <table class="st-table" data-ct-paginate="8">
                 <thead>
                   <tr>
                     <th>Examination</th>

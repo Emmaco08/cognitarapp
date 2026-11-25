@@ -1,1076 +1,845 @@
-{%- from '_ct_shell.html' import ico, ct_boot_script, admin_shell_start, teacher_shell_start, student_topbar, shell_end -%}
+{%- from '_ct_shell.html' import ico, person_avatar, ct_boot_script, admin_shell_start, shell_end with context -%}
 <!DOCTYPE html>
 <html lang="en" data-theme="dark">
 <head>
-    <meta charset="UTF-8">
-    <title>Exam Control Center | Admin</title>
-    <link href="{{ url_for('static', filename='vendor/bootstrap/css/bootstrap.min.css') }}" rel="stylesheet">
-    <link href="{{ url_for('static', filename='vendor/fontawesome/css/all.min.css') }}" rel="stylesheet">
-    <script src="{{ url_for('static', filename='vendor/chartjs/chart.umd.min.js') }}"></script>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <style>
-        :root {
-            --bg: var(--ct-surface-2); --surface: var(--ct-surface); --border: var(--ct-line-2);
-            --text: var(--ct-ink); --text2: #475569; --text3: #94a3b8;
-            --primary: var(--ct-primary); --primary2: var(--ct-primary); --green: #10b981;
-            --amber: #f59e0b; --red: #ef4444; --blue: #3b82f6;
-            --radius: 18px; --radius-sm: 12px; --radius-xs: 8px;
-            --shadow-sm: 0 1px 2px rgba(0,0,0,0.03);
-            --shadow: 0 4px 12px rgba(0,0,0,0.04);
-            --shadow-lg: 0 12px 28px rgba(0,0,0,0.06);
-            --shadow-xl: 0 24px 48px rgba(0,0,0,0.1);
-            --ease: cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            background: var(--bg); font-family: 'Inter', system-ui, -apple-system, sans-serif;
-            color: var(--text); min-height: 100vh; -webkit-font-smoothing: antialiased;
-        }
-
-        /* Subtle animated background */
-        body::before {
-            content: ''; position: fixed; top: -20%; right: -10%; width: 700px; height: 700px;
-            background: radial-gradient(circle, rgba(99,102,241,0.04) 0%, transparent 70%);
-            pointer-events: none; z-index: 0; animation: floatBg 20s ease-in-out infinite;
-        }
-        @keyframes floatBg { 0%,100% { transform: translate(0,0) rotate(0deg); } 50% { transform: translate(-50px,30px) rotate(5deg); } }
-
-        .app { max-width: 1440px; margin: 0 auto; padding: 24px 28px; position: relative; z-index: 1; }
-
-        /* ============ TOP BAR ============ */
-        .topbar {
-            display: flex; align-items: center; justify-content: space-between;
-            gap: 16px; margin-bottom: 28px; flex-wrap: wrap;
-        }
-        .topbar-l { display: flex; align-items: center; gap: 16px; }
-        .back-btn {
-            width: 44px; height: 44px; border-radius: 50%; background: var(--surface);
-            border: 1.5px solid var(--border); display: flex; align-items: center; justify-content: center;
-            color: var(--text2); transition: all 0.2s var(--ease); cursor: pointer;
-            text-decoration: none; box-shadow: var(--shadow-sm);
-        }
-        .back-btn:hover {
-            border-color: var(--primary); color: var(--primary);
-            background: var(--ct-surface); transform: translateX(-3px); box-shadow: var(--shadow);
-        }
-        .topbar h1 { font-size: 24px; font-weight: 800; letter-spacing: -0.5px; background: linear-gradient(135deg, var(--primary), var(--primary2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        .topbar-sub { font-size: 12px; color: var(--text3); font-weight: 500; }
-        .refresh-btn {
-            padding: 10px 18px; border-radius: 50px; background: var(--surface);
-            border: 1.5px solid var(--border); color: var(--text2); font-weight: 600;
-            font-size: 12px; cursor: pointer; display: flex; align-items: center; gap: 8px;
-            transition: all 0.2s var(--ease); box-shadow: var(--shadow-sm);
-        }
-        .refresh-btn:hover { border-color: var(--primary); color: var(--primary); transform: translateY(-1px); box-shadow: var(--shadow); }
-        .refresh-btn i { transition: transform 0.5s; }
-        .refresh-btn:hover i { transform: rotate(180deg); }
-
-        /* ============ STATS - Premium Cards ============ */
-        .stats-row {
-            display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; margin-bottom: 24px;
-        }
-        @media (max-width: 1000px) { .stats-row { grid-template-columns: repeat(3, 1fr); } }
-        @media (max-width: 600px) { .stats-row { grid-template-columns: repeat(2, 1fr); } }
-
-        .stat-card {
-            background: var(--surface); border-radius: var(--radius); padding: 20px 22px;
-            border: 1px solid var(--border); cursor: pointer; transition: all 0.25s var(--ease);
-            position: relative; overflow: hidden; box-shadow: var(--shadow-sm);
-        }
-        .stat-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-lg); }
-        .stat-card.active-filter { border-color: var(--primary); box-shadow: 0 0 0 4px rgba(99,102,241,0.08); }
-        .stat-card::after {
-            content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 4px;
-            border-radius: 4px 4px 0 0; transition: all 0.3s;
-        }
-        .stat-card:nth-child(1)::after { background: var(--primary); }
-        .stat-card:nth-child(2)::after { background: var(--green); }
-        .stat-card:nth-child(3)::after { background: var(--amber); }
-        .stat-card:nth-child(4)::after { background: var(--red); }
-        .stat-card:nth-child(5)::after { background: var(--primary2); }
-        
-        .stat-icon-wrap {
-            width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center;
-            justify-content: center; font-size: 18px; margin-bottom: 14px; transition: all 0.3s;
-        }
-        .stat-card:hover .stat-icon-wrap { transform: scale(1.08); }
-        .stat-card:nth-child(1) .stat-icon-wrap { background: var(--ct-surface); color: var(--primary); }
-        .stat-card:nth-child(2) .stat-icon-wrap { background: var(--ct-ok-soft); color: var(--green); }
-        .stat-card:nth-child(3) .stat-icon-wrap { background: var(--ct-warn-soft); color: var(--amber); }
-        .stat-card:nth-child(4) .stat-icon-wrap { background: var(--ct-bad-soft); color: var(--red); }
-        .stat-card:nth-child(5) .stat-icon-wrap { background: #faf5ff; color: var(--primary2); }
-        
-        .stat-num { font-size: 30px; font-weight: 800; letter-spacing: -0.8px; line-height: 1; }
-        .stat-lbl { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.6px; font-weight: 600; margin-top: 4px; }
-
-        /* ============ FILTER BAR ============ */
-        .filter-row {
-            background: var(--surface); border-radius: var(--radius); padding: 14px 18px;
-            margin-bottom: 20px; border: 1px solid var(--border); box-shadow: var(--shadow-sm);
-            display: flex; gap: 10px; flex-wrap: wrap; align-items: center;
-        }
-        .search-field { position: relative; flex: 2; min-width: 200px; }
-        .search-field i { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: var(--text3); font-size: 14px; }
-        .search-field input {
-            width: 100%; padding: 11px 16px 11px 42px; border: 2px solid var(--border);
-            border-radius: 50px; font-size: 13px; outline: none; background: var(--bg);
-            transition: all 0.2s var(--ease);
-        }
-        .search-field input:focus { border-color: var(--primary); background: var(--ct-surface); box-shadow: 0 0 0 4px rgba(99,102,241,0.05); }
-        .flt-select {
-            padding: 10px 14px; border: 2px solid var(--border); border-radius: 50px;
-            font-size: 12px; font-weight: 600; outline: none; background: var(--bg);
-            cursor: pointer; min-width: 110px; transition: all 0.2s;
-        }
-        .flt-select:focus { border-color: var(--primary); }
-
-        .sel-chip {
-            display: none; align-items: center; gap: 8px; padding: 8px 16px;
-            background: linear-gradient(135deg, var(--primary), var(--primary2));
-            color: white; border-radius: 50px; font-weight: 600; font-size: 11px;
-        }
-        .sel-chip.show { display: flex; }
-        .sel-chip i { cursor: pointer; opacity: 0.8; }
-        .sel-chip i:hover { opacity: 1; }
-
-        /* ============ BULK BAR ============ */
-        .bulk-bar {
-            display: none; align-items: center; gap: 8px; padding: 14px 20px;
-            background: linear-gradient(135deg, #1e293b, #334155); color: white;
-            border-radius: var(--radius); margin-bottom: 20px; flex-wrap: wrap;
-            animation: slideDown 0.4s cubic-bezier(0.34, 1.2, 0.64, 1);
-        }
-        .bulk-bar.show { display: flex; }
-        @keyframes slideDown { from { opacity: 0; transform: translateY(-15px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
-        .bulk-text { font-weight: 600; font-size: 13px; margin-right: auto; }
-        .bbtn {
-            padding: 8px 16px; border-radius: 50px; font-weight: 600; font-size: 11px;
-            cursor: pointer; border: none; display: flex; align-items: center; gap: 6px;
-            transition: all 0.2s; letter-spacing: 0.2px;
-        }
-        .bbtn:hover { transform: translateY(-1px); filter: brightness(1.2); }
-        .bbtn-begin { background: var(--green); color: white; }
-        .bbtn-pause { background: var(--amber); color: var(--ct-ink); }
-        .bbtn-block { background: var(--red); color: white; }
-        .bbtn-restore { background: var(--primary2); color: white; }
-        .bbtn-dl { background: var(--blue); color: white; }
-        .bbtn-remove { background: #991b1b; color: white; }
-
-        /* ============ EXAM CARDS ============ */
-        .exams-grid {
-            display: grid; grid-template-columns: repeat(auto-fill, minmax(370px, 1fr)); gap: 16px;
-        }
-        @media (max-width: 450px) { .exams-grid { grid-template-columns: 1fr; } }
-
-        .exam-card {
-            background: var(--surface); border-radius: var(--radius); border: 1px solid var(--border);
-            box-shadow: var(--shadow-sm); transition: all 0.3s var(--ease);
-            display: flex; flex-direction: column; overflow: hidden;
-        }
-        .exam-card:hover { box-shadow: var(--shadow-lg); transform: translateY(-2px); border-color: var(--ct-line-2); }
-        .exam-card.deactivated { opacity: 0.7; background: #fff5f5; border-color: #fecaca; }
-        .exam-card.deactivated:hover { opacity: 0.85; }
-        .exam-card.selected { border-color: var(--primary) !important; box-shadow: 0 0 0 4px rgba(99,102,241,0.1) !important; }
-
-        .ec-head {
-            padding: 18px 20px 14px; display: flex; gap: 14px; align-items: flex-start;
-            cursor: pointer; border-bottom: 1px solid #f1f5f9; transition: background 0.2s;
-        }
-        .ec-head:hover { background: #fafbff; }
-        .ec-check {
-            width: 24px; height: 24px; border-radius: 50%; border: 2.5px solid var(--ct-line-2);
-            flex-shrink: 0; display: flex; align-items: center; justify-content: center;
-            cursor: pointer; transition: all 0.2s var(--ease); margin-top: 2px;
-            font-size: 11px; color: transparent;
-        }
-        .ec-check:hover { border-color: var(--primary); }
-        .ec-check.checked { background: var(--primary); border-color: var(--primary); color: white; }
-        .ec-info { flex: 1; min-width: 0; }
-        .ec-title { font-weight: 700; font-size: 15px; color: var(--text); margin-bottom: 8px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-        .ec-title-text { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        
-        .tag {
-            padding: 3px 10px; border-radius: 50px; font-size: 10px; font-weight: 600;
-            display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;
-        }
-        .tag-subject { background: var(--ct-surface); color: var(--ct-ink-2); }
-        .tag-science { background: var(--ct-surface); color: #1d4ed8; }
-        .tag-art { background: #fdf4ff; color: #a21caf; }
-        .tag-commercial { background: #fff7ed; color: #c2410c; }
-        .tag-general { background: var(--ct-ok-soft); color: #15803d; }
-        .tag-live { background: #dcfce7; color: #15803d; }
-        .tag-paused { background: var(--ct-warn-soft); color: #a16207; }
-        .tag-blocked { background: var(--ct-bad-soft); color: #991b1b; }
-
-        .ec-body {
-            padding: 14px 20px; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px;
-        }
-        .ec-stat { text-align: center; }
-        .ec-stat-icon { font-size: 14px; margin-bottom: 4px; }
-        .ec-stat-val { font-size: 16px; font-weight: 700; }
-        .ec-stat-lbl { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.3px; font-weight: 600; }
-        .ec-stat-val.high { color: #059669; }
-        .ec-stat-val.mid { color: #d97706; }
-        .ec-stat-val.low { color: #dc2626; }
-
-        .ec-actions {
-            padding: 12px 16px; display: flex; gap: 6px; flex-wrap: wrap;
-            border-top: 1px solid var(--ct-line); background: var(--ct-surface-2); margin-top: auto;
-        }
-        .ap {
-            padding: 6px 11px; border-radius: 8px; font-size: 11px; font-weight: 600;
-            cursor: pointer; border: 1px solid var(--ct-line-2); display: inline-flex; align-items: center; gap: 5px;
-            transition: all 0.2s var(--ease); white-space: nowrap;
-            background: var(--ct-surface); color: var(--ct-ink-2);
-        }
-        .ap:hover { background: var(--ct-hover); color: var(--ct-ink); transform: translateY(-1px); }
-        .ap-eye { background: var(--ct-primary-soft); color: var(--ct-cobalt-text); border-color: rgba(0,102,255,0.28); }
-        .ap-power { background: var(--ct-ok-soft); color: var(--ct-ok); border-color: var(--ct-ok-line); }
-        .ap-power.pause { background: var(--ct-warn-soft); color: var(--ct-warn); border-color: var(--ct-warn-line); }
-        .ap-shield { background: var(--ct-bad-soft); color: var(--ct-bad); border-color: var(--ct-bad-line); }
-        .ap-flask { background: var(--ct-accent-soft); color: var(--ct-accent); border-color: var(--ct-accent-line); }
-        .ap-download { background: var(--ct-ok-soft); color: var(--ct-ok); border-color: var(--ct-ok-line); }
-        .ap-trash { background: var(--ct-bad-soft); color: var(--ct-bad); border-color: var(--ct-bad-line); margin-left: auto; }
-        .ap-restore { background: var(--ct-ok-soft); color: var(--ct-ok); border-color: var(--ct-ok-line); }
-
-        /* ============ DRAWER ============ */
-        .drw-overlay {
-            position: fixed; inset: 0; background: var(--ct-scrim); z-index: 10000;
-            display: none; opacity: 0; pointer-events: none; transition: opacity 0.3s ease;
-        }
-        .drw-overlay.show { display: block; opacity: 1; pointer-events: auto; }
-        .drw {
-            position: fixed; top: 0; right: 0; width: 700px; max-width: 96vw;
-            height: 100vh; background: var(--ct-surface); z-index: 10001;
-            border-left: 1px solid var(--ct-line-2);
-            box-shadow: var(--ct-shadow-pop); display: none; flex-direction: column;
-            border-radius: 20px 0 0 20px;
-        }
-        .drw.show { display: flex; }
-        .drw-head {
-            padding: 24px 28px 16px; border-bottom: 1px solid var(--border);
-            display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;
-        }
-        .drw-head h3 { font-size: 18px; font-weight: 700; }
-        .drw-x {
-            width: 40px; height: 40px; border-radius: 50%; background: var(--ct-surface);
-            border: none; cursor: pointer; font-size: 15px; color: var(--text2);
-            display: flex; align-items: center; justify-content: center;
-            transition: all 0.2s;
-        }
-        .drw-x:hover { background: var(--ct-line-2); color: var(--text); transform: rotate(90deg); }
-        .drw-tabs {
-            display: flex; gap: 4px; padding: 12px 28px; border-bottom: 1px solid var(--border); flex-shrink: 0;
-        }
-        .drw-tab {
-            padding: 9px 18px; border-radius: 50px; font-size: 12px; font-weight: 600;
-            cursor: pointer; border: none; background: transparent; color: var(--text2);
-            transition: all 0.15s; display: flex; align-items: center; gap: 6px;
-        }
-        .drw-tab.active { background: var(--ct-surface); color: var(--primary); }
-        .drw-tab:hover:not(.active) { background: var(--ct-surface); }
-        .drw-body { flex: 1; overflow-y: auto; padding: 24px 28px; }
-
-        .ins-card {
-            background: var(--ct-surface); border-radius: 14px; padding: 16px 18px;
-            margin-bottom: 10px; border: 1px solid var(--border);
-        }
-        .ins-lbl { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.6px; font-weight: 700; }
-        .ins-val { font-size: 15px; font-weight: 700; margin-top: 4px; }
-        .ins-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin-bottom: 18px; }
-        .chart-box { height: 230px; margin: 16px 0; }
-
-        .stu-item {
-            display: flex; align-items: center; gap: 14px; padding: 12px 16px;
-            border-radius: 12px; transition: background 0.15s; cursor: default;
-        }
-        .stu-item:hover { background: var(--ct-surface); }
-        .stu-img { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; }
-        .stu-rank {
-            width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center;
-            justify-content: center; font-weight: 700; font-size: 12px; flex-shrink: 0;
-        }
-        .stu-rank.first { background: linear-gradient(135deg, #fbbf24, #f59e0b); color: white; }
-        .stu-rank.second { background: linear-gradient(135deg, var(--ct-line-2), #94a3b8); color: white; }
-        .stu-rank.third { background: linear-gradient(135deg, #fdba74, #f97316); color: white; }
-
-        .q-row { margin-bottom: 12px; }
-        .q-row-head { display: flex; justify-content: space-between; align-items: center; font-size: 11px; margin-bottom: 5px; }
-        .q-row-track { height: 10px; background: var(--ct-surface); border-radius: 5px; overflow: hidden; }
-        .q-row-fill { height: 100%; border-radius: 5px; transition: width 0.7s ease; }
-
-        /* MODALS */
-        .mod-over {
-            position: fixed; inset: 0; background: rgba(15,23,42,0.6); backdrop-filter: blur(6px);
-            z-index: 50000; display: flex; align-items: center; justify-content: center;
-            opacity: 0; pointer-events: none; transition: opacity 0.25s;
-        }
-        .mod-over.show { opacity: 1; pointer-events: auto; }
-        .mod-box {
-            background: var(--ct-surface); border-radius: 24px; width: 450px; max-width: 93vw;
-            box-shadow: 0 30px 60px rgba(0,0,0,0.25); overflow: hidden;
-            transform: scale(0.9) translateY(20px);
-            transition: transform 0.35s cubic-bezier(0.34, 1.2, 0.64, 1);
-        }
-        .mod-over.show .mod-box { transform: scale(1) translateY(0); }
-        .mod-vis { padding: 30px 30px 0; text-align: center; }
-        .mod-icon {
-            width: 72px; height: 72px; border-radius: 50%; display: inline-flex;
-            align-items: center; justify-content: center; font-size: 30px; margin-bottom: 16px;
-        }
-        .mod-icon.danger { background: linear-gradient(135deg, #fee2e2, #fecaca); color: #dc2626; }
-        .mod-icon.warn { background: var(--ct-surface-2); color: #d97706; }
-        .mod-icon.good { background: linear-gradient(135deg, #dcfce7, #bbf7d0); color: #059669; }
-        .mod-icon.info { background: var(--ct-surface-2); color: var(--ct-primary); }
-        .mod-body { padding: 12px 30px 22px; text-align: center; }
-        .mod-body h2 { font-size: 20px; font-weight: 700; margin-bottom: 6px; }
-        .mod-body p { font-size: 13px; color: var(--text2); line-height: 1.7; }
-        .mod-ta {
-            width: 100%; padding: 14px; border: 2px solid var(--border); border-radius: 12px;
-            font-size: 13px; font-family: inherit; resize: vertical; min-height: 80px;
-            margin-top: 12px; transition: border-color 0.2s;
-        }
-        .mod-ta:focus { outline: none; border-color: var(--primary); }
-        .mod-ft {
-            padding: 16px 30px 24px; display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;
-        }
-        .mbtn {
-            padding: 11px 24px; border-radius: 50px; font-weight: 600; font-size: 13px;
-            cursor: pointer; border: none; display: flex; align-items: center; gap: 7px;
-            transition: all 0.2s;
-        }
-        .mbtn-cancel { background: var(--ct-surface); color: var(--text2); }
-        .mbtn-cancel:hover { background: var(--ct-line-2); }
-        .mbtn-danger { background: linear-gradient(135deg, #ef4444, #dc2626); color: white; }
-        .mbtn-danger:hover { box-shadow: 0 8px 20px rgba(239,68,68,0.3); transform: translateY(-1px); }
-        .mbtn-primary { background: var(--ct-brand-grad); color: white; }
-        .mbtn-primary:hover { box-shadow: 0 8px 20px rgba(99,102,241,0.3); transform: translateY(-1px); }
-
-        /* TOAST */
-        .toast-rack { position: fixed; top: 20px; right: 20px; z-index: 60000; display: flex; flex-direction: column; gap: 8px; }
-        .tst {
-            padding: 14px 20px; border-radius: 14px; color: white; font-weight: 600;
-            font-size: 13px; display: flex; align-items: center; gap: 10px;
-            box-shadow: 0 12px 28px rgba(0,0,0,0.18); animation: tstIn 0.4s cubic-bezier(0.34,1.2,0.64,1);
-            max-width: 380px;
-        }
-        @keyframes tstIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
-        .tst.ok { background: linear-gradient(135deg, #059669, #10b981); }
-        .tst.err { background: linear-gradient(135deg, #dc2626, #ef4444); }
-        .tst.inf { background: linear-gradient(135deg, var(--ct-primary), #3b82f6); }
-
-        .loader { display: none; text-align: center; padding: 50px; }
-        .loader.show { display: block; }
-        .ld-ri {
-            width: 48px; height: 48px; border-radius: 50%; border: 4px solid var(--ct-line-2);
-            border-top-color: var(--primary); animation: spin 0.7s linear infinite;
-            margin: 0 auto 14px;
-        }
-        @keyframes spin { to { transform: rotate(360deg); } }
-    </style>
-    <!-- CSRF Protection Shield -->
-    <meta name="csrf-token" content="{{ csrf_token() }}">
-    <script>
-    window.CSRF_TOKEN = "{{ csrf_token() }}";
-    (function() {
-        if (window.fetch) {
-            const _origFetch = window.fetch;
-            window.fetch = function(url, options) {
-                options = options || {};
-                const method = (options.method || 'GET').toUpperCase();
-                if (!['GET', 'HEAD', 'OPTIONS', 'TRACE'].includes(method)) {
-                    options.headers = options.headers || {};
-                    const token = window.CSRF_TOKEN || (document.querySelector('meta[name="csrf-token"]') && document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
-                    if (token) {
-                        if (typeof Headers !== 'undefined' && options.headers instanceof Headers) {
-                            if (!options.headers.has('X-CSRFToken')) options.headers.set('X-CSRFToken', token);
-                        } else if (Array.isArray(options.headers)) {
-                            options.headers.push(['X-CSRFToken', token]);
-                        } else {
-                            if (!options.headers['X-CSRFToken']) options.headers['X-CSRFToken'] = token;
-                        }
-                    }
-                }
-                return _origFetch(url, options);
-            };
-        }
-        if (window.$ && $.ajaxSetup) {
-            $.ajaxSetup({
-                beforeSend: function(xhr, settings) {
-                    if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type)) {
-                        xhr.setRequestHeader("X-CSRFToken", window.CSRF_TOKEN);
-                    }
-                }
-            });
-        }
-        if (navigator.sendBeacon) {
-            const _origBeacon = navigator.sendBeacon.bind(navigator);
-            navigator.sendBeacon = function(url, data) {
-                if (data instanceof FormData) {
-                    if (!data.has('csrf_token')) data.append('csrf_token', window.CSRF_TOKEN);
-                } else if (typeof data === 'string') {
-                    try {
-                        const obj = JSON.parse(data);
-                        if (typeof obj === 'object' && obj !== null && !obj.csrf_token) {
-                            obj.csrf_token = window.CSRF_TOKEN;
-                            data = JSON.stringify(obj);
-                        }
-                    } catch(e) {}
-                }
-                return _origBeacon(url, data);
-            };
-        }
-        document.addEventListener('DOMContentLoaded', function() {
-            document.querySelectorAll('form[method="POST"], form[method="post"]').forEach(function(form) {
-                if (!form.querySelector('input[name="csrf_token"]')) {
-                    var input = document.createElement('input');
-                    input.type = 'hidden';
-                    input.name = 'csrf_token';
-                    input.value = window.CSRF_TOKEN;
-                    form.appendChild(input);
-                }
-            });
-        });
-    })();
-    </script>
-    <link rel="stylesheet" href="{{ url_for('static', filename='vendor/katex/katex.min.css') }}">
-    <script src="{{ url_for('static', filename='vendor/katex/katex.min.js') }}"></script>
-    <script src="{{ url_for('static', filename='vendor/katex/contrib/auto-render.min.js') }}"></script>
-
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+  <meta name="color-scheme" content="dark light">
+  <title>Exam Control Center — {{ school_branding.school_name }} | CogniTara</title>
+  <link rel="icon" href="{{ url_for('static', filename='images/cognitara-favicon.ico') }}">
+  <script src="{{ url_for('static', filename='vendor/chartjs/chart.umd.min.js') }}"></script>
+  <link rel="stylesheet" href="{{ url_for('static', filename='vendor/katex/katex.min.css') }}">
+  <script src="{{ url_for('static', filename='vendor/katex/katex.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='vendor/katex/contrib/auto-render.min.js') }}"></script>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/cognitara-web.css') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/cognitara-portal-unified.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/cognitara-teacher-studio.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/cognitara-admin-studio.css') }}">
   {{ ct_boot_script() }}
+  <style>
+    .ecc-kpis {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+    @media (max-width: 1080px) { .ecc-kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+    @media (max-width: 640px) { .ecc-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+    .ecc-kpi {
+      background: var(--tc-surface);
+      border: 1px solid var(--tc-line-2);
+      border-radius: 14px;
+      padding: 16px 18px;
+      cursor: pointer;
+      transition: transform 160ms ease, border-color 160ms ease, background-color 160ms ease;
+      text-align: left;
+    }
+    .ecc-kpi:hover { transform: translateY(-2px); border-color: var(--ct-accent-line); }
+    .ecc-kpi.is-active {
+      border-color: var(--ct-accent);
+      background: var(--ct-accent-soft);
+    }
+    .ecc-kpi__lbl { font-size: 11.5px; font-weight: 600; color: var(--tc-ink-3); text-transform: uppercase; letter-spacing: 0.04em; display: block; margin-bottom: 6px; }
+    .ecc-kpi__val { font-size: 26px; font-weight: 760; letter-spacing: -0.025em; color: var(--tc-ink); font-variant-numeric: tabular-nums; line-height: 1.1; }
+
+    .ecc-bar {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      padding: 14px 16px;
+      background: var(--tc-surface);
+      border: 1px solid var(--tc-line-2);
+      border-radius: 14px;
+      margin-bottom: 16px;
+    }
+    .ecc-select {
+      height: 36px;
+      padding: 0 28px 0 12px;
+      border-radius: 9px;
+      border: 1px solid var(--tc-line-2);
+      background: var(--tc-surface-2);
+      color: var(--tc-ink);
+      font-size: 12.5px;
+      font-weight: 560;
+      cursor: pointer;
+    }
+    .ecc-select:focus { outline: none; border-color: var(--ct-accent-line); }
+
+    .ecc-bulk {
+      display: none;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+      padding: 12px 16px;
+      border-radius: 12px;
+      background: var(--tc-surface-2);
+      border: 1px solid var(--ct-accent-line);
+      margin-bottom: 16px;
+      animation: ct-rise-in 240ms cubic-bezier(0.22, 1, 0.36, 1) both;
+    }
+    .ecc-bulk.is-show { display: flex; }
+    .ecc-bulk__count { font-size: 13px; font-weight: 650; color: var(--tc-ink); margin-right: auto; }
+
+    .ecc-table th {
+      text-align: left;
+      height: 42px;
+      padding: 0 14px;
+      font-size: 11px;
+      font-weight: 650;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--tc-ink-3);
+      white-space: nowrap;
+    }
+    .ecc-table td { padding: 13px 14px; vertical-align: middle; }
+    .ecc-table th:first-child, .ecc-table td:first-child { padding-left: 18px; width: 42px; }
+    .ecc-table th:last-child, .ecc-table td:last-child { padding-right: 18px; text-align: right; }
+    .ecc-table th.is-center, .ecc-table td.is-center { text-align: center; }
+    .ecc-table td:last-child .tc-actions { justify-content: flex-end; }
+    .ecc-table tr.is-deactivated { opacity: 0.68; }
+    .ecc-table tr.is-selected { background: var(--ct-accent-soft); }
+
+    .ecc-chk {
+      width: 18px;
+      height: 18px;
+      border-radius: 5px;
+      border: 1.5px solid var(--tc-line-2);
+      background: var(--tc-surface-2);
+      cursor: pointer;
+      display: inline-grid;
+      place-items: center;
+      color: transparent;
+      transition: background-color 140ms ease, border-color 140ms ease;
+    }
+    .ecc-chk.is-checked {
+      background: var(--ct-primary);
+      border-color: var(--ct-primary);
+      color: #FFFFFF;
+    }
+
+    /* Slide-over Details Drawer */
+    .ecc-drw-scrim {
+      position: fixed;
+      inset: 0;
+      background: var(--ct-scrim);
+      backdrop-filter: blur(5px);
+      z-index: 1050;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 220ms ease, visibility 0s linear 220ms;
+    }
+    .ecc-drw-scrim.is-open { opacity: 1; visibility: visible; transition: opacity 220ms ease, visibility 0s; }
+    .ecc-drw {
+      position: fixed;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      width: min(680px, 95vw);
+      background: var(--tc-surface);
+      border-left: 1px solid var(--tc-line-2);
+      box-shadow: -16px 0 48px rgba(0, 0, 0, 0.42);
+      z-index: 1060;
+      display: flex;
+      flex-direction: column;
+      transform: translateX(100%);
+      transition: transform 280ms cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    .ecc-drw.is-open { transform: translateX(0); }
+    .ecc-drw__head {
+      padding: 20px 24px 16px;
+      border-bottom: 1px solid var(--tc-line);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .ecc-drw__head h3 { margin: 0; font-size: 17px; font-weight: 700; color: var(--tc-ink); }
+    .ecc-drw__tabs {
+      display: flex;
+      gap: 6px;
+      padding: 10px 24px;
+      border-bottom: 1px solid var(--tc-line);
+      background: var(--tc-surface-2);
+    }
+    .ecc-drw__tab {
+      padding: 7px 14px;
+      border-radius: 8px;
+      border: 1px solid transparent;
+      background: transparent;
+      color: var(--tc-ink-2);
+      font-size: 12.5px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background-color 140ms ease, color 140ms ease, border-color 140ms ease;
+    }
+    .ecc-drw__tab.is-active {
+      background: var(--tc-surface);
+      color: var(--tc-ink);
+      border-color: var(--tc-line-2);
+    }
+    .ecc-drw__body { flex: 1; overflow-y: auto; padding: 20px 24px; }
+    .ecc-ins-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 10px;
+      margin-bottom: 18px;
+    }
+    .ecc-ins-card {
+      padding: 13px 14px;
+      border-radius: 11px;
+      background: var(--tc-surface-2);
+      border: 1px solid var(--tc-line);
+    }
+    .ecc-ins-card small { display: block; font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--tc-ink-3); font-weight: 650; }
+    .ecc-ins-card strong { display: block; margin-top: 4px; font-size: 14.5px; color: var(--tc-ink); font-weight: 700; }
+    .ecc-stu-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1px solid var(--tc-line);
+      background: var(--tc-surface-2);
+      margin-bottom: 8px;
+    }
+    .ecc-q-card {
+      padding: 15px 16px;
+      border-radius: 12px;
+      border: 1px solid var(--tc-line-2);
+      background: var(--tc-surface-2);
+      margin-bottom: 12px;
+    }
+    .ecc-q-opt {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      padding: 8px 10px;
+      margin-top: 6px;
+      border-radius: 8px;
+      border: 1px solid var(--tc-line);
+      background: var(--tc-surface);
+      font-size: 12.5px;
+      color: var(--tc-ink-2);
+    }
+    .ecc-q-opt.is-correct {
+      background: var(--ct-ok-soft);
+      border-color: var(--ct-ok-line);
+      color: var(--tc-ink);
+    }
+    .ecc-ta {
+      width: 100%;
+      min-height: 84px;
+      padding: 11px 13px;
+      border-radius: 10px;
+      border: 1px solid var(--tc-line-2);
+      background: var(--tc-surface-2);
+      color: var(--tc-ink);
+      font-size: 13.5px;
+      font-family: inherit;
+      margin-top: 12px;
+      resize: vertical;
+    }
+    .ecc-ta:focus { outline: none; border-color: var(--ct-accent-line); }
+  </style>
 </head>
-<body class="ct-app ct-bs ad-studio ad-ecc">
+<body class="ct-app ad-studio">
 {{ admin_shell_start(active='control', crumb='Exam Control Center') }}
 
-    <div class="toast-rack" id="toastRack"></div>
-    <div class="app">
-        <!-- TOPBAR -->
-        <div class="topbar">
-            <div class="topbar-l">
-                <a href="/admin" class="back-btn"><i class="fas fa-arrow-left"></i></a>
-                <div>
-                    <h1>Exam Control Center</h1>
-                    <div class="topbar-sub">Complete oversight & management dashboard</div>
-                </div>
-            </div>
-            <button class="refresh-btn" onclick="location.reload()"><i class="fas fa-arrows-rotate"></i> Refresh Data</button>
-        </div>
-
-        <!-- STATS -->
-        <div class="stats-row">
-            <div class="stat-card" data-filter="all" onclick="quickFilter('all')">
-                <div class="stat-icon-wrap"><i class="fas fa-folder-tree"></i></div>
-                <div class="stat-num" id="sTotal">{{ total_exams }}</div>
-                <div class="stat-lbl">Total Exams</div>
-            </div>
-            <div class="stat-card" data-filter="active" onclick="quickFilter('active')">
-                <div class="stat-icon-wrap"><i class="fas fa-circle-play"></i></div>
-                <div class="stat-num" id="sActive">{{ active_exams }}</div>
-                <div class="stat-lbl">Active Now</div>
-            </div>
-            <div class="stat-card" data-filter="inactive" onclick="quickFilter('inactive')">
-                <div class="stat-icon-wrap"><i class="fas fa-circle-pause"></i></div>
-                <div class="stat-num" id="sInactive">{{ inactive_exams }}</div>
-                <div class="stat-lbl">Paused</div>
-            </div>
-            <div class="stat-card" data-filter="deactivated" onclick="quickFilter('deactivated')">
-                <div class="stat-icon-wrap"><i class="fas fa-shield-halved"></i></div>
-                <div class="stat-num" id="sDeactivated">{{ deactivated_exams }}</div>
-                <div class="stat-lbl">Deactivated</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-icon-wrap"><i class="fas fa-chart-line"></i></div>
-                <div class="stat-num">{{ school_avg }}%</div>
-                <div class="stat-lbl">School Average</div>
-            </div>
-        </div>
-
-        <!-- FILTERS -->
-        <div class="filter-row">
-            <div class="search-field">
-                <i class="fas fa-magnifying-glass"></i>
-                <input type="text" id="searchInput" placeholder="Search exams, teachers, or classes..." oninput="applyFilters()">
-            </div>
-            <select class="flt-select" id="fClass" onchange="applyFilters()">
-                <option value="all">All Classes</option>
-                {% for cls in classes %}<option value="{{ cls.class }}">{{ cls.class }}</option>{% endfor %}
-            </select>
-            <select class="flt-select" id="fSpec" onchange="applyFilters()">
-                <option value="all">All Specialisations</option>
-                <option>Science</option><option>Art</option><option>Commercial</option><option>General</option>
-            </select>
-            <select class="flt-select" id="fTeacher" onchange="applyFilters()">
-                <option value="all">All Teachers</option>
-                {% for t in teachers %}<option value="{{ t.username }}">{{ t.username }}</option>{% endfor %}
-            </select>
-            <select class="flt-select" id="fStatus" onchange="applyFilters()">
-                <option value="all">All Status</option>
-                <option value="active">Active</option><option value="inactive">Inactive</option><option value="deactivated">Deactivated</option>
-            </select>
-            <div class="sel-chip" id="selChip">
-                <span id="selCount">0</span> selected <i class="fas fa-xmark" onclick="clearSel()"></i>
-            </div>
-        </div>
-
-        <!-- BULK -->
-        <div class="bulk-bar" id="bulkBar">
-            <span class="bulk-text" id="bulkBadge">0 exams selected</span>
-            <button class="bbtn bbtn-begin" onclick="bulkAct('start')"><i class="fas fa-play"></i> Start All</button>
-            <button class="bbtn bbtn-pause" onclick="bulkAct('stop')"><i class="fas fa-pause"></i> Stop All</button>
-            <button class="bbtn bbtn-block" onclick="bulkAct('deactivate')"><i class="fas fa-ban"></i> Deactivate</button>
-            <button class="bbtn bbtn-restore" onclick="bulkAct('reactivate')"><i class="fas fa-rotate-left"></i> Reactivate</button>
-            <button class="bbtn bbtn-dl" onclick="bulkExport()"><i class="fas fa-file-export"></i> Export JSON</button>
-            <button class="bbtn bbtn-remove" onclick="showBulkDel()"><i class="fas fa-trash-can"></i> Delete</button>
-        </div>
-
-        <!-- EXAMS GRID -->
-        <div class="exams-grid" id="examsGrid">
-            {% for exam in exams %}
-            <div class="exam-card {% if exam.deactivated %}deactivated{% endif %}"
-                 data-id="{{ exam.id }}" data-name="{{ exam.name|lower }}"
-                 data-class="{{ exam.class }}" data-spec="{{ exam.specialisation_tag or 'General' }}"
-                 data-teacher="{{ exam.teacher_name or '' }}"
-                 data-status="{% if exam.deactivated %}deactivated{% elif exam.active %}active{% else %}inactive{% endif %}"
-                 id="ec-{{ exam.id }}">
-                
-                <div class="ec-head" onclick="openDrawer({{ exam.id }})">
-                    <div class="ec-check" data-id="{{ exam.id }}" onclick="event.stopPropagation();toggleSel({{ exam.id }})">
-                        <i class="fas fa-check"></i>
-                    </div>
-                    <div class="ec-info">
-                        <div class="ec-title">
-                            <span class="ec-title-text">{{ exam.name }}</span>
-                            <span class="tag tag-subject"><i class="fas fa-book"></i> {{ exam.subject_tag or 'General' }}</span>
-                        </div>
-                        <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
-                            <span style="font-size:11px;color:var(--text2);">{{ exam.class }}</span>
-                            <span class="tag tag-{{ (exam.specialisation_tag or 'General')|lower }}"><i class="fas fa-flask"></i> {{ exam.specialisation_tag or 'General' }}</span>
-                            <span class="tag {% if exam.deactivated %}tag-blocked{% elif exam.active %}tag-live{% else %}tag-paused{% endif %}">
-                                <i class="fas {% if exam.deactivated %}fa-shield-halved{% elif exam.active %}fa-circle-check{% else %}fa-circle-pause{% endif %}"></i>
-                                {% if exam.deactivated %}Deactivated{% elif exam.active %}Active{% else %}Inactive{% endif %}
-                            </span>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="ec-body">
-                    <div class="ec-stat">
-                        <div class="ec-stat-icon"><i class="fas fa-user-tie" style="color:var(--text3);"></i></div>
-                        <div class="ec-stat-val" style="font-size:12px;">{{ exam.teacher_name or '—' }}</div>
-                        <div class="ec-stat-lbl">Teacher</div>
-                    </div>
-                    <div class="ec-stat">
-                        <div class="ec-stat-icon"><i class="fas fa-user-graduate" style="color:var(--blue);"></i></div>
-                        <div class="ec-stat-val">{{ exam.student_count or 0 }}{% if exam.in_progress_count %}<span style="color:#f59e0b;font-size:10px;margin-left:2px;"><i class="fas fa-bolt"></i>{{ exam.in_progress_count }}</span>{% endif %}</div>
-                        <div class="ec-stat-lbl">Students</div>
-                    </div>
-                    <div class="ec-stat">
-                        <div class="ec-stat-icon"><i class="fas fa-bullseye" style="color:var(--text3);"></i></div>
-                        <div class="ec-stat-val {% if exam.avg_score is not none and exam.avg_score >= 70 %}high{% elif exam.avg_score is not none and exam.avg_score >= 50 %}mid{% elif exam.avg_score is not none %}low{% endif %}">
-                            {% if exam.avg_score is not none %}{{ "%.1f"|format(exam.avg_score) }}%{% else %}—{% endif %}
-                        </div>
-                        <div class="ec-stat-lbl">Avg Score</div>
-                    </div>
-                </div>
-
-                <div class="ec-actions">
-                    <button class="ap ap-eye" onclick="openDrawer({{ exam.id }})"><i class="fas fa-eye"></i> Details</button>
-                    {% if not exam.deactivated %}
-                    <button class="ap ap-power {% if exam.active %}pause{% endif %}" onclick="toggleStatus({{ exam.id }}, {{ 'false' if exam.active else 'true' }})">
-                        <i class="fas {% if exam.active %}fa-pause{% else %}fa-play{% endif %}"></i> {% if exam.active %}Stop{% else %}Start{% endif %}
-                    </button>
-                    <button class="ap ap-shield" onclick="showDeactModal({{ exam.id }}, '{{ exam.name|e }}')"><i class="fas fa-ban"></i> Deactivate</button>
-                    {% else %}
-                    <button class="ap ap-restore" onclick="reactExam({{ exam.id }})"><i class="fas fa-rotate-left"></i> Restore</button>
-                    {% endif %}
-                    <button class="ap ap-flask" onclick="previewExam({{ exam.id }})"><i class="fas fa-flask"></i> Preview</button>
-                    <button class="ap ap-download" onclick="dlJSON({{ exam.id }})"><i class="fas fa-download"></i> JSON</button>
-                    <button class="ap ap-trash" onclick="showDelModal({{ exam.id }}, '{{ exam.name|e }}')"><i class="fas fa-trash-can"></i></button>
-                </div>
-            </div>
-            {% endfor %}
-        </div>
+  <header class="tc-head ct-animate-rise">
+    <div class="tc-head__txt">
+      <h1>Exam Control Center</h1>
+      <p style="margin:4px 0 0;color:var(--tc-ink-2);font-size:14px">Oversight, activation, bulk controls, and live analytics across all teacher-authored examinations.</p>
     </div>
-
-    <!-- DRAWER -->
-    <div class="drw-overlay" id="drwOverlay" onclick="closeDrawer()"></div>
-    <div class="drw" id="drw">
-        <div class="drw-head">
-            <h3 id="drwTitle">Exam Details</h3>
-            <button class="drw-x" onclick="closeDrawer()"><i class="fas fa-xmark"></i></button>
-        </div>
-        <div class="drw-tabs">
-            <button class="drw-tab active" data-tab="overview"><i class="fas fa-chart-pie"></i> Overview</button>
-            <button class="drw-tab" data-tab="students"><i class="fas fa-users"></i> Students</button>
-            <button class="drw-tab" data-tab="questions"><i class="fas fa-circle-question"></i> Questions</button>
-            <button class="drw-tab" data-tab="versions"><i class="fas fa-clock-rotate-left"></i> History</button>
-        </div>
-        <div class="drw-body" id="drwBody">
-            <div class="loader show" id="drwLoader"><div class="ld-ri"></div><p style="color:var(--text2);">Loading exam data...</p></div>
-            <div id="drwContent" style="display:none;"></div>
-        </div>
+    <div class="tc-head__actions">
+      <a class="tc-btn tc-btn--secondary" href="/admin/exam_technical_support">{{ ico('i-activity', 'ct-ico--sm') }}Live Support</a>
+      <button type="button" class="tc-btn tc-btn--secondary" onclick="location.reload()">{{ ico('i-refresh', 'ct-ico--sm') }}Refresh</button>
     </div>
+  </header>
 
-    <!-- MODALS -->
-    <div class="mod-over" id="delModal">
-        <div class="mod-box"><div class="mod-vis"><div class="mod-icon danger"><i class="fas fa-trash-can"></i></div></div>
-            <div class="mod-body"><h2>Delete Exam?</h2><p id="delMsg">Permanent action. Cannot be undone.</p></div>
-            <div class="mod-ft"><button class="mbtn mbtn-cancel" onclick="hideM('delModal')">Cancel</button><button class="mbtn mbtn-danger" id="delConfirmBtn">Delete Forever</button></div>
-        </div>
+  <!-- 5-KPI Interactive Filter Strip -->
+  <section class="ecc-kpis" data-ct-stagger>
+    <button type="button" class="ecc-kpi is-active" data-kpi-filter="all" onclick="quickFilter('all')">
+      <span class="ecc-kpi__lbl">Total Exams</span>
+      <strong class="ecc-kpi__val" id="sTotal" data-ct-count>{{ total_exams }}</strong>
+    </button>
+    <button type="button" class="ecc-kpi" data-kpi-filter="active" onclick="quickFilter('active')">
+      <span class="ecc-kpi__lbl">Active Now</span>
+      <strong class="ecc-kpi__val" id="sActive" style="color:var(--ct-ok)" data-ct-count>{{ active_exams }}</strong>
+    </button>
+    <button type="button" class="ecc-kpi" data-kpi-filter="inactive" onclick="quickFilter('inactive')">
+      <span class="ecc-kpi__lbl">Inactive / Paused</span>
+      <strong class="ecc-kpi__val" id="sInactive" style="color:var(--ct-warn)" data-ct-count>{{ inactive_exams }}</strong>
+    </button>
+    <button type="button" class="ecc-kpi" data-kpi-filter="deactivated" onclick="quickFilter('deactivated')">
+      <span class="ecc-kpi__lbl">Deactivated</span>
+      <strong class="ecc-kpi__val" id="sDeactivated" style="color:var(--ct-bad)" data-ct-count>{{ deactivated_exams }}</strong>
+    </button>
+    <div class="ecc-kpi" style="cursor:default">
+      <span class="ecc-kpi__lbl">School Average</span>
+      <strong class="ecc-kpi__val">{{ school_avg }}%</strong>
     </div>
+  </section>
 
-    <div class="mod-over" id="deactModal">
-        <div class="mod-box"><div class="mod-vis"><div class="mod-icon warn"><i class="fas fa-ban"></i></div></div>
-            <div class="mod-body"><h2>Deactivate Exam?</h2><p id="deactMsg">Hidden from teachers & students.</p><textarea class="mod-ta" id="deactReason" placeholder="Reason for deactivation..."></textarea></div>
-            <div class="mod-ft"><button class="mbtn mbtn-cancel" onclick="hideM('deactModal')">Cancel</button><button class="mbtn mbtn-danger" id="deactConfirmBtn">Deactivate</button></div>
-        </div>
+  <!-- Filters -->
+  <div class="ecc-bar">
+    <label class="tc-search" style="flex:1;min-width:210px">
+      {{ ico('i-search', 'ct-ico--sm') }}
+      <input type="search" id="searchInput" placeholder="Search exams, teachers, subjects, or classes…" oninput="applyFilters()" aria-label="Search exams">
+    </label>
+    <select class="ecc-select" id="fClass" onchange="applyFilters()" aria-label="Filter by class">
+      <option value="all">All Classes</option>
+      {% for cls in classes %}<option value="{{ cls.class }}">{{ cls.class }}</option>{% endfor %}
+    </select>
+    <select class="ecc-select" id="fSpec" onchange="applyFilters()" aria-label="Filter by track">
+      <option value="all">All Tracks</option>
+      <option>Science</option><option>Art</option><option>Commercial</option><option>General</option>
+    </select>
+    <select class="ecc-select" id="fTeacher" onchange="applyFilters()" aria-label="Filter by teacher">
+      <option value="all">All Teachers</option>
+      {% for t in teachers %}<option value="{{ t.username }}">{{ t.username }}</option>{% endfor %}
+    </select>
+    <select class="ecc-select" id="fStatus" onchange="applyFilters()" aria-label="Filter by status">
+      <option value="all">All Status</option>
+      <option value="active">Active</option>
+      <option value="inactive">Inactive</option>
+      <option value="deactivated">Deactivated</option>
+    </select>
+  </div>
+
+  <!-- Bulk Actions Bar -->
+  <div class="ecc-bulk" id="bulkBar">
+    <span class="ecc-bulk__count" id="bulkBadge">0 exams selected</span>
+    <button type="button" class="tc-btn tc-btn--ok tc-btn--sm" onclick="bulkAct('start')">{{ ico('i-play', 'ct-ico--xs') }}Start</button>
+    <button type="button" class="tc-btn tc-btn--secondary tc-btn--sm" onclick="bulkAct('stop')">{{ ico('i-pause', 'ct-ico--xs') }}Stop</button>
+    <button type="button" class="tc-btn tc-btn--secondary tc-btn--sm" onclick="bulkAct('deactivate')">{{ ico('i-ban', 'ct-ico--xs') }}Deactivate</button>
+    <button type="button" class="tc-btn tc-btn--secondary tc-btn--sm" onclick="bulkAct('reactivate')">{{ ico('i-undo', 'ct-ico--xs') }}Restore</button>
+    <button type="button" class="tc-btn tc-btn--secondary tc-btn--sm" onclick="bulkExport()">{{ ico('i-download', 'ct-ico--xs') }}Export JSON</button>
+    <button type="button" class="ct-btn ct-btn--danger-solid ct-btn--sm" onclick="showBulkDel()">{{ ico('i-trash', 'ct-ico--xs') }}Delete</button>
+    <button type="button" class="tc-btn tc-btn--ghost tc-btn--sm" onclick="clearSel()">Clear</button>
+  </div>
+
+  <!-- Paginated Exams Oversight Table -->
+  <section class="tc-card">
+    <div class="tc-table-wrap ct-table-wrap">
+      {% if exams %}
+      <table class="tc-table ecc-table" id="eccTable" data-ct-paginate="12" data-ct-paginate-sizes="12,25,50">
+        <thead>
+          <tr>
+            <th>
+              <button type="button" class="ecc-chk" id="selAllPage" onclick="toggleSelectVisible()" aria-label="Select visible exams">
+                {{ ico('i-check', 'ct-ico--xs') }}
+              </button>
+            </th>
+            <th style="min-width:210px">Examination</th>
+            <th style="width:110px">Class</th>
+            <th style="min-width:165px">Subject &amp; Track</th>
+            <th style="width:130px">Teacher</th>
+            <th class="is-center" style="width:100px">Students</th>
+            <th class="is-center" style="width:95px">Avg</th>
+            <th class="is-center" style="width:120px">Status</th>
+            <th style="width:270px;text-align:right">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for exam in exams %}
+          {% set e_status = 'deactivated' if exam.deactivated else ('active' if exam.active else 'inactive') %}
+          <tr class="ecc-row{% if exam.deactivated %} is-deactivated{% endif %}"
+              id="ec-{{ exam.id }}"
+              data-id="{{ exam.id }}"
+              data-name="{{ exam.name|lower }}"
+              data-subject="{{ (exam.subject_tag or 'General')|lower }}"
+              data-class="{{ exam.class }}"
+              data-spec="{{ exam.specialisation_tag or 'General' }}"
+              data-teacher="{{ exam.teacher_name or '' }}"
+              data-status="{{ e_status }}">
+            <td>
+              <button type="button" class="ecc-chk" data-chk-id="{{ exam.id }}" onclick="toggleSel({{ exam.id }})" aria-label="Select {{ exam.name }}">
+                {{ ico('i-check', 'ct-ico--xs') }}
+              </button>
+            </td>
+            <td>
+              <a href="javascript:void(0)" onclick="openDrawer({{ exam.id }})" style="text-decoration:none;color:inherit;display:block">
+                <strong class="row-title" style="display:block;font-weight:650">{{ exam.name }}</strong>
+                <span class="tc-mono" style="font-size:11.5px;color:var(--tc-ink-3)">#{{ exam.id }} · {{ exam.duration }} min</span>
+              </a>
+            </td>
+            <td><span class="tc-pill">{{ exam.class }}</span></td>
+            <td>
+              <div style="display:inline-flex;align-items:center;gap:6px;flex-wrap:wrap">
+                <span class="tc-pill">{{ exam.subject_tag or 'General' }}</span>
+                <span class="tc-pill tc-pill--accent">{{ exam.specialisation_tag or 'General' }}</span>
+              </div>
+            </td>
+            <td style="font-size:13px;color:var(--tc-ink-2)">{{ exam.teacher_name or '—' }}</td>
+            <td class="tc-mono is-center">
+              {{ exam.student_count or 0 }}
+              {% if exam.in_progress_count %}<span style="color:var(--ct-warn);font-size:11px;margin-left:4px">({{ exam.in_progress_count }} live)</span>{% endif %}
+            </td>
+            <td class="tc-mono is-center" style="font-weight:650;color:{% if exam.avg_score is not none and exam.avg_score >= 70 %}var(--ct-ok){% elif exam.avg_score is not none and exam.avg_score >= 50 %}var(--ct-warn){% elif exam.avg_score is not none %}var(--ct-bad){% else %}var(--tc-ink-3){% endif %}">
+              {% if exam.avg_score is not none %}{{ "%.1f"|format(exam.avg_score) }}%{% else %}—{% endif %}
+            </td>
+            <td class="is-center" data-status-cell>
+              {% if exam.deactivated %}
+              <span class="tc-pill tc-pill--bad"><i class="tc-dot"></i>Deactivated</span>
+              {% elif exam.active %}
+              <span class="tc-pill tc-pill--ok"><i class="tc-dot"></i>Active</span>
+              {% else %}
+              <span class="tc-pill"><i class="tc-dot"></i>Inactive</span>
+              {% endif %}
+            </td>
+            <td data-actions-cell>
+              <div class="tc-actions">
+                <button type="button" class="tc-btn tc-btn--secondary tc-btn--sm" onclick="openDrawer({{ exam.id }})" title="View details &amp; analytics">Details</button>
+                <a class="tc-btn tc-btn--secondary tc-btn--icon" href="/admin/exam/{{ exam.id }}/preview" target="_blank" title="Read-only paper preview" aria-label="Preview {{ exam.name }}">{{ ico('i-eye', 'ct-ico--sm') }}</a>
+                {% if not exam.deactivated %}
+                <button type="button" class="tc-btn {% if exam.active %}tc-btn--danger-soft{% else %}tc-btn--ok{% endif %} tc-btn--sm" onclick="toggleStatus({{ exam.id }}, {{ 'false' if exam.active else 'true' }})">
+                  {{ ico('i-stop' if exam.active else 'i-play', 'ct-ico--xs') }}{% if exam.active %}Stop{% else %}Start{% endif %}
+                </button>
+                <button type="button" class="tc-btn tc-btn--ghost tc-btn--icon" onclick="openDeactModal({{ exam.id }}, {{ exam.name|tojson|forceescape }})" title="Deactivate exam" aria-label="Deactivate {{ exam.name }}">{{ ico('i-ban', 'ct-ico--sm') }}</button>
+                {% else %}
+                <button type="button" class="tc-btn tc-btn--ok tc-btn--sm" onclick="reactExam({{ exam.id }})">{{ ico('i-undo', 'ct-ico--xs') }}Restore</button>
+                {% endif %}
+                <button type="button" class="tc-btn tc-btn--ghost tc-btn--icon" onclick="dlJSON({{ exam.id }})" title="Export JSON" aria-label="Export JSON">{{ ico('i-download', 'ct-ico--sm') }}</button>
+                <button type="button" class="tc-btn tc-btn--ghost tc-btn--icon" style="color:var(--tc-bad)" onclick="deleteOneExam({{ exam.id }}, {{ exam.name|tojson|forceescape }})" title="Delete exam" aria-label="Delete {{ exam.name }}">{{ ico('i-trash', 'ct-ico--sm') }}</button>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <div class="tc-empty">
+        <span class="tc-empty__ico">{{ ico('i-doc') }}</span>
+        <strong>No examinations found</strong>
+        <p>When teachers author exams, they will appear here for central activation and oversight.</p>
+      </div>
+      {% endif %}
     </div>
+  </section>
 
-    <div class="mod-over" id="bulkDelModal">
-        <div class="mod-box"><div class="mod-vis"><div class="mod-icon danger"><i class="fas fa-trash-can"></i></div></div>
-            <div class="mod-body"><h2>Delete Selected?</h2><p id="bulkDelMsg">Multiple exams will be removed.</p></div>
-            <div class="mod-ft"><button class="mbtn mbtn-cancel" onclick="hideM('bulkDelModal')">Cancel</button><button class="mbtn mbtn-danger" id="bulkDelConfirmBtn">Delete All</button></div>
-        </div>
+  <!-- Details Slide-over Drawer -->
+  <div class="ecc-drw-scrim" id="drwScrim" onclick="closeDrawer()"></div>
+  <aside class="ecc-drw" id="drw" aria-label="Examination details drawer">
+    <div class="ecc-drw__head">
+      <h3 id="drwTitle">Exam Details</h3>
+      <div style="display:flex;align-items:center;gap:8px">
+        <a class="tc-btn tc-btn--secondary tc-btn--sm" id="drwPreviewLink" href="#" target="_blank">{{ ico('i-eye', 'ct-ico--xs') }}Full Preview</a>
+        <button type="button" class="ct-iconbtn ct-iconbtn--ghost" onclick="closeDrawer()" aria-label="Close drawer">{{ ico('i-x') }}</button>
+      </div>
     </div>
+    <div class="ecc-drw__tabs">
+      <button type="button" class="ecc-drw__tab is-active" data-tab="overview">Overview</button>
+      <button type="button" class="ecc-drw__tab" data-tab="students">Students</button>
+      <button type="button" class="ecc-drw__tab" data-tab="questions">Questions</button>
+    </div>
+    <div class="ecc-drw__body" id="drwBody"></div>
+  </aside>
 
-    <script>
-        let sel = new Set(), drwId = null, drwData = null;
-        let pendDel = null, pendDeact = null, gradeChart = null;
+  <!-- Deactivate Reason Modal (Spring-animated Neutral Carbon) -->
+  <div class="ct-modal-backdrop" id="deactModal" data-ct-dismissable aria-hidden="true">
+    <div class="ct-modal ct-confirm-modal" data-tone="warn" role="dialog" aria-modal="true">
+      <div class="ct-confirm-accent"></div>
+      <div class="ct-confirm-head">
+        <div class="ct-confirm-badge"><span class="ct-confirm-badge__ring"></span><span class="ct-confirm-badge__ico">{{ ico('i-ban') }}</span></div>
+        <div class="ct-confirm-copy">
+          <h3>Deactivate examination?</h3>
+          <div class="ct-confirm-desc" id="deactMsg">This exam will be hidden and stopped immediately.</div>
+          <textarea class="ecc-ta" id="deactReason" placeholder="Optional reason for audit log…"></textarea>
+        </div>
+        <button type="button" class="ct-iconbtn ct-iconbtn--ghost ct-modal__close" data-ct-modal-close aria-label="Close">{{ ico('i-x', 'ct-ico--sm') }}</button>
+      </div>
+      <div class="ct-confirm-actions">
+        <button type="button" class="ct-btn ct-btn--ghost" data-ct-modal-close>Cancel</button>
+        <button type="button" class="ct-btn ct-btn--warn-solid" id="deactConfirmBtn" onclick="confirmDeact()">Deactivate exam</button>
+      </div>
+    </div>
+  </div>
 
-        function showM(id) { document.getElementById(id).classList.add('show'); }
-        function hideM(id) { document.getElementById(id).classList.remove('show'); }
+  <script>
+    var sel = new Set();
+    var drwId = null, drwData = null, gradeChart = null, pendDeact = null;
 
-        function toast(m, t = 'ok') {
-            const r = document.getElementById('toastRack');
-            const d = document.createElement('div');
-            d.className = `tst ${t}`;
-            const i = { ok: 'fa-circle-check', err: 'fa-circle-xmark', inf: 'fa-circle-info' };
-            d.innerHTML = `<i class="fas ${i[t]}"></i> ${m}`;
-            r.appendChild(d);
-            setTimeout(() => { d.style.opacity = '0'; d.style.transform = 'translateX(100%)'; d.style.transition = 'all 0.3s'; setTimeout(() => d.remove(), 300); }, 3200);
+    function applyFilters() {
+      var s = (document.getElementById("searchInput").value || "").trim().toLowerCase();
+      var fc = document.getElementById("fClass").value;
+      var fs = document.getElementById("fSpec").value;
+      var ft = document.getElementById("fTeacher").value;
+      var fst = document.getElementById("fStatus").value;
+      var tbl = document.getElementById("eccTable");
+      if (!tbl) return;
+      tbl.querySelectorAll("tbody .ecc-row").forEach(function (r) {
+        var ms = !s || r.dataset.name.indexOf(s) > -1 || r.dataset.subject.indexOf(s) > -1 || r.dataset.teacher.toLowerCase().indexOf(s) > -1 || r.dataset.class.toLowerCase().indexOf(s) > -1;
+        var mc = fc === "all" || r.dataset.class === fc;
+        var msp = fs === "all" || r.dataset.spec === fs;
+        var mt = ft === "all" || r.dataset.teacher === ft;
+        var mst = fst === "all" || r.dataset.status === fst;
+        r.dataset.ctFilteredOut = (ms && mc && msp && mt && mst) ? "0" : "1";
+      });
+      if (tbl._ctRepaginate) tbl._ctRepaginate(true);
+    }
+
+    function quickFilter(v) {
+      document.getElementById("fStatus").value = v;
+      applyFilters();
+      document.querySelectorAll("[data-kpi-filter]").forEach(function (b) {
+        b.classList.toggle("is-active", b.getAttribute("data-kpi-filter") === v);
+      });
+    }
+
+    function toggleSel(id) {
+      var ck = document.querySelector('[data-chk-id="' + id + '"]');
+      var row = document.getElementById("ec-" + id);
+      if (sel.has(id)) { sel.delete(id); if (ck) ck.classList.remove("is-checked"); if (row) row.classList.remove("is-selected"); }
+      else { sel.add(id); if (ck) ck.classList.add("is-checked"); if (row) row.classList.add("is-selected"); }
+      updateBulk();
+    }
+
+    function toggleSelectVisible() {
+      var visible = Array.prototype.slice.call(document.querySelectorAll("#eccTable tbody .ecc-row")).filter(function (r) { return r.style.display !== "none"; });
+      var allSel = visible.length > 0 && visible.every(function (r) { return sel.has(parseInt(r.dataset.id, 10)); });
+      visible.forEach(function (r) {
+        var id = parseInt(r.dataset.id, 10);
+        if (allSel) { if (sel.has(id)) toggleSel(id); }
+        else { if (!sel.has(id)) toggleSel(id); }
+      });
+      var hdr = document.getElementById("selAllPage");
+      if (hdr) hdr.classList.toggle("is-checked", !allSel && visible.length > 0);
+    }
+
+    function updateBulk() {
+      var n = sel.size;
+      document.getElementById("bulkBar").classList.toggle("is-show", n > 0);
+      document.getElementById("bulkBadge").textContent = n + " exam" + (n === 1 ? "" : "s") + " selected";
+    }
+
+    function clearSel() {
+      sel.clear();
+      document.querySelectorAll(".ecc-chk.is-checked").forEach(function (c) { c.classList.remove("is-checked"); });
+      document.querySelectorAll(".ecc-row.is-selected").forEach(function (r) { r.classList.remove("is-selected"); });
+      updateBulk();
+    }
+
+    function updateCounters() {
+      var rows = Array.prototype.slice.call(document.querySelectorAll(".ecc-row"));
+      var active = 0, inactive = 0, deact = 0;
+      rows.forEach(function (r) {
+        if (r.dataset.status === "deactivated") deact++;
+        else if (r.dataset.status === "active") active++;
+        else inactive++;
+      });
+      document.getElementById("sTotal").textContent = rows.length;
+      document.getElementById("sActive").textContent = active;
+      document.getElementById("sInactive").textContent = inactive;
+      document.getElementById("sDeactivated").textContent = deact;
+    }
+
+    function updateRowState(id, status) {
+      var row = document.getElementById("ec-" + id);
+      if (!row) return;
+      row.dataset.status = status;
+      row.classList.toggle("is-deactivated", status === "deactivated");
+      var name = row.querySelector(".row-title") ? row.querySelector(".row-title").textContent.trim() : "Exam";
+      var stCell = row.querySelector("[data-status-cell]");
+      if (stCell) {
+        stCell.innerHTML = status === "deactivated"
+          ? '<span class="tc-pill tc-pill--bad"><i class="tc-dot"></i>Deactivated</span>'
+          : (status === "active"
+            ? '<span class="tc-pill tc-pill--ok"><i class="tc-dot"></i>Active</span>'
+            : '<span class="tc-pill"><i class="tc-dot"></i>Inactive</span>');
+      }
+      var actCell = row.querySelector("[data-actions-cell]");
+      if (actCell) {
+        var safeJson = JSON.stringify(name).replace(/"/g, "&quot;");
+        var powerHtml = status === "deactivated"
+          ? '<button type="button" class="tc-btn tc-btn--ok tc-btn--sm" onclick="reactExam(' + id + ')">' + CT.icon("i-undo", "ct-ico--xs") + 'Restore</button>'
+          : '<button type="button" class="tc-btn ' + (status === "active" ? "tc-btn--danger-soft" : "tc-btn--ok") + ' tc-btn--sm" onclick="toggleStatus(' + id + ', ' + (status !== "active") + ')">' + CT.icon(status === "active" ? "i-stop" : "i-play", "ct-ico--xs") + (status === "active" ? "Stop" : "Start") + '</button>' +
+            '<button type="button" class="tc-btn tc-btn--ghost tc-btn--icon" onclick="openDeactModal(' + id + ', ' + safeJson + ')" title="Deactivate">' + CT.icon("i-ban", "ct-ico--sm") + '</button>';
+        actCell.innerHTML = '<div class="tc-actions">' +
+          '<button type="button" class="tc-btn tc-btn--secondary tc-btn--sm" onclick="openDrawer(' + id + ')">Details</button>' +
+          '<a class="tc-btn tc-btn--secondary tc-btn--icon" href="/admin/exam/' + id + '/preview" target="_blank" title="Preview">' + CT.icon("i-eye", "ct-ico--sm") + '</a>' +
+          powerHtml +
+          '<button type="button" class="tc-btn tc-btn--ghost tc-btn--icon" onclick="dlJSON(' + id + ')" title="Export JSON">' + CT.icon("i-download", "ct-ico--sm") + '</button>' +
+          '<button type="button" class="tc-btn tc-btn--ghost tc-btn--icon" style="color:var(--tc-bad)" onclick="deleteOneExam(' + id + ', ' + safeJson + ')" title="Delete">' + CT.icon("i-trash", "ct-ico--sm") + '</button>' +
+        '</div>';
+      }
+    }
+
+    async function toggleStatus(id, makeActive) {
+      try {
+        var r = await fetch("/admin/exam/" + id + "/toggle-status", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ active: makeActive })
+        });
+        var d = await r.json();
+        if (d.success) {
+          updateRowState(id, makeActive ? "active" : "inactive");
+          updateCounters();
+          applyFilters();
+          CT.toast("Exam " + (makeActive ? "activated" : "stopped"), "ok");
+        } else {
+          CT.toast(d.error || "Update failed", "bad");
         }
+      } catch (e) { CT.toast("Network error", "bad"); }
+    }
 
-        function applyFilters() {
-            const s = document.getElementById('searchInput').value.toLowerCase();
-            const fc = document.getElementById('fClass').value;
-            const fs = document.getElementById('fSpec').value;
-            const ft = document.getElementById('fTeacher').value;
-            const fst = document.getElementById('fStatus').value;
-            document.querySelectorAll('.exam-card').forEach(c => {
-                const ms = !s || c.dataset.name.includes(s) || c.dataset.teacher.includes(s) || c.dataset.class.toLowerCase().includes(s);
-                const mc = fc === 'all' || c.dataset.class === fc;
-                const msp = fs === 'all' || c.dataset.spec === fs;
-                const mt = ft === 'all' || c.dataset.teacher === ft;
-                const mst = fst === 'all' || c.dataset.status === fst;
-                c.style.display = (ms && mc && msp && mt && mst) ? '' : 'none';
-            });
+    function openDeactModal(id, name) {
+      pendDeact = id;
+      document.getElementById("deactMsg").innerHTML = "<strong>" + CT.esc(name) + "</strong> will be stopped and hidden from students until restored.";
+      document.getElementById("deactReason").value = "";
+      CT.modal.open("#deactModal");
+    }
+
+    async function confirmDeact() {
+      if (!pendDeact) return;
+      var id = pendDeact;
+      var reason = document.getElementById("deactReason").value.trim() || "Administrative hold";
+      try {
+        var r = await fetch("/admin/exam/" + id + "/deactivate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ reason: reason })
+        });
+        var d = await r.json();
+        if (d.success) {
+          updateRowState(id, "deactivated");
+          updateCounters();
+          applyFilters();
+          CT.modal.close("#deactModal");
+          CT.toast("Exam deactivated", "ok");
+        } else {
+          CT.toast(d.error || "Failed", "bad");
         }
+      } catch (e) { CT.toast("Network error", "bad"); }
+      finally { pendDeact = null; }
+    }
 
-        function quickFilter(v) {
-            document.getElementById('fStatus').value = v;
-            applyFilters();
-            document.querySelectorAll('.stat-card').forEach(b => b.classList.remove('active-filter'));
-            const card = document.querySelector(`.stat-card[data-filter="${v}"]`);
-            if (card) card.classList.add('active-filter');
+    async function reactExam(id) {
+      try {
+        var r = await fetch("/admin/exam/" + id + "/reactivate", { method: "POST" });
+        var d = await r.json();
+        if (d.success) {
+          updateRowState(id, "inactive");
+          updateCounters();
+          applyFilters();
+          CT.toast("Exam restored to inactive state", "ok");
+        } else {
+          CT.toast(d.error || "Restore failed", "bad");
         }
+      } catch (e) { CT.toast("Network error", "bad"); }
+    }
 
-        function toggleSel(id) {
-            const ck = document.querySelector(`.ec-check[data-id="${id}"]`);
-            const card = document.getElementById(`ec-${id}`);
-            if (sel.has(id)) { sel.delete(id); ck.classList.remove('checked'); card.classList.remove('selected'); }
-            else { sel.add(id); ck.classList.add('checked'); card.classList.add('selected'); }
-            updateBulk();
+    async function deleteOneExam(id, name) {
+      var ok = await CT.confirm({
+        title: "Delete examination?",
+        html: "Permanently delete <strong>" + CT.esc(name) + "</strong> along with all questions and scores? This cannot be undone.",
+        tone: "danger",
+        icon: "i-trash",
+        confirmText: "Delete exam"
+      });
+      if (!ok) return;
+      try {
+        var r = await fetch("/admin/exam/" + id + "/delete", { method: "DELETE" });
+        var d = await r.json();
+        if (d.success) {
+          var row = document.getElementById("ec-" + id);
+          if (row) row.remove();
+          sel.delete(id);
+          updateBulk();
+          updateCounters();
+          applyFilters();
+          CT.toast(d.message || "Exam deleted", "ok");
+        } else {
+          CT.toast(d.error || "Delete failed", "bad");
         }
+      } catch (e) { CT.toast("Network error", "bad"); }
+    }
 
-        function updateBulk() {
-            const n = sel.size;
-            document.getElementById('selCount').textContent = n;
-            document.getElementById('selChip').classList.toggle('show', n > 0);
-            document.getElementById('bulkBar').classList.toggle('show', n > 0);
-            document.getElementById('bulkBadge').textContent = `${n} exam${n !== 1 ? 's' : ''} selected`;
+    async function bulkAct(action) {
+      if (!sel.size) return CT.toast("Select exams first", "warn");
+      var ids = Array.from(sel);
+      try {
+        var r = await fetch("/admin/exams/bulk-action", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: action, exam_ids: ids })
+        });
+        var d = await r.json();
+        if (d.success) {
+          ids.forEach(function (id) {
+            var row = document.getElementById("ec-" + id);
+            if (!row) return;
+            if (action === "delete") row.remove();
+            else if (action === "start" && row.dataset.status !== "deactivated") updateRowState(id, "active");
+            else if (action === "stop" && row.dataset.status !== "deactivated") updateRowState(id, "inactive");
+            else if (action === "deactivate") updateRowState(id, "deactivated");
+            else if (action === "reactivate") updateRowState(id, "inactive");
+          });
+          clearSel();
+          updateCounters();
+          applyFilters();
+          CT.toast(d.message || "Bulk update completed", "ok");
+        } else {
+          CT.toast(d.error || "Bulk action failed", "bad");
         }
+      } catch (e) { CT.toast("Network error", "bad"); }
+    }
 
-        function clearSel() { sel.clear(); document.querySelectorAll('.ec-check.checked').forEach(c => c.classList.remove('checked')); document.querySelectorAll('.exam-card.selected').forEach(c => c.classList.remove('selected')); updateBulk(); }
+    async function showBulkDel() {
+      if (!sel.size) return;
+      var ok = await CT.confirm({
+        title: "Delete " + sel.size + " selected exams?",
+        html: "All questions and student scores belonging to these <strong>" + sel.size + " examination(s)</strong> will be permanently removed.",
+        tone: "danger",
+        icon: "i-trash",
+        confirmText: "Delete selected"
+      });
+      if (ok) await bulkAct("delete");
+    }
 
-        function updateDashboardCounters() {
-            const cards = Array.from(document.querySelectorAll('.exam-card'));
-            const total = cards.length;
-            let active = 0, inactive = 0, deactivated = 0;
-            cards.forEach(c => {
-                const s = c.dataset.status;
-                if (s === 'deactivated') deactivated++;
-                else if (s === 'active') active++;
-                else inactive++;
-            });
-            const sTotal = document.getElementById('sTotal');
-            const sActive = document.getElementById('sActive');
-            const sInactive = document.getElementById('sInactive');
-            const sDeactivated = document.getElementById('sDeactivated');
-            if (sTotal) sTotal.textContent = total;
-            if (sActive) sActive.textContent = active;
-            if (sInactive) sInactive.textContent = inactive;
-            if (sDeactivated) sDeactivated.textContent = deactivated;
+    function bulkExport() {
+      if (!sel.size) return;
+      Array.from(sel).forEach(function (id) { window.open("/admin/exam/" + id + "/export-json", "_blank"); });
+      CT.toast("Exporting " + sel.size + " exam JSON files", "info");
+    }
+
+    function dlJSON(id) {
+      window.open("/admin/exam/" + id + "/export-json", "_blank");
+      CT.toast("JSON export started", "ok");
+    }
+
+    /* Slide-over Drawer */
+    async function openDrawer(id) {
+      drwId = id;
+      document.getElementById("drwScrim").classList.add("is-open");
+      document.getElementById("drw").classList.add("is-open");
+      document.getElementById("drwPreviewLink").href = "/admin/exam/" + id + "/preview";
+      document.getElementById("drwBody").innerHTML = '<p style="color:var(--tc-ink-3);text-align:center;padding:48px 0">Loading examination telemetry…</p>';
+      document.querySelectorAll(".ecc-drw__tab").forEach(function (t, i) { t.classList.toggle("is-active", i === 0); });
+      try {
+        var r = await fetch("/admin/exam/" + id + "/details");
+        drwData = await r.json();
+        document.getElementById("drwTitle").textContent = (drwData.exam && drwData.exam.name) || "Exam Details";
+        renderDrw("overview");
+      } catch (e) {
+        document.getElementById("drwBody").innerHTML = '<p style="color:var(--ct-bad);text-align:center;padding:40px 0">Failed to load exam details.</p>';
+      }
+    }
+
+    function closeDrawer() {
+      document.getElementById("drwScrim").classList.remove("is-open");
+      document.getElementById("drw").classList.remove("is-open");
+    }
+
+    document.querySelectorAll(".ecc-drw__tab").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        document.querySelectorAll(".ecc-drw__tab").forEach(function (x) { x.classList.remove("is-active"); });
+        this.classList.add("is-active");
+        renderDrw(this.getAttribute("data-tab"));
+      });
+    });
+
+    function personAvatarHtml(photo) {
+      var glyph = '<svg class="ct-avatar__glyph" viewBox="0 0 24 24" aria-hidden="true"><use href="' + CT.sprite + '#i-person-avatar"/></svg>';
+      if (photo && photo !== "default.png") {
+        return '<span class="ct-avatar ct-avatar--sm ct-avatar--person"><img src="/static/images/' + CT.esc(photo) + '" alt="" onerror="this.remove();">' + glyph + '</span>';
+      }
+      return '<span class="ct-avatar ct-avatar--sm ct-avatar--person">' + glyph + '</span>';
+    }
+
+    function calcAvg(arr) {
+      if (!arr || !arr.length) return "0.0";
+      var valid = arr.filter(function (s) { return s.percentage != null; });
+      if (!valid.length) return "0.0";
+      return (valid.reduce(function (a, s) { return a + Number(s.percentage || 0); }, 0) / valid.length).toFixed(1);
+    }
+
+    function renderDrw(tab) {
+      if (!drwData) return;
+      var body = document.getElementById("drwBody");
+      var ex = drwData.exam || {};
+      if (tab === "overview") {
+        body.innerHTML =
+          '<div class="ecc-ins-grid">' +
+            '<div class="ecc-ins-card"><small>Class</small><strong>' + CT.esc(ex.class || "—") + '</strong></div>' +
+            '<div class="ecc-ins-card"><small>Subject</small><strong>' + CT.esc(ex.subject_tag || "General") + '</strong></div>' +
+            '<div class="ecc-ins-card"><small>Track</small><strong>' + CT.esc(ex.specialisation_tag || "General") + '</strong></div>' +
+            '<div class="ecc-ins-card"><small>Duration</small><strong>' + CT.esc(ex.duration || 0) + ' min</strong></div>' +
+            '<div class="ecc-ins-card"><small>Teacher</small><strong>' + CT.esc(ex.teacher_name || "—") + '</strong></div>' +
+            '<div class="ecc-ins-card"><small>Attempts</small><strong>' + (drwData.students ? drwData.students.length : 0) + '</strong></div>' +
+            '<div class="ecc-ins-card"><small>Avg Score</small><strong style="color:var(--ct-ok)">' + calcAvg(drwData.students) + '%</strong></div>' +
+          '</div>' +
+          '<div style="height:240px;padding:14px;border-radius:12px;border:1px solid var(--tc-line);background:var(--tc-surface-2)"><canvas id="eccGradeChart"></canvas></div>';
+        setTimeout(function () {
+          var ctx = document.getElementById("eccGradeChart");
+          if (!ctx || !window.Chart) return;
+          if (gradeChart) gradeChart.destroy();
+          var grades = ["A", "B", "C", "D", "F"];
+          var colors = ["#10B981", "#3B82F6", "#F59E0B", "#F97316", "#EF4444"];
+          var dist = drwData.grade_distribution || [];
+          var counts = grades.map(function (g) { var f = dist.find(function (x) { return x.grade === g; }); return f ? f.count : 0; });
+          gradeChart = new Chart(ctx, {
+            type: "bar",
+            data: { labels: grades, datasets: [{ data: counts, backgroundColor: colors, borderRadius: 6, maxBarThickness: 40 }] },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
+          });
+        }, 60);
+      } else if (tab === "students") {
+        var list = drwData.students || [];
+        if (!list.length) {
+          body.innerHTML = '<p style="text-align:center;color:var(--tc-ink-3);padding:48px 0">No students have completed this examination yet.</p>';
+          return;
         }
-
-        function updateExamCardState(id, status, examName) {
-            const card = document.getElementById(`ec-${id}`);
-            if (!card) return;
-            card.dataset.status = status;
-            const name = examName || card.querySelector('.ec-title-text')?.textContent.trim() || 'Exam';
-
-            card.classList.toggle('deactivated', status === 'deactivated');
-
-            const statusTag = card.querySelector('.tag.tag-live, .tag.tag-paused, .tag.tag-blocked');
-            if (statusTag) {
-                statusTag.className = 'tag ' + (status === 'deactivated' ? 'tag-blocked' : (status === 'active' ? 'tag-live' : 'tag-paused'));
-                const icon = status === 'deactivated' ? 'fa-shield-halved' : (status === 'active' ? 'fa-circle-check' : 'fa-circle-pause');
-                const label = status === 'deactivated' ? 'Deactivated' : (status === 'active' ? 'Active' : 'Inactive');
-                statusTag.innerHTML = `<i class="fas ${icon}"></i> ${label}`;
-            }
-
-            const actionsDiv = card.querySelector('.ec-actions');
-            if (actionsDiv) {
-                const safeName = name.replace(/'/g, "\\'");
-                let powerButtons = '';
-                if (status === 'deactivated') {
-                    powerButtons = `<button class="ap ap-restore" onclick="reactExam(${id})"><i class="fas fa-rotate-left"></i> Restore</button>`;
-                } else if (status === 'active') {
-                    powerButtons = `
-                        <button class="ap ap-power pause" onclick="toggleStatus(${id}, false)">
-                            <i class="fas fa-pause"></i> Stop
-                        </button>
-                        <button class="ap ap-shield" onclick="showDeactModal(${id}, '${safeName}')">
-                            <i class="fas fa-ban"></i> Deactivate
-                        </button>`;
-                } else {
-                    powerButtons = `
-                        <button class="ap ap-power" onclick="toggleStatus(${id}, true)">
-                            <i class="fas fa-play"></i> Start
-                        </button>
-                        <button class="ap ap-shield" onclick="showDeactModal(${id}, '${safeName}')">
-                            <i class="fas fa-ban"></i> Deactivate
-                        </button>`;
-                }
-                
-                actionsDiv.innerHTML = `
-                    <button class="ap ap-eye" onclick="openDrawer(${id})"><i class="fas fa-eye"></i> Details</button>
-                    ${powerButtons}
-                    <button class="ap ap-flask" onclick="previewExam(${id})"><i class="fas fa-flask"></i> Preview</button>
-                    <button class="ap ap-download" onclick="dlJSON(${id})"><i class="fas fa-download"></i> JSON</button>
-                    <button class="ap ap-trash" onclick="showDelModal(${id}, '${safeName}')"><i class="fas fa-trash-can"></i></button>
-                `;
-            }
+        body.innerHTML = list.map(function (s, idx) {
+          var pct = Number(s.percentage || 0);
+          var tone = pct >= 70 ? "tc-pill--ok" : (pct >= 50 ? "tc-pill--warn" : "tc-pill--bad");
+          return '<div class="ecc-stu-row">' +
+            '<span class="tc-mono" style="width:24px;text-align:center;font-weight:700;color:var(--tc-ink-3)">' + (idx + 1) + '</span>' +
+            personAvatarHtml(s.photo) +
+            '<div style="flex:1;min-width:0"><strong style="display:block;font-size:13.5px;color:var(--tc-ink)">' + CT.esc(s.full_name || s.username) + '</strong><span class="tc-mono" style="font-size:11.5px;color:var(--tc-ink-3)">@' + CT.esc(s.username) + ' · ' + CT.esc(s.class || "") + '</span></div>' +
+            '<span class="tc-pill ' + tone + '">' + pct + '%</span>' +
+          '</div>';
+        }).join("");
+      } else {
+        var qs = drwData.questions || [];
+        if (!qs.length) {
+          body.innerHTML = '<p style="text-align:center;color:var(--tc-ink-3);padding:48px 0">No questions added to this examination yet.</p>';
+          return;
         }
-
-        async function bulkAct(action) {
-            if (!sel.size) return toast('Select exams first', 'err');
-            const selectedIds = Array.from(sel);
-            try {
-                const r = await fetch('/admin/exams/bulk-action', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ action, exam_ids: selectedIds })
-                });
-                const d = await r.json();
-                if (d.success) {
-                    selectedIds.forEach(id => {
-                        if (action === 'delete') {
-                            document.getElementById(`ec-${id}`)?.remove();
-                        } else if (action === 'start') {
-                            const card = document.getElementById(`ec-${id}`);
-                            if (card && card.dataset.status !== 'deactivated') {
-                                updateExamCardState(id, 'active');
-                            }
-                        } else if (action === 'stop') {
-                            const card = document.getElementById(`ec-${id}`);
-                            if (card && card.dataset.status !== 'deactivated') {
-                                updateExamCardState(id, 'inactive');
-                            }
-                        } else if (action === 'deactivate') {
-                            updateExamCardState(id, 'deactivated');
-                        } else if (action === 'reactivate') {
-                            updateExamCardState(id, 'inactive');
-                        }
-                    });
-                    clearSel();
-                    updateDashboardCounters();
-                    applyFilters();
-                    toast(d.message || 'Bulk action completed');
-                } else {
-                    toast(d.error || 'Failed', 'err');
-                }
-            } catch {
-                toast('Network error', 'err');
-            }
+        body.innerHTML = qs.map(function (q, idx) {
+          var rate = q.total_attempts > 0 ? Math.round(((q.correct_count || 0) / q.total_attempts) * 100) : null;
+          var opts = [
+            { label: "A", text: q.option1, num: "1" },
+            { label: "B", text: q.option2, num: "2" },
+            { label: "C", text: q.option3, num: "3" },
+            { label: "D", text: q.option4, num: "4" }
+          ].filter(function (o) { return o.text != null && String(o.text).trim() !== ""; });
+          var ans = String(q.answer || "").trim();
+          var optHtml = opts.map(function (o) {
+            var isC = ans === String(o.text).trim() || ans === o.num || ans === o.label;
+            return '<div class="ecc-q-opt' + (isC ? " is-correct" : "") + '"><strong class="tc-mono">' + o.label + '.</strong><div style="flex:1">' + o.text + '</div>' + (isC ? '<span style="color:var(--ct-ok);font-weight:650;font-size:11.5px">Correct</span>' : '') + '</div>';
+          }).join("");
+          return '<div class="ecc-q-card">' +
+            '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px">' +
+              '<span class="tc-pill">Q' + (idx + 1) + (q.section_name ? ' · ' + CT.esc(q.section_name) : '') + '</span>' +
+              '<span class="tc-mono" style="font-size:11.5px;color:var(--tc-ink-3)">' + (rate !== null ? (rate + '% correct (' + q.correct_count + '/' + q.total_attempts + ')') : 'Not attempted') + '</span>' +
+            '</div>' +
+            '<div style="font-size:13.5px;line-height:1.55;color:var(--tc-ink);margin-bottom:8px">' + (q.question || "") + '</div>' +
+            optHtml +
+          '</div>';
+        }).join("");
+        if (window.renderMathInElement) {
+          renderMathInElement(body, {
+            delimiters: [{ left: "$$", right: "$$", display: true }, { left: "$", right: "$", display: false }, { left: "\\(", right: "\\)", display: false }],
+            throwOnError: false
+          });
         }
+      }
+    }
 
-        function bulkExport() { if (!sel.size) return toast('Select exams first', 'err'); Array.from(sel).forEach(id => window.open(`/admin/exam/${id}/export-json`, '_blank')); toast(`Exporting ${sel.size} exams...`, 'inf'); }
-        function showBulkDel() {
-            if (!sel.size) return toast('Select exams first', 'err');
-            document.getElementById('bulkDelMsg').textContent = `${sel.size} exam(s) permanently deleted.`;
-            document.getElementById('bulkDelConfirmBtn').onclick = async () => { hideM('bulkDelModal'); await bulkAct('delete'); };
-            showM('bulkDelModal');
-        }
-
-        async function toggleStatus(id, makeActive) {
-            try {
-                const r = await fetch(`/admin/exam/${id}/toggle-status`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ active: makeActive })
-                });
-                const d = await r.json();
-                if (d.success) {
-                    updateExamCardState(id, makeActive ? 'active' : 'inactive');
-                    updateDashboardCounters();
-                    applyFilters();
-                    toast(`Exam ${makeActive ? 'started' : 'paused'}`);
-                } else {
-                    toast(d.error || 'Failed', 'err');
-                }
-            } catch {
-                toast('Failed', 'err');
-            }
-        }
-
-        function showDeactModal(id, name) {
-            pendDeact = id; document.getElementById('deactMsg').innerHTML = `<strong>${name}</strong> will be hidden & stopped.`;
-            document.getElementById('deactReason').value = '';
-            document.getElementById('deactConfirmBtn').onclick = confirmDeact; showM('deactModal');
-        }
-        async function confirmDeact() {
-            if (!pendDeact) return;
-            const reason = document.getElementById('deactReason').value || 'No reason';
-            const examId = pendDeact;
-            try {
-                const r = await fetch(`/admin/exam/${examId}/deactivate`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ reason })
-                });
-                const d = await r.json();
-                if (d.success) {
-                    updateExamCardState(examId, 'deactivated');
-                    updateDashboardCounters();
-                    applyFilters();
-                    toast('Exam deactivated & stopped');
-                    hideM('deactModal');
-                } else {
-                    toast(d.error || 'Failed', 'err');
-                }
-            } catch {
-                toast('Failed', 'err');
-            } finally {
-                pendDeact = null;
-            }
-        }
-
-        async function reactExam(id) {
-            try {
-                const r = await fetch(`/admin/exam/${id}/reactivate`, { method: 'POST' });
-                const d = await r.json();
-                if (d.success) {
-                    updateExamCardState(id, 'inactive');
-                    updateDashboardCounters();
-                    applyFilters();
-                    toast('Exam restored');
-                } else {
-                    toast(d.error || 'Failed', 'err');
-                }
-            } catch {
-                toast('Failed', 'err');
-            }
-        }
-
-        function showDelModal(id, name) {
-            pendDel = id; document.getElementById('delMsg').innerHTML = `<strong>${name}</strong> permanently deleted.`;
-            document.getElementById('delConfirmBtn').onclick = confirmDel; showM('delModal');
-        }
-        async function confirmDel() {
-            if (!pendDel) return;
-            const examId = pendDel;
-            try {
-                const r = await fetch(`/admin/exam/${examId}/delete`, { method: 'DELETE' });
-                const d = await r.json();
-                if (d.success) {
-                    toast(d.message);
-                    const card = document.getElementById(`ec-${examId}`);
-                    if (card) {
-                        card.style.transition = 'all 0.3s ease';
-                        card.style.opacity = '0';
-                        card.style.transform = 'scale(0.9)';
-                        setTimeout(() => {
-                            card.remove();
-                            if (sel.has(examId)) {
-                                sel.delete(examId);
-                                updateBulk();
-                            }
-                            updateDashboardCounters();
-                            applyFilters();
-                        }, 300);
-                    }
-                } else {
-                    toast(d.error || 'Delete failed', 'err');
-                }
-            } catch {
-                toast('Network error', 'err');
-            } finally {
-                hideM('delModal');
-                pendDel = null;
-            }
-        }
-
-        function previewExam(id) {
-            window.open(`/admin/exam/${id}/preview`, '_blank');
-            toast('Preview opened in new tab', 'inf');
-        }
-
-        function dlJSON(id) { window.open(`/admin/exam/${id}/export-json`, '_blank'); toast('Download started', 'ok'); }
-
-        // DRAWER
-        async function openDrawer(id) {
-            drwId = id; document.getElementById('drwOverlay').classList.add('show');
-            document.getElementById('drw').classList.add('show');
-            document.getElementById('drwLoader').classList.add('show');
-            document.getElementById('drwContent').style.display = 'none';
-            document.body.style.overflow = 'hidden';
-            document.querySelectorAll('.drw-tab').forEach((t, i) => t.classList.toggle('active', i === 0));
-            try {
-                const r = await fetch(`/admin/exam/${id}/details`);
-                drwData = await r.json();
-                document.getElementById('drwTitle').textContent = drwData.exam?.name || 'Details';
-                renderDrw('overview');
-            } catch { toast('Failed to load', 'err'); }
-            document.getElementById('drwLoader').classList.remove('show');
-            document.getElementById('drwContent').style.display = 'block';
-        }
-
-        function closeDrawer() {
-            document.getElementById('drwOverlay').classList.remove('show');
-            document.getElementById('drw').classList.remove('show');
-            document.body.style.overflow = ''; drwId = null; drwData = null;
-        }
-
-        document.querySelectorAll('.drw-tab').forEach(t => t.addEventListener('click', function() {
-            document.querySelectorAll('.drw-tab').forEach(x => x.classList.remove('active'));
-            this.classList.add('active'); renderDrw(this.dataset.tab);
-        }));
-
-        function renderDrw(tab) {
-            if (!drwData) return;
-            const c = document.getElementById('drwContent'), ex = drwData.exam;
-            if (tab === 'overview') {
-                c.innerHTML = `<div class="ins-grid">
-                    <div class="ins-card"><div class="ins-lbl">Name</div><div class="ins-val">${ex.name}</div></div>
-                    <div class="ins-card"><div class="ins-lbl">Class</div><div class="ins-val">${ex.class}</div></div>
-                    <div class="ins-card"><div class="ins-lbl">Subject</div><div class="ins-val">${ex.subject_tag||'General'}</div></div>
-                    <div class="ins-card"><div class="ins-lbl">Specialisation</div><div class="ins-val"><span class="tag tag-${(ex.specialisation_tag||'General').toLowerCase()}">${ex.specialisation_tag||'General'}</span></div></div>
-                    <div class="ins-card"><div class="ins-lbl">Duration</div><div class="ins-val">${ex.duration} min</div></div>
-                    <div class="ins-card"><div class="ins-lbl">Teacher</div><div class="ins-val">${ex.teacher_name||'—'}</div></div>
-                    <div class="ins-card"><div class="ins-lbl">Students</div><div class="ins-val">${drwData.students.length}</div></div>
-                    <div class="ins-card"><div class="ins-lbl">Avg Score</div><div class="ins-val" style="color:#059669;">${calcAvg(drwData.students)}%</div></div>
-                </div><div class="chart-box"><canvas id="gradeChart"></canvas></div>`;
-                setTimeout(() => renderChart(drwData.grade_distribution), 100);
-            } else if (tab === 'students') {
-                c.innerHTML = drwData.students.length === 0 ? '<p style="text-align:center;color:var(--text3);padding:40px;">No students yet</p>' :
-                    drwData.students.map((s, i) => `
-                        <div class="stu-item">
-                            <div class="stu-rank ${i===0?'first':(i===1?'second':(i===2?'third':''))}">${i+1}</div>
-                            <img src="/static/images/${s.photo||'default.png'}" class="stu-img" onerror="this.src='/static/images/default.png'">
-                            <div style="flex:1;"><strong>${s.full_name||s.username}</strong><div style="font-size:11px;color:var(--text3);">@${s.username} · ${s.class}</div></div>
-                            <span class="tag ${(s.percentage||0)>=70?'tag-live':((s.percentage||0)>=50?'tag-paused':'tag-blocked')}">${s.percentage||0}%</span>
-                        </div>`).join('');
-            } else if (tab === 'questions') {
-                if (!drwData.questions || drwData.questions.length === 0) {
-                    c.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text3);"><i class="fas fa-inbox fa-2x mb-2 d-block"></i>No questions found in this exam.</div>';
-                } else {
-                    c.innerHTML = drwData.questions.map((q, i) => {
-                        const rate = q.total_attempts > 0 ? ((q.correct_count||0)/q.total_attempts*100) : 0;
-                        const clr = rate >= 70 ? '#10b981' : (rate >= 40 ? '#f59e0b' : '#ef4444');
-                        const isOptCorrect = (optVal, optNum) => {
-                            if (!q.answer) return false;
-                            const ans = String(q.answer).trim();
-                            return ans === String(optVal).trim() || ans === String(optNum) || (optNum === 1 && ans === 'A') || (optNum === 2 && ans === 'B') || (optNum === 3 && ans === 'C') || (optNum === 4 && ans === 'D');
-                        };
-
-                        const optHtml = [
-                            { text: q.option1, num: 1, label: 'A' },
-                            { text: q.option2, num: 2, label: 'B' },
-                            { text: q.option3, num: 3, label: 'C' },
-                            { text: q.option4, num: 4, label: 'D' }
-                        ].filter(o => o.text !== null && o.text !== undefined && o.text !== '').map(o => {
-                            const correct = isOptCorrect(o.text, o.num);
-                            return `
-                                <div class="drw-opt" style="display:flex;align-items:flex-start;gap:8px;padding:7px 10px;margin-top:5px;border-radius:8px;background:${correct ? '#ecfdf5' : '#f8fafc'};border:1px solid ${correct ? '#a7f3d0' : '#e2e8f0'};font-size:12px;">
-                                    <span style="font-weight:700;color:${correct ? '#065f46' : '#64748b'};">${o.label}.</span>
-                                    <div style="flex:1;color:${correct ? '#065f46' : '#334155'};">${o.text}</div>
-                                    ${correct ? '<span style="color:#059669;font-weight:700;font-size:11px;margin-left:auto;"><i class="fas fa-check-circle"></i> Correct</span>' : ''}
-                                </div>
-                            `;
-                        }).join('');
-
-                        return `
-                            <div class="q-detail-card" style="background: var(--ct-surface-2);border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:14px;box-shadow:0 1px 3px rgba(0,0,0,0.03);">
-                                <div class="d-flex justify-content-between align-items-center mb-2">
-                                    <div style="display:flex;align-items:center;gap:8px;">
-                                        <span class="badge" style="background:#eff6ff;color:#1d4ed8;font-weight:700;">Question ${i+1}</span>
-                                        ${q.section_name ? `<span class="badge" style="background: var(--ct-surface-2);color:#475569;">${q.section_name}</span>` : ''}
-                                        ${q.mandatory ? `<span class="badge bg-warning text-dark"><i class="fas fa-star"></i> Mandatory</span>` : ''}
-                                    </div>
-                                    <div style="font-size:11px;font-weight:600;color:${clr};background:${rate>=70?'#ecfdf5':(rate>=40?'#fffbeb':'#fef2f2')};padding:3px 10px;border-radius:20px;">
-                                        ${q.total_attempts > 0 ? `${Math.round(rate)}% pass rate (${q.correct_count}/${q.total_attempts})` : 'Not attempted yet'}
-                                    </div>
-                                </div>
-                                <div class="q-text-body mb-2" style="font-size:13px;font-weight:600;color:var(--text);line-height:1.5;">
-                                    ${q.question || 'Untitled Question'}
-                                </div>
-                                ${q.image ? `<div class="mb-2"><img src="/static/images/${q.image}" style="max-height:120px;border-radius:8px;border:1px solid #e2e8f0;"></div>` : ''}
-                                <div class="options-wrapper mb-2">
-                                    ${optHtml}
-                                </div>
-                                ${q.explanation ? `
-                                    <div class="q-expl mt-2" style="background:#fefce8;border:1px solid #fef08a;padding:8px 12px;border-radius:8px;font-size:11px;color:#713f12;">
-                                        <i class="fas fa-lightbulb text-warning me-1"></i> <strong>Explanation:</strong> ${q.explanation}
-                                    </div>
-                                ` : ''}
-                            </div>
-                        `;
-                    }).join('');
-
-                    if (window.renderMathInElement) {
-                        window.renderMathInElement(c, {
-                            delimiters: [
-                                {left: '$$', right: '$$', display: true},
-                                {left: '$', right: '$', display: false},
-                                {left: '\\(', right: '\\)', display: false},
-                                {left: '\\[', right: '\\]', display: true}
-                            ],
-                            throwOnError: false
-                        });
-                    }
-                }
-            } else {
-                c.innerHTML = '<p style="color:var(--text3);text-align:center;padding:40px;">Version history tracking coming soon.</p>';
-            }
-        }
-
-        function calcAvg(arr) { if (!arr?.length) return 0; const v = arr.filter(s => s.percentage != null); return v.length ? (v.reduce((a,s) => a + s.percentage, 0) / v.length).toFixed(1) : 0; }
-
-        function renderChart(dist) {
-            const ctx = document.getElementById('gradeChart'); if (!ctx) return;
-            if (gradeChart) gradeChart.destroy();
-            const grades = ['A','B','C','D','F'], colors = ['#10b981','#6366f1','#f59e0b','#f97316','#ef4444'];
-            const data = grades.map(g => { const f = dist?.find(d => d.grade === g); return f ? f.count : 0; });
-            gradeChart = new Chart(ctx, { type: 'bar', data: { labels: grades, datasets: [{ data, backgroundColor: colors, borderRadius: 8 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } } });
-        }
-
-        document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeDrawer(); hideM('delModal'); hideM('deactModal'); hideM('bulkDelModal'); } });
-    </script>
+    document.addEventListener("keydown", function (e) { if (e.key === "Escape") closeDrawer(); });
+  </script>
 
 {{ shell_end(role='admin') }}
 </body>

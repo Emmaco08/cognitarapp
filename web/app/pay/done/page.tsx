@@ -154,18 +154,48 @@ export default function PaymentDonePage() {
             </div>
           ) : r ? (
             <>
-              <div className="receipt-hero">
-                <div className={`receipt-check ${isPaid ? "" : isFailed ? "receipt-check--bad" : "receipt-check--pending"}`}>
-                  {isPaid ? <IconCheck size={28} /> : isFailed ? "✕" : "…"}
-                </div>
-                <h1 style={{ margin: 0, fontSize: 24, letterSpacing: "-0.025em" }}>
+              <div className={`receipt-hero ${isPaid ? "receipt-hero--paid" : ""}`}>
+                {isPaid ? <div className="pay-celebrate-shimmer" aria-hidden="true" /> : null}
+                {isPaid ? (
+                  <div className="pay-celebrate-seal" aria-hidden="true">
+                    <svg viewBox="0 0 140 140">
+                      <circle className="pc-wave pc-wave-1" cx="70" cy="70" r="46" />
+                      <circle className="pc-wave pc-wave-2" cx="70" cy="70" r="46" />
+                      <circle className="pc-orbit" cx="70" cy="70" r="56" />
+                      <g className="pc-sparks">
+                        <line className="pc-spark" x1="70" y1="10" x2="70" y2="19" />
+                        <line className="pc-spark" x1="112" y1="28" x2="106" y2="34" />
+                        <line className="pc-spark" x1="130" y1="70" x2="121" y2="70" />
+                        <line className="pc-spark" x1="112" y1="112" x2="106" y2="106" />
+                        <line className="pc-spark" x1="70" y1="130" x2="70" y2="121" />
+                        <line className="pc-spark" x1="28" y1="112" x2="34" y2="106" />
+                        <line className="pc-spark" x1="10" y1="70" x2="19" y2="70" />
+                        <line className="pc-spark" x1="28" y1="28" x2="34" y2="34" />
+                      </g>
+                      <circle className="pc-halo" cx="70" cy="70" r="42" />
+                      <circle className="pc-ring" cx="70" cy="70" r="36" pathLength={100} />
+                      <path className="pc-check" d="M52 71 L64 83 L89 58" pathLength={100} />
+                    </svg>
+                  </div>
+                ) : (
+                  <div className={`receipt-check ${isFailed ? "receipt-check--bad" : "receipt-check--pending"}`}>
+                    {isFailed ? "✕" : "…"}
+                  </div>
+                )}
+                {isPaid ? (
+                  <span className="pay-celebrate-badge">
+                    <i />
+                    Verified &amp; Ed25519 Signed
+                  </span>
+                ) : null}
+                <h1 className="pay-celebrate-title" style={{ margin: 0, fontSize: 25, letterSpacing: "-0.028em" }}>
                   {isPaid
                     ? "Payment confirmed"
                     : isFailed
                     ? "Payment was not completed"
                     : "Waiting for confirmation"}
                 </h1>
-                <p style={{ margin: 0, color: "var(--ink-2)", maxWidth: "46ch" }}>
+                <p className="pay-celebrate-sub" style={{ margin: 0, color: "var(--ink-2)", maxWidth: "46ch" }}>
                   {isPaid
                     ? `Thank you! Your ${r.plan_name} for ${r.school_name} is now active${r.is_test ? " (Test payment)" : ""}. A receipt has also been emailed to ${r.email}.`
                     : isFailed

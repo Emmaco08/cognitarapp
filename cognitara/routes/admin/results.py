@@ -435,21 +435,50 @@ def admin_school_analytics():
     class_labels = [c["class"] for c in class_performance]
     class_avgs = [round(c["avg_score"] or 0, 1) for c in class_performance]
     
-    # Subject-wise performance
-    subject_performance = conn.execute("""
-        SELECT e.subject_tag,
-               COUNT(sc.id) as attempt_count,
-               AVG(sc.percentage) as avg_score,
-               SUM(CASE WHEN sc.percentage >= 50 THEN 1 ELSE 0 END) as passed_count
+    # Subject-wise performance (case-insensitive normalization so 'Physics' and 'PHYSICS' merge cleanly)
+    raw_subject_rows = conn.execute("""
+        SELECT TRIM(COALESCE(NULLIF(TRIM(e.subject_tag), ''), e.name)) AS raw_subject,
+               sc.percentage AS pct
         FROM scores sc
         JOIN exams e ON sc.exam_id = e.id
-        WHERE sc.status = 'completed' AND sc.percentage IS NOT NULL AND e.subject_tag IS NOT NULL
-        GROUP BY e.subject_tag
-        ORDER BY avg_score DESC
+        WHERE sc.status = 'completed' AND sc.percentage IS NOT NULL
     """).fetchall()
-    
+
+    subj_buckets = {}
+    for row in raw_subject_rows:
+        raw_name = str(row["raw_subject"] or "General").strip()
+        if not raw_name:
+            raw_name = "General"
+        key = " ".join(raw_name.split()).lower()
+        # Preserve clean acronyms (e.g. C.R.S., I.C.T., P.H.E.) while title-casing standard names
+        display = raw_name if ("." in raw_name or len(raw_name) <= 4) else raw_name.title()
+        b = subj_buckets.get(key)
+        if not b:
+            b = {"subject_tag": display, "sum_pct": 0.0, "attempt_count": 0, "passed_count": 0}
+            subj_buckets[key] = b
+        pct_val = float(row["pct"] or 0.0)
+        b["sum_pct"] += pct_val
+        b["attempt_count"] += 1
+        if pct_val >= 50.0:
+            b["passed_count"] += 1
+
+    subject_performance = sorted(
+        [
+            {
+                "subject_tag": b["subject_tag"],
+                "attempt_count": b["attempt_count"],
+                "avg_score": round(b["sum_pct"] / b["attempt_count"], 1) if b["attempt_count"] else 0.0,
+                "passed_count": b["passed_count"],
+                "pass_rate": round((b["passed_count"] / b["attempt_count"]) * 100, 1) if b["attempt_count"] else 0.0,
+            }
+            for b in subj_buckets.values()
+        ],
+        key=lambda x: x["avg_score"],
+        reverse=True,
+    )
+
     subject_labels = [s["subject_tag"] for s in subject_performance]
-    subject_scores = [round(s["avg_score"] or 0, 1) for s in subject_performance]
+    subject_scores = [s["avg_score"] for s in subject_performance]
     
     # Recent exam results (last 10)
     recent_exams = conn.execute("""

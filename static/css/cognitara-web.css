@@ -2597,6 +2597,281 @@ html.ct-motion .ct-lift.is-settled { transition: transform var(--ct-d-3) var(--c
   }
 }
 
+/* ---------- 12.6 v2.2.6 Shared Upgrades: Person Avatars, Spring Modals, Pagination & Aligned Tables ---------- */
+.ct-avatar--person {
+  position: relative;
+  background: var(--ct-surface-3) !important;
+  color: var(--ct-ink-3) !important;
+  border: 1px solid var(--ct-line-2);
+}
+.ct-avatar--person img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: 2;
+  background: var(--ct-surface-3);
+}
+.ct-avatar--person .ct-avatar__glyph {
+  width: 62%;
+  height: 62%;
+  display: block;
+  z-index: 1;
+  opacity: 0.85;
+}
+html[data-theme="light"] .ct-avatar--person {
+  background: #ECEEF2 !important;
+  color: #5C6470 !important;
+  border-color: rgba(15, 23, 42, 0.1);
+}
+
+/* Crisp Table Header Alignment & Visual Hierarchy */
+.ct-table th {
+  vertical-align: middle;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  font-size: 11px;
+  font-weight: 650;
+  color: var(--ct-ink-3);
+}
+.ct-table th.ct-col-right, .ct-table td.ct-col-right { text-align: right; }
+.ct-table th.ct-col-center, .ct-table td.ct-col-center { text-align: center; }
+.ct-table td.ct-col-right .ct-cell-actions { justify-content: flex-end; }
+.ct-table th:last-child.ct-col-actions, .ct-table td:last-child.ct-col-actions { text-align: right; }
+.ct-table td:last-child.ct-col-actions .ct-cell-actions { justify-content: flex-end; }
+
+/* Reusable Pagination Bar (.ct-pager) */
+.ct-pager {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px 16px;
+  padding: 12px 20px;
+  border-top: 1px solid var(--ct-line);
+  background: var(--ct-surface);
+  border-radius: 0 0 var(--ct-r-lg) var(--ct-r-lg);
+}
+.ct-pager[hidden] { display: none !important; }
+.ct-pager__meta {
+  font-size: 12.5px;
+  color: var(--ct-ink-3);
+  font-variant-numeric: tabular-nums;
+}
+.ct-pager__meta strong { color: var(--ct-ink); font-weight: 620; }
+.ct-pager__controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.ct-pager__select {
+  height: 32px;
+  padding: 0 28px 0 10px;
+  border-radius: 7px;
+  border: 1px solid var(--ct-line-2);
+  background: var(--ct-surface-2);
+  color: var(--ct-ink);
+  font-size: 12.5px;
+  font-weight: 550;
+  cursor: pointer;
+  transition: border-color 140ms ease, background-color 140ms ease;
+}
+.ct-pager__select:hover, .ct-pager__select:focus {
+  border-color: var(--ct-accent-line);
+  outline: none;
+}
+.ct-pager__single {
+  font-size: 12.5px;
+  color: var(--ct-ink-3);
+  padding: 0 6px;
+  font-variant-numeric: tabular-nums;
+}
+.ct-page-ellipsis {
+  padding: 0 4px;
+  color: var(--ct-ink-3);
+  font-size: 13px;
+}
+.ct-page-btn {
+  transition: background-color 140ms ease, border-color 140ms ease, color 140ms ease, transform 120ms ease;
+  cursor: pointer;
+}
+.ct-page-btn:hover:not(:disabled):not(.is-active) {
+  background: var(--ct-hover);
+  color: var(--ct-ink);
+  border-color: var(--ct-line-3, var(--ct-line-2));
+}
+.ct-page-btn.is-active {
+  background: var(--ct-primary);
+  color: #FFFFFF;
+  border-color: var(--ct-primary);
+  font-weight: 650;
+}
+.ct-page-btn:disabled {
+  opacity: 0.42;
+  cursor: not-allowed;
+}
+
+/* High-Contrast Solid Semantic Action Buttons */
+.ct-btn--danger-solid {
+  background: #DC2626 !important;
+  color: #FFFFFF !important;
+  border: 1px solid #DC2626 !important;
+  box-shadow: 0 1px 2px rgba(220, 38, 38, 0.25);
+}
+.ct-btn--danger-solid:hover {
+  background: #B91C1C !important;
+  border-color: #B91C1C !important;
+  color: #FFFFFF !important;
+  transform: translateY(-1px);
+}
+.ct-btn--warn-solid {
+  background: #D97706 !important;
+  color: #FFFFFF !important;
+  border: 1px solid #D97706 !important;
+}
+.ct-btn--warn-solid:hover {
+  background: #B45309 !important;
+  border-color: #B45309 !important;
+  color: #FFFFFF !important;
+}
+.ct-btn--ok-solid {
+  background: #059669 !important;
+  color: #FFFFFF !important;
+  border: 1px solid #059669 !important;
+}
+.ct-btn--ok-solid:hover {
+  background: #047857 !important;
+  border-color: #047857 !important;
+  color: #FFFFFF !important;
+}
+
+/* Spring-Animated Modals & CT.confirm Choreography */
+.ct-modal-backdrop {
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+.ct-modal {
+  transform: translateY(18px) scale(0.95);
+  transition: transform 320ms cubic-bezier(0.22, 1, 0.36, 1), opacity 220ms ease;
+}
+.ct-modal-backdrop.is-open .ct-modal {
+  transform: translateY(0) scale(1);
+  opacity: 1;
+}
+.ct-confirm-backdrop { z-index: 1200; }
+.ct-confirm-modal {
+  max-width: 450px;
+  padding: 0;
+  overflow: hidden;
+  border-radius: 16px;
+  border: 1px solid var(--ct-line-2);
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.04);
+}
+html[data-theme="light"] .ct-confirm-modal {
+  box-shadow: 0 24px 56px rgba(15, 23, 42, 0.16), 0 2px 6px rgba(15, 23, 42, 0.06);
+}
+.ct-confirm-accent {
+  height: 3px;
+  width: 100%;
+  background: linear-gradient(90deg, #DC2626, #F97316);
+}
+.ct-confirm-modal[data-tone="warn"] .ct-confirm-accent { background: linear-gradient(90deg, #D97706, #F59E0B); }
+.ct-confirm-modal[data-tone="ok"] .ct-confirm-accent { background: linear-gradient(90deg, #059669, #10B981); }
+.ct-confirm-modal[data-tone="primary"] .ct-confirm-accent { background: linear-gradient(90deg, #2563EB, #38BDF8); }
+.ct-confirm-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 24px 24px 6px;
+}
+.ct-confirm-badge {
+  position: relative;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  flex: none;
+  background: rgba(220, 38, 38, 0.12);
+  color: #F87171;
+  border: 1px solid rgba(220, 38, 38, 0.28);
+}
+html[data-theme="light"] .ct-confirm-badge { color: #DC2626; background: rgba(220, 38, 38, 0.08); }
+.ct-confirm-modal[data-tone="warn"] .ct-confirm-badge { background: rgba(217, 119, 6, 0.12); color: #F59E0B; border-color: rgba(217, 119, 6, 0.28); }
+.ct-confirm-modal[data-tone="ok"] .ct-confirm-badge { background: rgba(16, 185, 129, 0.12); color: #10B981; border-color: rgba(16, 185, 129, 0.28); }
+.ct-confirm-modal[data-tone="primary"] .ct-confirm-badge { background: rgba(59, 130, 246, 0.12); color: #60A5FA; border-color: rgba(59, 130, 246, 0.28); }
+.ct-confirm-badge__ring {
+  position: absolute;
+  inset: -4px;
+  border-radius: 15px;
+  border: 1.5px solid currentColor;
+  opacity: 0;
+}
+.ct-confirm-backdrop.is-open .ct-confirm-badge__ring {
+  animation: ct-badge-pulse 1.3s cubic-bezier(0.22, 1, 0.36, 1) 120ms 1;
+}
+.ct-confirm-backdrop.is-open .ct-confirm-badge__ico {
+  display: inline-flex;
+  animation: ct-badge-pop 380ms cubic-bezier(0.34, 1.56, 0.64, 1) 60ms both;
+}
+.ct-confirm-badge__ico .ct-ico { width: 20px; height: 20px; }
+.ct-confirm-copy { flex: 1; min-width: 0; }
+.ct-confirm-copy h3 {
+  margin: 0 0 6px;
+  font-size: 16.5px;
+  font-weight: 700;
+  color: var(--ct-ink);
+  letter-spacing: -0.015em;
+}
+.ct-confirm-desc {
+  font-size: 13.5px;
+  line-height: 1.58;
+  color: var(--ct-ink-2);
+}
+.ct-confirm-desc strong { color: var(--ct-ink); font-weight: 650; }
+.ct-confirm-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 20px 24px 22px;
+  margin-top: 8px;
+  border-top: 1px solid var(--ct-line);
+  background: var(--ct-surface-2);
+}
+@keyframes ct-badge-pop {
+  0% { transform: scale(0.55) rotate(-10deg); opacity: 0; }
+  100% { transform: scale(1) rotate(0deg); opacity: 1; }
+}
+@keyframes ct-badge-pulse {
+  0% { transform: scale(0.88); opacity: 0.55; }
+  100% { transform: scale(1.22); opacity: 0; }
+}
+
+/* SweetAlert2 Theme Harmonization (whenever Swal is used directly) */
+.swal2-popup {
+  background: var(--ct-surface) !important;
+  color: var(--ct-ink) !important;
+  border: 1px solid var(--ct-line-2) !important;
+  border-radius: 16px !important;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.45) !important;
+}
+.swal2-title { color: var(--ct-ink) !important; font-size: 18px !important; font-weight: 700 !important; }
+.swal2-html-container { color: var(--ct-ink-2) !important; font-size: 14px !important; }
+.swal2-confirm { border-radius: 9px !important; font-weight: 600 !important; }
+.swal2-cancel { border-radius: 9px !important; font-weight: 600 !important; }
+
+/* Subtle Calibrated Motion for Static Pages */
+@keyframes ct-rise-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.ct-animate-rise {
+  animation: ct-rise-in 380ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
 /* ---------- 13. Reduced motion ---------- */
 @media (prefers-reduced-motion: reduce) {
   .ct-app *, .ct-app *::before, .ct-app *::after,
@@ -2614,7 +2889,7 @@ html.ct-motion .ct-lift.is-settled { transition: transform var(--ct-d-3) var(--c
 
 /* ---------- 14. Print ---------- */
 @media print {
-  .ct-sidebar, .ct-topbar, .ct-scrim, .ct-toasts { display: none !important; }
+  .ct-sidebar, .ct-topbar, .ct-scrim, .ct-toasts, .ct-pager { display: none !important; }
   .ct-shell { grid-template-columns: 1fr !important; }
   .ct-card { box-shadow: none; }
 }

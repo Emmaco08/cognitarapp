@@ -4,6 +4,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { BrandHeader } from "@/components/BrandHeader";
+import { PlanEmblem } from "@/components/PlanEmblem";
 import {
   IconCloud,
   IconCopy,
@@ -591,55 +592,70 @@ export default function DashboardPage() {
                   ) : null}
                 </div>
 
-                <div className="plans-grid">
-                  {plans.map((p) => {
+                <div className="cl-plans-grid">
+                  {plans.map((p, idx) => {
                     const origMinor = currency === "USD" ? p.price_usd_cents : p.price_ngn_kobo;
                     const discMinor = computeDiscountedMinor(origMinor);
                     const feeInfo = estimateAddedFee(discMinor, currency, account.directives);
                     const totalMinor = discMinor + feeInfo.feeMinor;
                     const highlights = p.features_json?.highlights || [];
+                    const featured = Boolean(p.badge && /popular|best/i.test(p.badge)) || p.slug === "annual" || p.slug === "termly";
 
                     return (
-                      <div key={p.id} className={`plan-card ${p.badge ? "is-featured" : ""}`}>
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
-                          <strong style={{ fontSize: 15 }}>{p.display_name}</strong>
-                          {p.badge ? <span className="status-txt status-txt--accent">{p.badge}</span> : null}
+                      <article key={p.id} className={`cl-plan-card ${featured ? "is-featured" : ""}`}>
+                        <div className="cl-plan-head">
+                          <PlanEmblem slug={p.slug} index={idx} />
+                          {p.badge ? <span className="cl-plan-tag">{p.badge}</span> : null}
                         </div>
+                        <h3 className="cl-plan-name">{p.display_name}</h3>
+                        <p className="cl-plan-desc">
+                          {p.duration_days
+                            ? `${p.duration_days}-day institutional licence · ${feeInfo.note}`
+                            : `Perpetual one-time school licence · ${feeInfo.note}`}
+                        </p>
 
-                        <div>
-                          {discMinor < origMinor ? (
-                            <span className="mono" style={{ fontSize: 13, color: "var(--ink-3)", textDecoration: "line-through", marginRight: 8 }}>
-                              {fmtMoney(origMinor, currency)}
-                            </span>
-                          ) : null}
-                          <span className="mono" style={{ fontSize: 24, fontWeight: 760 }}>
+                        <div className="cl-plan-price-row">
+                          <div className="cl-plan-price">
+                            {discMinor < origMinor ? (
+                              <span className="cl-plan-strike">{fmtMoney(origMinor, currency)}</span>
+                            ) : null}
                             {fmtMoney(totalMinor, currency)}
-                          </span>
-                          <div style={{ fontSize: 12, color: "var(--ink-3)", marginTop: 2 }}>
-                            {p.duration_days ? `${p.duration_days} days access` : "One-time perpetual licence"} · {feeInfo.note}
+                          </div>
+                          <div className="cl-plan-cadence">
+                            <span>{p.duration_days ? `${currency} / ${p.duration_days}d` : `${currency} / perpetual`}</span>
+                            <span>{p.lease_days || 14}d offline lease</span>
                           </div>
                         </div>
 
-                        {highlights.length > 0 ? (
-                          <ul style={{ margin: "4px 0 8px", paddingLeft: 18, fontSize: 12.5, color: "var(--ink-2)", display: "grid", gap: 4 }}>
-                            {highlights.slice(0, 4).map((h, i) => (
-                              <li key={i}>{h}</li>
-                            ))}
-                          </ul>
-                        ) : null}
+                        <button
+                          type="button"
+                          className={`cl-plan-cta ${featured ? "cl-plan-cta--solid" : "cl-plan-cta--soft"}`}
+                          disabled={busyPlanId === p.id}
+                          onClick={() => void buyPlan(p.id)}
+                        >
+                          {busyPlanId === p.id ? "Opening Paystack…" : `Pay ${fmtMoney(totalMinor, currency)}`}
+                        </button>
+                        <div className="cl-plan-note">Instant Ed25519 activation · Works offline</div>
 
-                        <div style={{ marginTop: "auto", paddingTop: 6 }}>
-                          <button
-                            type="button"
-                            className="btn btn--primary"
-                            style={{ width: "100%" }}
-                            disabled={busyPlanId === p.id}
-                            onClick={() => void buyPlan(p.id)}
-                          >
-                            {busyPlanId === p.id ? "Opening Paystack…" : `Pay ${fmtMoney(totalMinor, currency)}`}
-                          </button>
-                        </div>
-                      </div>
+                        <div className="cl-plan-divider" />
+                        <ul className="cl-plan-feats">
+                          {(highlights.length > 0
+                            ? highlights.slice(0, 4)
+                            : [
+                                p.duration_days ? `${p.duration_days} days full CBT server access` : "Perpetual licence — zero renewals",
+                                "Unlimited students, exams & question banks",
+                                "Encrypted CogniTara Cloud backups",
+                              ]
+                          ).map((h, i) => (
+                            <li key={i}>
+                              <svg viewBox="0 0 24 24" aria-hidden="true">
+                                <path d="M20 6 9 17l-5-5" />
+                              </svg>
+                              <span>{h}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </article>
                     );
                   })}
                 </div>

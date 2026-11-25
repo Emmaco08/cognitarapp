@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { BrandHeader } from "@/components/BrandHeader";
+import { PlanEmblem } from "@/components/PlanEmblem";
 import { ExamHallArchitecture } from "@/components/ExamHallArchitecture";
 import { IconDownload, IconStar } from "@/components/Icons";
 import { StudioDesktopShowcase } from "@/components/StudioDesktopShowcase";
@@ -14,6 +15,7 @@ interface PlanItem {
   slug: string;
   display_name: string;
   description: string;
+  badge?: string;
   duration_days: number | null;
   lease_days: number;
   price_ngn_kobo: number;
@@ -163,7 +165,7 @@ export default function CloudHomePage() {
       .then((r) => r.json())
       .then((j) => {
         if (j?.ok && Array.isArray(j.plans) && j.plans.length > 0) {
-          setPlans(j.plans.slice(0, 3));
+          setPlans(j.plans.slice(0, 4));
         }
       })
       .catch(() => {});
@@ -329,17 +331,15 @@ export default function CloudHomePage() {
           {!reviewsLoaded ? null : null}
         </section>
 
-        {/* Transparent Live Pricing */}
+        {/* Transparent Live Pricing (Claude-Inspired Architectural Plan Gallery) */}
         <section id="pricing" className="lp-section lp-reveal">
-          <div className="lp-pricing-head">
-            <div style={{ display: "grid", gap: 8 }}>
-              <h2 className="lp-h2">Simple licensing for every school size.</h2>
-              <p className="lp-body">
-                Pay securely with Paystack inside Studio or online. Receive an official receipt and
-                signed Ed25519 offline licence immediately.
-              </p>
-            </div>
-            <div className="lp-seg" role="group" aria-label="Select currency">
+          <div className="cl-pricing-head">
+            <h2 className="lp-h2">Plans that grow with your school</h2>
+            <p className="lp-body">
+              Pay securely with Paystack inside Studio or online. Receive an official receipt and
+              signed Ed25519 offline licence immediately.
+            </p>
+            <div className="lp-seg" role="group" aria-label="Select currency" style={{ marginTop: 8 }}>
               <button
                 type="button"
                 className={currency === "NGN" ? "is-active" : ""}
@@ -357,35 +357,53 @@ export default function CloudHomePage() {
             </div>
           </div>
 
-          <div className="lp-pricing-grid">
+          <div className="cl-plans-grid">
             {plans.map((p, idx) => {
               const minor = currency === "USD" ? p.price_usd_cents : p.price_ngn_kobo;
               const highlights = p.features_json?.highlights || [];
-              const featured = p.slug === "annual" || idx === 1;
+              const featured = p.slug === "annual" || p.slug === "termly" || Boolean(p.badge && /popular|best/i.test(p.badge));
               return (
-                <article key={p.id} className={`lp-tier ${featured ? "is-featured" : ""}`}>
-                  <h3 className="lp-tier__name">{p.display_name}</h3>
-                  <div className="lp-tier__price">{fmtPrice(minor, currency)}</div>
-                  <div className="lp-tier__meta">
-                    {p.duration_days
-                      ? `${p.duration_days} days access · ${p.lease_days}-day offline lease`
-                      : `One-time purchase · ${p.lease_days}-day offline lease`}
+                <article key={p.id} className={`cl-plan-card ${featured ? "is-featured" : ""}`}>
+                  <div className="cl-plan-head">
+                    <PlanEmblem slug={p.slug} index={idx} />
+                    {p.badge ? <span className="cl-plan-tag">{p.badge}</span> : null}
                   </div>
-                  <p className="lp-body">{p.description}</p>
-                  <ul className="lp-tier__list">
-                    {highlights.slice(0, 3).map((item) => (
-                      <li key={item}>{item}</li>
+                  <h3 className="cl-plan-name">{p.display_name}</h3>
+                  <p className="cl-plan-desc">{p.description}</p>
+                  <div className="cl-plan-price-row">
+                    <div className="cl-plan-price">{fmtPrice(minor, currency)}</div>
+                    <div className="cl-plan-cadence">
+                      <span>{p.duration_days ? `${currency} / ${p.duration_days} days` : `${currency} / one-time`}</span>
+                      <span>{p.lease_days}-day offline lease</span>
+                    </div>
+                  </div>
+                  <Link
+                    href="/signup"
+                    className={`cl-plan-cta ${featured ? "cl-plan-cta--solid" : "cl-plan-cta--soft"}`}
+                  >
+                    Get {p.display_name.replace(/\s+(School|Institutional)\s+Plan$/i, " plan")}
+                  </Link>
+                  <div className="cl-plan-note">Instant activation · Works offline</div>
+                  <div className="cl-plan-divider" />
+                  <div className="cl-plan-kicker">Included in {p.display_name}:</div>
+                  <ul className="cl-plan-feats">
+                    {(highlights.length
+                      ? highlights.slice(0, 4)
+                      : [
+                          p.duration_days ? `${p.duration_days} days full CBT server access` : "Perpetual school licence — zero renewals",
+                          `${p.lease_days}-day offline LAN check-in window`,
+                          "Unlimited students, teachers & question banks",
+                          "Encrypted CogniTara Cloud backups",
+                        ]
+                    ).map((item) => (
+                      <li key={item}>
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                          <path d="M20 6 9 17l-5-5" />
+                        </svg>
+                        <span>{item}</span>
+                      </li>
                     ))}
                   </ul>
-                  <div style={{ marginTop: "auto" }}>
-                    <Link
-                      href="/signup"
-                      className={featured ? "btn btn--primary" : "btn btn--outline"}
-                      style={{ width: "100%" }}
-                    >
-                      Choose {p.display_name}
-                    </Link>
-                  </div>
                 </article>
               );
             })}

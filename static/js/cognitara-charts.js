@@ -314,6 +314,13 @@
       return s.length > maxLen ? s.slice(0, maxLen - 1).trim() + "…" : s;
     });
     var values = (cfg.values || []).map(function (v) { return Number(v) || 0; });
+    var rowHeight = cfg.rowHeight || 34;
+    var minHeight = cfg.minHeight || 250;
+    var computedHeight = Math.max(minHeight, labels.length * rowHeight + 56);
+    if (canvas.parentElement) {
+      canvas.parentElement.style.height = computedHeight + "px";
+      canvas.parentElement.style.minHeight = computedHeight + "px";
+    }
 
     var chart = new Chart(canvas.getContext("2d"), {
       type: "bar",
@@ -326,16 +333,16 @@
           hoverBackgroundColor: values.map(function (v) { return pal.tierColor(v); }),
           borderRadius: 6,
           borderSkipped: false,
-          barThickness: values.length > 6 ? 16 : 22,
-          maxBarThickness: 26
+          barThickness: values.length > 10 ? 18 : 22,
+          maxBarThickness: 24
         }]
       },
       options: {
         responsive: true,
         maintainAspectRatio: false,
         indexAxis: "y",
-        layout: { padding: { top: 20, right: narrow ? 42 : 48, bottom: 2, left: 2 } },
-        animation: { duration: 740, easing: "easeOutQuart" },
+        layout: { padding: { top: 22, right: narrow ? 46 : 52, bottom: 4, left: 4 } },
+        animation: { duration: 700, easing: "easeOutQuart" },
         plugins: {
           legend: { display: false },
           tooltip: commonTooltip(pal, cfg.unit || "%"),

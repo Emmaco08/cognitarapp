@@ -1,709 +1,419 @@
-{%- from '_ct_shell.html' import ico, ct_boot_script, admin_shell_start, teacher_shell_start, student_topbar, shell_end -%}
+{%- from '_ct_shell.html' import ico, person_avatar, ct_boot_script, admin_shell_start, shell_end with context -%}
 <!DOCTYPE html>
 <html lang="en" data-theme="dark">
 <head>
-    <title>Warning Logs | COGNITARA EXAM SYSTEM</title>
-    <link href="{{ url_for('static', filename='vendor/bootstrap/css/bootstrap.min.css') }}" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='vendor/fontawesome/css/all.min.css') }}">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            background: linear-gradient(135deg, #f5f7fa 0%, #e8edf5 100%);
-            font-family: 'Segoe UI', 'Poppins', Tahoma, Geneva, Verdana, sans-serif;
-            min-height: 100vh;
-            position: relative;
-            overflow-x: hidden;
-        }
-
-        /* Animated Educational Icons Background */
-        .edu-icon {
-            position: absolute;
-            color: rgba(239, 68, 68, 0.05);
-            pointer-events: none;
-            z-index: 0;
-            animation: floatIcon 20s infinite ease-in-out;
-        }
-
-        @keyframes floatIcon {
-            0% {
-                transform: translate(0, 0) rotate(0deg);
-                opacity: 0;
-            }
-            10% {
-                opacity: 0.08;
-            }
-            90% {
-                opacity: 0.08;
-            }
-            100% {
-                transform: translate(100px, -100px) rotate(360deg);
-                opacity: 0;
-            }
-        }
-
-        .edu-icon:nth-child(1) { top: 10%; left: 5%; animation-duration: 18s; font-size: 50px; }
-        .edu-icon:nth-child(2) { top: 70%; left: 15%; animation-duration: 22s; font-size: 40px; animation-delay: 2s; }
-        .edu-icon:nth-child(3) { top: 30%; left: 85%; animation-duration: 20s; font-size: 55px; animation-delay: 4s; }
-        .edu-icon:nth-child(4) { top: 80%; left: 80%; animation-duration: 25s; font-size: 35px; animation-delay: 1s; }
-        .edu-icon:nth-child(5) { top: 50%; left: 10%; animation-duration: 19s; font-size: 45px; animation-delay: 3s; }
-        .edu-icon:nth-child(6) { top: 20%; left: 70%; animation-duration: 23s; font-size: 60px; animation-delay: 5s; }
-        .edu-icon:nth-child(7) { top: 60%; left: 90%; animation-duration: 21s; font-size: 42px; animation-delay: 2.5s; }
-        .edu-icon:nth-child(8) { top: 85%; left: 25%; animation-duration: 24s; font-size: 38px; animation-delay: 6s; }
-        .edu-icon:nth-child(9) { top: 15%; left: 45%; animation-duration: 17s; font-size: 48px; animation-delay: 1.5s; }
-        .edu-icon:nth-child(10) { top: 45%; left: 75%; animation-duration: 26s; font-size: 52px; animation-delay: 3.5s; }
-
-        /* Main Container */
-        .logs-container {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 40px 30px;
-            position: relative;
-            z-index: 10;
-        }
-
-        /* Header Section */
-        .page-header {
-            text-align: center;
-            margin-bottom: 40px;
-        }
-
-        .logo-icon {
-            width: 80px;
-            height: 80px;
-            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-            border-radius: 50%;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            margin-bottom: 20px;
-            animation: pulse 2s infinite;
-            box-shadow: 0 10px 25px rgba(239, 68, 68, 0.2);
-        }
-
-        @keyframes pulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.05); }
-        }
-
-        .logo-icon i {
-            font-size: 40px;
-            color: white;
-        }
-
-        .page-header h1 {
-            font-size: 36px;
-            font-weight: 800;
-            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            margin-bottom: 10px;
-        }
-
-        .page-header p {
-            font-size: 16px;
-            color: var(--ct-ink-3);
-        }
-
-        /* Stats Bar */
-        .stats-bar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 15px;
-            margin-bottom: 30px;
-        }
-
-        .stats-cards {
-            display: flex;
-            gap: 15px;
-            flex-wrap: wrap;
-        }
-
-        .stat-card {
-            background: var(--ct-surface);
-            border-radius: 20px;
-            padding: 15px 25px;
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            border: 1px solid var(--ct-line-2);
-            box-shadow: 0 2px 5px rgba(0,0,0,0.03);
-        }
-
-        .stat-icon {
-            width: 45px;
-            height: 45px;
-            background: var(--ct-bad-soft);
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .stat-icon i {
-            font-size: 22px;
-            color: #ef4444;
-        }
-
-        .stat-info h3 {
-            font-size: 24px;
-            font-weight: 800;
-            color: var(--ct-ink);
-            margin: 0;
-        }
-
-        .stat-info p {
-            margin: 0;
-            color: var(--ct-ink-3);
-            font-size: 12px;
-        }
-
-        .action-buttons {
-            display: flex;
-            gap: 12px;
-        }
-
-        .btn-back, .btn-delete-all {
-            padding: 10px 20px;
-            border-radius: 12px;
-            font-weight: 600;
-            font-size: 14px;
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            transition: all 0.3s ease;
-        }
-
-        .btn-back {
-            background: var(--ct-surface);
-            border: 2px solid var(--ct-line-2);
-            color: var(--ct-ink-3);
-        }
-
-        .btn-back:hover {
-            border-color: var(--ct-primary);
-            color: var(--ct-primary);
-            transform: translateY(-2px);
-        }
-
-        .btn-delete-all {
-            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-            color: white;
-            border: none;
-        }
-
-        .btn-delete-all:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(239, 68, 68, 0.3);
-        }
-
-        /* Card Styles */
-        .card-custom {
-            background: var(--ct-surface);
-            border-radius: 24px;
-            border: 1px solid var(--ct-line-2);
-            overflow: hidden;
-            margin-bottom: 30px;
-            transition: all 0.3s ease;
-        }
-
-        .card-custom:hover {
-            box-shadow: 0 10px 25px -10px rgba(0, 0, 0, 0.1);
-        }
-
-        .card-header-custom {
-            padding: 18px 25px;
-            border-bottom: 1px solid var(--ct-line-2);
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .card-header-custom.warning {
-            background: linear-gradient(135deg, #fef2f2 0%, #fff5f5 100%);
-        }
-
-        .card-header-custom.info {
-            background: var(--ct-surface-2);
-        }
-
-        .card-header-custom.dark {
-            background: var(--ct-surface-2);
-        }
-
-        .card-header-icon {
-            width: 40px;
-            height: 40px;
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .card-header-icon.warning {
-            background: var(--ct-bad-soft);
-            color: #ef4444;
-        }
-
-        .card-header-icon.info {
-            background: var(--ct-accent-soft);
-            color: #3b82f6;
-        }
-
-        .card-header-icon.dark {
-            background: var(--ct-line-2);
-            color: var(--ct-ink-2);
-        }
-
-        .card-header-custom h5 {
-            margin: 0;
-            font-size: 16px;
-            font-weight: 600;
-            color: var(--ct-ink);
-        }
-
-        .card-body-custom {
-            padding: 20px 25px;
-        }
-
-        /* Table Styles */
-        .custom-table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        .custom-table th {
-            padding: 12px 12px;
-            text-align: left;
-            font-size: 12px;
-            font-weight: 600;
-            color: var(--ct-ink-3);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            border-bottom: 1px solid var(--ct-line-2);
-            background: var(--ct-surface);
-        }
-
-        .custom-table td {
-            padding: 12px 12px;
-            border-bottom: 1px solid #f0f2f5;
-            font-size: 13px;
-            color: var(--ct-ink-2);
-            vertical-align: middle;
-        }
-
-        .custom-table tbody tr:hover {
-            background: var(--ct-surface);
-        }
-
-        /* Badge Styles */
-        .badge-warning-count {
-            background: var(--ct-warn-soft);
-            color: #d97706;
-            padding: 4px 10px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 600;
-        }
-
-        .badge-exam-count {
-            background: var(--ct-accent-soft);
-            color: #1d4ed8;
-            padding: 4px 10px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 600;
-        }
-
-        /* Warning Level Colors */
-        .warning-high {
-            color: #dc2626;
-            font-weight: 700;
-        }
-
-        .warning-medium {
-            color: #f59e0b;
-            font-weight: 600;
-        }
-
-        .warning-low {
-            color: #10b981;
-        }
-
-        /* Scrollable Table */
-        .scrollable-table {
-            max-height: 400px;
-            overflow-y: auto;
-            border-radius: 12px;
-        }
-
-        /* Empty State */
-        .empty-state {
-            text-align: center;
-            padding: 60px 20px;
-        }
-
-        .empty-icon {
-            width: 80px;
-            height: 80px;
-            background: var(--ct-surface);
-            border-radius: 50%;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            margin-bottom: 20px;
-        }
-
-        .empty-icon i {
-            font-size: 40px;
-            color: #94a3b8;
-        }
-
-        .empty-state h4 {
-            color: var(--ct-ink);
-            margin-bottom: 8px;
-        }
-
-        .empty-state p {
-            color: var(--ct-ink-3);
-        }
-
-        /* Responsive */
-        @media (max-width: 768px) {
-            .logs-container {
-                padding: 20px 15px;
-            }
-            
-            .page-header h1 {
-                font-size: 28px;
-            }
-            
-            .stats-bar {
-                flex-direction: column;
-                align-items: stretch;
-            }
-            
-            .stats-cards {
-                justify-content: center;
-            }
-            
-            .action-buttons {
-                justify-content: center;
-            }
-            
-            .custom-table th, .custom-table td {
-                padding: 8px;
-                font-size: 11px;
-            }
-            
-            .card-header-custom {
-                padding: 15px 20px;
-            }
-            
-            .card-body-custom {
-                padding: 15px 20px;
-                overflow-x: auto;
-            }
-        }
-    </style>
-    <!-- CSRF Protection Shield -->
-    <meta name="csrf-token" content="{{ csrf_token() }}">
-    <script>
-    window.CSRF_TOKEN = "{{ csrf_token() }}";
-    (function() {
-        if (window.fetch) {
-            const _origFetch = window.fetch;
-            window.fetch = function(url, options) {
-                options = options || {};
-                const method = (options.method || 'GET').toUpperCase();
-                if (!['GET', 'HEAD', 'OPTIONS', 'TRACE'].includes(method)) {
-                    options.headers = options.headers || {};
-                    const token = window.CSRF_TOKEN || (document.querySelector('meta[name="csrf-token"]') && document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
-                    if (token) {
-                        if (typeof Headers !== 'undefined' && options.headers instanceof Headers) {
-                            if (!options.headers.has('X-CSRFToken')) options.headers.set('X-CSRFToken', token);
-                        } else if (Array.isArray(options.headers)) {
-                            options.headers.push(['X-CSRFToken', token]);
-                        } else {
-                            if (!options.headers['X-CSRFToken']) options.headers['X-CSRFToken'] = token;
-                        }
-                    }
-                }
-                return _origFetch(url, options);
-            };
-        }
-        if (window.$ && $.ajaxSetup) {
-            $.ajaxSetup({
-                beforeSend: function(xhr, settings) {
-                    if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type)) {
-                        xhr.setRequestHeader("X-CSRFToken", window.CSRF_TOKEN);
-                    }
-                }
-            });
-        }
-        if (navigator.sendBeacon) {
-            const _origBeacon = navigator.sendBeacon.bind(navigator);
-            navigator.sendBeacon = function(url, data) {
-                if (data instanceof FormData) {
-                    if (!data.has('csrf_token')) data.append('csrf_token', window.CSRF_TOKEN);
-                } else if (typeof data === 'string') {
-                    try {
-                        const obj = JSON.parse(data);
-                        if (typeof obj === 'object' && obj !== null && !obj.csrf_token) {
-                            obj.csrf_token = window.CSRF_TOKEN;
-                            data = JSON.stringify(obj);
-                        }
-                    } catch(e) {}
-                }
-                return _origBeacon(url, data);
-            };
-        }
-        document.addEventListener('DOMContentLoaded', function() {
-            document.querySelectorAll('form[method="POST"], form[method="post"]').forEach(function(form) {
-                if (!form.querySelector('input[name="csrf_token"]')) {
-                    var input = document.createElement('input');
-                    input.type = 'hidden';
-                    input.name = 'csrf_token';
-                    input.value = window.CSRF_TOKEN;
-                    form.appendChild(input);
-                }
-            });
-        });
-    })();
-    </script>
-
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+  <meta name="color-scheme" content="dark light">
+  <title>Warning Logs — {{ school_branding.school_name }} | CogniTara</title>
+  <link rel="icon" href="{{ url_for('static', filename='images/cognitara-favicon.ico') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/cognitara-web.css') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/cognitara-portal-unified.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/cognitara-teacher-studio.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/cognitara-admin-studio.css') }}">
   {{ ct_boot_script() }}
+  <style>
+    .wl-tabs-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .wl-seg {
+      display: inline-flex;
+      padding: 4px;
+      border-radius: 11px;
+      background: var(--tc-surface);
+      border: 1px solid var(--tc-line-2);
+      gap: 3px;
+    }
+    .wl-seg button {
+      border: 0;
+      background: transparent;
+      color: var(--tc-ink-2);
+      font-size: 13px;
+      font-weight: 600;
+      padding: 7px 14px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background-color 140ms ease, color 140ms ease;
+    }
+    .wl-seg button.is-active {
+      background: var(--tc-surface-2);
+      color: var(--tc-ink);
+      border: 1px solid var(--tc-line-2);
+    }
+    .wl-panel[hidden] { display: none !important; }
+    .wl-table th {
+      text-align: left;
+      height: 42px;
+      padding: 0 16px;
+      font-size: 11px;
+      font-weight: 650;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--tc-ink-3);
+      white-space: nowrap;
+    }
+    .wl-table td { padding: 13px 16px; vertical-align: middle; }
+    .wl-table th:first-child, .wl-table td:first-child { padding-left: 20px; }
+    .wl-table th:last-child, .wl-table td:last-child { padding-right: 20px; text-align: right; }
+    .wl-table th.is-center, .wl-table td.is-center { text-align: center; }
+    .wl-msg-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 8px;
+      font-size: 12.5px;
+      font-weight: 550;
+      background: var(--ct-warn-soft);
+      border: 1px solid var(--ct-warn-line);
+      color: var(--ct-warn);
+      max-width: 440px;
+    }
+    .wl-msg-pill--bad {
+      background: var(--ct-bad-soft);
+      border-color: var(--ct-bad-line);
+      color: var(--ct-bad);
+    }
+  </style>
 </head>
-<body class="ct-app ct-bs ad-studio">
+<body class="ct-app ad-studio">
 {{ admin_shell_start(active='warnings', crumb='Warning Logs') }}
 
-
-    <!-- Animated Educational Icons Background -->
-    <div class="edu-icon"><i class="fas fa-exclamation-triangle"></i></div>
-    <div class="edu-icon"><i class="fas fa-shield-alt"></i></div>
-    <div class="edu-icon"><i class="fas fa-flag"></i></div>
-    <div class="edu-icon"><i class="fas fa-ban"></i></div>
-    <div class="edu-icon"><i class="fas fa-gavel"></i></div>
-    <div class="edu-icon"><i class="fas fa-eye"></i></div>
-    <div class="edu-icon"><i class="fas fa-user-secret"></i></div>
-    <div class="edu-icon"><i class="fas fa-clipboard-list"></i></div>
-    <div class="edu-icon"><i class="fas fa-chart-line"></i></div>
-    <div class="edu-icon"><i class="fas fa-school"></i></div>
-
-    <div class="logs-container">
-        <!-- Header -->
-        <div class="page-header">
-            <div class="logo-icon">
-                <i class="fas fa-exclamation-triangle"></i>
-            </div>
-            <h1>Student Warning Logs</h1>
-            <p>Monitor and manage student exam violations</p>
-        </div>
-
-        <!-- Stats Bar -->
-        <div class="stats-bar">
-            <div class="stats-cards">
-                <div class="stat-card">
-                    <div class="stat-icon">
-                        <i class="fas fa-users"></i>
-                    </div>
-                    <div class="stat-info">
-                        <h3>{{ summary|length }}</h3>
-                        <p>Students with Warnings</p>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon">
-                        <i class="fas fa-exclamation-triangle"></i>
-                    </div>
-                    <div class="stat-info">
-                        <h3>{{ logs|length }}</h3>
-                        <p>Total Warning Events</p>
-                    </div>
-                </div>
-            </div>
-            <div class="action-buttons">
-                <a href="/admin" class="btn-back">
-                    <i class="fas fa-arrow-left"></i> Back
-                </a>
-                <a href="{{ url_for('delete_all_warning_logs') }}" 
-                   class="btn-delete-all" 
-                   onclick="return confirm(' Delete ALL warning logs? This action cannot be undone!')">
-                    <i class="fas fa-trash-alt"></i> Delete All Logs
-                </a>
-            </div>
-        </div>
-
-        <!-- Summary by Student -->
-        <div class="card-custom">
-            <div class="card-header-custom warning">
-                <div class="card-header-icon warning">
-                    <i class="fas fa-chart-pie"></i>
-                </div>
-                <h5>Warning Summary by Student</h5>
-            </div>
-            <div class="card-body-custom">
-                <table class="custom-table">
-                    <thead>
-                        <tr>
-                            <th>Student Name</th>
-                            <th>Total Warnings</th>
-                            <th>Exams with Warnings</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for s in summary %}
-                        <tr>
-                            <td><strong><i class="fas fa-user-graduate"></i> {{ s.student_name }}</strong></td>
-                            <td>
-                                {% set warning_count = s.total_warning_events %}
-                                <span class="badge-warning-count">
-                                    <i class="fas fa-exclamation-triangle"></i> {{ warning_count }} warning(s)
-                                </span>
-                            </td>
-                            <td>
-                                <span class="badge-exam-count">
-                                    <i class="fas fa-file-alt"></i> {{ s.exams_with_warnings }} exam(s)
-                                </span>
-                            </td>
-                            <td>
-                                <a href="{{ url_for('delete_student_warning_logs', student_name=s.student_name) }}" 
-                                   class="btn-delete-all" style="padding: 6px 15px; font-size: 12px;"
-                                   onclick="return confirm('Delete all warnings for {{ s.student_name }}?')">
-                                    <i class="fas fa-trash-alt"></i> Delete
-                                </a>
-                            </td>
-                        </tr>
-                        {% else %}
-                        <tr>
-                            <td colspan="4" class="text-center">No warnings recorded yet.</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <!-- Breakdown by Student and Exam -->
-        <div class="card-custom">
-            <div class="card-header-custom info">
-                <div class="card-header-icon info">
-                    <i class="fas fa-chart-bar"></i>
-                </div>
-                <h5>Warning Breakdown by Student and Exam</h5>
-            </div>
-            <div class="card-body-custom">
-                <table class="custom-table">
-                    <thead>
-                        <tr>
-                            <th>Student</th>
-                            <th>Exam</th>
-                            <th>Warnings</th>
-                            <th>Warnings List</th>
-                            <th>First Warning</th>
-                            <th>Last Warning</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for exam in by_exam %}
-                        <tr>
-                            <td><i class="fas fa-user-graduate"></i> {{ exam.student_name }}</td>
-                            <td><i class="fas fa-file-alt"></i> {{ exam.exam_name }}</td>
-                            <td>
-                                <span class="badge-warning-count">
-                                    <i class="fas fa-exclamation-triangle"></i> {{ exam.warning_events_in_exam }}
-                                </span>
-                            </td>
-                            <td>
-                                <small class="text-muted">{{ exam.warnings_list[:80] }}{% if exam.warnings_list|length > 80 %}...{% endif %}</small>
-                            </td>
-                            <td><small>{{ exam.first_warning | wat_time if exam.first_warning else '-' }}</small></td>
-                            <td><small>{{ exam.last_warning | wat_time if exam.last_warning else '-' }}</small></td>
-                        </tr>
-                        {% else %}
-                        <tr>
-                            <td colspan="6" class="text-center">No warnings recorded yet.</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <!-- All Warning Events -->
-        <div class="card-custom">
-            <div class="card-header-custom dark">
-                <div class="card-header-icon dark">
-                    <i class="fas fa-list"></i>
-                </div>
-                <h5>All Warning Events</h5>
-            </div>
-            <div class="card-body-custom">
-                <div class="scrollable-table">
-                    <table class="custom-table">
-                        <thead>
-                            <tr>
-                                <th>ID</th>
-                                <th>Student</th>
-                                <th>Exam</th>
-                                <th>Warning Message</th>
-                                <th>Timestamp</th>
-                                <th>Action</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for log in logs %}
-                            <tr>
-                                <td>{{ log.id }}</td>
-                                <td><strong>{{ log.student_name }}</strong></td>
-                                <td>{{ log.exam_name }}</td>
-                                <td>
-                                    <span class="badge-warning-count">
-                                        <i class="fas fa-flag"></i> {{ log.warning_message }}
-                                    </span>
-                                </td>
-                                <td><small>{{ log.timestamp | wat_time }}</small></td>
-                                <td>
-                                    <a href="{{ url_for('delete_warning_log', log_id=log.id) }}" 
-                                       class="btn-delete-all" style="padding: 5px 12px; font-size: 11px;"
-                                       onclick="return confirm('Delete this warning?')">
-                                        <i class="fas fa-trash-alt"></i>
-                                    </a>
-                                </td>
-                            </tr>
-                            {% else %}
-                            <tr>
-                                <td colspan="6" class="text-center">
-                                    <div class="empty-state">
-                                        <div class="empty-icon">
-                                            <i class="fas fa-check-circle"></i>
-                                        </div>
-                                        <h4>No Warnings Recorded</h4>
-                                        <p>All students are following exam rules properly.</p>
-                                    </div>
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
+  <header class="tc-head ct-animate-rise">
+    <div class="tc-head__txt">
+      <h1>Exam Integrity &amp; Warning Logs</h1>
+      <p>Track tab switches, focus losses, and automated proctoring alerts recorded during examinations.</p>
     </div>
+    <div class="tc-head__actions">
+      <a href="/admin" class="tc-btn tc-btn--secondary">{{ ico('i-arrow-left', 'ct-ico--sm') }}Dashboard</a>
+      {% if logs %}
+      <button type="button" class="tc-btn tc-btn--secondary" onclick="exportWarningsCsv()">{{ ico('i-download', 'ct-ico--sm') }}Export CSV</button>
+      <button type="button" class="ct-btn ct-btn--danger-solid tc-btn--sm" style="height:36px;padding:0 14px" onclick="clearAllWarnings()">{{ ico('i-trash', 'ct-ico--xs') }}Clear All Logs</button>
+      {% endif %}
+    </div>
+  </header>
+
+  <!-- 3-KPI Summary Strip -->
+  <section class="tc-kpi-strip" style="grid-template-columns:repeat(3,minmax(0,1fr))" data-ct-stagger>
+    <div class="tc-kpi">
+      <span class="tc-kpi__label">Flagged Students</span>
+      <strong class="tc-kpi__val" id="wlStudentCount" data-ct-count>{{ summary|length }}</strong>
+      <span class="tc-kpi__meta">Unique examinees with alerts</span>
+    </div>
+    <div class="tc-kpi">
+      <span class="tc-kpi__label">Total Warning Events</span>
+      <strong class="tc-kpi__val" id="wlEventCount" data-ct-count>{{ logs|length }}</strong>
+      <span class="tc-kpi__meta">Recorded proctoring triggers</span>
+    </div>
+    <div class="tc-kpi">
+      <span class="tc-kpi__label">Exam Sessions Flagged</span>
+      <strong class="tc-kpi__val" data-ct-count>{{ by_exam|length }}</strong>
+      <span class="tc-kpi__meta">Student-exam pairs logged</span>
+    </div>
+  </section>
+
+  <!-- Tab Switcher + Unified Search -->
+  <div class="wl-tabs-bar">
+    <div class="wl-seg" role="tablist" aria-label="Warning log views">
+      <button type="button" class="is-active" data-wl-tab="panel-summary" onclick="switchWlTab('panel-summary', this)">By Student ({{ summary|length }})</button>
+      <button type="button" data-wl-tab="panel-by-exam" onclick="switchWlTab('panel-by-exam', this)">By Exam ({{ by_exam|length }})</button>
+      <button type="button" data-wl-tab="panel-all" onclick="switchWlTab('panel-all', this)">All Events ({{ logs|length }})</button>
+    </div>
+    <label class="tc-search" style="width:270px">
+      {{ ico('i-search', 'ct-ico--sm') }}
+      <input type="search" id="wlSearchInput" placeholder="Filter by student, exam, or reason…" oninput="filterWarningTables()" aria-label="Search warning logs">
+    </label>
+  </div>
+
+  <!-- TAB 1: Summary by Student -->
+  <section class="tc-card wl-panel" id="panel-summary">
+    <div class="tc-card__head">
+      <div class="tc-card__title">
+        <h2>Warning Summary by Student</h2>
+        <p>Aggregated violation totals per student across all examinations</p>
+      </div>
+    </div>
+    <div class="tc-table-wrap ct-table-wrap">
+      {% if summary %}
+      <table class="tc-table wl-table" id="wlSummaryTable" data-ct-paginate="10" data-ct-paginate-sizes="10,25,50">
+        <thead>
+          <tr>
+            <th>Student</th>
+            <th class="is-center" style="width:140px">Warnings</th>
+            <th class="is-center" style="width:140px">Exams Flagged</th>
+            <th style="width:185px">Last Recorded</th>
+            <th style="width:130px;text-align:right">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for s in summary %}
+          {% set wc = s.total_warning_events or 0 %}
+          <tr id="wl-stu-{{ loop.index }}" data-search="{{ (s.student_name or '')|lower }} {{ (s.exam_names or '')|lower }}">
+            <td>
+              <div class="tc-user-cell">
+                {{ person_avatar('', s.student_name or 'Student', 'sm') }}
+                <div>
+                  <strong style="display:block">{{ s.student_name }}</strong>
+                  {% if s.exam_names %}<span style="font-size:11.5px;color:var(--tc-ink-3)">{{ s.exam_names[:60] }}{% if s.exam_names|length > 60 %}…{% endif %}</span>{% endif %}
+                </div>
+              </div>
+            </td>
+            <td class="is-center">
+              <span class="tc-pill {% if wc >= 3 %}tc-pill--bad{% else %}tc-pill--warn{% endif %}">{{ wc }} alert{% if wc != 1 %}s{% endif %}</span>
+            </td>
+            <td class="tc-mono is-center">{{ s.exams_with_warnings }}</td>
+            <td class="tc-mono" style="font-size:12px;color:var(--tc-ink-2)">{{ s.last_warning | wat_time if s.last_warning else '—' }}</td>
+            <td>
+              <button type="button" class="tc-btn tc-btn--ghost tc-btn--sm" style="color:var(--tc-bad)" onclick="clearStudentWarnings({{ s.student_name|tojson|forceescape }}, 'wl-stu-{{ loop.index }}')">
+                {{ ico('i-trash', 'ct-ico--xs') }}Clear
+              </button>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <div class="tc-empty">
+        <span class="tc-empty__ico">{{ ico('i-check-circle') }}</span>
+        <strong>Clean integrity record</strong>
+        <p>No proctoring warnings have been triggered across your examinations.</p>
+      </div>
+      {% endif %}
+    </div>
+  </section>
+
+  <!-- TAB 2: Breakdown by Student & Exam -->
+  <section class="tc-card wl-panel" id="panel-by-exam" hidden>
+    <div class="tc-card__head">
+      <div class="tc-card__title">
+        <h2>Breakdown by Student &amp; Exam</h2>
+        <p>Grouped alerts with first and last recorded timestamps</p>
+      </div>
+    </div>
+    <div class="tc-table-wrap ct-table-wrap">
+      {% if by_exam %}
+      <table class="tc-table wl-table" id="wlExamTable" data-ct-paginate="10" data-ct-paginate-sizes="10,25,50">
+        <thead>
+          <tr>
+            <th>Student</th>
+            <th>Examination</th>
+            <th class="is-center" style="width:110px">Count</th>
+            <th>Recorded Reasons</th>
+            <th style="width:170px;text-align:right">Last Alert</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in by_exam %}
+          <tr data-search="{{ (row.student_name or '')|lower }} {{ (row.exam_name or '')|lower }} {{ (row.warnings_list or '')|lower }}">
+            <td>
+              <div class="tc-user-cell">
+                {{ person_avatar('', row.student_name or 'Student', 'xs') }}
+                <strong>{{ row.student_name }}</strong>
+              </div>
+            </td>
+            <td style="font-weight:600">{{ row.exam_name }}</td>
+            <td class="is-center">
+              <span class="tc-pill {% if (row.warning_events_in_exam or 0) >= 3 %}tc-pill--bad{% else %}tc-pill--warn{% endif %}">{{ row.warning_events_in_exam }}</span>
+            </td>
+            <td style="font-size:12.5px;color:var(--tc-ink-2);max-width:340px">{{ (row.warnings_list or '')[:110] }}{% if row.warnings_list and row.warnings_list|length > 110 %}…{% endif %}</td>
+            <td class="tc-mono" style="font-size:12px;color:var(--tc-ink-2)">{{ row.last_warning | wat_time if row.last_warning else '—' }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <div class="tc-empty">
+        <span class="tc-empty__ico">{{ ico('i-check-circle') }}</span>
+        <strong>No grouped exam warnings</strong>
+        <p>All active sessions are currently clean.</p>
+      </div>
+      {% endif %}
+    </div>
+  </section>
+
+  <!-- TAB 3: Chronological Feed -->
+  <section class="tc-card wl-panel" id="panel-all" hidden>
+    <div class="tc-card__head">
+      <div class="tc-card__title">
+        <h2>Chronological Warning Feed</h2>
+        <p>Every individual violation timestamped in West Africa Time</p>
+      </div>
+    </div>
+    <div class="tc-table-wrap ct-table-wrap">
+      {% if logs %}
+      <table class="tc-table wl-table" id="wlAllTable" data-ct-paginate="15" data-ct-paginate-sizes="15,30,50">
+        <thead>
+          <tr>
+            <th style="width:70px">ID</th>
+            <th>Student</th>
+            <th>Examination</th>
+            <th>Event Detail</th>
+            <th style="width:175px">Timestamp</th>
+            <th style="width:90px;text-align:right">Remove</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for log in logs %}
+          {% set is_auto = 'auto' in (log.warning_message or '')|lower or 'limit' in (log.warning_message or '')|lower %}
+          <tr id="wl-row-{{ log.id }}" data-search="{{ (log.student_name or '')|lower }} {{ (log.exam_name or '')|lower }} {{ (log.warning_message or '')|lower }}">
+            <td class="tc-mono" style="color:var(--tc-ink-3)">#{{ log.id }}</td>
+            <td>
+              <div class="tc-user-cell">
+                {{ person_avatar('', log.student_name or 'Student', 'xs') }}
+                <strong>{{ log.student_name }}</strong>
+              </div>
+            </td>
+            <td style="font-weight:580">{{ log.exam_name }}</td>
+            <td>
+              <span class="wl-msg-pill{% if is_auto %} wl-msg-pill--bad{% endif %}">
+                {{ ico('i-alert', 'ct-ico--xs') }}{{ log.warning_message }}
+              </span>
+            </td>
+            <td class="tc-mono" style="font-size:12px;color:var(--tc-ink-2)">{{ log.timestamp | wat_time }}</td>
+            <td>
+              <button type="button" class="tc-btn tc-btn--ghost tc-btn--icon" style="color:var(--tc-bad)" onclick="deleteOneWarning({{ log.id }})" title="Delete log entry" aria-label="Delete warning {{ log.id }}">
+                {{ ico('i-trash', 'ct-ico--sm') }}
+              </button>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <div class="tc-empty">
+        <span class="tc-empty__ico">{{ ico('i-check-circle') }}</span>
+        <strong>No warnings recorded</strong>
+        <p>All students are following exam rules cleanly.</p>
+      </div>
+      {% endif %}
+    </div>
+  </section>
+
+  <script>
+    function switchWlTab(panelId, btn) {
+      document.querySelectorAll(".wl-panel").forEach(function (p) { p.hidden = p.id !== panelId; });
+      document.querySelectorAll("[data-wl-tab]").forEach(function (b) { b.classList.toggle("is-active", b === btn); });
+    }
+
+    function filterWarningTables() {
+      var q = (document.getElementById("wlSearchInput").value || "").trim().toLowerCase();
+      ["wlSummaryTable", "wlExamTable", "wlAllTable"].forEach(function (tid) {
+        var tbl = document.getElementById(tid);
+        if (!tbl) return;
+        tbl.querySelectorAll("tbody tr").forEach(function (row) {
+          var hay = row.getAttribute("data-search") || row.textContent.toLowerCase();
+          row.dataset.ctFilteredOut = (!q || hay.indexOf(q) > -1) ? "0" : "1";
+        });
+        if (tbl._ctRepaginate) tbl._ctRepaginate(true);
+      });
+    }
+
+    async function deleteOneWarning(id) {
+      var ok = await CT.confirm({
+        title: "Delete warning entry?",
+        html: "Remove warning log <strong>#" + id + "</strong> from the integrity record?",
+        tone: "danger",
+        icon: "i-trash",
+        confirmText: "Delete entry"
+      });
+      if (!ok) return;
+      try {
+        var res = await fetch("/admin/delete_warning_log/" + id, {
+          method: "POST",
+          headers: { "X-CSRFToken": window.CSRF_TOKEN, "X-Requested-With": "XMLHttpRequest" }
+        });
+        if (res.ok) {
+          var row = document.getElementById("wl-row-" + id);
+          if (row) row.remove();
+          var tbl = document.getElementById("wlAllTable");
+          if (tbl && tbl._ctRepaginate) tbl._ctRepaginate(false);
+          var cnt = document.getElementById("wlEventCount");
+          if (cnt) cnt.textContent = String(Math.max(0, (parseInt(cnt.textContent, 10) || 0) - 1));
+          CT.toast("Warning entry removed", "ok");
+        } else {
+          CT.toast("Failed to delete warning log", "bad");
+        }
+      } catch (e) { CT.toast("Network error", "bad"); }
+    }
+
+    async function clearStudentWarnings(studentName, rowId) {
+      var ok = await CT.confirm({
+        title: "Clear student warnings?",
+        html: "Remove all warning records for <strong>" + CT.esc(studentName) + "</strong>?",
+        tone: "danger",
+        icon: "i-trash",
+        confirmText: "Clear warnings"
+      });
+      if (!ok) return;
+      try {
+        var res = await fetch("/admin/delete_student_warning_logs/" + encodeURIComponent(studentName), {
+          method: "POST",
+          headers: { "X-CSRFToken": window.CSRF_TOKEN, "X-Requested-With": "XMLHttpRequest" }
+        });
+        if (res.ok) {
+          CT.toast("Cleared warnings for " + studentName, "ok");
+          setTimeout(function () { location.reload(); }, 450);
+        } else {
+          CT.toast("Failed to clear warnings", "bad");
+        }
+      } catch (e) { CT.toast("Network error", "bad"); }
+    }
+
+    async function clearAllWarnings() {
+      var ok = await CT.confirm({
+        title: "Clear all warning logs?",
+        html: "Permanently remove <strong>every warning log</strong> across all students and exams? This cannot be undone.",
+        tone: "danger",
+        icon: "i-trash",
+        confirmText: "Clear all logs"
+      });
+      if (!ok) return;
+      try {
+        var res = await fetch("/admin/delete_all_warning_logs", {
+          method: "POST",
+          headers: { "X-CSRFToken": window.CSRF_TOKEN, "X-Requested-With": "XMLHttpRequest" }
+        });
+        if (res.ok) {
+          CT.toast("All warning logs cleared", "ok");
+          setTimeout(function () { location.reload(); }, 450);
+        } else {
+          CT.toast("Failed to clear logs", "bad");
+        }
+      } catch (e) { CT.toast("Network error", "bad"); }
+    }
+
+    function exportWarningsCsv() {
+      var rows = [["ID", "Student", "Exam", "Warning Message", "Timestamp"]];
+      document.querySelectorAll("#wlAllTable tbody tr").forEach(function (tr) {
+        var cols = tr.querySelectorAll("td");
+        if (cols.length >= 5) {
+          rows.push([
+            cols[0].textContent.trim(),
+            cols[1].textContent.trim(),
+            cols[2].textContent.trim(),
+            cols[3].textContent.trim(),
+            cols[4].textContent.trim()
+          ]);
+        }
+      });
+      var csv = rows.map(function (r) {
+        return r.map(function (v) { return '"' + String(v).replace(/"/g, '""') + '"'; }).join(",");
+      }).join("\n");
+      var blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement("a");
+      a.href = url;
+      a.download = "cognitara-warning-logs.csv";
+      a.click();
+      URL.revokeObjectURL(url);
+      CT.toast("CSV exported", "ok");
+    }
+  </script>
 
 {{ shell_end(role='admin') }}
 </body>

@@ -24,9 +24,13 @@
         },
 
         /**
-         * Show toast notification using SweetAlert2 if present, or lightweight fallback toast
+         * Show toast notification using CT.toast, SweetAlert2, or lightweight fallback toast
          */
         toast(message, type = 'success') {
+            if (window.CT && typeof window.CT.toast === 'function') {
+                window.CT.toast(message, type);
+                return;
+            }
             if (window.Swal) {
                 window.Swal.fire({
                     title: type === 'success' ? 'Success' : (type === 'error' || type === 'danger') ? 'Error' : 'Notice',
@@ -59,7 +63,7 @@
         },
 
         /**
-         * Standard confirmation dialog supporting SweetAlert2 and native fallback
+         * Standard confirmation dialog using spring-animated CT.confirm with SweetAlert2 fallback
          */
         async confirm(options) {
             const {
@@ -67,9 +71,25 @@
                 message = 'This action cannot be undone.',
                 confirmText = 'Yes, Proceed',
                 cancelText = 'Cancel',
-                confirmColor = '#1a56db',
-                icon = 'question'
+                confirmColor = '#dc2626',
+                icon = 'warning',
+                tone = null
             } = options;
+
+            if (window.CT && typeof window.CT.confirm === 'function') {
+                const resolvedTone = tone || (
+                    confirmColor && /dc2626|ef4444|b91c1c|f43f5e/i.test(confirmColor) ? 'danger' :
+                    icon === 'warning' || icon === 'error' ? 'danger' :
+                    icon === 'success' ? 'ok' : 'primary'
+                );
+                return window.CT.confirm({
+                    title,
+                    html: message,
+                    confirmText,
+                    cancelText,
+                    tone: resolvedTone
+                });
+            }
 
             if (window.Swal) {
                 const res = await window.Swal.fire({

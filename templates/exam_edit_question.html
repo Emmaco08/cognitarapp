@@ -1,4 +1,4 @@
-{%- from '_ct_shell.html' import ico, ct_boot_script, admin_shell_start, teacher_shell_start, portal_shell_start, portal_shell_end, student_topbar, shell_end -%}
+{%- from '_ct_shell.html' import ico, ct_boot_script, admin_shell_start, teacher_shell_start, portal_shell_start, portal_shell_end, student_topbar, shell_end with context -%}
 <!DOCTYPE html>
 <html lang="en" data-theme="dark">
 <head>
@@ -322,12 +322,7 @@
                     </div>
                 </div>
 
-                <!-- Explanation Field -->
-                <div class="editor-section mt-2">
-                    <div class="editor-label"><i class="fas fa-lightbulb text-warning"></i> Question Explanation / Solution Guide (optional)</div>
-                    <div class="editor-area" id="expEditor" contenteditable="true" placeholder="Provide step-by-step working, solution, or teacher notes..." style="min-height:50px;max-height:100px;font-size:13px;">{{ question.explanation | safe if question.explanation else '' }}</div>
-                    <input type="hidden" name="explanation" id="expEditorHidden" value="{{ question.explanation if question.explanation else '' }}">
-                </div>
+                <input type="hidden" name="explanation" id="expEditorHidden" value="">
 
                 <!-- LIVE STUDENT PREVIEW CARD -->
                 <div class="mt-3 p-3" style="background: var(--ct-surface-2); border:1px solid var(--ct-line-2); border-radius:12px;" id="studentPreviewContainer">
@@ -342,9 +337,6 @@
                             <div class="col-md-6"><div style="padding:6px 10px; background: var(--ct-surface-2); border-radius:6px; font-size:12px;"><strong class="text-primary">B.</strong> <span id="previewOptB">Option B</span></div></div>
                             <div class="col-md-6"><div style="padding:6px 10px; background: var(--ct-surface-2); border-radius:6px; font-size:12px;"><strong class="text-primary">C.</strong> <span id="previewOptC">Option C</span></div></div>
                             <div class="col-md-6"><div style="padding:6px 10px; background: var(--ct-surface-2); border-radius:6px; font-size:12px;"><strong class="text-primary">D.</strong> <span id="previewOptD">Option D</span></div></div>
-                        </div>
-                        <div id="previewExplanation" class="mt-2 text-muted" style="font-size:12px; display:none; border-top:1px dashed #cbd5e1; padding-top:6px;">
-                            <i class="fas fa-lightbulb text-warning"></i> <strong>Explanation:</strong> <span id="previewExpText"></span>
                         </div>
                     </div>
                 </div>
@@ -373,7 +365,7 @@
     </div>
 
     <script>
-        const editors = ['qEditor', 'optA', 'optB', 'optC', 'optD', 'expEditor'];
+        const editors = ['qEditor', 'optA', 'optB', 'optC', 'optD'];
         let activeEditor = 'qEditor';
 
         function E(id) { return document.getElementById(id); }
@@ -398,22 +390,12 @@
                 const bText = E('optB') ? (window.CogniTaraKaTeX ? window.CogniTaraKaTeX.serializeEditor(E('optB')) : E('optB').innerHTML) : '';
                 const cText = E('optC') ? (window.CogniTaraKaTeX ? window.CogniTaraKaTeX.serializeEditor(E('optC')) : E('optC').innerHTML) : '';
                 const dText = E('optD') ? (window.CogniTaraKaTeX ? window.CogniTaraKaTeX.serializeEditor(E('optD')) : E('optD').innerHTML) : '';
-                const expText = E('expEditor') ? (window.CogniTaraKaTeX ? window.CogniTaraKaTeX.serializeEditor(E('expEditor')) : E('expEditor').innerHTML) : '';
 
                 if (E('previewQuestion')) E('previewQuestion').innerHTML = qText.trim() || '<em>(Question text preview)</em>';
                 if (E('previewOptA')) E('previewOptA').innerHTML = aText.trim() || 'Option A';
                 if (E('previewOptB')) E('previewOptB').innerHTML = bText.trim() || 'Option B';
                 if (E('previewOptC')) E('previewOptC').innerHTML = cText.trim() || 'Option C';
                 if (E('previewOptD')) E('previewOptD').innerHTML = dText.trim() || 'Option D';
-
-                if (E('previewExplanation')) {
-                    if (expText.trim()) {
-                        E('previewExplanation').style.display = 'block';
-                        if (E('previewExpText')) E('previewExpText').innerHTML = expText.trim();
-                    } else {
-                        E('previewExplanation').style.display = 'none';
-                    }
-                }
 
                 const prevBox = document.getElementById('livePreviewContent');
                 if (prevBox && typeof renderMathInElement !== 'undefined') {

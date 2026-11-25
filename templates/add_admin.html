@@ -1,376 +1,422 @@
-{%- from '_ct_shell.html' import ico, ct_boot_script, admin_shell_start, teacher_shell_start, student_topbar, shell_end -%}
+{%- from '_ct_shell.html' import ico, person_avatar, ct_boot_script, admin_shell_start, shell_end with context -%}
 <!DOCTYPE html>
 <html lang="en" data-theme="dark">
 <head>
-    <meta charset="UTF-8">
-    <title>Create Administrator | COGNITARA EXAM SYSTEM</title>
-    <link href="{{ url_for('static', filename='vendor/bootstrap/css/bootstrap.min.css') }}" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='vendor/fontawesome/css/all.min.css') }}">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            min-height: 100vh;
-            color: #f8fafc;
-            position: relative;
-            overflow-x: hidden;
-        }
-
-        .add-container {
-            max-width: 680px;
-            margin: 0 auto;
-            padding: 50px 20px;
-            position: relative;
-            z-index: 10;
-        }
-
-        .page-header {
-            text-align: center;
-            margin-bottom: 30px;
-        }
-
-        .logo-icon {
-            width: 76px;
-            height: 76px;
-            background: var(--ct-brand-grad);
-            border-radius: 24px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            margin-bottom: 18px;
-            box-shadow: 0 10px 25px rgba(59, 130, 246, 0.35);
-        }
-
-        .logo-icon i {
-            font-size: 36px;
-            color: white;
-        }
-
-        .page-header h1 {
-            font-size: 30px;
-            font-weight: 800;
-            color: #ffffff;
-            margin-bottom: 8px;
-            letter-spacing: -0.5px;
-        }
-
-        .page-header p {
-            font-size: 15px;
-            color: #94a3b8;
-        }
-
-        .form-container {
-            background: rgba(30, 41, 59, 0.7);
-            backdrop-filter: blur(16px);
-            border-radius: 24px;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.35);
-            padding: 35px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .form-group {
-            margin-bottom: 22px;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 600;
-            font-size: 13px;
-            color: var(--ct-line-2);
-        }
-
-        .input-group-custom {
-            position: relative;
-        }
-
-        .input-group-custom i.input-icon {
-            position: absolute;
-            left: 15px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: var(--ct-ink-3);
-            font-size: 15px;
-            z-index: 1;
-        }
-
-        .form-control-custom {
-            width: 100%;
-            padding: 12px 16px 12px 42px;
-            border: 1.5px solid rgba(255, 255, 255, 0.12);
-            border-radius: 12px;
-            font-size: 14px;
-            transition: all 0.25s ease;
-            background: rgba(15, 23, 42, 0.6);
-            color: #ffffff;
-        }
-
-        .form-control-custom:focus {
-            outline: none;
-            border-color: #3b82f6;
-            background: rgba(15, 23, 42, 0.9);
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
-            color: #ffffff;
-        }
-
-        .toggle-password {
-            position: absolute;
-            right: 15px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: var(--ct-ink-3);
-            cursor: pointer;
-            z-index: 2;
-        }
-
-        .btn-submit {
-            background: var(--ct-brand-grad);
-            border: none;
-            padding: 13px 28px;
-            border-radius: 12px;
-            color: white;
-            font-weight: 700;
-            font-size: 14px;
-            cursor: pointer;
-            transition: all 0.25s ease;
-            width: 100%;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            box-shadow: 0 8px 20px rgba(59, 130, 246, 0.3);
-        }
-
-        .btn-submit:hover:not(:disabled) {
-            transform: translateY(-2px);
-            box-shadow: 0 12px 24px rgba(59, 130, 246, 0.4);
-            color: white;
-        }
-
-        .btn-submit:disabled {
-            background: #475569;
-            cursor: not-allowed;
-            box-shadow: none;
-            opacity: 0.6;
-        }
-
-        .btn-back {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            color: #94a3b8;
-            text-decoration: none;
-            font-size: 13px;
-            font-weight: 600;
-            margin-bottom: 20px;
-            transition: color 0.2s;
-        }
-
-        .btn-back:hover {
-            color: #ffffff;
-        }
-
-        .security-badge {
-            background: rgba(59, 130, 246, 0.15);
-            border: 1px solid rgba(59, 130, 246, 0.3);
-            border-radius: 12px;
-            padding: 12px 16px;
-            margin-bottom: 24px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            font-size: 12px;
-            color: #93c5fd;
-        }
-
-        .status-msg {
-            font-size: 12px;
-            margin-top: 6px;
-            display: none;
-        }
-    </style>
-    <meta name="csrf-token" content="{{ csrf_token() }}">
-
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+  <meta name="color-scheme" content="dark light">
+  <title>Administrators — {{ school_branding.school_name }} | CogniTara</title>
+  <link rel="icon" href="{{ url_for('static', filename='images/cognitara-favicon.ico') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/cognitara-web.css') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/cognitara-portal-unified.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/cognitara-teacher-studio.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/cognitara-admin-studio.css') }}">
   {{ ct_boot_script() }}
+  <style>
+    .adm-grid {
+      display: grid;
+      grid-template-columns: minmax(340px, 460px) minmax(0, 1fr);
+      gap: 20px;
+      align-items: start;
+    }
+    @media (max-width: 1020px) {
+      .adm-grid { grid-template-columns: 1fr; }
+    }
+    .adm-field { display: grid; gap: 7px; margin-bottom: 18px; }
+    .adm-field label {
+      font-size: 13px;
+      font-weight: 620;
+      color: var(--tc-ink);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .adm-input-wrap {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+    .adm-input-ico {
+      position: absolute;
+      left: 13px;
+      color: var(--tc-ink-3);
+      pointer-events: none;
+      display: inline-flex;
+    }
+    .adm-input {
+      width: 100%;
+      height: 42px;
+      padding: 0 42px 0 40px;
+      border-radius: 10px;
+      border: 1px solid var(--tc-line-2);
+      background: var(--tc-surface-2);
+      color: var(--tc-ink);
+      font-size: 14px;
+      transition: border-color 150ms ease, box-shadow 150ms ease, background-color 150ms ease;
+    }
+    .adm-input:focus {
+      outline: none;
+      border-color: var(--ct-accent);
+      background: var(--tc-surface);
+      box-shadow: 0 0 0 3px var(--ct-accent-soft);
+    }
+    .adm-eye {
+      position: absolute;
+      right: 8px;
+      width: 30px;
+      height: 30px;
+      border-radius: 7px;
+      border: 0;
+      background: transparent;
+      color: var(--tc-ink-3);
+      display: grid;
+      place-items: center;
+      cursor: pointer;
+      transition: color 140ms ease, background-color 140ms ease;
+    }
+    .adm-eye:hover { color: var(--tc-ink); background: var(--ct-hover); }
+    .adm-hint {
+      font-size: 12px;
+      color: var(--tc-ink-3);
+      min-height: 17px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .adm-hint--ok { color: var(--ct-ok); }
+    .adm-hint--bad { color: var(--ct-bad); }
+    .adm-strength {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 5px;
+      margin-top: 2px;
+    }
+    .adm-strength span {
+      height: 4px;
+      border-radius: 99px;
+      background: var(--tc-line-2);
+      transition: background-color 200ms ease;
+    }
+    .adm-strength[data-level="1"] span:nth-child(1) { background: #EF4444; }
+    .adm-strength[data-level="2"] span:nth-child(-n+2) { background: #F59E0B; }
+    .adm-strength[data-level="3"] span:nth-child(-n+3) { background: #3B82F6; }
+    .adm-strength[data-level="4"] span { background: #10B981; }
+    .adm-notice {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 13px 15px;
+      border-radius: 11px;
+      border: 1px solid var(--tc-line-2);
+      background: var(--tc-surface-2);
+      font-size: 13px;
+      color: var(--tc-ink-2);
+      line-height: 1.5;
+      margin-bottom: 20px;
+    }
+    .adm-notice .ct-ico { color: var(--ct-accent); flex: none; margin-top: 1px; }
+    .adm-notice strong { color: var(--tc-ink); display: block; margin-bottom: 2px; }
+    .adm-table th {
+      text-align: left;
+      height: 40px;
+      padding: 0 18px;
+      font-size: 11px;
+      font-weight: 650;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--tc-ink-3);
+    }
+    .adm-table td { padding: 13px 18px; vertical-align: middle; }
+    .adm-table th:last-child, .adm-table td:last-child { text-align: right; }
+  </style>
 </head>
-<body class="ct-app ct-bs ad-studio">
-{{ admin_shell_start(active='add_admin', crumb='Add Admin') }}
+<body class="ct-app ad-studio">
+{{ admin_shell_start(active='add_admin', crumb='Administrators') }}
 
-    <div class="add-container">
-        <a href="/admin" class="btn-back">
-            <i class="fas fa-arrow-left"></i> Back to Dashboard
-        </a>
-
-        <div class="page-header">
-            <div class="logo-icon">
-                <i class="fas fa-user-shield"></i>
-            </div>
-            <h1>Create System Administrator</h1>
-            <p>Grant full administrative access and system privileges to a trusted staff member.</p>
-        </div>
-
-        <div class="form-container">
-            <div class="security-badge">
-                <i class="fas fa-shield-halved fa-2x text-primary"></i>
-                <div>
-                    <strong>Privileged Account Creation</strong>
-                    <div style="opacity: 0.85;">Admins have unrestricted control over examination management, school settings, and user accounts.</div>
-                </div>
-            </div>
-
-            {% if error %}
-            <div class="alert alert-danger" style="border-radius:12px; font-size:13px; background:rgba(239,68,68,0.2); border-color:rgba(239,68,68,0.4); color:#fca5a5;">
-                <i class="fas fa-exclamation-triangle me-2"></i> {{ error }}
-            </div>
-            {% endif %}
-
-            <form method="POST" action="/admin/add_admin" onsubmit="return validateForm()">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-
-                <!-- Username -->
-                <div class="form-group">
-                    <label><i class="fas fa-user"></i> Administrator Username</label>
-                    <div class="input-group-custom">
-                        <i class="fas fa-user input-icon"></i>
-                        <input type="text" name="username" id="username" class="form-control-custom" placeholder="e.g. admin_joshua" required minlength="3">
-                    </div>
-                    <div id="usernameStatus" class="status-msg"></div>
-                </div>
-
-                <!-- Password -->
-                <div class="form-group">
-                    <label><i class="fas fa-lock"></i> Master Password</label>
-                    <div class="input-group-custom">
-                        <i class="fas fa-lock input-icon"></i>
-                        <input type="password" name="password" id="password" class="form-control-custom" placeholder="Minimum 6 characters" required minlength="6">
-                        <i class="fas fa-eye toggle-password" onclick="togglePass('password', this)"></i>
-                    </div>
-                </div>
-
-                <!-- Confirm Password -->
-                <div class="form-group">
-                    <label><i class="fas fa-check-double"></i> Confirm Password</label>
-                    <div class="input-group-custom">
-                        <i class="fas fa-check-double input-icon"></i>
-                        <input type="password" name="confirm_password" id="confirm_password" class="form-control-custom" placeholder="Repeat password" required>
-                        <i class="fas fa-eye toggle-password" onclick="togglePass('confirm_password', this)"></i>
-                    </div>
-                    <div id="passStatus" class="status-msg"></div>
-                </div>
-
-                <div class="pt-3">
-                    <button type="submit" id="submitBtn" class="btn-submit" disabled>
-                        <i class="fas fa-shield-alt"></i> Create Administrator Account
-                    </button>
-                </div>
-            </form>
-        </div>
+  <header class="tc-head ct-animate-rise">
+    <div class="tc-head__txt">
+      <h1>Administrators</h1>
+      <p style="margin:4px 0 0;color:var(--tc-ink-2);font-size:14px">Manage privileged console accounts for {{ school_branding.school_name }}.</p>
     </div>
+    <div class="tc-head__actions">
+      <a class="tc-btn tc-btn--secondary" href="/admin">{{ ico('i-arrow-left', 'ct-ico--sm') }}Back to Overview</a>
+    </div>
+  </header>
 
-    <script>
-        function togglePass(id, icon) {
-            const input = document.getElementById(id);
-            if (input.type === 'password') {
-                input.type = 'text';
-                icon.classList.replace('fa-eye', 'fa-eye-slash');
-            } else {
-                input.type = 'password';
-                icon.classList.replace('fa-eye-slash', 'fa-eye');
-            }
+  {% if success %}
+  <div class="ct-alert ct-alert--ok ct-animate-rise" style="margin-bottom:18px">
+    {{ ico('i-check-circle') }}
+    <div class="ct-alert__body"><strong>Account created</strong><span>{{ success }}</span></div>
+  </div>
+  {% endif %}
+
+  {% if error %}
+  <div class="ct-alert ct-alert--bad ct-alert--shake" style="margin-bottom:18px">
+    {{ ico('i-alert') }}
+    <div class="ct-alert__body"><strong>Could not create administrator</strong><span>{{ error }}</span></div>
+  </div>
+  {% endif %}
+
+  <div class="adm-grid">
+    <!-- Left: Create Administrator Form -->
+    <section class="tc-card" data-ct-reveal>
+      <div class="tc-card__head">
+        <div class="tc-card__title">
+          <h2>Create Administrator</h2>
+          <p>Provision a new school administrator with oversight access</p>
+        </div>
+      </div>
+
+      <div style="padding:22px">
+        <div class="adm-notice">
+          {{ ico('i-shield') }}
+          <div>
+            <strong>Role boundaries enforced</strong>
+            Administrators manage teachers, students, results, live proctoring, and school settings. Exam question authoring remains strictly with subject teachers.
+          </div>
+        </div>
+
+        <form method="POST" action="/admin/add_admin" id="createAdminForm" novalidate>
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+          <div class="adm-field">
+            <label for="username">Username</label>
+            <div class="adm-input-wrap">
+              <span class="adm-input-ico">{{ ico('i-user', 'ct-ico--sm') }}</span>
+              <input type="text" name="username" id="username" class="adm-input" placeholder="e.g. principal_ade" autocomplete="username" required minlength="3">
+            </div>
+            <div id="usernameStatus" class="adm-hint">Minimum 3 characters, unique across all accounts</div>
+          </div>
+
+          <div class="adm-field">
+            <label for="password">
+              <span>Password</span>
+              <span id="strengthLabel" style="font-size:11.5px;font-weight:600;color:var(--tc-ink-3)"></span>
+            </label>
+            <div class="adm-input-wrap">
+              <span class="adm-input-ico">{{ ico('i-lock', 'ct-ico--sm') }}</span>
+              <input type="password" name="password" id="password" class="adm-input" placeholder="Minimum 6 characters" autocomplete="new-password" required minlength="6">
+              <button type="button" class="adm-eye" onclick="togglePass('password', this)" aria-label="Toggle password visibility">{{ ico('i-eye', 'ct-ico--sm') }}</button>
+            </div>
+            <div class="adm-strength" id="strengthMeter" data-level="0" aria-hidden="true">
+              <span></span><span></span><span></span><span></span>
+            </div>
+          </div>
+
+          <div class="adm-field">
+            <label for="confirm_password">Confirm Password</label>
+            <div class="adm-input-wrap">
+              <span class="adm-input-ico">{{ ico('i-check-circle', 'ct-ico--sm') }}</span>
+              <input type="password" name="confirm_password" id="confirm_password" class="adm-input" placeholder="Repeat password" autocomplete="new-password" required>
+              <button type="button" class="adm-eye" onclick="togglePass('confirm_password', this)" aria-label="Toggle confirm password visibility">{{ ico('i-eye', 'ct-ico--sm') }}</button>
+            </div>
+            <div id="passStatus" class="adm-hint"></div>
+          </div>
+
+          <button type="submit" id="submitBtn" class="tc-btn tc-btn--primary" style="width:100%;height:42px;justify-content:center" disabled>
+            {{ ico('i-shield', 'ct-ico--sm') }}Create Administrator Account
+          </button>
+        </form>
+      </div>
+    </section>
+
+    <!-- Right: Existing Administrators Directory -->
+    <section class="tc-card" data-ct-reveal>
+      <div class="tc-card__head">
+        <div class="tc-card__title">
+          <h2>Active Administrators</h2>
+          <p><span id="adminCountLabel">{{ existing_admins|length }}</span> console account{% if existing_admins|length != 1 %}s{% endif %} configured</p>
+        </div>
+        <div class="tc-card__tools">
+          <label class="tc-search" style="width:190px">
+            {{ ico('i-search', 'ct-ico--sm') }}
+            <input type="search" id="adminDirSearch" data-ct-filter="#adminsTable" placeholder="Filter admins…" aria-label="Filter administrators">
+          </label>
+        </div>
+      </div>
+
+      <div class="tc-table-wrap ct-table-wrap">
+        <table class="tc-table adm-table" id="adminsTable" data-ct-paginate="8" data-ct-paginate-sizes="8,15,25">
+          <thead>
+            <tr>
+              <th>Administrator</th>
+              <th>Role</th>
+              <th style="text-align:right">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for adm in existing_admins %}
+            <tr id="admin-row-{{ adm.id }}" data-search="{{ (adm.username or '')|lower }}">
+              <td>
+                <div class="tc-user-cell">
+                  {{ person_avatar('', adm.username or 'Admin', 'sm') }}
+                  <div>
+                    <strong class="row-title" style="display:block">{{ adm.username }}</strong>
+                    <span class="tc-mono" style="font-size:11.5px;color:var(--tc-ink-3)">ID #{{ adm.id }}</span>
+                  </div>
+                </div>
+              </td>
+              <td>
+                {% if adm.id == current_admin_id %}
+                <span class="tc-pill tc-pill--ok"><i class="tc-dot"></i>You (Signed In)</span>
+                {% else %}
+                <span class="tc-pill">Administrator</span>
+                {% endif %}
+              </td>
+              <td>
+                {% if adm.id == current_admin_id %}
+                <span style="font-size:12px;color:var(--tc-ink-3)">Current session</span>
+                {% else %}
+                <button type="button" class="tc-btn tc-btn--ghost tc-btn--sm" style="color:var(--tc-bad)" onclick="removeAdmin({{ adm.id }}, {{ adm.username|tojson|forceescape }})">
+                  {{ ico('i-trash', 'ct-ico--xs') }}Remove
+                </button>
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    function togglePass(id, btn) {
+      var input = document.getElementById(id);
+      if (!input) return;
+      var show = input.type === "password";
+      input.type = show ? "text" : "password";
+      btn.innerHTML = CT.icon(show ? "i-eye-off" : "i-eye", "ct-ico--sm");
+    }
+
+    var isUsernameValid = false;
+    var isPassValid = false;
+    var usernameInput = document.getElementById("username");
+    var usernameStatus = document.getElementById("usernameStatus");
+    var passInput = document.getElementById("password");
+    var confirmInput = document.getElementById("confirm_password");
+    var passStatus = document.getElementById("passStatus");
+    var strengthMeter = document.getElementById("strengthMeter");
+    var strengthLabel = document.getElementById("strengthLabel");
+    var submitBtn = document.getElementById("submitBtn");
+
+    function updateSubmit() {
+      submitBtn.disabled = !(isUsernameValid && isPassValid);
+    }
+
+    var checkTimer = null;
+    usernameInput.addEventListener("input", function () {
+      clearTimeout(checkTimer);
+      var val = this.value.trim();
+      if (val.length < 3) {
+        isUsernameValid = false;
+        usernameStatus.className = "adm-hint" + (val.length ? " adm-hint--bad" : "");
+        usernameStatus.textContent = val.length ? "Must be at least 3 characters." : "Minimum 3 characters, unique across all accounts";
+        updateSubmit();
+        return;
+      }
+      usernameStatus.className = "adm-hint";
+      usernameStatus.textContent = "Checking availability…";
+      checkTimer = setTimeout(async function () {
+        try {
+          var res = await fetch("/check_admin_username?username=" + encodeURIComponent(val));
+          if (!res.ok) throw new Error("HTTP " + res.status);
+          var data = await res.json();
+          if (data.exists) {
+            isUsernameValid = false;
+            usernameStatus.className = "adm-hint adm-hint--bad";
+            usernameStatus.textContent = "Username '" + val + "' is already taken.";
+          } else {
+            isUsernameValid = true;
+            usernameStatus.className = "adm-hint adm-hint--ok";
+            usernameStatus.textContent = "Username is available.";
+          }
+        } catch (e) {
+          isUsernameValid = true;
+          usernameStatus.className = "adm-hint";
+          usernameStatus.textContent = "Ready to submit.";
         }
+        updateSubmit();
+      }, 260);
+    });
 
-        let isUsernameValid = false;
-        let isPassValid = false;
+    function scorePassword(p) {
+      if (!p) return 0;
+      var s = 0;
+      if (p.length >= 6) s++;
+      if (p.length >= 10) s++;
+      if (/[A-Z]/.test(p) && /[a-z]/.test(p)) s++;
+      if (/\d/.test(p) && /[^A-Za-z0-9]/.test(p)) s++;
+      return Math.min(4, Math.max(1, s));
+    }
 
-        const usernameInput = document.getElementById('username');
-        const usernameStatus = document.getElementById('usernameStatus');
-        const passInput = document.getElementById('password');
-        const confirmInput = document.getElementById('confirm_password');
-        const passStatus = document.getElementById('passStatus');
-        const submitBtn = document.getElementById('submitBtn');
+    function validatePasswords() {
+      var p1 = passInput.value;
+      var p2 = confirmInput.value;
+      var lvl = p1 ? scorePassword(p1) : 0;
+      strengthMeter.setAttribute("data-level", String(lvl));
+      var labels = ["", "Weak", "Fair", "Good", "Strong"];
+      strengthLabel.textContent = labels[lvl] || "";
 
-        let checkTimeout;
-        usernameInput.addEventListener('input', function() {
-            clearTimeout(checkTimeout);
-            const val = this.value.trim();
-            if (val.length < 3) {
-                usernameStatus.style.display = 'none';
-                isUsernameValid = false;
-                checkReady();
-                return;
-            }
-            usernameStatus.style.display = 'block';
-            usernameStatus.style.color = '#94a3b8';
-            usernameStatus.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Checking availability...';
+      if (p1.length < 6) {
+        isPassValid = false;
+        passStatus.className = p1.length ? "adm-hint adm-hint--bad" : "adm-hint";
+        passStatus.textContent = p1.length ? "Password must be at least 6 characters." : "";
+      } else if (!p2) {
+        isPassValid = false;
+        passStatus.className = "adm-hint";
+        passStatus.textContent = "Repeat the password to confirm.";
+      } else if (p1 !== p2) {
+        isPassValid = false;
+        passStatus.className = "adm-hint adm-hint--bad";
+        passStatus.textContent = "Passwords do not match.";
+      } else {
+        isPassValid = true;
+        passStatus.className = "adm-hint adm-hint--ok";
+        passStatus.textContent = "Passwords match.";
+      }
+      updateSubmit();
+    }
 
-            checkTimeout = setTimeout(async () => {
-                try {
-                    const res = await fetch(`/check_admin_username?username=${encodeURIComponent(val)}`);
-                    const data = await res.json();
-                    if (data.exists) {
-                        usernameStatus.style.color = '#f87171';
-                        usernameStatus.innerHTML = '<i class="fas fa-times-circle"></i> Username already taken!';
-                        isUsernameValid = false;
-                    } else {
-                        usernameStatus.style.color = '#4ade80';
-                        usernameStatus.innerHTML = '<i class="fas fa-check-circle"></i> Username available';
-                        isUsernameValid = true;
-                    }
-                } catch(e) {
-                    isUsernameValid = true;
-                }
-                checkReady();
-            }, 400);
+    passInput.addEventListener("input", validatePasswords);
+    confirmInput.addEventListener("input", validatePasswords);
+
+    async function removeAdmin(id, name) {
+      var ok = await CT.confirm({
+        title: "Remove administrator?",
+        html: "Revoke console access for <strong>" + CT.esc(name) + "</strong>?",
+        tone: "danger",
+        icon: "i-trash",
+        confirmText: "Remove admin"
+      });
+      if (!ok) return;
+      try {
+        var res = await fetch("/admin/delete_admin/" + id, {
+          method: "POST",
+          headers: { "X-CSRFToken": window.CSRF_TOKEN, "Content-Type": "application/json" }
         });
-
-        function checkPasswords() {
-            const p1 = passInput.value;
-            const p2 = confirmInput.value;
-            if (!p1 && !p2) {
-                passStatus.style.display = 'none';
-                isPassValid = false;
-                checkReady();
-                return;
-            }
-            if (p1.length < 6) {
-                passStatus.style.display = 'block';
-                passStatus.style.color = '#f87171';
-                passStatus.innerHTML = '<i class="fas fa-times-circle"></i> Password must be at least 6 characters.';
-                isPassValid = false;
-            } else if (p2 && p1 !== p2) {
-                passStatus.style.display = 'block';
-                passStatus.style.color = '#f87171';
-                passStatus.innerHTML = '<i class="fas fa-times-circle"></i> Passwords do not match.';
-                isPassValid = false;
-            } else if (p1 && p2 && p1 === p2) {
-                passStatus.style.display = 'block';
-                passStatus.style.color = '#4ade80';
-                passStatus.innerHTML = '<i class="fas fa-check-circle"></i> Passwords match';
-                isPassValid = true;
-            } else {
-                passStatus.style.display = 'none';
-                isPassValid = false;
-            }
-            checkReady();
+        var data = await res.json().catch(function () { return {}; });
+        if (res.ok && data.success) {
+          var row = document.getElementById("admin-row-" + id);
+          if (row) {
+            row.classList.add("fade-out");
+            setTimeout(function () {
+              row.remove();
+              var tbl = document.getElementById("adminsTable");
+              if (tbl && tbl._ctRepaginate) tbl._ctRepaginate(false);
+              var lbl = document.getElementById("adminCountLabel");
+              if (lbl) lbl.textContent = String(Math.max(1, (parseInt(lbl.textContent, 10) || 1) - 1));
+            }, 240);
+          }
+          CT.toast(data.message || "Administrator removed", "ok");
+        } else {
+          CT.toast(data.error || "Could not remove administrator", "bad");
         }
-
-        passInput.addEventListener('input', checkPasswords);
-        confirmInput.addEventListener('input', checkPasswords);
-
-        function checkReady() {
-            submitBtn.disabled = !(isUsernameValid && isPassValid);
-        }
-
-        function validateForm() {
-            return isUsernameValid && isPassValid;
-        }
-    </script>
+      } catch (e) {
+        CT.toast("Network error while removing administrator", "bad");
+      }
+    }
+  </script>
 
 {{ shell_end(role='admin') }}
 </body>

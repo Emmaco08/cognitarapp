@@ -1,4 +1,4 @@
-{%- from '_ct_shell.html' import ico, ct_boot_script, teacher_shell_start, shell_end -%}
+{%- from '_ct_shell.html' import ico, person_avatar, ct_boot_script, teacher_shell_start, shell_end with context -%}
 {%- set completed = namespace(count=0, sum_pct=0, passed=0) -%}
 {%- for r in results -%}
   {%- if r.total and r.total > 0 -%}
@@ -84,7 +84,7 @@
 
     {% if results %}
     <div class="tc-table-wrap">
-      <table class="tc-table" id="examResultsTable">
+      <table class="tc-table" id="examResultsTable" data-ct-paginate="12">
         <thead>
           <tr>
             <th style="width:52px">#</th>
@@ -102,7 +102,7 @@
             <td class="tc-mono" style="color:var(--tc-ink-3)">{{ loop.index }}</td>
             <td>
               <div class="tc-user-cell">
-                <span class="tc-avatar tc-avatar--sm">{{ (r.student[:2] if r.student else 'ST')|upper }}</span>
+                {{ person_avatar(r.photo if r.photo is defined else '', r.student or 'Student', 'sm') }}
                 <span><strong>{{ r.student }}</strong></span>
               </div>
             </td>

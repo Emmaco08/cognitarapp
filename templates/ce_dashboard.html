@@ -1,4 +1,4 @@
-{%- from '_ct_shell.html' import ico, ct_boot_script -%}
+{%- from '_ct_shell.html' import ico, ct_boot_script with context -%}
 {%- set ICONS = url_for('static', filename='icons/cognitara-icons.svg') -%}
 {%- set _school = school_branding if school_branding is defined and school_branding else {'school_name': 'CogniTara School'} -%}
 <!DOCTYPE html>
@@ -36,16 +36,27 @@
     </header>
 
     <main class="st-folio-stage">
-      <section class="st-brief" style="width:min(640px,100%)" aria-label="Common Entrance candidate briefing">
+      <section class="st-brief st-brief--motion" style="width:min(640px,100%)" aria-label="Common Entrance candidate briefing">
         <div class="st-folio__top">
           <span class="st-folio__doc-id" style="text-transform:none;letter-spacing:0.01em">Candidate · {{ student_name }}</span>
-          <span class="st-pill st-mono">{{ exam.duration }} min · {{ exam.total_questions_to_show }} questions</span>
+          <span class="st-pill st-pill--accent st-mono">{{ exam.duration }} min · {{ exam.total_questions_to_show }} questions</span>
         </div>
 
         <div class="st-brief__body">
-          <div class="st-folio__headline">
-            <h1>{{ exam.name }}</h1>
-            <p>Welcome, {{ student_name }}. Review your paper settings below before entering the examination room. Every answer saves immediately to the school server.</p>
+          <div class="st-brief__stage">
+            <div class="st-brief__crest" aria-hidden="true">
+              <svg viewBox="0 0 56 56">
+                <circle class="st-crest-ring" cx="28" cy="28" r="24"/>
+                <circle class="st-crest-orbit-rev" cx="28" cy="28" r="19"/>
+                <path class="st-crest-shield" d="M28 11 L40 16 V26 C40 34 34.8 40.5 28 43.5 C21.2 40.5 16 34 16 26 V16 Z"/>
+                <path class="st-crest-spark" d="M23 27.5 L26.5 31 L33.5 23.5"/>
+              </svg>
+            </div>
+            <div class="st-folio__headline">
+              <span class="st-brief__candidate"><i class="st-brief__dot"></i>Entrance Portal · {{ exam.target_class }}</span>
+              <h1>{{ exam.name }}</h1>
+              <p>Welcome, {{ student_name }}. Review your paper settings below before entering the examination room. Every answer saves immediately to the school server.</p>
+            </div>
           </div>
 
           <div class="st-ledger">
@@ -84,7 +95,7 @@
                 <span>Your previous attempt did not meet the cut-off.{% if exam.active %} You may sit the paper again below.{% endif %}</span>
               </div>
               {% if exam.active %}
-              <button type="button" class="st-btn st-btn--primary st-btn--lg st-btn--block" onclick="openStartModal()">
+              <button type="button" class="st-btn st-btn--primary st-btn--lg st-btn--block st-brief__cta" onclick="openStartModal()">
                 <span>Retake Examination</span>
                 {{ ico('i-arrow-right', 'ct-ico--sm st-arrow') }}
               </button>
@@ -105,7 +116,7 @@
                 <span>Waiting for Proctor Authorization</span>
               </button>
               {% else %}
-              <button type="button" class="st-btn st-btn--primary st-btn--lg st-btn--block" onclick="openResumeModal({{ existing_attempt.id }})">
+              <button type="button" class="st-btn st-btn--primary st-btn--lg st-btn--block st-brief__cta" onclick="openResumeModal({{ existing_attempt.id }})">
                 <span>Resume Examination</span>
                 {{ ico('i-arrow-right', 'ct-ico--sm st-arrow') }}
               </button>
@@ -113,7 +124,7 @@
             {% endif %}
           {% else %}
             {% if exam.active %}
-            <button type="button" class="st-btn st-btn--primary st-btn--lg st-btn--block" onclick="openStartModal()">
+            <button type="button" class="st-btn st-btn--primary st-btn--lg st-btn--block st-brief__cta" onclick="openStartModal()">
               <span>Begin Examination</span>
               {{ ico('i-arrow-right', 'ct-ico--sm st-arrow') }}
             </button>
@@ -125,7 +136,8 @@
             {% endif %}
           {% endif %}
 
-          <div style="display:flex;align-items:center;justify-content:center;gap:7px;font-size:12.5px;color:var(--st-ink-3);padding-top:10px;border-top:1px solid var(--st-line)">
+          <div class="st-brief__integrity">
+            <span class="st-brief__integrity-pulse" aria-hidden="true"></span>
             {{ ico('i-shield', 'ct-ico--xs') }}
             <span>Integrity shield active · {{ exam.max_warnings if exam.max_warnings else 5 }} focus warnings auto-submit</span>
           </div>

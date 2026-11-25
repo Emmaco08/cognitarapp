@@ -46,7 +46,15 @@ def admin_dashboard():
         return redirect("/")
     
     conn = get_db_connection()
-    exams = conn.execute("SELECT * FROM exams").fetchall()
+    try:
+        exams = conn.execute("""
+            SELECT e.*, t.username as teacher_name
+            FROM exams e
+            LEFT JOIN teachers t ON e.teacher_id = t.id
+            ORDER BY e.id DESC
+        """).fetchall()
+    except sqlite3.OperationalError:
+        exams = conn.execute("SELECT * FROM exams ORDER BY id DESC").fetchall()
     
     # Common Entrance exams for dashboard
     ce_exams = conn.execute("""
@@ -57,70 +65,33 @@ def admin_dashboard():
         ORDER BY id DESC
     """).fetchall()
     
-    # Paginated Students (10 latest created/modified)
     search_query = request.args.get('search', '').strip()
-    try:
-        page_students = max(1, int(request.args.get('page_students', 1)))
-    except (ValueError, TypeError):
-        page_students = 1
-    per_page_students = 10
+    teacher_search = request.args.get('teacher_search', '').strip()
 
     if search_query:
-        total_students_res = conn.execute(
-            "SELECT COUNT(*) as count FROM students WHERE (username LIKE ? OR class LIKE ? OR full_name LIKE ?) AND status='approved'", 
-            (f'%{search_query}%', f'%{search_query}%', f'%{search_query}%')
-        ).fetchone()
-        total_students_count = total_students_res["count"] if total_students_res else 0
-        total_student_pages = max(1, math.ceil(total_students_count / per_page_students))
-        page_students = max(1, min(page_students, total_student_pages))
-        offset_students = (page_students - 1) * per_page_students
         students = conn.execute(
-            "SELECT * FROM students WHERE (username LIKE ? OR class LIKE ? OR full_name LIKE ?) AND status='approved' ORDER BY id DESC LIMIT ? OFFSET ?", 
-            (f'%{search_query}%', f'%{search_query}%', f'%{search_query}%', per_page_students, offset_students)
+            "SELECT * FROM students WHERE (username LIKE ? OR class LIKE ? OR full_name LIKE ?) AND status='approved' ORDER BY id DESC",
+            (f'%{search_query}%', f'%{search_query}%', f'%{search_query}%')
         ).fetchall()
     else:
-        total_students_res = conn.execute("SELECT COUNT(*) as count FROM students WHERE status='approved'").fetchone()
-        total_students_count = total_students_res["count"] if total_students_res else 0
-        total_student_pages = max(1, math.ceil(total_students_count / per_page_students))
-        page_students = max(1, min(page_students, total_student_pages))
-        offset_students = (page_students - 1) * per_page_students
         students = conn.execute(
-            "SELECT * FROM students WHERE status='approved' ORDER BY id DESC LIMIT ? OFFSET ?",
-            (per_page_students, offset_students)
+            "SELECT * FROM students WHERE status='approved' ORDER BY id DESC"
         ).fetchall()
 
-    # Paginated Teachers (10 latest created/modified)
-    teacher_search = request.args.get('teacher_search', '').strip()
-    try:
-        page_teachers = max(1, int(request.args.get('page_teachers', 1)))
-    except (ValueError, TypeError):
-        page_teachers = 1
-    per_page_teachers = 10
+    total_students_count = len(students)
 
     if teacher_search:
-        total_teachers_res = conn.execute(
-            "SELECT COUNT(*) as count FROM teachers WHERE username LIKE ? OR class LIKE ?",
-            (f'%{teacher_search}%', f'%{teacher_search}%')
-        ).fetchone()
-        total_teachers_count = total_teachers_res["count"] if total_teachers_res else 0
-        total_teacher_pages = max(1, math.ceil(total_teachers_count / per_page_teachers))
-        page_teachers = max(1, min(page_teachers, total_teacher_pages))
-        offset_teachers = (page_teachers - 1) * per_page_teachers
         teachers = conn.execute(
-            "SELECT * FROM teachers WHERE username LIKE ? OR class LIKE ? ORDER BY id DESC LIMIT ? OFFSET ?",
-            (f'%{teacher_search}%', f'%{teacher_search}%', per_page_teachers, offset_teachers)
+            "SELECT * FROM teachers WHERE username LIKE ? OR class LIKE ? ORDER BY id DESC",
+            (f'%{teacher_search}%', f'%{teacher_search}%')
         ).fetchall()
     else:
-        total_teachers_res = conn.execute("SELECT COUNT(*) as count FROM teachers").fetchone()
-        total_teachers_count = total_teachers_res["count"] if total_teachers_res else 0
-        total_teacher_pages = max(1, math.ceil(total_teachers_count / per_page_teachers))
-        page_teachers = max(1, min(page_teachers, total_teacher_pages))
-        offset_teachers = (page_teachers - 1) * per_page_teachers
-        teachers = conn.execute(
-            "SELECT * FROM teachers ORDER BY id DESC LIMIT ? OFFSET ?",
-            (per_page_teachers, offset_teachers)
-        ).fetchall()
-    
+        teachers = conn.execute("SELECT * FROM teachers ORDER BY id DESC").fetchall()
+
+    total_teachers_count = len(teachers)
+
+    student_classes = sorted({(s["class"] or "").strip() for s in students if s["class"] and str(s["class"]).strip()})
+
     result = conn.execute("SELECT COUNT(*) as count FROM pending_registrations WHERE status='pending'").fetchone()
     pending_count = result["count"] if result else 0
     
@@ -131,16 +102,17 @@ def admin_dashboard():
                          ce_exams=ce_exams,
                          students=students,
                          teachers=teachers, 
+                         student_classes=student_classes,
                          username=session["username"],
                          search_query=search_query,
                          teacher_search=teacher_search,
                          pending_count=pending_count,
                          total_students_count=total_students_count,
                          total_teachers_count=total_teachers_count,
-                         current_student_page=page_students,
-                         total_student_pages=total_student_pages,
-                         current_teacher_page=page_teachers,
-                         total_teacher_pages=total_teacher_pages)
+                         current_student_page=1,
+                         total_student_pages=1,
+                         current_teacher_page=1,
+                         total_teacher_pages=1)
 
 
 @admin_dashboard_bp.route("/admin/logs")
@@ -196,10 +168,12 @@ def warning_logs():
     return render_template("warning_logs.html", logs=logs, summary=summary, by_exam=by_exam)
 
 
-@admin_dashboard_bp.route("/admin/delete_warning_log/<int:log_id>")
+@admin_dashboard_bp.route("/admin/delete_warning_log/<int:log_id>", methods=["GET", "POST"])
 def delete_warning_log(log_id):
     if "admin_id" not in session:
-        return redirect("/")
+        return ({"error": "Unauthorized"}, 401) if request.method == "POST" else redirect("/")
+    if request.method == "POST" and not validate_csrf():
+        return {"error": "Invalid CSRF token"}, 403
     
     conn = get_db_connection()
     log = conn.execute("SELECT student_name, exam_name FROM warning_logs WHERE id=?", (log_id,)).fetchone()
@@ -209,13 +183,17 @@ def delete_warning_log(log_id):
     conn.commit()
     conn.close()
     
+    if request.method == "POST" or request.headers.get("X-Requested-With") == "XMLHttpRequest":
+        return {"success": True, "message": "Warning log entry deleted."}
     return redirect("/admin/warning_logs")
 
 
-@admin_dashboard_bp.route("/admin/delete_all_warning_logs")
+@admin_dashboard_bp.route("/admin/delete_all_warning_logs", methods=["GET", "POST"])
 def delete_all_warning_logs():
     if "admin_id" not in session:
-        return redirect("/")
+        return ({"error": "Unauthorized"}, 401) if request.method == "POST" else redirect("/")
+    if request.method == "POST" and not validate_csrf():
+        return {"error": "Invalid CSRF token"}, 403
     
     conn = get_db_connection()
     conn.execute("DELETE FROM warning_logs")
@@ -223,13 +201,17 @@ def delete_all_warning_logs():
     conn.commit()
     conn.close()
     
+    if request.method == "POST" or request.headers.get("X-Requested-With") == "XMLHttpRequest":
+        return {"success": True, "message": "All warning logs cleared."}
     return redirect("/admin/warning_logs")
 
 
-@admin_dashboard_bp.route("/admin/delete_student_warning_logs/<string:student_name>")
+@admin_dashboard_bp.route("/admin/delete_student_warning_logs/<string:student_name>", methods=["GET", "POST"])
 def delete_student_warning_logs(student_name):
     if "admin_id" not in session:
-        return redirect("/")
+        return ({"error": "Unauthorized"}, 401) if request.method == "POST" else redirect("/")
+    if request.method == "POST" and not validate_csrf():
+        return {"error": "Invalid CSRF token"}, 403
     
     conn = get_db_connection()
     conn.execute("DELETE FROM warning_logs WHERE student_name=?", (student_name,))
@@ -237,4 +219,6 @@ def delete_student_warning_logs(student_name):
     conn.commit()
     conn.close()
     
+    if request.method == "POST" or request.headers.get("X-Requested-With") == "XMLHttpRequest":
+        return {"success": True, "message": f"Cleared all warning logs for {student_name}."}
     return redirect("/admin/warning_logs")

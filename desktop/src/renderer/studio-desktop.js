@@ -51,7 +51,7 @@
     writing: 0,
     samples: new Array(120).fill(0),
     stopArmed: false,
-    version: "2.2.5",
+    version: "2.2.6",
     activeView: "home",
     cloudAccount: null,
     updateState: null
@@ -3169,6 +3169,125 @@
     });
   }
 
+  function getPlanEmblemSvg(slug, idx) {
+    var key = String(slug || "").toLowerCase();
+    if (key.indexOf("lifetime") > -1 || key.indexOf("perpetual") > -1 || idx === 3) {
+      // Crystalline institutional lattice + radiant crown
+      return "<svg viewBox='0 0 44 44' aria-hidden='true'>" +
+        "<circle class='em-path' cx='22' cy='10' r='3.5'/>" +
+        "<path class='em-path' d='M22 13.5V35'/>" +
+        "<path class='em-path' d='M22 19L12 14M22 19L32 14'/>" +
+        "<path class='em-path' d='M22 25L10 21M22 25L34 21'/>" +
+        "<path class='em-path' d='M22 31L13 28M22 31L31 28'/>" +
+        "<circle class='em-path' cx='10' cy='13' r='2.2'/><circle class='em-path' cx='34' cy='13' r='2.2'/>" +
+        "<circle class='em-path' cx='8' cy='20.5' r='2'/><circle class='em-path' cx='36' cy='20.5' r='2'/>" +
+        "<circle class='em-path' cx='11.5' cy='27.5' r='1.8'/><circle class='em-path' cx='32.5' cy='27.5' r='1.8'/>" +
+        "</svg>";
+    }
+    if (key.indexOf("annual") > -1 || key.indexOf("year") > -1 || idx === 2) {
+      // Full 3-tier symmetrical academic tree
+      return "<svg viewBox='0 0 44 44' aria-hidden='true'>" +
+        "<circle class='em-path' cx='22' cy='10' r='4'/>" +
+        "<circle class='em-path' cx='22' cy='10' r='1.4'/>" +
+        "<path class='em-path' d='M22 14V35'/>" +
+        "<path class='em-path' d='M22 20L13 15.5M22 20L31 15.5'/>" +
+        "<path class='em-path' d='M22 27L12 22.5M22 27L32 22.5'/>" +
+        "<path class='em-path' d='M22 33L15 30M22 33L29 30'/>" +
+        "<circle class='em-path' cx='11.5' cy='15' r='2'/><circle class='em-path' cx='32.5' cy='15' r='2'/>" +
+        "<circle class='em-path' cx='10.5' cy='22' r='2'/><circle class='em-path' cx='33.5' cy='22' r='2'/>" +
+        "</svg>";
+    }
+    if (key.indexOf("term") > -1 || idx === 0) {
+      // Dual-branch term node emblem
+      return "<svg viewBox='0 0 44 44' aria-hidden='true'>" +
+        "<circle class='em-path' cx='22' cy='11' r='4.2'/>" +
+        "<circle class='em-path' cx='22' cy='11' r='1.5'/>" +
+        "<path class='em-path' d='M22 15.2V35'/>" +
+        "<path class='em-path' d='M22 22L13 18M22 22L31 18'/>" +
+        "<path class='em-path' d='M22 29L14 25.5M22 29L30 25.5'/>" +
+        "<circle class='em-path' cx='11.5' cy='17.5' r='2.1'/><circle class='em-path' cx='32.5' cy='17.5' r='2.1'/>" +
+        "<circle class='em-path' cx='12.5' cy='25' r='1.9'/><circle class='em-path' cx='31.5' cy='25' r='1.9'/>" +
+        "</svg>";
+    }
+    // Clean minimal starter stem emblem (Monthly)
+    return "<svg viewBox='0 0 44 44' aria-hidden='true'>" +
+      "<circle class='em-path' cx='22' cy='12' r='4.5'/>" +
+      "<circle class='em-path' cx='22' cy='12' r='1.6'/>" +
+      "<path class='em-path' d='M22 16.5V35'/>" +
+      "<path class='em-path' d='M22 25L14 21.5M22 25L30 21.5'/>" +
+      "<circle class='em-path' cx='12.5' cy='21' r='2'/><circle class='em-path' cx='31.5' cy='21' r='2'/>" +
+      "</svg>";
+  }
+
+  function getPlanDefaults(p) {
+    var slug = String(p.slug || p.display_name || "").toLowerCase();
+    var lease = p.lease_days || 14;
+    if (slug.indexOf("lifetime") > -1 || !p.duration_days) {
+      return {
+        desc: "One-time institutional licence with perpetual offline operation.",
+        kicker: "Everything in Annual, plus:",
+        cadenceTop: billingState.currency + " / one-time",
+        cadenceSub: lease + "-day offline lease",
+        cta: "Get Lifetime plan",
+        featured: false,
+        feats: [
+          "Perpetual school licence — zero renewals",
+          lease + "-day extended offline check-in window",
+          "Unlimited exams, students & question banks",
+          "Encrypted CogniTara Cloud backups & sync",
+          "Priority support & lifetime Studio updates"
+        ]
+      };
+    }
+    if (slug.indexOf("annual") > -1 || (p.duration_days && p.duration_days >= 300)) {
+      return {
+        desc: "Complete academic year coverage for secondary & primary schools.",
+        kicker: "Everything in Termly, plus:",
+        cadenceTop: billingState.currency + " / 365 days",
+        cadenceSub: lease + "-day offline lease",
+        cta: "Get Annual plan",
+        featured: true,
+        feats: [
+          "Full 365-day academic session coverage",
+          lease + "-day offline lease without internet",
+          "Unlimited exams, students & Common Entrance",
+          "Automated encrypted Cloud & local backups",
+          "Analytics, grading schemes & progression"
+        ]
+      };
+    }
+    if (slug.indexOf("term") > -1 || (p.duration_days && p.duration_days >= 90)) {
+      return {
+        desc: "Purpose-built for a full academic term of continuous testing.",
+        kicker: "Everything in Monthly, plus:",
+        cadenceTop: billingState.currency + " / " + (p.duration_days || 120) + " days",
+        cadenceSub: lease + "-day offline lease",
+        cta: "Get Termly plan",
+        featured: true,
+        feats: [
+          "Full " + (p.duration_days || 120) + "-day academic term coverage",
+          lease + "-day offline LAN exam window",
+          "Unlimited exams, students & question banks",
+          "Encrypted CogniTara Cloud backup sync"
+        ]
+      };
+    }
+    return {
+      desc: "Flexible 30-day licence for assessments and mid-term sprints.",
+      kicker: "Included in Monthly:",
+      cadenceTop: billingState.currency + " / " + (p.duration_days || 30) + " days",
+      cadenceSub: lease + "-day offline lease",
+      cta: "Get Monthly plan",
+      featured: false,
+      feats: [
+        "30-day school CBT server licence",
+        lease + "-day offline exam room operation",
+        "Unlimited students on local Wi-Fi / LAN",
+        "Auto-save scripts & instant grading"
+      ]
+    };
+  }
+
   function renderBillingPlans() {
     var grid = $("#billingPlansGrid");
     if (!grid) return;
@@ -3176,33 +3295,66 @@
       grid.innerHTML = "<div class='billing-loading'>No active plans available right now.</div>";
       return;
     }
-    grid.innerHTML = billingState.plans.map(function (p) {
-      var sel = p.id === billingState.selectedPlanId;
-      var priceMinor = billingState.currency === "USD" ? p.price_usd_cents : p.price_ngn_kobo;
-      var dur = p.duration_days ? (p.duration_days + " days · " + p.lease_days + "d offline lease") : ("Perpetual · " + p.lease_days + "d offline lease");
-      var feats = (p.features && Array.isArray(p.features.highlights)) ? p.features.highlights.slice(0, 3) : [];
-      return "<button type='button' class='bplan" + (sel ? " is-selected" : "") + "' data-plan-id='" + esc(p.id) + "'>" +
-        "<div class='bplan__top'><span class='bplan__name'>" + esc(p.display_name) + "</span>" +
-        (p.badge ? "<span class='bplan__badge'>" + esc(p.badge) + "</span>" : "") + "</div>" +
-        "<div class='bplan__price'>" + fmtMoney(priceMinor, billingState.currency) + "</div>" +
-        "<div class='bplan__meta'>" + esc(dur) + "</div>" +
-        (feats.length ? "<ul class='bplan__feats'>" + feats.map(function (f) { return "<li>· " + esc(f) + "</li>"; }).join("") + "</ul>" : "") +
-        "</button>";
+    var signedIn = Boolean(state.cloudAccount && state.cloudAccount.signedIn);
+    var checkSvg = "<svg viewBox='0 0 24 24' aria-hidden='true'><path d='M20 6 9 17l-5-5'/></svg>";
+
+    grid.innerHTML = billingState.plans.map(function (p, idx) {
+      var defaults = getPlanDefaults(p);
+      var origMinor = billingState.currency === "USD" ? p.price_usd_cents : p.price_ngn_kobo;
+      var hasPromoForPlan = Boolean(
+        billingState.appliedPromo &&
+        (!billingState.appliedPromo.plan_id || billingState.appliedPromo.plan_id === p.id || billingState.selectedPlanId === p.id)
+      );
+      var discMinor = hasPromoForPlan ? Number(billingState.appliedPromo.discount_amount_minor || 0) : 0;
+      var finalMinor = Math.max(0, origMinor - discMinor);
+      var feats = (p.features && Array.isArray(p.features.highlights) && p.features.highlights.length >= 3)
+        ? p.features.highlights.slice(0, 5)
+        : defaults.feats;
+      var isFeatured = Boolean(defaults.featured || (p.badge && /popular|best/i.test(p.badge)));
+      var ctaClass = isFeatured ? "bplan-card__cta bplan-card__cta--solid" : "bplan-card__cta bplan-card__cta--soft";
+      var ctaLabel = (finalMinor === 0 && hasPromoForPlan)
+        ? "Activate free order"
+        : (signedIn ? defaults.cta : "Sign in to choose");
+
+      return "<article class='bplan-card" + (isFeatured ? " is-featured" : "") + "' data-plan-id='" + esc(p.id) + "'>" +
+        "<div class='bplan-card__head'>" +
+          "<div class='bplan-card__emblem'>" + getPlanEmblemSvg(p.slug, idx) + "</div>" +
+          (p.badge ? "<span class='bplan-card__tag'>" + esc(p.badge) + "</span>" : "") +
+        "</div>" +
+        "<div class='bplan-card__title'>" + esc(p.display_name) + "</div>" +
+        "<div class='bplan-card__desc'>" + esc((p.features && p.features.subtitle) || defaults.desc) + "</div>" +
+        "<div class='bplan-card__price-row'>" +
+          "<div class='bplan-card__price'>" +
+            (discMinor > 0 ? "<span class='bplan-card__strike'>" + fmtMoney(origMinor, billingState.currency) + "</span>" : "") +
+            fmtMoney(finalMinor, billingState.currency) +
+          "</div>" +
+          "<div class='bplan-card__cadence'><span>" + esc(defaults.cadenceTop) + "</span><span>" + esc(defaults.cadenceSub) + "</span></div>" +
+        "</div>" +
+        "<button type='button' class='" + ctaClass + "' data-plan-cta='" + esc(p.id) + "'>" + esc(ctaLabel) + "</button>" +
+        "<div class='bplan-card__note'>Instant activation · Works offline</div>" +
+        "<div class='bplan-card__divider'></div>" +
+        "<div class='bplan-card__kicker'>" + esc(defaults.kicker) + "</div>" +
+        "<ul class='bplan-card__feats'>" +
+          feats.map(function (f) { return "<li>" + checkSvg + "<span>" + esc(f) + "</span></li>"; }).join("") +
+        "</ul>" +
+      "</article>";
     }).join("");
 
-    $$("#billingPlansGrid .bplan").forEach(function (el) {
-      el.addEventListener("click", function () {
-        billingState.selectedPlanId = el.dataset.planId;
-        billingState.appliedPromo = null;
-        renderBillingPlans();
+    $$("#billingPlansGrid [data-plan-cta]").forEach(function (btn) {
+      btn.addEventListener("click", function (ev) {
+        ev.stopPropagation();
+        var pid = btn.getAttribute("data-plan-cta");
+        billingState.selectedPlanId = pid;
         renderBillingSummary();
+        void startCheckoutForPlan(pid, btn);
       });
     });
+
     renderBillingSummary();
   }
 
   function renderBillingSummary() {
-    var plan = billingState.plans.find(function (p) { return p.id === billingState.selectedPlanId; });
+    var plan = billingState.plans.find(function (p) { return p.id === billingState.selectedPlanId; }) || billingState.plans[0];
     var signedIn = Boolean(state.cloudAccount && state.cloudAccount.signedIn);
     if ($("#billingSignInHintBtn")) $("#billingSignInHintBtn").hidden = signedIn;
     if (!plan) {
@@ -3215,24 +3367,14 @@
     var discMinor = billingState.appliedPromo ? Number(billingState.appliedPromo.discount_amount_minor || 0) : 0;
     var finalMinor = Math.max(0, origMinor - discMinor);
 
-    $("#bsPlanName").textContent = plan.display_name;
+    if ($("#bsPlanName")) $("#bsPlanName").textContent = plan.display_name;
     if (discMinor > 0) {
-      $("#bsDiscountRow").hidden = false;
-      $("#bsDiscountVal").textContent = "-" + fmtMoney(discMinor, billingState.currency) + " (" + billingState.appliedPromo.code + ")";
-      $("#bsTotalVal").innerHTML = "<span class='billing-summary__strike'>" + fmtMoney(origMinor, billingState.currency) + "</span>" + fmtMoney(finalMinor, billingState.currency);
+      if ($("#bsDiscountRow")) $("#bsDiscountRow").hidden = false;
+      if ($("#bsDiscountVal")) $("#bsDiscountVal").textContent = "-" + fmtMoney(discMinor, billingState.currency) + " (" + billingState.appliedPromo.code + ")";
+      if ($("#bsTotalVal")) $("#bsTotalVal").innerHTML = "<span class='billing-summary__strike'>" + fmtMoney(origMinor, billingState.currency) + "</span>" + fmtMoney(finalMinor, billingState.currency);
     } else {
-      $("#bsDiscountRow").hidden = true;
-      $("#bsTotalVal").textContent = fmtMoney(finalMinor, billingState.currency);
-    }
-    var payBtn = $("#billingPayBtn");
-    if (payBtn) {
-      if (finalMinor === 0 && billingState.appliedPromo) {
-        payBtn.textContent = "Activate free order";
-      } else {
-        payBtn.textContent = signedIn
-          ? ("Pay " + fmtMoney(finalMinor, billingState.currency) + " with Paystack")
-          : "Sign in to pay with Paystack";
-      }
+      if ($("#bsDiscountRow")) $("#bsDiscountRow").hidden = true;
+      if ($("#bsTotalVal")) $("#bsTotalVal").textContent = fmtMoney(finalMinor, billingState.currency);
     }
   }
 
@@ -3297,12 +3439,13 @@
       var code = ($("#billingPromoInput").value || "").trim().toUpperCase();
       if (!code) { setBillingMsg("Enter a promo or redeem code first.", ""); return; }
       setBillingMsg("", "");
+      var targetPlanId = billingState.selectedPlanId || (billingState.plans[0] && billingState.plans[0].id);
       var res = bridge && bridge.validatePromoCode
-        ? await bridge.validatePromoCode({ code: code, plan_id: billingState.selectedPlanId, currency: billingState.currency })
+        ? await bridge.validatePromoCode({ code: code, plan_id: targetPlanId, currency: billingState.currency })
         : { ok: false, message: "Desktop IPC unavailable." };
       if (!res || !res.ok) {
         billingState.appliedPromo = null;
-        renderBillingSummary();
+        renderBillingPlans();
         setBillingMsg((res && res.message) || "Invalid code.", "");
         return;
       }
@@ -3313,7 +3456,7 @@
         return;
       }
       billingState.appliedPromo = res;
-      renderBillingSummary();
+      renderBillingPlans();
       setBillingMsg("", res.message || "Discount applied!");
     });
   }
@@ -3350,72 +3493,83 @@
     }
   }
 
-  if ($("#billingPayBtn")) {
-    $("#billingPayBtn").addEventListener("click", async function () {
-      setBillingMsg("", "");
-      if (!state.cloudAccount || !state.cloudAccount.signedIn) {
-        reopenBillingAfterAuth = true;
-        openCloudModal("signup");
-        toast("Create or sign in to your school Cloud Account first");
-        return;
-      }
-      if (!billingState.selectedPlanId) {
-        setBillingMsg("Please select a subscription plan.", "");
-        return;
-      }
-      var plan = billingState.plans.find(function (p) { return p.id === billingState.selectedPlanId; });
-      var origMinor = plan ? (billingState.currency === "USD" ? plan.price_usd_cents : plan.price_ngn_kobo) : 0;
-      var discMinor = billingState.appliedPromo ? Number(billingState.appliedPromo.discount_amount_minor || 0) : 0;
-      var finalMinor = Math.max(0, origMinor - discMinor);
-      var amountLabel = fmtMoney(finalMinor, billingState.currency);
+  async function startCheckoutForPlan(planId, triggerBtn) {
+    setBillingMsg("", "");
+    if (planId) billingState.selectedPlanId = planId;
+    if (!state.cloudAccount || !state.cloudAccount.signedIn) {
+      reopenBillingAfterAuth = true;
+      openCloudModal("signup");
+      toast("Create or sign in to your school Cloud Account first");
+      return;
+    }
+    if (!billingState.selectedPlanId) {
+      setBillingMsg("Please select a subscription plan.", "");
+      return;
+    }
+    var plan = billingState.plans.find(function (p) { return p.id === billingState.selectedPlanId; });
+    var origMinor = plan ? (billingState.currency === "USD" ? plan.price_usd_cents : plan.price_ngn_kobo) : 0;
+    var discMinor = billingState.appliedPromo ? Number(billingState.appliedPromo.discount_amount_minor || 0) : 0;
+    var finalMinor = Math.max(0, origMinor - discMinor);
+    var amountLabel = fmtMoney(finalMinor, billingState.currency);
 
-      if (billingState.appliedPromo && Number(billingState.appliedPromo.final_amount_minor) === 0 && bridge) {
-        var rFree = await bridge.redeemVoucherCode({
-          code: billingState.appliedPromo.code,
-          plan_id: billingState.selectedPlanId,
-          currency: billingState.currency
+    if (billingState.appliedPromo && Number(billingState.appliedPromo.final_amount_minor) === 0 && bridge) {
+      var rFree = await bridge.redeemVoucherCode({
+        code: billingState.appliedPromo.code,
+        plan_id: billingState.selectedPlanId,
+        currency: billingState.currency
+      });
+      if (rFree && rFree.ok) {
+        toast("Licence activated!");
+        await refreshLicenceFromEngine();
+        showBillingReceipt({
+          ok: true,
+          source: "redeem",
+          license: rFree.license,
+          license_key: rFree.license_key,
+          message: rFree.message || "Promo redeemed & licence activated!"
         });
-        if (rFree && rFree.ok) {
-          toast("Licence activated!");
-          await refreshLicenceFromEngine();
-          showBillingReceipt({
-            ok: true,
-            source: "redeem",
-            license: rFree.license,
-            license_key: rFree.license_key,
-            message: rFree.message || "Promo redeemed & licence activated!"
-          });
-        } else {
-          setBillingMsg((rFree && rFree.message) || "Could not activate free order.", "");
-        }
-        return;
+      } else {
+        setBillingMsg((rFree && rFree.message) || "Could not activate free order.", "");
       }
+      return;
+    }
 
-      if (!bridge) {
-        launchEmbeddedPaystackStage({ reference: "CTPAY_2026_DEMO88", plan_name: plan ? plan.display_name : "Annual School Plan" }, plan ? plan.display_name : "Annual School Plan", amountLabel);
-        return;
-      }
+    if (!bridge) {
+      launchEmbeddedPaystackStage({ reference: "CTPAY_2026_DEMO88", plan_name: plan ? plan.display_name : "Annual School Plan" }, plan ? plan.display_name : "Annual School Plan", amountLabel);
+      return;
+    }
 
-      var btn = $("#billingPayBtn");
+    var btn = triggerBtn || $("#billingPayBtn");
+    var prevText = btn ? btn.textContent : "";
+    if (btn) {
       btn.disabled = true;
-      btn.textContent = "Preparing Paystack checkout…";
-      try {
-        var res = await bridge.startPaystackCheckout({
-          plan_id: billingState.selectedPlanId,
-          currency: billingState.currency,
-          promo_code: billingState.appliedPromo ? billingState.appliedPromo.code : undefined,
-          amount_label: amountLabel
-        });
-        if (!res || !res.ok) {
-          setBillingMsg((res && res.message) || "Could not initialize Paystack checkout.", "");
-          return;
-        }
-        var finalChargeLabel = res.charge_minor != null ? fmtMoney(res.charge_minor, res.currency || billingState.currency) : amountLabel;
-        launchEmbeddedPaystackStage(res, res.plan_name || (plan && plan.display_name), finalChargeLabel);
-      } finally {
-        btn.disabled = false;
-        renderBillingSummary();
+      btn.textContent = "Opening Paystack…";
+    }
+    try {
+      var res = await bridge.startPaystackCheckout({
+        plan_id: billingState.selectedPlanId,
+        currency: billingState.currency,
+        promo_code: billingState.appliedPromo ? billingState.appliedPromo.code : undefined,
+        amount_label: amountLabel
+      });
+      if (!res || !res.ok) {
+        setBillingMsg((res && res.message) || "Could not initialize Paystack checkout.", "");
+        return;
       }
+      var finalChargeLabel = res.charge_minor != null ? fmtMoney(res.charge_minor, res.currency || billingState.currency) : amountLabel;
+      launchEmbeddedPaystackStage(res, res.plan_name || (plan && plan.display_name), finalChargeLabel);
+    } finally {
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = prevText || "Continue";
+      }
+      renderBillingSummary();
+    }
+  }
+
+  if ($("#billingPayBtn")) {
+    $("#billingPayBtn").addEventListener("click", function () {
+      void startCheckoutForPlan(billingState.selectedPlanId, $("#billingPayBtn"));
     });
   }
 
@@ -3881,7 +4035,7 @@
       renderUpdateState({
         status: "downloading",
         currentVersion: "2.2.3",
-        availableVersion: "2.2.5",
+        availableVersion: "2.2.6",
         percent: 68.4,
         bytesPerSecond: 4.2 * 1024 * 1024,
         transferred: 58.2 * 1024 * 1024,
@@ -3891,7 +4045,7 @@
       renderUpdateState({
         status: "downloaded",
         currentVersion: "2.2.3",
-        availableVersion: "2.2.5",
+        availableVersion: "2.2.6",
         percent: 100
       });
     }

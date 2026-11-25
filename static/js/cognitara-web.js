@@ -378,7 +378,93 @@
     }
   }
 
-  /* ---------------- Table filter ---------------- */
+  /* ---------------- Animated Confirm Modal (CT.confirm) ---------------- */
+  var _confirmState = null;
+  function ensureConfirmDialog() {
+    var bd = $("#ctConfirmBackdrop");
+    if (bd) return bd;
+    bd = doc.createElement("div");
+    bd.id = "ctConfirmBackdrop";
+    bd.className = "ct-modal-backdrop ct-confirm-backdrop";
+    bd.setAttribute("aria-hidden", "true");
+    bd.innerHTML =
+      '<div class="ct-modal ct-confirm-modal" role="alertdialog" aria-modal="true" aria-labelledby="ctConfirmTitle" aria-describedby="ctConfirmDesc">' +
+        '<div class="ct-confirm-accent" id="ctConfirmAccent"></div>' +
+        '<div class="ct-confirm-head">' +
+          '<div class="ct-confirm-badge" id="ctConfirmBadge">' +
+            '<span class="ct-confirm-badge__ring" aria-hidden="true"></span>' +
+            '<span class="ct-confirm-badge__ico" id="ctConfirmIcon"></span>' +
+          '</div>' +
+          '<div class="ct-confirm-copy">' +
+            '<h3 id="ctConfirmTitle">Confirm action</h3>' +
+            '<div class="ct-confirm-desc" id="ctConfirmDesc"></div>' +
+          '</div>' +
+          '<button type="button" class="ct-iconbtn ct-iconbtn--ghost ct-modal__close" id="ctConfirmX" aria-label="Close">' + icon("i-x", "ct-ico--sm") + '</button>' +
+        '</div>' +
+        '<div class="ct-confirm-actions">' +
+          '<button type="button" class="ct-btn ct-btn--ghost" id="ctConfirmCancel">Cancel</button>' +
+          '<button type="button" class="ct-btn ct-btn--danger-solid" id="ctConfirmOk">Confirm</button>' +
+        '</div>' +
+      '</div>';
+    doc.body.appendChild(bd);
+
+    function finish(val) {
+      bd.classList.remove("is-open");
+      bd.setAttribute("aria-hidden", "true");
+      var st = _confirmState;
+      _confirmState = null;
+      if (st && st.prevFocus && st.prevFocus.focus) {
+        try { st.prevFocus.focus({ preventScroll: true }); } catch (e) {}
+      }
+      if (st && st.resolve) st.resolve(val);
+    }
+    $("#ctConfirmCancel", bd).addEventListener("click", function () { finish(false); });
+    $("#ctConfirmX", bd).addEventListener("click", function () { finish(false); });
+    $("#ctConfirmOk", bd).addEventListener("click", function () { finish(true); });
+    bd.addEventListener("mousedown", function (e) { if (e.target === bd) finish(false); });
+    doc.addEventListener("keydown", function (e) {
+      if (!_confirmState) return;
+      if (e.key === "Escape") { e.preventDefault(); finish(false); }
+    });
+    return bd;
+  }
+
+  function confirmDialog(opts) {
+    opts = opts || {};
+    var bd = ensureConfirmDialog();
+    var tone = opts.tone || "danger";
+    var modalEl = $(".ct-confirm-modal", bd);
+    modalEl.setAttribute("data-tone", tone);
+    var iconMap = { danger: "i-trash", warn: "i-alert", ok: "i-check-circle", primary: "i-info" };
+    var iconName = opts.icon || iconMap[tone] || "i-alert";
+    $("#ctConfirmIcon", bd).innerHTML = icon(iconName);
+    $("#ctConfirmTitle", bd).textContent = opts.title || "Are you sure?";
+    var descEl = $("#ctConfirmDesc", bd);
+    if (opts.html != null) descEl.innerHTML = opts.html;
+    else descEl.textContent = opts.message || "This action cannot be undone.";
+    var cancelBtn = $("#ctConfirmCancel", bd);
+    var okBtn = $("#ctConfirmOk", bd);
+    cancelBtn.textContent = opts.cancelText || "Cancel";
+    okBtn.textContent = opts.confirmText || (tone === "danger" ? "Delete" : "Confirm");
+    okBtn.className = "ct-btn " + (
+      tone === "danger" ? "ct-btn--danger-solid" :
+      tone === "warn" ? "ct-btn--warn-solid" :
+      tone === "ok" ? "ct-btn--ok-solid" : "ct-btn--primary"
+    );
+
+    if (_confirmState && _confirmState.resolve) _confirmState.resolve(false);
+
+    return new Promise(function (resolve) {
+      _confirmState = { resolve: resolve, prevFocus: doc.activeElement };
+      bd.classList.add("is-open");
+      bd.setAttribute("aria-hidden", "false");
+      setTimeout(function () {
+        try { (tone === "danger" ? cancelBtn : okBtn).focus({ preventScroll: true }); } catch (e) {}
+      }, 45);
+    });
+  }
+
+  /* ---------------- Table filter + Pagination ---------------- */
   function tableFilter(input, table, opts) {
     input = $(input); table = $(table); opts = opts || {};
     if (!input || !table) return;
@@ -391,20 +477,168 @@
         if (row.classList.contains("ct-table-empty-row")) return;
         var hay = (opts.attr && row.getAttribute(opts.attr)) || row.getAttribute("data-search") || row.textContent;
         var hit = !q || hay.toLowerCase().indexOf(q) > -1;
-        row.style.display = hit ? "" : "none";
+        row.dataset.ctFilteredOut = hit ? "0" : "1";
+        if (!table._ctPaginated) {
+          row.style.display = hit ? "" : "none";
+        }
         if (hit) shown++;
       });
+      if (table._ctRepaginate) table._ctRepaginate(true);
       if (emptyEl) emptyEl.hidden = shown !== 0;
       if (typeof opts.onFilter === "function") opts.onFilter(shown, q);
     }
     input.addEventListener("input", run);
     return run;
   }
+
+  function paginateTable(tableOrSel, opts) {
+    var table = $(tableOrSel);
+    if (!table) return null;
+    opts = opts || {};
+    var tbody = table.tBodies && table.tBodies[0] ? table.tBodies[0] : $("tbody", table);
+    if (!tbody) return null;
+
+    var sizes = opts.pageSizes || [10, 25, 50, 100];
+    var pageSize = parseInt(opts.pageSize || table.getAttribute("data-ct-paginate") || "10", 10) || 10;
+    if (sizes.indexOf(pageSize) === -1) {
+      sizes = [pageSize].concat(sizes).sort(function (a, b) { return a - b; });
+    }
+    var page = 1;
+
+    var host = opts.host ? $(opts.host) : null;
+    if (!host) {
+      var wrap = table.closest(".ct-table-wrap") || table.parentNode;
+      var existing = wrap && wrap.nextElementSibling && wrap.nextElementSibling.classList.contains("ct-pager") ? wrap.nextElementSibling : null;
+      if (existing) {
+        host = existing;
+      } else {
+        host = doc.createElement("div");
+        host.className = "ct-pager";
+        if (wrap && wrap.parentNode) wrap.parentNode.insertBefore(host, wrap.nextSibling);
+        else table.parentNode.appendChild(host);
+      }
+    }
+
+    function getRows() {
+      return Array.prototype.slice.call(tbody.children).filter(function (tr) {
+        return tr.tagName === "TR" && !tr.classList.contains("ct-table-empty-row") && !tr.hasAttribute("data-ct-empty-row");
+      });
+    }
+
+    function render(resetPage) {
+      if (resetPage) page = 1;
+      var allRows = getRows();
+      var eligible = allRows.filter(function (tr) {
+        if (tr.dataset.ctFilteredOut === "1") return false;
+        if (typeof opts.filterFn === "function" && !opts.filterFn(tr)) return false;
+        return true;
+      });
+
+      var total = eligible.length;
+      var totalPages = Math.max(1, Math.ceil(total / pageSize));
+      if (page > totalPages) page = totalPages;
+      if (page < 1) page = 1;
+
+      var startIdx = (page - 1) * pageSize;
+      var endIdx = Math.min(total, startIdx + pageSize);
+
+      allRows.forEach(function (tr) {
+        tr.style.display = "none";
+      });
+      eligible.slice(startIdx, endIdx).forEach(function (tr) {
+        tr.style.display = "";
+      });
+
+      if (allRows.length === 0) {
+        host.hidden = true;
+        return;
+      }
+      host.hidden = false;
+
+      var rangeText = total === 0
+        ? "No matching records"
+        : ("Showing <strong>" + (startIdx + 1) + "&ndash;" + endIdx + "</strong> of <strong>" + total + "</strong>");
+
+      var sizeOptions = sizes.map(function (s) {
+        return '<option value="' + s + '"' + (s === pageSize ? " selected" : "") + '>' + s + " / page</option>";
+      }).join("");
+
+      var pagesHtml = "";
+      if (totalPages > 1) {
+        var nums = [];
+        for (var p = 1; p <= totalPages; p++) {
+          if (p === 1 || p === totalPages || (p >= page - 1 && p <= page + 1)) {
+            nums.push(p);
+          } else if (nums[nums.length - 1] !== "...") {
+            nums.push("...");
+          }
+        }
+        pagesHtml =
+          '<button type="button" class="ct-page-btn" data-ct-page="' + (page - 1) + '"' + (page <= 1 ? " disabled" : "") + ' aria-label="Previous page">' + icon("i-chevron-left", "ct-ico--sm") + '</button>' +
+          nums.map(function (n) {
+            if (n === "...") return '<span class="ct-page-ellipsis">&hellip;</span>';
+            return '<button type="button" class="ct-page-btn' + (n === page ? " is-active" : "") + '" data-ct-page="' + n + '"' + (n === page ? ' aria-current="page"' : "") + '>' + n + '</button>';
+          }).join("") +
+          '<button type="button" class="ct-page-btn" data-ct-page="' + (page + 1) + '"' + (page >= totalPages ? " disabled" : "") + ' aria-label="Next page">' + icon("i-chevron-right", "ct-ico--sm") + '</button>';
+      } else {
+        pagesHtml = '<span class="ct-pager__single">Page 1 of 1</span>';
+      }
+
+      host.innerHTML =
+        '<div class="ct-pager__meta">' + rangeText + '</div>' +
+        '<div class="ct-pager__controls">' +
+          '<label class="ct-pager__size"><span class="sr-only">Rows per page</span><select class="ct-pager__select" aria-label="Rows per page">' + sizeOptions + '</select></label>' +
+          '<div class="ct-pagination" role="navigation" aria-label="Table pagination">' + pagesHtml + '</div>' +
+        '</div>';
+
+      var selEl = $(".ct-pager__select", host);
+      if (selEl) {
+        selEl.addEventListener("change", function () {
+          pageSize = parseInt(selEl.value, 10) || 10;
+          page = 1;
+          render(false);
+        });
+      }
+      $$("[data-ct-page]", host).forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          var next = parseInt(btn.getAttribute("data-ct-page"), 10);
+          if (isFinite(next) && next >= 1 && next <= totalPages && next !== page) {
+            page = next;
+            render(false);
+          }
+        });
+      });
+
+      if (typeof opts.onChange === "function") opts.onChange({ page: page, pageSize: pageSize, total: total, totalPages: totalPages });
+    }
+
+    table._ctPaginated = true;
+    table._ctRepaginate = function (reset) { render(!!reset); };
+    render(false);
+    return {
+      refresh: function (reset) { render(!!reset); },
+      setPage: function (p) { page = p; render(false); },
+      setPageSize: function (s) { pageSize = s; page = 1; render(false); }
+    };
+  }
+
   function bindFilters() {
     $$("[data-ct-filter]").forEach(function (inp) {
       tableFilter(inp, inp.getAttribute("data-ct-filter"), {
         rows: inp.getAttribute("data-ct-filter-rows") || undefined,
         empty: inp.getAttribute("data-ct-filter-empty") || undefined
+      });
+    });
+  }
+
+  function bindPaginators() {
+    $$("table[data-ct-paginate]").forEach(function (tbl) {
+      if (tbl._ctPaginated) return;
+      var sizesAttr = tbl.getAttribute("data-ct-paginate-sizes");
+      var sizes = sizesAttr ? sizesAttr.split(",").map(function (n) { return parseInt(n.trim(), 10); }).filter(Boolean) : undefined;
+      paginateTable(tbl, {
+        pageSize: parseInt(tbl.getAttribute("data-ct-paginate"), 10) || 10,
+        pageSizes: sizes
       });
     });
   }
@@ -536,6 +770,7 @@
     bindSidebar();
     bindTopbar();
     bindSectionNav();
+    bindPaginators();
     bindFilters();
     bindTabs();
     bindSeg();
@@ -544,15 +779,17 @@
   }
 
   window.CT = {
-    version: "3.0.0",
+    version: "3.1.0",
     sprite: SPRITE,
     icon: icon,
     esc: esc,
     theme: theme,
     toast: toast,
     modal: modal,
+    confirm: confirmDialog,
     sidebar: sidebar,
     tableFilter: tableFilter,
+    paginateTable: paginateTable,
     countUp: countUp,
     reveal: reveal,
     palette: palette,

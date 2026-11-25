@@ -42,29 +42,19 @@ home_bp = Blueprint('home', __name__)
 
 @home_bp.route('/avatar', endpoint='avatar')
 def avatar():
-    """Generates local lightweight SVG avatars offline, replacing ui-avatars.com."""
+    """Generates a clean generic person silhouette SVG avatar offline (zero initials monograms)."""
     import re
-    name = request.args.get('name', 'User')
-    parts = [p for p in name.split() if p]
-    if len(parts) >= 2:
-        initials = (parts[0][0] + parts[1][0]).upper()
-    elif parts:
-        initials = parts[0][:2].upper()
-    else:
-        initials = "U"
-    initials = re.sub(r'[^A-Z0-9]', '', initials) or 'U'
-    
     hex_re = re.compile(r'^[0-9a-fA-F]{3,8}$')
-    bg = request.args.get('background', '1a56db').replace('#', '').strip()
-    color = request.args.get('color', 'ffffff').replace('#', '').strip()
-    if not hex_re.match(bg):
-        bg = '1a56db'
+    raw_bg = request.args.get('background', '').replace('#', '').strip()
+    bg = raw_bg if (raw_bg and hex_re.match(raw_bg) and raw_bg.lower() not in ('1a56db', '2563eb', '3b82f6')) else '2A2E37'
+    color = request.args.get('color', 'D6DCE6').replace('#', '').strip()
     if not hex_re.match(color):
-        color = 'ffffff'
-        
+        color = 'D6DCE6'
+
     svg = f'''<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
         <rect width="128" height="128" rx="64" fill="#{bg}"/>
-        <text x="50%" y="54%" font-family="system-ui, -apple-system, sans-serif" font-size="44" font-weight="700" fill="#{color}" dominant-baseline="middle" text-anchor="middle">{initials}</text>
+        <circle cx="64" cy="48" r="21" fill="#{color}" fill-opacity="0.92"/>
+        <path d="M26 112c2-22 18-35 38-35s36 13 38 35" fill="#{color}" fill-opacity="0.92"/>
     </svg>'''
     return Response(svg, mimetype='image/svg+xml')
 

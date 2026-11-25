@@ -474,119 +474,413 @@ html, body {
 .hq-banner__body strong { font-size: 12.5px; font-weight: 700; color: var(--ink-2); }
 .hq-banner__body span { color: var(--ink); line-height: 1.45; }
 
-/* ---------- Full-Screen Animated Billing & Embedded Paystack SDK ---------- */
+/* ---------- Claude-Inspired Architectural Plans & Billing Gallery ---------- */
 .bstage {
-  animation: bstage-in 260ms var(--ease) both;
+  animation: bstage-in 320ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 .bstage[hidden] { display: none !important; }
 @keyframes bstage-in {
-  from { opacity: 0; transform: translate3d(0, 12px, 0); }
+  from { opacity: 0; transform: translate3d(0, 14px, 0); }
   to { opacity: 1; transform: translate3d(0, 0, 0); }
 }
 
-.billing-toolbar {
+.bplans-hero {
+  text-align: center;
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  margin: 4px 0 24px;
+}
+.bplans-hero h2 {
+  font-size: clamp(1.55rem, 2.5vw, 2.05rem);
+  font-weight: 740;
+  letter-spacing: -0.032em;
+  line-height: 1.15;
+  color: var(--ink);
+  margin: 0;
+}
+.bplans-hero p {
+  font-size: 13.5px;
+  color: var(--ink-2);
+  max-width: 56ch;
+  line-height: 1.5;
+  margin: 0;
+}
+.bplans-controls {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  justify-content: center;
   gap: 12px;
   flex-wrap: wrap;
-  margin-bottom: 18px;
+  margin-top: 10px;
 }
-.billing-workspace {
+
+.bplans-pane {
   display: grid;
-  grid-template-columns: minmax(0, 1.45fr) minmax(310px, 0.95fr);
-  gap: 20px;
-  align-items: start;
+  gap: 18px;
 }
-@media (max-width: 960px) {
-  .billing-workspace { grid-template-columns: 1fr; }
+.bplans-pending-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 12px 16px;
+  border-radius: 14px;
+  background: var(--accent-soft);
+  border: 1px solid rgba(59, 130, 246, 0.28);
+  font-size: 13px;
 }
-.billing-plans {
+.bplans-pending-bar__info {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--ink);
+}
+.bplans-pending-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  animation: bplan-pulse 1.8s ease-out infinite;
+}
+
+.bplans-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 14px;
-}
-@media (max-width: 720px) {
-  .billing-plans { grid-template-columns: 1fr; }
+  grid-template-columns: repeat(auto-fit, minmax(232px, 1fr));
+  gap: 16px;
+  align-items: stretch;
 }
 .billing-loading {
   grid-column: 1 / -1;
-  padding: 28px;
+  padding: 36px;
   text-align: center;
   color: var(--ink-3);
   font-size: 13.5px;
-  border-radius: 14px;
+  border-radius: 18px;
   background: var(--card);
   border: 1px dashed var(--line-2);
 }
 
-.bplan {
-  text-align: left;
-  padding: 18px 20px;
-  border-radius: 14px;
-  background: var(--card);
-  border: 1.5px solid var(--card-border);
-  box-shadow: var(--card-shadow);
-  display: grid;
-  gap: 7px;
-  cursor: pointer;
-  transition: border-color 160ms var(--ease), background-color 160ms var(--ease), transform 160ms var(--ease);
-}
-.bplan:hover {
-  border-color: var(--line-2);
-  transform: translate3d(0, -2px, 0);
-}
-.bplan.is-selected {
-  border-color: var(--cobalt);
-  background: var(--cobalt-soft);
-}
-.bplan__top {
+/* Architectural Plan Card (Claude Code Dark & Light Inspired) */
+.bplan-card {
+  position: relative;
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 8px;
+  flex-direction: column;
+  padding: 24px 22px 22px;
+  border-radius: 18px;
+  background: var(--card);
+  border: 1px solid var(--card-border);
+  box-shadow: var(--card-shadow);
+  text-align: left;
+  overflow: hidden;
+  transition: transform 220ms cubic-bezier(0.22, 1, 0.36, 1), border-color 200ms var(--ease), box-shadow 220ms var(--ease), background-color 200ms var(--ease);
+  animation: bplan-rise 460ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
-.bplan__name { font-size: 15px; font-weight: 700; color: var(--ink); letter-spacing: -0.015em; }
-.bplan__badge {
-  font-size: 11.5px;
-  font-weight: 600;
-  color: var(--accent);
+.bplan-card:nth-child(1) { animation-delay: 40ms; }
+.bplan-card:nth-child(2) { animation-delay: 95ms; }
+.bplan-card:nth-child(3) { animation-delay: 150ms; }
+.bplan-card:nth-child(4) { animation-delay: 205ms; }
+.bplan-card:hover {
+  transform: translate3d(0, -4px, 0);
+  border-color: var(--line-2);
+  box-shadow: 0 22px 44px -20px rgba(0, 0, 0, 0.45);
 }
-.bplan__price {
-  font-size: 24px;
-  font-weight: 760;
-  font-variant-numeric: tabular-nums;
-  color: var(--ink);
-  letter-spacing: -0.03em;
+[data-theme="light"] .bplan-card:hover {
+  box-shadow: 0 20px 42px -20px rgba(20, 20, 22, 0.14);
 }
-.bplan__meta { font-size: 12.5px; color: var(--ink-3); }
-.bplan__feats {
-  list-style: none;
-  margin: 6px 0 0;
-  padding: 8px 0 0;
-  border-top: 1px solid var(--line);
-  display: grid;
-  gap: 4px;
-  font-size: 12.5px;
-  color: var(--ink-2);
+.bplan-card.is-featured {
+  border-color: rgba(255, 255, 255, 0.20);
+}
+[data-theme="light"] .bplan-card.is-featured {
+  border-color: rgba(20, 20, 22, 0.24);
+}
+.bplan-card.is-featured::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -35%;
+  width: 55%;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--ink-2), transparent);
+  opacity: 0.45;
+  animation: bplan-glint 4.8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
 }
 
-.billing-summary-card {
-  padding: 20px 22px;
-  display: grid;
-  gap: 15px;
+.bplan-card__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 18px;
 }
-.billing-summary-card h2 {
-  font-size: 16px;
-  font-weight: 700;
-  letter-spacing: -0.02em;
+.bplan-card__emblem {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  color: var(--ink);
+  flex: none;
+}
+.bplan-card__emblem svg {
+  width: 40px;
+  height: 40px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: transform 280ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.bplan-card__emblem .em-path {
+  stroke-dasharray: 90;
+  stroke-dashoffset: 0;
+  animation: bplan-emblem-draw 780ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.bplan-card:hover .bplan-card__emblem svg {
+  transform: scale(1.07) translateY(-1px);
+}
+.bplan-card__tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 640;
+  letter-spacing: 0.01em;
+  background: var(--field);
+  border: 1px solid var(--line-2);
+  color: var(--ink-2);
+  white-space: nowrap;
+}
+.bplan-card.is-featured .bplan-card__tag {
+  color: var(--accent);
+  background: var(--accent-soft);
+  border-color: rgba(59, 130, 246, 0.26);
+}
+
+.bplan-card__title {
+  font-size: 18px;
+  font-weight: 720;
+  letter-spacing: -0.022em;
+  color: var(--ink);
+  line-height: 1.2;
+}
+.bplan-card__desc {
+  font-size: 12.5px;
+  color: var(--ink-2);
+  line-height: 1.45;
+  margin-top: 4px;
+  min-height: 36px;
+}
+
+.bplan-card__price-row {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin: 18px 0 16px;
+}
+.bplan-card__price {
+  font-size: 30px;
+  font-weight: 760;
+  letter-spacing: -0.036em;
+  line-height: 1;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+.bplan-card__strike {
+  font-size: 14px;
+  color: var(--ink-3);
+  text-decoration: line-through;
+  font-weight: 500;
+  margin-right: 4px;
+}
+.bplan-card__cadence {
+  display: grid;
+  gap: 1px;
+  font-size: 11px;
+  line-height: 1.3;
+  color: var(--ink-3);
+}
+
+/* Full-width high-contrast solid CTA button inside every card (Claude Code style) */
+.bplan-card__cta {
+  width: 100%;
+  height: 42px;
+  padding: 0 16px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  font-family: inherit;
+  font-size: 13.5px;
+  font-weight: 660;
+  letter-spacing: -0.01em;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: transform 150ms cubic-bezier(0.22, 1, 0.36, 1), background-color 160ms var(--ease), border-color 160ms var(--ease), opacity 160ms var(--ease);
+}
+.bplan-card__cta:active { transform: scale(0.98); }
+.bplan-card__cta:disabled { opacity: 0.6; cursor: wait; }
+
+/* Dark mode: solid crisp white button for featured/primary plans, refined charcoal for secondary */
+.bplan-card__cta--solid {
+  background: #F4F4F6;
+  color: #111113;
+}
+.bplan-card__cta--solid:hover {
+  background: #FFFFFF;
+  transform: translateY(-1px);
+}
+.bplan-card__cta--soft {
+  background: rgba(255, 255, 255, 0.11);
+  color: var(--ink);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+.bplan-card__cta--soft:hover {
+  background: rgba(255, 255, 255, 0.17);
+  border-color: rgba(255, 255, 255, 0.16);
+  transform: translateY(-1px);
+}
+
+/* Light mode: pure carbon-black button for primary plans, subtle paper fill for secondary */
+[data-theme="light"] .bplan-card__cta--solid {
+  background: #141416;
+  color: #FFFFFF;
+}
+[data-theme="light"] .bplan-card__cta--solid:hover {
+  background: #27272A;
+}
+[data-theme="light"] .bplan-card__cta--soft {
+  background: #F1F1F4;
+  color: #141416;
+  border-color: rgba(20, 20, 22, 0.10);
+}
+[data-theme="light"] .bplan-card__cta--soft:hover {
+  background: #E5E5EA;
+  border-color: rgba(20, 20, 22, 0.18);
+}
+
+.bplan-card__note {
+  margin-top: 9px;
+  text-align: center;
+  font-size: 11px;
+  color: var(--ink-3);
+}
+.bplan-card__divider {
+  height: 1px;
+  background: var(--line);
+  margin: 16px 0 14px;
+}
+.bplan-card__kicker {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink-2);
+  margin-bottom: 10px;
+}
+.bplan-card__feats {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+  font-size: 12.5px;
+  line-height: 1.42;
+  color: var(--ink-2);
+}
+.bplan-card__feats li {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+.bplan-card__feats svg {
+  width: 14px;
+  height: 14px;
+  margin-top: 2px;
+  flex: none;
+  stroke: var(--ink-2);
+  fill: none;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.bplan-card.is-featured .bplan-card__feats svg {
+  stroke: var(--ok);
+}
+
+/* Sleek Promo & Trust Utility Bar Below Plan Grid */
+.bplans-utility-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+  padding: 13px 18px;
+  border-radius: 14px;
+  background: var(--card);
+  border: 1px solid var(--card-border);
+}
+.bplans-promo-box {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.bplans-promo-label {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ink-2);
 }
 .billing-promo-row {
   display: flex;
-  gap: 8px;
+  gap: 6px;
   align-items: center;
 }
-.billing-promo-row input { flex: 1; text-transform: uppercase; }
+.billing-promo-row input {
+  width: 152px;
+  height: 32px !important;
+  font-size: 12.5px !important;
+  text-transform: uppercase;
+}
+.bplans-promo-applied {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--ok-soft);
+  color: var(--ok);
+  font-size: 12px;
+}
+.bplans-promo-applied svg {
+  width: 13px;
+  height: 13px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.2;
+}
+.bplans-utility-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.bplans-trust-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12px;
+  color: var(--ink-3);
+}
+.bplans-trust-inline svg {
+  width: 14px;
+  height: 14px;
+  color: var(--ok);
+  flex: none;
+}
+
 .billing-summary {
   display: grid;
   gap: 8px;
@@ -602,37 +896,30 @@ html, body {
   align-items: center;
   gap: 12px;
 }
-.billing-summary__row.is-total {
-  padding-top: 10px;
-  border-top: 1px solid var(--line);
-  font-size: 16px;
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-}
 .billing-summary__strike {
   text-decoration: line-through;
   color: var(--ink-3);
   margin-right: 8px;
   font-weight: 400;
 }
-.billing-cta-stack {
-  display: grid;
-  gap: 8px;
+
+@keyframes bplan-rise {
+  from { opacity: 0; transform: translate3d(0, 16px, 0) scale(0.985); }
+  to { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
 }
-.billing-cta-stack .btn { width: 100%; }
-.billing-trust-note {
-  display: flex;
-  align-items: flex-start;
-  gap: 9px;
-  font-size: 12px;
-  line-height: 1.5;
-  color: var(--ink-3);
+@keyframes bplan-emblem-draw {
+  from { stroke-dashoffset: 90; opacity: 0.4; }
+  to { stroke-dashoffset: 0; opacity: 1; }
 }
-.billing-trust-note svg {
-  width: 15px;
-  height: 15px;
-  margin-top: 2px;
-  color: var(--ok);
+@keyframes bplan-glint {
+  0%, 55% { transform: translateX(0); opacity: 0; }
+  75% { opacity: 0.65; }
+  100% { transform: translateX(260%); opacity: 0; }
+}
+@keyframes bplan-pulse {
+  0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.55); }
+  70% { box-shadow: 0 0 0 7px rgba(59, 130, 246, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
 }
 
 .billing-redeem-stage {
@@ -779,22 +1066,64 @@ html, body {
 }
 .ps-mock-row span { color: var(--ink-3); }
 
-/* Stage 3: Full-Screen Payment Confirmed Celebration Seal */
+/* Stage 3: Full-Screen Celebratory Payment Confirmed Motion Graphics */
 .receipt-hero {
-  max-width: 580px;
+  position: relative;
+  overflow: hidden;
+  max-width: 590px;
   margin: 12px auto 24px;
-  padding: 34px 32px;
+  padding: 36px 34px 32px;
+  border-radius: 22px;
   display: grid;
   justify-items: center;
   text-align: center;
   gap: 14px;
+  animation: rs-card-in 480ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
-.receipt-seal svg { width: 96px; height: 96px; overflow: visible; }
+.receipt-shimmer {
+  position: absolute;
+  top: 0;
+  left: -45%;
+  width: 65%;
+  height: 2px;
+  background: linear-gradient(90deg, transparent 0%, var(--ok) 45%, var(--accent) 70%, transparent 100%);
+  animation: bplan-glint 3.6s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+.receipt-seal svg { width: 128px; height: 128px; overflow: visible; }
+.rs-wave {
+  fill: none;
+  stroke: var(--ok);
+  stroke-width: 1.5;
+  transform-origin: 70px 70px;
+  opacity: 0;
+}
+.rs-wave-1 { animation: rs-wave-out 1.8s cubic-bezier(0.22, 1, 0.36, 1) 180ms 2; }
+.rs-wave-2 { animation: rs-wave-out 1.8s cubic-bezier(0.22, 1, 0.36, 1) 520ms 2; }
+.rs-orbit {
+  fill: none;
+  stroke: var(--line-2);
+  stroke-width: 1.25;
+  stroke-dasharray: 4 5;
+  transform-origin: 70px 70px;
+  animation: rs-orbit-spin 22s linear infinite;
+}
+.rs-sparks {
+  transform-origin: 70px 70px;
+  animation: rs-sparks-pop 760ms cubic-bezier(0.22, 1, 0.36, 1) 360ms both;
+}
+.rs-spark {
+  stroke: var(--ok);
+  stroke-width: 2.2;
+  stroke-linecap: round;
+}
+.rs-spark:nth-child(even) {
+  stroke: var(--accent);
+}
 .rs-halo {
   fill: var(--ok-soft);
   stroke: none;
-  transform-origin: 60px 60px;
-  animation: rs-pop 520ms var(--spring) both;
+  transform-origin: 70px 70px;
+  animation: rs-pop 540ms var(--spring) both;
 }
 .rs-ring {
   fill: none;
@@ -802,7 +1131,7 @@ html, body {
   stroke-width: 3.5;
   stroke-dasharray: 100;
   stroke-dashoffset: 100;
-  transform-origin: 60px 60px;
+  transform-origin: 70px 70px;
   transform: rotate(-90deg);
   animation: rs-draw 680ms var(--ease) 120ms forwards;
 }
@@ -816,11 +1145,48 @@ html, body {
   stroke-dashoffset: 100;
   animation: rs-draw 420ms var(--ease) 440ms forwards;
 }
-@keyframes rs-pop { from { opacity: 0; transform: scale(0.75); } to { opacity: 1; transform: scale(1); } }
-@keyframes rs-draw { to { stroke-dashoffset: 0; } }
-.receipt-hero h2 { font-size: 22px; font-weight: 760; letter-spacing: -0.025em; }
-.receipt-hero p { font-size: 13.5px; color: var(--ink-2); max-width: 46ch; line-height: 1.55; }
+.receipt-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: var(--ok-soft);
+  border: 1px solid rgba(52, 211, 153, 0.28);
+  color: var(--ok);
+  font-size: 11.5px;
+  font-weight: 660;
+  letter-spacing: 0.02em;
+  animation: rs-row-in 380ms cubic-bezier(0.22, 1, 0.36, 1) 180ms both;
+}
+.receipt-badge i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+.receipt-hero h2 {
+  font-size: 23px;
+  font-weight: 760;
+  letter-spacing: -0.028em;
+  animation: rs-row-in 420ms cubic-bezier(0.22, 1, 0.36, 1) 240ms both;
+}
+.receipt-hero p {
+  font-size: 13.5px;
+  color: var(--ink-2);
+  max-width: 46ch;
+  line-height: 1.55;
+  animation: rs-row-in 420ms cubic-bezier(0.22, 1, 0.36, 1) 300ms both;
+}
 .receipt-ledger { width: 100%; text-align: left; margin-top: 6px; }
+.receipt-ledger .billing-summary__row {
+  animation: rs-row-in 380ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.receipt-ledger .billing-summary__row:nth-child(1) { animation-delay: 340ms; }
+.receipt-ledger .billing-summary__row:nth-child(2) { animation-delay: 390ms; }
+.receipt-ledger .billing-summary__row:nth-child(3) { animation-delay: 440ms; }
+.receipt-ledger .billing-summary__row:nth-child(4) { animation-delay: 490ms; }
+.receipt-ledger .billing-summary__row:nth-child(5) { animation-delay: 540ms; }
 .receipt-actions {
   width: 100%;
   display: flex;
@@ -829,6 +1195,34 @@ html, body {
   gap: 10px;
   flex-wrap: wrap;
   margin-top: 6px;
+  animation: rs-row-in 400ms cubic-bezier(0.22, 1, 0.36, 1) 580ms both;
+}
+
+@keyframes rs-card-in { from { opacity: 0; transform: translate3d(0, 18px, 0) scale(0.97); } to { opacity: 1; transform: translate3d(0, 0, 0) scale(1); } }
+@keyframes rs-pop { from { opacity: 0; transform: scale(0.7); } to { opacity: 1; transform: scale(1); } }
+@keyframes rs-draw { to { stroke-dashoffset: 0; } }
+@keyframes rs-orbit-spin { to { transform: rotate(360deg); } }
+@keyframes rs-wave-out {
+  0% { transform: scale(0.86); opacity: 0.52; }
+  100% { transform: scale(1.42); opacity: 0; }
+}
+@keyframes rs-sparks-pop {
+  0% { opacity: 0; transform: scale(0.55) rotate(-18deg); }
+  55% { opacity: 1; transform: scale(1.06) rotate(4deg); }
+  100% { opacity: 0.9; transform: scale(1) rotate(0deg); }
+}
+@keyframes rs-row-in {
+  from { opacity: 0; transform: translate3d(0, 8px, 0); }
+  to { opacity: 1; transform: translate3d(0, 0, 0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bplan-card, .bplan-card.is-featured::before, .bplan-card__emblem .em-path,
+  .receipt-hero, .receipt-shimmer, .rs-wave, .rs-orbit, .rs-sparks, .rs-halo, .rs-ring, .rs-check,
+  .receipt-badge, .receipt-hero h2, .receipt-hero p, .receipt-ledger .billing-summary__row, .receipt-actions {
+    animation: none !important;
+  }
+  .rs-ring, .rs-check { stroke-dashoffset: 0 !important; }
 }
 
 /* ---------- Full-Screen Cloud Account & 5-Star Rating Studio ---------- */

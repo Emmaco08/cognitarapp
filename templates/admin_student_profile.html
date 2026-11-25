@@ -1,6 +1,5 @@
-{%- from '_ct_shell.html' import ico, ct_boot_script, admin_shell_start, shell_end -%}
+{%- from '_ct_shell.html' import ico, person_avatar, ct_boot_script, admin_shell_start, shell_end with context -%}
 {%- set st_name = student.full_name or student.username -%}
-{%- set st_has_photo = student.photo and student.photo != 'default.png' -%}
 <!DOCTYPE html>
 <html lang="en" data-theme="dark">
 <head>
@@ -23,15 +22,8 @@
 
   <header class="tc-head">
     <div class="tc-head__left">
-      <div class="tc-avatar" aria-hidden="true">
-        {% if st_has_photo %}
-        <img src="{{ url_for('static', filename='images/' + student.photo) }}" alt="{{ st_name }}" onerror="this.parentElement.textContent='{{ st_name[:2]|upper }}'">
-        {% else %}
-        {{ st_name[:2]|upper }}
-        {% endif %}
-      </div>
+      {{ person_avatar(student.photo, st_name, 'lg', '', 'static') }}
       <div class="tc-head__txt">
-        <span class="tc-eyebrow">Official Student Record</span>
         <h1>{{ st_name }}</h1>
         <div class="tc-head__tags">
           <span class="tc-pill">@{{ student.username }}</span>
@@ -96,8 +88,8 @@
       <span class="tc-pill">{{ results|length }} {{ 'record' if results|length == 1 else 'records' }}</span>
     </div>
     {% if results %}
-    <div class="tc-table-wrap">
-      <table class="tc-table">
+    <div class="tc-table-wrap ct-table-wrap">
+      <table class="tc-table" data-ct-paginate="10" data-ct-paginate-sizes="10,25,50">
         <thead>
           <tr>
             <th>Examination</th>

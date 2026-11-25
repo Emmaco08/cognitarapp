@@ -1,4 +1,4 @@
-{%- from '_ct_shell.html' import ico, ct_boot_script, admin_shell_start, teacher_shell_start, shell_end -%}
+{%- from '_ct_shell.html' import ico, person_avatar, ct_boot_script, admin_shell_start, teacher_shell_start, shell_end with context -%}
 {%- set is_teacher = session.get('teacher_id') is not none and not session.get('admin') -%}
 {%- set attempts_total = (score_stats.total_attempts or 0)|int -%}
 {%- set passed_total = (score_stats.passed_count or 0)|int -%}
@@ -198,7 +198,7 @@
       </div>
       {% if rankings %}
       <div class="tc-table-wrap">
-        <table class="tc-table">
+        <table class="tc-table" data-ct-paginate="10">
           <thead>
             <tr>
               <th style="width:48px">#</th>
@@ -213,7 +213,6 @@
             {% for r in rankings %}
             {% set pct = (r.percentage or 0)|float %}
             {% set st_name = r.full_name or r.username %}
-            {% set st_has_photo = r.photo and r.photo != 'default.png' %}
             {% if pct >= 75 %}{% set grade = 'A' %}{% set gcls = 'tc-pill--ok' %}
             {% elif pct >= 60 %}{% set grade = 'B' %}{% set gcls = 'tc-pill--accent' %}
             {% elif pct >= 50 %}{% set grade = 'C' %}{% set gcls = 'tc-pill--warn' %}
@@ -223,13 +222,7 @@
               <td><span class="tc-rank {% if loop.index == 1 %}tc-rank--1{% elif loop.index == 2 %}tc-rank--2{% elif loop.index == 3 %}tc-rank--3{% endif %}">{{ loop.index }}</span></td>
               <td>
                 <div class="tc-user-cell">
-                  <span class="tc-avatar tc-avatar--sm">
-                    {% if st_has_photo %}
-                    <img src="{{ url_for('static', filename='images/' + r.photo) }}" alt="" onerror="this.parentElement.textContent='{{ st_name[:2]|upper }}'">
-                    {% else %}
-                    {{ st_name[:2]|upper }}
-                    {% endif %}
-                  </span>
+                  {{ person_avatar(r.photo, st_name, 'sm') }}
                   <span><strong>{{ st_name }}</strong><span class="tc-mono">{{ r.score }}/{{ r.total }}</span></span>
                 </div>
               </td>
@@ -266,7 +259,7 @@
       </div>
       {% if fastest %}
       <div class="tc-table-wrap">
-        <table class="tc-table">
+        <table class="tc-table" data-ct-paginate="10">
           <thead>
             <tr>
               <th style="width:48px">#</th>
@@ -279,18 +272,11 @@
           <tbody>
             {% for r in fastest %}
             {% set st_name = r.full_name or r.username %}
-            {% set st_has_photo = r.photo and r.photo != 'default.png' %}
             <tr>
               <td><span class="tc-rank">{{ loop.index }}</span></td>
               <td>
                 <div class="tc-user-cell">
-                  <span class="tc-avatar tc-avatar--sm">
-                    {% if st_has_photo %}
-                    <img src="{{ url_for('static', filename='images/' + r.photo) }}" alt="" onerror="this.parentElement.textContent='{{ st_name[:2]|upper }}'">
-                    {% else %}
-                    {{ st_name[:2]|upper }}
-                    {% endif %}
-                  </span>
+                  {{ person_avatar(r.photo, st_name, 'sm') }}
                   <span><strong>{{ st_name }}</strong><span>{{ r.class }}</span></span>
                 </div>
               </td>

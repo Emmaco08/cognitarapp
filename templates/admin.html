@@ -1,5 +1,5 @@
+{%- from '_ct_shell.html' import ico, person_avatar with context -%}
 {%- set ICONS = url_for('static', filename='icons/cognitara-icons.svg') -%}
-{%- macro ico(name, cls='') -%}<svg class="ct-ico{% if cls %} {{ cls }}{% endif %}" aria-hidden="true"><use href="{{ url_for('static', filename='icons/cognitara-icons.svg') }}#{{ name }}"/></svg>{%- endmacro -%}
 {%- set ns = namespace(active=0) -%}
 {%- for e in exams %}{% if e.active and not (e.deactivated is defined and e.deactivated) %}{% set ns.active = ns.active + 1 %}{% endif %}{% endfor -%}
 <!DOCTYPE html>
@@ -16,6 +16,105 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='css/cognitara-web.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/cognitara-teacher-studio.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/cognitara-admin-studio.css') }}">
+  <style>
+    /* Admin Dashboard Table Alignment & Students Management Polish */
+    .ad-dash-table th {
+      text-align: left;
+      padding: 0 16px;
+      height: 42px;
+      font-size: 11px;
+      font-weight: 650;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--tc-ink-3);
+      white-space: nowrap;
+      vertical-align: middle;
+    }
+    .ad-dash-table td {
+      padding: 13px 16px;
+      vertical-align: middle;
+    }
+    .ad-dash-table th:first-child, .ad-dash-table td:first-child { padding-left: 22px; }
+    .ad-dash-table th:last-child, .ad-dash-table td:last-child { padding-right: 22px; text-align: right; }
+    .ad-dash-table th.is-center, .ad-dash-table td.is-center { text-align: center; }
+    .ad-dash-table td:last-child .tc-actions { justify-content: flex-end; }
+    .ad-filter-select {
+      height: 36px;
+      padding: 0 30px 0 12px;
+      border-radius: 9px;
+      border: 1px solid var(--tc-line-2);
+      background: var(--tc-surface-2);
+      color: var(--tc-ink);
+      font-size: 12.5px;
+      font-weight: 550;
+      cursor: pointer;
+      transition: border-color 140ms ease, background-color 140ms ease;
+    }
+    .ad-filter-select:hover, .ad-filter-select:focus {
+      border-color: var(--ct-accent-line);
+      outline: none;
+    }
+    .ad-stu-perf {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .ad-stu-avg {
+      display: inline-flex;
+      align-items: center;
+      padding: 3px 9px;
+      border-radius: 999px;
+      font-family: var(--ct-mono);
+      font-size: 12px;
+      font-weight: 650;
+      font-variant-numeric: tabular-nums;
+      border: 1px solid var(--tc-line-2);
+      background: var(--tc-surface-2);
+      color: var(--tc-ink);
+    }
+    .ad-stu-avg--ok { background: var(--ct-ok-soft); border-color: var(--ct-ok-line); color: var(--ct-ok); }
+    .ad-stu-avg--warn { background: var(--ct-warn-soft); border-color: var(--ct-warn-line); color: var(--ct-warn); }
+    .ad-stu-avg--bad { background: var(--ct-bad-soft); border-color: var(--ct-bad-line); color: var(--ct-bad); }
+    .ad-stu-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 3px 9px;
+      border-radius: 7px;
+      background: var(--tc-surface-2);
+      border: 1px solid var(--tc-line);
+      font-size: 11.5px;
+      color: var(--tc-ink-2);
+      max-width: 175px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .ad-stu-chip b {
+      font-family: var(--ct-mono);
+      color: var(--tc-ink);
+      font-weight: 650;
+    }
+    .ad-reset-wrap {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      max-width: 245px;
+    }
+    .ad-reset-select {
+      height: 30px;
+      max-width: 168px;
+      padding: 0 24px 0 9px;
+      border-radius: 7px;
+      border: 1px solid var(--tc-line-2);
+      background: var(--tc-surface-2);
+      color: var(--tc-ink);
+      font-size: 12px;
+      text-overflow: ellipsis;
+    }
+    .ad-reset-select:focus { outline: none; border-color: var(--ct-accent-line); }
+  </style>
   <script>
     (function () {
       var d = document.documentElement, saved = null, side = null;
@@ -86,23 +185,6 @@
 <!-- Loading veil -->
 <div class="ct-veil" id="loadingOverlay" aria-hidden="true"><div class="ct-spinner"></div></div>
 
-<!-- Confirmation modal -->
-<div class="ct-modal-backdrop" id="customModal" role="dialog" aria-modal="true" aria-labelledby="modalTitle" aria-hidden="true">
-  <div class="ct-modal">
-    <div class="ct-modal__head">
-      <b class="ct-tile ct-tile--lg ct-tile--warn" id="modalIcon">{{ ico('i-alert') }}</b>
-      <div style="display:grid;gap:4px;min-width:0">
-        <h3 id="modalTitle">Confirm action</h3>
-        <p class="ct-modal__msg" id="modalMessage" style="color:var(--tc-ink-2);font-size:14px;line-height:1.6">Are you sure you want to continue?</p>
-      </div>
-    </div>
-    <div class="ct-modal__actions">
-      <button type="button" class="tc-btn tc-btn--ghost" id="modalCancelBtn" onclick="closeModal()">Cancel</button>
-      <button type="button" class="tc-btn tc-btn--primary" id="modalConfirmBtn" onclick="confirmModal()">Confirm</button>
-    </div>
-  </div>
-</div>
-
 <!-- Command palette (Ctrl+K) -->
 <div class="ct-palette" id="palette" hidden>
   <div class="ct-palette__box" role="dialog" aria-label="Quick command palette">
@@ -158,7 +240,7 @@
         <a class="ct-nav__link" href="#sec-teachers" data-rail="teachers">{{ ico('i-teacher') }}<span class="ct-nav__text">Teachers</span></a>
         <a class="ct-nav__link" href="#sec-students" data-rail="students">{{ ico('i-users') }}<span class="ct-nav__text">Students</span></a>
         <a class="ct-nav__link" href="{{ url_for('pending_students') }}">{{ ico('i-clock') }}<span class="ct-nav__text">Approvals</span>{% if pending_count > 0 %}<span class="ct-nav__badge ct-nav__badge--warn">{{ pending_count }}</span>{% endif %}</a>
-        <a class="ct-nav__link" href="/admin/add_admin">{{ ico('i-shield') }}<span class="ct-nav__text">Add Admin</span></a>
+        <a class="ct-nav__link" href="/admin/add_admin">{{ ico('i-shield') }}<span class="ct-nav__text">Administrators</span></a>
       </nav>
 
       <nav class="ct-nav" aria-label="Reports and settings">
@@ -174,8 +256,8 @@
     </div>
 
     <div class="ct-sidebar__foot">
-      <a class="ct-btn ct-btn--primary ct-btn--sm ct-btn--block" href="/admin/add_exam" data-ct-tip="Create exam" data-ct-tip-pos="right">
-        {{ ico('i-plus') }}<span class="ct-hide-collapsed">Create Exam</span>
+      <a class="ct-btn ct-btn--soft ct-btn--sm ct-btn--block" href="/admin/exams-management" data-ct-tip="Exam Control Center" data-ct-tip-pos="right">
+        {{ ico('i-live') }}<span class="ct-hide-collapsed">Exam Control</span>
       </a>
     </div>
   </aside>
@@ -210,14 +292,14 @@
 
         <div class="ct-dropdown" data-ct-dropdown>
           <button type="button" class="ct-userpill" data-ct-dropdown-trigger aria-haspopup="menu" aria-expanded="false" title="Signed in administrator">
-            <span class="ct-avatar ct-avatar--xs">{{ (username[:2] if username else 'AD')|upper }}</span>
+            {{ person_avatar('', username or 'Administrator', 'xs') }}
             <span class="ct-userpill__name">{{ username }}</span>
             {{ ico('i-chevron-down') }}
           </button>
           <div class="ct-menu" role="menu">
             <div class="ct-menu__head"><strong>{{ username }}</strong><span>Administrator · {{ school_branding.school_name }}</span></div>
             <a class="ct-menu__item" role="menuitem" href="/admin/school-settings">{{ ico('i-settings') }}School settings</a>
-            <a class="ct-menu__item" role="menuitem" href="/admin/add_admin">{{ ico('i-shield') }}Add another admin</a>
+            <a class="ct-menu__item" role="menuitem" href="/admin/add_admin">{{ ico('i-shield') }}Manage administrators</a>
             <a class="ct-menu__item" role="menuitem" href="{{ url_for('admin_logs') }}">{{ ico('i-book') }}Audit logs</a>
             <div class="ct-menu__sep"></div>
             <a class="ct-menu__item ct-menu__item--danger" role="menuitem" href="{{ url_for('logout') }}">{{ ico('i-logout') }}Log out</a>
@@ -228,7 +310,7 @@
 
     <main class="ct-content ct-enter" id="main">
       <!-- ================= OVERVIEW HEADER ================= -->
-      <header class="tc-head" id="sec-overview">
+      <header class="tc-head ct-animate-rise" id="sec-overview">
         <div class="tc-head__txt">
           <h1>{{ school_branding.school_name }}</h1>
           <div class="tc-head__tags">
@@ -239,19 +321,19 @@
         </div>
         <div class="tc-head__actions">
           <a class="tc-btn tc-btn--secondary" href="/admin/exam_technical_support">{{ ico('i-activity', 'ct-ico--sm') }}Live Support</a>
-          <a class="tc-btn tc-btn--secondary" href="{{ url_for('add_student') }}">{{ ico('i-users', 'ct-ico--sm') }}Add Student</a>
-          <a class="tc-btn tc-btn--primary" href="/admin/add_exam">{{ ico('i-plus', 'ct-ico--sm') }}New Exam</a>
+          <a class="tc-btn tc-btn--secondary" href="{{ url_for('add_teacher') }}">{{ ico('i-teacher', 'ct-ico--sm') }}Add Teacher</a>
+          <a class="tc-btn tc-btn--primary" href="{{ url_for('add_student') }}">{{ ico('i-users', 'ct-ico--sm') }}Add Student</a>
         </div>
       </header>
 
       <!-- 4-Column Typographic KPI Strip -->
-      <section class="tc-kpi-strip" aria-label="School overview numbers">
+      <section class="tc-kpi-strip" data-ct-stagger aria-label="School overview numbers">
         <div class="tc-kpi">
           <span class="tc-kpi__label">Total Exams</span>
           <strong class="tc-kpi__val" id="totalExams" data-ct-count>{{ exams|length }}</strong>
           <span class="tc-kpi__meta">
             <span class="tc-pill tc-pill--ok"><i class="tc-dot"></i>{{ ns.active }} active</span>
-            <a href="#sec-exams" style="margin-left:auto">Manage {{ ico('i-arrow-right', 'ct-ico--xs') }}</a>
+            <a href="#sec-exams" style="margin-left:auto">Directory {{ ico('i-arrow-right', 'ct-ico--xs') }}</a>
           </span>
         </div>
         <div class="tc-kpi">
@@ -280,40 +362,46 @@
         </div>
       </section>
 
-      <!-- ================= EXAMS MANAGEMENT (#sec-exams) ================= -->
-      <section class="tc-card" id="sec-exams">
+      <!-- ================= EXAMS OVERSIGHT (#sec-exams) ================= -->
+      <section class="tc-card" id="sec-exams" data-ct-reveal>
         <div class="tc-card__head">
           <div class="tc-card__title">
-            <h2>Exams Management</h2>
-            <p>Activate papers, edit questions, preview exams, or jump into the Control Center</p>
+            <h2>Examinations Directory</h2>
+            <p>Read-only paper oversight — preview teacher-authored exams, toggle availability, or manage in Control Center</p>
           </div>
           <div class="tc-card__tools">
             <label class="tc-search">
               {{ ico('i-search', 'ct-ico--sm') }}
-              <input type="search" id="examSearchInput" placeholder="Filter exams, class, subject…" oninput="liveSearchExams()" aria-label="Search exams">
+              <input type="search" id="examSearchInput" placeholder="Filter exams, class, teacher…" oninput="liveSearchExams()" aria-label="Search exams">
             </label>
+            <select class="ad-filter-select" id="examStatusFilter" onchange="liveSearchExams()" aria-label="Filter exam status">
+              <option value="all">All Status</option>
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
+              <option value="deactivated">Deactivated</option>
+            </select>
             <a class="tc-btn tc-btn--secondary tc-btn--sm" href="/admin/exams-management">{{ ico('i-live', 'ct-ico--xs') }}Control Center</a>
-            <a class="tc-btn tc-btn--secondary tc-btn--sm" href="/admin/add_exam">{{ ico('i-plus', 'ct-ico--xs') }}Add Exam</a>
           </div>
         </div>
 
-        <div class="tc-table-wrap">
+        <div class="tc-table-wrap ct-table-wrap">
           {% if exams %}
-          <table class="tc-table tc-table--exams" id="examsTable">
+          <table class="tc-table ad-dash-table" id="examsTable" data-ct-paginate="10" data-ct-paginate-sizes="10,25,50">
             <thead>
               <tr>
-                <th>Examination</th>
-                <th>Class</th>
-                <th>Subject &amp; Track</th>
-                <th>Duration</th>
-                <th>Status</th>
-                <th style="text-align:right">Actions</th>
+                <th style="min-width:220px">Examination</th>
+                <th style="width:110px">Class</th>
+                <th style="min-width:170px">Subject &amp; Track</th>
+                <th class="is-center" style="width:105px">Duration</th>
+                <th class="is-center" style="width:125px">Status</th>
+                <th style="width:240px;text-align:right">Actions</th>
               </tr>
             </thead>
             <tbody>
               {% for exam in exams %}
               {% set spec = exam.specialisation_tag or 'General' %}
-              <tr class="exam-row" id="exam-row-{{ exam.id }}" data-search="{{ exam.name|lower }} {{ exam.class|lower }} {{ exam.subject_tag|lower if exam.subject_tag else '' }} {{ exam.teacher_name|lower if exam.teacher_name else '' }}">
+              {% set e_status = 'deactivated' if (exam.deactivated is defined and exam.deactivated) else ('active' if exam.active else 'inactive') %}
+              <tr class="exam-row" id="exam-row-{{ exam.id }}" data-status="{{ e_status }}" data-search="{{ exam.name|lower }} {{ exam.class|lower }} {{ exam.subject_tag|lower if exam.subject_tag else '' }} {{ exam.teacher_name|lower if exam.teacher_name else '' }}">
                 <td>
                   <strong class="row-title" style="display:block;font-weight:650">{{ exam.name }}</strong>
                   <span class="tc-mono row-sub" style="font-size:11.5px;color:var(--tc-ink-3)">#{{ exam.id }}{% if exam.teacher_name %} · {{ exam.teacher_name }}{% endif %}</span>
@@ -325,20 +413,19 @@
                     <span class="tc-pill tc-pill--accent">{{ spec }}</span>
                   </div>
                 </td>
-                <td class="tc-mono" style="color:var(--tc-ink-2)">{{ exam.duration }} min</td>
-                <td id="exam-status-{{ exam.id }}">
-                  {% if exam.deactivated is defined and exam.deactivated %}
+                <td class="tc-mono is-center" style="color:var(--tc-ink-2);white-space:nowrap">{{ exam.duration }} min</td>
+                <td class="is-center" id="exam-status-{{ exam.id }}">
+                  {% if e_status == 'deactivated' %}
                   <span class="tc-pill tc-pill--bad"><i class="tc-dot"></i>Deactivated</span>
-                  {% elif exam.active %}
+                  {% elif e_status == 'active' %}
                   <span class="tc-pill tc-pill--ok"><i class="tc-dot"></i>Active</span>
                   {% else %}
                   <span class="tc-pill"><i class="tc-dot"></i>Inactive</span>
                   {% endif %}
                 </td>
-                <td style="text-align:right">
+                <td>
                   <div class="tc-actions row-actions">
-                    <a class="tc-btn tc-btn--secondary tc-btn--sm" href="/edit_exam/{{ exam.id }}" title="Edit exam and questions">{{ ico('i-edit', 'ct-ico--xs') }}Edit &amp; Questions</a>
-                    <button type="button" class="tc-btn tc-btn--secondary tc-btn--icon" onclick="window.open('/admin/exam/{{ exam.id }}/preview', '_blank')" title="Preview exam" aria-label="Preview {{ exam.name }}">{{ ico('i-eye', 'ct-ico--sm') }}</button>
+                    <a class="tc-btn tc-btn--secondary tc-btn--sm" href="/admin/exam/{{ exam.id }}/preview" target="_blank" title="Open read-only exam preview">{{ ico('i-eye', 'ct-ico--xs') }}Preview</a>
                     {% if exam.deactivated is not defined or not exam.deactivated %}
                     <button type="button" class="tc-btn {% if exam.active %}tc-btn--danger-soft{% else %}tc-btn--ok{% endif %} tc-btn--sm" id="toggle-btn-{{ exam.id }}" onclick="toggleExam({{ exam.id }}, {{ 'true' if exam.active else 'false' }}, {{ exam.name|tojson|forceescape }})">
                       {{ ico('i-stop' if exam.active else 'i-play', 'ct-ico--xs') }}{% if exam.active %}Stop{% else %}Start{% endif %}
@@ -355,23 +442,16 @@
           <div class="tc-empty">
             <span class="tc-empty__ico">{{ ico('i-doc') }}</span>
             <strong>No examinations created yet</strong>
-            <p>Create your first examination paper, add questions, and activate it for students.</p>
-            <a class="tc-btn tc-btn--primary" style="margin-top:6px" href="/admin/add_exam">{{ ico('i-plus', 'ct-ico--sm') }}Create First Exam</a>
+            <p>Examinations authored by subject teachers will appear here for oversight and activation.</p>
           </div>
           {% endif %}
         </div>
-        {% if exams %}
-        <div class="tc-toolbar" style="border-top:1px solid var(--tc-line);border-bottom:0">
-          <span class="tc-mono" style="font-size:12px;color:var(--tc-ink-3)"><strong style="color:var(--tc-ink)">{{ exams|length }}</strong> exams · {{ ns.active }} active</span>
-          <a href="/admin/exams-management" style="font-size:12.5px;font-weight:620;color:var(--tc-ink-2);display:inline-flex;align-items:center;gap:5px">Open Exam Control Center {{ ico('i-arrow-right', 'ct-ico--xs') }}</a>
-        </div>
-        {% endif %}
       </section>
 
       <!-- ================= COMMON ENTRANCE & TEACHERS (2-Col) ================= -->
       <div class="tc-grid-2" style="align-items:start">
         <!-- Common Entrance -->
-        <section class="tc-card" id="sec-ce">
+        <section class="tc-card" id="sec-ce" data-ct-reveal>
           <div class="tc-card__head">
             <div class="tc-card__title">
               <h2>Common Entrance Exams</h2>
@@ -382,15 +462,15 @@
               <a class="tc-btn tc-btn--secondary tc-btn--sm" href="/admin/common-entrance">Manage CE</a>
             </div>
           </div>
-          <div class="tc-table-wrap">
+          <div class="tc-table-wrap ct-table-wrap">
             {% if ce_exams %}
-            <table class="tc-table">
+            <table class="tc-table ad-dash-table" id="ceExamsTable" data-ct-paginate="6" data-ct-paginate-sizes="6,12,25">
               <thead>
                 <tr>
                   <th>Exam</th>
                   <th>Target</th>
-                  <th>Status</th>
-                  <th>Attempts</th>
+                  <th class="is-center">Status</th>
+                  <th class="is-center">Attempts</th>
                   <th style="text-align:right">Config</th>
                 </tr>
               </thead>
@@ -399,10 +479,12 @@
                 <tr>
                   <td><strong class="row-title" style="font-weight:640">{{ exam.name }}</strong></td>
                   <td><span class="tc-pill">{{ exam.target_class }}</span></td>
-                  <td>{% if exam.active %}<span class="tc-pill tc-pill--ok"><i class="tc-dot"></i>Active</span>{% else %}<span class="tc-pill"><i class="tc-dot"></i>Inactive</span>{% endif %}</td>
-                  <td class="tc-mono">{{ exam.attempts_count or 0 }}</td>
-                  <td style="text-align:right">
-                    <a class="tc-btn tc-btn--secondary tc-btn--icon" href="/admin/ce_exam/{{ exam.id }}/settings" title="Settings" aria-label="Settings for {{ exam.name }}">{{ ico('i-settings', 'ct-ico--sm') }}</a>
+                  <td class="is-center">{% if exam.active %}<span class="tc-pill tc-pill--ok"><i class="tc-dot"></i>Active</span>{% else %}<span class="tc-pill"><i class="tc-dot"></i>Inactive</span>{% endif %}</td>
+                  <td class="tc-mono is-center">{{ exam.attempts_count or 0 }}</td>
+                  <td>
+                    <div class="tc-actions">
+                      <a class="tc-btn tc-btn--secondary tc-btn--icon" href="/admin/ce_exam/{{ exam.id }}/settings" title="Settings" aria-label="Settings for {{ exam.name }}">{{ ico('i-settings', 'ct-ico--sm') }}</a>
+                    </div>
                   </td>
                 </tr>
                 {% endfor %}
@@ -420,11 +502,11 @@
         </section>
 
         <!-- Teachers Management -->
-        <section class="tc-card" id="sec-teachers">
+        <section class="tc-card" id="sec-teachers" data-ct-reveal>
           <div class="tc-card__head">
             <div class="tc-card__title">
               <h2>Teachers Management</h2>
-              <p>Assigned classes and portal accounts</p>
+              <p>Assigned classes, form-teacher roles, and portal accounts</p>
             </div>
             <div class="tc-card__tools">
               <label class="tc-search" style="width:170px">
@@ -435,34 +517,32 @@
             </div>
           </div>
 
-          <div class="tc-table-wrap">
+          <div class="tc-table-wrap ct-table-wrap">
             {% if teachers %}
-            <table class="tc-table" id="teachersTable">
+            <table class="tc-table ad-dash-table" id="teachersTable" data-ct-paginate="6" data-ct-paginate-sizes="6,12,25">
               <thead>
                 <tr>
                   <th>Teacher</th>
-                  <th>Class</th>
+                  <th>Assigned Class</th>
                   <th style="text-align:right">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {% for teacher in teachers %}
-                {% set t_has_photo = teacher.photo and teacher.photo != 'default.png' %}
-                <tr class="teacher-row" id="teacher-row-{{ teacher.id }}">
+                <tr class="teacher-row" id="teacher-row-{{ teacher.id }}" data-search="{{ (teacher.username or '')|lower }} {{ (teacher.class or '')|lower }} {{ (teacher.class_teacher_of or '')|lower }}">
                   <td class="teacher-username">
                     <div class="tc-user-cell">
-                      <span class="tc-avatar tc-avatar--sm">
-                        {% if t_has_photo %}
-                        <img src="{{ url_for('static', filename='images/' + teacher.photo) }}" alt="" onerror="this.parentElement.textContent='{{ (teacher.username[:2] if teacher.username else 'TC')|upper }}'">
-                        {% else %}
-                        {{ (teacher.username[:2] if teacher.username else 'TC')|upper }}
+                      {{ person_avatar(teacher.photo, teacher.username or 'Teacher', 'sm', '', 'static') }}
+                      <div>
+                        <strong class="row-title" style="display:block">{{ teacher.username }}</strong>
+                        {% if teacher.class_teacher_of is defined and teacher.class_teacher_of %}
+                        <span class="tc-mono" style="font-size:11px;color:var(--ct-accent)">Form Teacher · {{ teacher.class_teacher_of }}</span>
                         {% endif %}
-                      </span>
-                      <span><strong class="row-title">{{ teacher.username }}</strong></span>
+                      </div>
                     </div>
                   </td>
                   <td class="teacher-class"><span class="tc-pill">{{ teacher.class or 'Unassigned' }}</span></td>
-                  <td style="text-align:right">
+                  <td>
                     <div class="tc-actions row-actions">
                       <a class="tc-btn tc-btn--secondary tc-btn--sm" href="{{ url_for('edit_teacher', teacher_id=teacher.id) }}">Edit</a>
                       <button type="button" class="tc-btn tc-btn--ghost tc-btn--icon" style="color:var(--tc-bad)" onclick="deleteTeacher({{ teacher.id }})" title="Delete teacher" aria-label="Delete {{ teacher.username }}">{{ ico('i-trash', 'ct-ico--sm') }}</button>
@@ -481,97 +561,103 @@
             </div>
             {% endif %}
           </div>
-          {% if teachers and total_teacher_pages and total_teacher_pages > 1 %}
-          <div class="tc-toolbar pagination-bar" style="border-top:1px solid var(--tc-line);border-bottom:0">
-            <span style="font-size:12px;color:var(--tc-ink-3)">Showing <strong>{{ teachers|length }}</strong> of <strong>{{ total_teachers_count }}</strong></span>
-            <nav class="ct-pagination" aria-label="Teacher pages">
-              {% if current_teacher_page > 1 %}
-              <a class="tc-btn tc-btn--secondary tc-btn--icon" aria-label="Previous page" href="?page_teachers={{ current_teacher_page - 1 }}{% if current_student_page %}&page_students={{ current_student_page }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}">{{ ico('i-chevron-left', 'ct-ico--sm') }}</a>
-              {% endif %}
-              <span class="tc-mono" style="font-size:12px;color:var(--tc-ink-2);padding:0 8px">{{ current_teacher_page }} / {{ total_teacher_pages }}</span>
-              {% if current_teacher_page < total_teacher_pages %}
-              <a class="tc-btn tc-btn--secondary tc-btn--icon" aria-label="Next page" href="?page_teachers={{ current_teacher_page + 1 }}{% if current_student_page %}&page_students={{ current_student_page }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}">{{ ico('i-chevron-right', 'ct-ico--sm') }}</a>
-              {% endif %}
-            </nav>
-          </div>
-          {% endif %}
         </section>
       </div>
 
       <!-- ================= STUDENTS MANAGEMENT ================= -->
-      <section class="tc-card" id="sec-students">
+      <section class="tc-card" id="sec-students" data-ct-reveal>
         <div class="tc-card__head">
           <div class="tc-card__title">
             <h2>Students Management</h2>
-            <p>Approved student roster, recorded scores, and individual exam attempt resets</p>
+            <p>Approved student roster, performance overview, and quick attempt resets</p>
           </div>
           <div class="tc-card__tools">
             <label class="tc-search">
               {{ ico('i-search', 'ct-ico--sm') }}
-              <input type="search" id="studentSearchInput" placeholder="Filter students or class…" oninput="liveSearchStudents()" aria-label="Search students">
+              <input type="search" id="studentSearchInput" placeholder="Search name, @username, class…" oninput="liveSearchStudents()" aria-label="Search students">
             </label>
+            <select class="ad-filter-select" id="studentClassFilter" onchange="liveSearchStudents()" aria-label="Filter students by class">
+              <option value="all">All Classes</option>
+              {% for cls in student_classes %}
+              <option value="{{ cls }}">{{ cls }}</option>
+              {% endfor %}
+            </select>
             <a class="tc-btn tc-btn--secondary tc-btn--sm" href="{{ url_for('add_student') }}">{{ ico('i-plus', 'ct-ico--xs') }}Add Student</a>
           </div>
         </div>
 
-        <div class="tc-table-wrap">
+        <div class="tc-table-wrap ct-table-wrap">
           {% if students %}
-          <table class="tc-table" id="studentsTable">
+          <table class="tc-table ad-dash-table" id="studentsTable" data-ct-paginate="10" data-ct-paginate-sizes="10,25,50">
             <thead>
               <tr>
-                <th>Student</th>
-                <th>Class</th>
-                <th>Recorded Scores</th>
-                <th>Reset Attempt</th>
-                <th style="text-align:right">Actions</th>
+                <th style="min-width:210px">Student</th>
+                <th style="width:150px">Class &amp; Track</th>
+                <th style="min-width:240px">Exam Performance</th>
+                <th style="width:245px">Reset Attempt</th>
+                <th style="width:170px;text-align:right">Actions</th>
               </tr>
             </thead>
             <tbody>
               {% for student in students %}
               {% set st_name = student.full_name if student.full_name else student.username %}
-              {% set st_has_photo = student.photo and student.photo != 'default.png' %}
-              <tr class="student-row" id="student-row-{{ student.id }}">
+              {% set student_scores = get_scores(student.id) %}
+              {% set st_avg = get_student_average(student.id) %}
+              <tr class="student-row" id="student-row-{{ student.id }}" data-class="{{ student.class or '' }}" data-search="{{ st_name|lower }} {{ (student.username or '')|lower }} {{ (student.class or '')|lower }} {{ (student.specialisation or '')|lower }}">
                 <td class="student-username">
                   <a class="tc-user-cell" href="/admin/student/{{ student.id }}">
-                    <span class="tc-avatar tc-avatar--sm">
-                      {% if st_has_photo %}
-                      <img src="{{ url_for('static', filename='images/' + student.photo) }}" alt="" onerror="this.parentElement.textContent='{{ st_name[:2]|upper }}'">
-                      {% else %}
-                      {{ st_name[:2]|upper }}
-                      {% endif %}
-                    </span>
+                    {{ person_avatar(student.photo, st_name, 'sm', '', 'static') }}
                     <span>
                       <strong class="row-title">{{ st_name }}</strong>
                       <span class="tc-mono row-sub">@{{ student.username }}</span>
                     </span>
                   </a>
                 </td>
-                <td class="student-class"><span class="tc-pill">{{ student.class }}</span></td>
+                <td class="student-class">
+                  <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+                    <span class="tc-pill">{{ student.class or 'Unassigned' }}</span>
+                    {% if student.specialisation is defined and student.specialisation and student.specialisation != 'General' %}
+                    <span class="tc-pill tc-pill--accent">{{ student.specialisation }}</span>
+                    {% endif %}
+                  </div>
+                </td>
                 <td id="exams-cell-{{ student.id }}">
-                  {% set student_scores = get_scores(student.id) %}
                   {% if student_scores %}
-                    {% for score in student_scores %}
-                      {% set score_data = get_score_details(student.id, score.exam_id) %}
-                      <span class="ad-score-chip score-chip" id="exam-tag-{{ student.id }}-{{ score.exam_id }}">{{ score.exam_name }}<b>{% if score_data %}{{ score_data.score }}/{{ score_data.total }}{% else %}0/0{% endif %}</b></span>
-                    {% endfor %}
+                    <div class="ad-stu-perf">
+                      {% set avg_val = st_avg|float if st_avg is not none else 0 %}
+                      <span class="ad-stu-avg {% if avg_val >= 70 %}ad-stu-avg--ok{% elif avg_val >= 50 %}ad-stu-avg--warn{% else %}ad-stu-avg--bad{% endif %}">{{ "%.0f"|format(avg_val) }}% avg</span>
+                      <span class="tc-mono" style="font-size:12px;color:var(--tc-ink-3)">{{ student_scores|length }} exam{% if student_scores|length != 1 %}s{% endif %}</span>
+                      {% for score in student_scores[:2] %}
+                        {% set score_data = get_score_details(student.id, score.exam_id) %}
+                        <span class="ad-stu-chip" id="exam-tag-{{ student.id }}-{{ score.exam_id }}" title="{{ score.exam_name }}">{{ score.exam_name }} <b>{% if score_data %}{{ score_data.score }}/{{ score_data.total }}{% else %}0/0{% endif %}</b></span>
+                      {% endfor %}
+                      {% if student_scores|length > 2 %}
+                      <a href="/admin/student/{{ student.id }}" class="tc-mono" style="font-size:11.5px;color:var(--ct-accent);font-weight:600">+{{ student_scores|length - 2 }} more</a>
+                      {% endif %}
+                    </div>
                   {% else %}
-                    <span style="color:var(--tc-ink-3);font-size:12.5px">No exams taken</span>
+                    <span style="color:var(--tc-ink-3);font-size:12.5px">No exams completed</span>
                   {% endif %}
                 </td>
                 <td class="reset-cell" id="reset-cell-{{ student.id }}">
-                  {% set student_scores = get_scores(student.id) %}
                   {% if student_scores %}
-                    <div style="display:flex;gap:6px;flex-wrap:wrap">
-                    {% for score in student_scores %}
-                      <button type="button" class="tc-btn tc-btn--ghost tc-btn--sm btn-reset" id="btn-reset-{{ student.id }}-{{ score.exam_id }}" onclick="resetExam({{ student.id }}, {{ score.exam_id }})">{{ ico('i-undo', 'ct-ico--xs') }}{{ score.exam_name }}</button>
-                    {% endfor %}
+                    <div class="ad-reset-wrap">
+                      <select class="ad-reset-select" id="reset-select-{{ student.id }}" aria-label="Select exam to reset for {{ st_name }}">
+                        {% for score in student_scores %}
+                        <option value="{{ score.exam_id }}">{{ score.exam_name }}</option>
+                        {% endfor %}
+                      </select>
+                      <button type="button" class="tc-btn tc-btn--secondary tc-btn--sm" onclick="resetSelectedExam({{ student.id }}, {{ st_name|tojson|forceescape }})">
+                        {{ ico('i-undo', 'ct-ico--xs') }}Reset
+                      </button>
                     </div>
                   {% else %}
                     <span style="color:var(--tc-ink-3)">—</span>
                   {% endif %}
                 </td>
-                <td style="text-align:right">
+                <td>
                   <div class="tc-actions row-actions">
+                    <a class="tc-btn tc-btn--ghost tc-btn--sm" href="/admin/student/{{ student.id }}" title="View student profile">Profile</a>
                     <a class="tc-btn tc-btn--secondary tc-btn--sm" href="{{ url_for('edit_student', student_id=student.id) }}">Edit</a>
                     <button type="button" class="tc-btn tc-btn--ghost tc-btn--icon" style="color:var(--tc-bad)" onclick="deleteStudent({{ student.id }})" title="Delete student" aria-label="Delete {{ student.username }}">{{ ico('i-trash', 'ct-ico--sm') }}</button>
                   </div>
@@ -589,20 +675,6 @@
           </div>
           {% endif %}
         </div>
-        {% if students and total_student_pages and total_student_pages > 1 %}
-        <div class="tc-toolbar pagination-bar" style="border-top:1px solid var(--tc-line);border-bottom:0">
-          <span style="font-size:12px;color:var(--tc-ink-3)">Showing <strong>{{ students|length }}</strong> of <strong>{{ total_students_count }}</strong> students</span>
-          <nav class="ct-pagination" aria-label="Student pages">
-            {% if current_student_page > 1 %}
-            <a class="tc-btn tc-btn--secondary tc-btn--icon" aria-label="Previous page" href="?page_students={{ current_student_page - 1 }}{% if current_teacher_page %}&page_teachers={{ current_teacher_page }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}">{{ ico('i-chevron-left', 'ct-ico--sm') }}</a>
-            {% endif %}
-            <span class="tc-mono" style="font-size:12px;color:var(--tc-ink-2);padding:0 8px">{{ current_student_page }} / {{ total_student_pages }}</span>
-            {% if current_student_page < total_student_pages %}
-            <a class="tc-btn tc-btn--secondary tc-btn--icon" aria-label="Next page" href="?page_students={{ current_student_page + 1 }}{% if current_teacher_page %}&page_teachers={{ current_teacher_page }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}">{{ ico('i-chevron-right', 'ct-ico--sm') }}</a>
-            {% endif %}
-          </nav>
-        </div>
-        {% endif %}
       </section>
 
       <footer class="ct-foot">CogniTara Offline Examination Server · {{ school_branding.school_name }}</footer>
@@ -619,69 +691,40 @@
     if (g) g.textContent = prefix + ", " + {{ (username or '')|tojson }};
 
     var COMMANDS = [
-      { label: "Create a new exam", icon: "i-plus", hint: "Exams", go: "/admin/add_exam" },
       { label: "Add a student", icon: "i-users", hint: "People", go: "{{ url_for('add_student') }}" },
       { label: "Add a teacher", icon: "i-teacher", hint: "People", go: "{{ url_for('add_teacher') }}" },
-      { label: "Add another admin", icon: "i-shield", hint: "People", go: "/admin/add_admin" },
+      { label: "Manage administrators", icon: "i-shield", hint: "People", go: "/admin/add_admin" },
       { label: "Open Exam Control Center", icon: "i-live", hint: "Exams", go: "/admin/exams-management" },
       { label: "Open Live Exam Support & Pause", icon: "i-activity", hint: "Live", go: "/admin/exam_technical_support" },
       { label: "Manage Common Entrance", icon: "i-door", hint: "Admissions", go: "/admin/common-entrance" },
       { label: "View Exam Results", icon: "i-chart", hint: "Reports", go: "{{ url_for('view_results') }}" },
       { label: "View School Analytics", icon: "i-trend", hint: "Reports", go: "/admin/school-analytics" },
       { label: "Pending Student Approvals", icon: "i-clock", hint: "People", go: "{{ url_for('pending_students') }}" },
-      { label: "School Settings & Grading", icon: "i-settings", hint: "Settings", go: "/admin/school-settings" },
+      { label: "School Settings & Database", icon: "i-settings", hint: "Settings", go: "/admin/school-settings" },
       { label: "Common Entrance Settings", icon: "i-sliders", hint: "Settings", go: "/admin/ce-settings" },
       { label: "Audit Logs", icon: "i-book", hint: "Logs", go: "{{ url_for('admin_logs') }}" },
       { label: "Warning Logs", icon: "i-alert", hint: "Logs", go: "{{ url_for('warning_logs') }}" },
       { label: "Switch light or dark theme", icon: "i-sun", hint: "Theme", run: function () { CT.theme.toggle(); } }
     ];
     CT.palette({ root: "#palette", input: "#palInput", list: "#palList", commands: COMMANDS, triggers: "#searchBtn" });
-
-    document.addEventListener("keydown", function (e) {
-      if (e.key === "Escape" && document.getElementById("customModal").classList.contains("is-open")) closeModal();
-    });
   })();
 
   var esc = (window.CT && CT.esc) || function (s) { return String(s); };
-  var TILE_MAP = { "tile--warn": "ct-tile--warn", "tile--bad": "ct-tile--bad", "tile--ok": "ct-tile--ok", "tile--cobalt": "ct-tile--cobalt", "tile--cyan": "ct-tile--cyan" };
-  var modalCallback = null;
-  function showCustomModal(opts) {
-    document.getElementById("modalTitle").textContent = opts.title || "Confirm";
-    document.getElementById("modalMessage").innerHTML = opts.message || "";
-    var confirmBtn = document.getElementById("modalConfirmBtn");
-    confirmBtn.textContent = opts.confirmText || "Confirm";
-    confirmBtn.className = "tc-btn " + (opts.confirmBtnClass === "ct-btn--danger-solid" ? "tc-btn--danger-soft" : "tc-btn--primary");
-    var iconEl = document.getElementById("modalIcon");
-    var tile = opts.tileClass || "ct-tile--warn";
-    iconEl.className = "ct-tile ct-tile--lg " + (TILE_MAP[tile] || tile);
-    iconEl.innerHTML = CT.icon(opts.iconId || "i-alert");
-    modalCallback = opts.onConfirm || null;
-    CT.modal.open("#customModal");
-  }
-  function closeModal() {
-    CT.modal.close("#customModal");
-    modalCallback = null;
-  }
-  async function confirmModal() {
-    var cb = modalCallback;
-    closeModal();
-    if (cb) await cb();
-  }
-  document.getElementById("customModal").addEventListener("click", function (e) {
-    if (e.target === this) closeModal();
-  });
-
   function showToast(message, type) {
     CT.toast(message, type === "error" ? "bad" : (type || "ok"));
   }
   function showLoading() { document.getElementById("loadingOverlay").classList.add("is-open"); }
   function hideLoading() { document.getElementById("loadingOverlay").classList.remove("is-open"); }
 
-  function fadeOutRow(rowId) {
+  function fadeOutRow(rowId, tableId) {
     var row = document.getElementById(rowId);
     if (!row) return;
     row.classList.add("fade-out");
-    setTimeout(function () { if (row.parentNode) row.remove(); }, CT.reducedMotion && CT.reducedMotion() ? 0 : 280);
+    setTimeout(function () {
+      if (row.parentNode) row.remove();
+      var tbl = tableId ? document.getElementById(tableId) : null;
+      if (tbl && tbl._ctRepaginate) tbl._ctRepaginate(false);
+    }, CT.reducedMotion && CT.reducedMotion() ? 0 : 260);
   }
   function updateStatCount(elementId, delta) {
     var el = document.getElementById(elementId);
@@ -694,206 +737,220 @@
     return (el && el.textContent.trim()) || fallback;
   }
 
-  function deleteExam(examId, examName) {
-    showCustomModal({
-      title: "Delete exam?",
-      message: "Delete <strong>" + esc(examName) + "</strong>? All questions and student scores for this exam will be permanently removed.",
-      tileClass: "ct-tile--bad",
-      iconId: "i-trash",
-      confirmText: "Delete exam",
-      confirmBtnClass: "ct-btn--danger-solid",
-      onConfirm: async function () {
-        showLoading();
-        try {
-          var res = await fetch("/admin/delete_exam/" + examId, {
-            method: "POST",
-            headers: { "X-CSRFToken": window.CSRF_TOKEN, "Content-Type": "application/json" }
-          });
-          if (res.ok) {
-            fadeOutRow("exam-row-" + examId);
-            updateStatCount("totalExams", -1);
-            updateStatCount("railExamsCount", -1);
-            showToast(examName + " deleted", "success");
-          } else {
-            var err = await res.json().catch(function () { return {}; });
-            showToast(err.error || err.message || "Failed to delete exam", "error");
-          }
-        } catch (e) {
-          showToast("Network error while deleting exam", "error");
-        } finally {
-          hideLoading();
-        }
-      }
+  async function deleteExam(examId, examName) {
+    var ok = await CT.confirm({
+      title: "Delete examination?",
+      html: "Delete <strong>" + esc(examName) + "</strong>? All questions and recorded student scores for this exam will be permanently removed.",
+      tone: "danger",
+      icon: "i-trash",
+      confirmText: "Delete exam"
     });
-  }
-
-  function deleteTeacher(teacherId, teacherName) {
-    if (!teacherName) teacherName = rowName("teacher-row-" + teacherId, ".row-title", "this teacher");
-    showCustomModal({
-      title: "Delete teacher?",
-      message: "Remove <strong>" + esc(teacherName) + "</strong> from teacher accounts?",
-      tileClass: "ct-tile--bad",
-      iconId: "i-trash",
-      confirmText: "Delete teacher",
-      confirmBtnClass: "ct-btn--danger-solid",
-      onConfirm: async function () {
-        showLoading();
-        try {
-          var res = await fetch("/admin/delete_teacher/" + teacherId, {
-            method: "POST",
-            headers: { "X-CSRFToken": window.CSRF_TOKEN, "Content-Type": "application/json" }
-          });
-          if (res.ok) {
-            fadeOutRow("teacher-row-" + teacherId);
-            updateStatCount("totalTeachers", -1);
-            showToast(teacherName + " deleted", "success");
-          } else {
-            var err = await res.json().catch(function () { return {}; });
-            showToast(err.error || err.message || "Failed to delete teacher", "error");
-          }
-        } catch (e) {
-          showToast("Network error occurred", "error");
-        } finally {
-          hideLoading();
-        }
+    if (!ok) return;
+    showLoading();
+    try {
+      var res = await fetch("/admin/delete_exam/" + examId, {
+        method: "POST",
+        headers: { "X-CSRFToken": window.CSRF_TOKEN, "Content-Type": "application/json" }
+      });
+      if (res.ok) {
+        fadeOutRow("exam-row-" + examId, "examsTable");
+        updateStatCount("totalExams", -1);
+        updateStatCount("railExamsCount", -1);
+        showToast(examName + " deleted", "success");
+      } else {
+        var err = await res.json().catch(function () { return {}; });
+        showToast(err.error || err.message || "Failed to delete exam", "error");
       }
-    });
-  }
-
-  function deleteStudent(studentId, studentName) {
-    if (!studentName) studentName = rowName("student-row-" + studentId, ".row-title", "this student");
-    showCustomModal({
-      title: "Delete student?",
-      message: "Remove <strong>" + esc(studentName) + "</strong> and all of their recorded exam scores?",
-      tileClass: "ct-tile--bad",
-      iconId: "i-trash",
-      confirmText: "Delete student",
-      confirmBtnClass: "ct-btn--danger-solid",
-      onConfirm: async function () {
-        showLoading();
-        try {
-          var res = await fetch("/admin/delete_student/" + studentId, {
-            method: "POST",
-            headers: { "X-CSRFToken": window.CSRF_TOKEN, "Content-Type": "application/json" }
-          });
-          if (res.ok) {
-            fadeOutRow("student-row-" + studentId);
-            updateStatCount("totalStudents", -1);
-            showToast(studentName + " deleted", "success");
-          } else {
-            var err = await res.json().catch(function () { return {}; });
-            showToast(err.error || err.message || "Failed to delete student", "error");
-          }
-        } catch (e) {
-          showToast("Network error occurred", "error");
-        } finally {
-          hideLoading();
-        }
-      }
-    });
-  }
-
-  function resetExam(studentId, examId, examName, studentName) {
-    if (!examName) {
-      var btn = document.getElementById("btn-reset-" + studentId + "-" + examId);
-      examName = btn ? btn.textContent.trim() : "this exam";
+    } catch (e) {
+      showToast("Network error while deleting exam", "error");
+    } finally {
+      hideLoading();
     }
-    if (!studentName) studentName = rowName("student-row-" + studentId, ".row-title", "this student");
-    showCustomModal({
-      title: "Reset exam attempt?",
-      message: "Reset <strong>" + esc(examName) + "</strong> for <strong>" + esc(studentName) + "</strong> so they can retake the exam?",
-      tileClass: "ct-tile--warn",
-      iconId: "i-undo",
-      confirmText: "Reset attempt",
-      confirmBtnClass: "ct-btn--primary",
-      onConfirm: async function () {
-        showLoading();
-        try {
-          var res = await fetch("/admin/reset_exam/" + studentId + "/" + examId, {
-            headers: { "X-Requested-With": "XMLHttpRequest", "Accept": "application/json" }
-          });
-          if (res.ok) {
-            var b = document.getElementById("btn-reset-" + studentId + "-" + examId);
-            var t = document.getElementById("exam-tag-" + studentId + "-" + examId);
-            if (b) b.remove();
-            if (t) t.remove();
-            var rc = document.getElementById("reset-cell-" + studentId);
-            if (rc && rc.querySelectorAll(".btn-reset").length === 0) rc.innerHTML = '<span style="color:var(--tc-ink-3)">—</span>';
-            var ec = document.getElementById("exams-cell-" + studentId);
-            if (ec && ec.querySelectorAll(".score-chip").length === 0) ec.innerHTML = '<span style="color:var(--tc-ink-3);font-size:12.5px">No exams taken</span>';
-            showToast("Reset " + examName + " for " + studentName, "success");
-          } else {
-            var err = await res.json().catch(function () { return {}; });
-            showToast(err.error || err.message || "Failed to reset exam", "error");
-          }
-        } catch (e) {
-          showToast("Network error occurred", "error");
-        } finally {
-          hideLoading();
-        }
-      }
-    });
   }
 
-  function toggleExam(examId, currentStatus, examName) {
-    var verb = currentStatus ? "Stop" : "Start";
-    showCustomModal({
-      title: verb + " exam?",
-      message: (currentStatus ? "Stop " : "Activate ") + "<strong>" + esc(examName) + "</strong> for students?",
-      tileClass: currentStatus ? "ct-tile--warn" : "ct-tile--ok",
-      iconId: currentStatus ? "i-stop" : "i-play",
-      confirmText: verb + " exam",
-      confirmBtnClass: currentStatus ? "ct-btn--danger-solid" : "ct-btn--primary",
-      onConfirm: async function () {
-        showLoading();
-        try {
-          var res = await fetch("/admin/toggle_exam/" + examId, { redirect: "follow" });
-          if (res.ok) {
-            var statusCell = document.getElementById("exam-status-" + examId);
-            var toggleBtn = document.getElementById("toggle-btn-" + examId);
-            var nowActive = !currentStatus;
-            statusCell.innerHTML = nowActive
-              ? '<span class="tc-pill tc-pill--ok"><i class="tc-dot"></i>Active</span>'
-              : '<span class="tc-pill"><i class="tc-dot"></i>Inactive</span>';
-            if (toggleBtn) {
-              toggleBtn.className = "tc-btn " + (nowActive ? "tc-btn--danger-soft" : "tc-btn--ok") + " tc-btn--sm";
-              toggleBtn.innerHTML = CT.icon(nowActive ? "i-stop" : "i-play", "ct-ico--xs") + (nowActive ? "Stop" : "Start");
-              toggleBtn.setAttribute("onclick", "toggleExam(" + examId + ", " + nowActive + ", " + JSON.stringify(examName) + ")");
-            }
-            showToast(examName + (currentStatus ? " stopped" : " is now active"), "success");
-          } else {
-            showToast("Failed to toggle exam status", "error");
-          }
-        } catch (e) {
-          showToast("Network error occurred", "error");
-        } finally {
-          hideLoading();
-        }
-      }
+  async function deleteTeacher(teacherId, teacherName) {
+    if (!teacherName) teacherName = rowName("teacher-row-" + teacherId, ".row-title", "this teacher");
+    var ok = await CT.confirm({
+      title: "Remove teacher account?",
+      html: "Remove <strong>" + esc(teacherName) + "</strong> from teacher accounts? Their authored examinations will remain intact.",
+      tone: "danger",
+      icon: "i-trash",
+      confirmText: "Delete teacher"
     });
+    if (!ok) return;
+    showLoading();
+    try {
+      var res = await fetch("/admin/delete_teacher/" + teacherId, {
+        method: "POST",
+        headers: { "X-CSRFToken": window.CSRF_TOKEN, "Content-Type": "application/json" }
+      });
+      if (res.ok) {
+        fadeOutRow("teacher-row-" + teacherId, "teachersTable");
+        updateStatCount("totalTeachers", -1);
+        showToast(teacherName + " deleted", "success");
+      } else {
+        var err = await res.json().catch(function () { return {}; });
+        showToast(err.error || err.message || "Failed to delete teacher", "error");
+      }
+    } catch (e) {
+      showToast("Network error occurred", "error");
+    } finally {
+      hideLoading();
+    }
+  }
+
+  async function deleteStudent(studentId, studentName) {
+    if (!studentName) studentName = rowName("student-row-" + studentId, ".row-title", "this student");
+    var ok = await CT.confirm({
+      title: "Delete student?",
+      html: "Remove <strong>" + esc(studentName) + "</strong> and all of their recorded exam scores?",
+      tone: "danger",
+      icon: "i-trash",
+      confirmText: "Delete student"
+    });
+    if (!ok) return;
+    showLoading();
+    try {
+      var res = await fetch("/admin/delete_student/" + studentId, {
+        method: "POST",
+        headers: { "X-CSRFToken": window.CSRF_TOKEN, "Content-Type": "application/json" }
+      });
+      if (res.ok) {
+        fadeOutRow("student-row-" + studentId, "studentsTable");
+        updateStatCount("totalStudents", -1);
+        showToast(studentName + " deleted", "success");
+      } else {
+        var err = await res.json().catch(function () { return {}; });
+        showToast(err.error || err.message || "Failed to delete student", "error");
+      }
+    } catch (e) {
+      showToast("Network error occurred", "error");
+    } finally {
+      hideLoading();
+    }
+  }
+
+  async function resetSelectedExam(studentId, studentName) {
+    var sel = document.getElementById("reset-select-" + studentId);
+    if (!sel || !sel.value) return;
+    var examId = sel.value;
+    var examName = sel.options[sel.selectedIndex] ? sel.options[sel.selectedIndex].text : "this exam";
+    await resetExam(studentId, examId, examName, studentName);
+  }
+
+  async function resetExam(studentId, examId, examName, studentName) {
+    if (!studentName) studentName = rowName("student-row-" + studentId, ".row-title", "this student");
+    var ok = await CT.confirm({
+      title: "Reset exam attempt?",
+      html: "Reset <strong>" + esc(examName) + "</strong> for <strong>" + esc(studentName) + "</strong> so they can retake the examination?",
+      tone: "warn",
+      icon: "i-undo",
+      confirmText: "Reset attempt"
+    });
+    if (!ok) return;
+    showLoading();
+    try {
+      var res = await fetch("/admin/reset_exam/" + studentId + "/" + examId, {
+        headers: { "X-Requested-With": "XMLHttpRequest", "Accept": "application/json" }
+      });
+      if (res.ok) {
+        var sel = document.getElementById("reset-select-" + studentId);
+        if (sel) {
+          var opt = sel.querySelector('option[value="' + examId + '"]');
+          if (opt) opt.remove();
+          if (sel.options.length === 0) {
+            var rc = document.getElementById("reset-cell-" + studentId);
+            if (rc) rc.innerHTML = '<span style="color:var(--tc-ink-3)">—</span>';
+          }
+        }
+        var tag = document.getElementById("exam-tag-" + studentId + "-" + examId);
+        if (tag) tag.remove();
+        showToast("Reset " + examName + " for " + studentName, "success");
+      } else {
+        var err = await res.json().catch(function () { return {}; });
+        showToast(err.error || err.message || "Failed to reset exam", "error");
+      }
+    } catch (e) {
+      showToast("Network error occurred", "error");
+    } finally {
+      hideLoading();
+    }
+  }
+
+  async function toggleExam(examId, currentStatus, examName) {
+    var verb = currentStatus ? "Stop" : "Start";
+    var ok = await CT.confirm({
+      title: verb + " examination?",
+      html: (currentStatus ? "Stop " : "Activate ") + "<strong>" + esc(examName) + "</strong> for students?",
+      tone: currentStatus ? "warn" : "ok",
+      icon: currentStatus ? "i-stop" : "i-play",
+      confirmText: verb + " exam"
+    });
+    if (!ok) return;
+    showLoading();
+    try {
+      var res = await fetch("/admin/toggle_exam/" + examId, { redirect: "follow" });
+      if (res.ok) {
+        var row = document.getElementById("exam-row-" + examId);
+        var statusCell = document.getElementById("exam-status-" + examId);
+        var toggleBtn = document.getElementById("toggle-btn-" + examId);
+        var nowActive = !currentStatus;
+        if (row) row.dataset.status = nowActive ? "active" : "inactive";
+        statusCell.innerHTML = nowActive
+          ? '<span class="tc-pill tc-pill--ok"><i class="tc-dot"></i>Active</span>'
+          : '<span class="tc-pill"><i class="tc-dot"></i>Inactive</span>';
+        if (toggleBtn) {
+          toggleBtn.className = "tc-btn " + (nowActive ? "tc-btn--danger-soft" : "tc-btn--ok") + " tc-btn--sm";
+          toggleBtn.innerHTML = CT.icon(nowActive ? "i-stop" : "i-play", "ct-ico--xs") + (nowActive ? "Stop" : "Start");
+          toggleBtn.setAttribute("onclick", "toggleExam(" + examId + ", " + nowActive + ", " + JSON.stringify(examName) + ")");
+        }
+        showToast(examName + (currentStatus ? " stopped" : " is now active"), "success");
+      } else {
+        showToast("Failed to toggle exam status", "error");
+      }
+    } catch (e) {
+      showToast("Network error occurred", "error");
+    } finally {
+      hideLoading();
+    }
   }
 
   function liveSearchExams() {
-    var q = (document.getElementById("examSearchInput").value || "").toLowerCase();
-    document.querySelectorAll("#examsTable tbody .exam-row").forEach(function (row) {
-      row.style.display = (row.getAttribute("data-search") || "").indexOf(q) > -1 ? "" : "none";
+    var q = (document.getElementById("examSearchInput").value || "").trim().toLowerCase();
+    var st = (document.getElementById("examStatusFilter").value || "all");
+    var tbl = document.getElementById("examsTable");
+    if (!tbl) return;
+    tbl.querySelectorAll("tbody .exam-row").forEach(function (row) {
+      var matchText = !q || (row.getAttribute("data-search") || "").indexOf(q) > -1;
+      var matchStatus = st === "all" || row.getAttribute("data-status") === st;
+      row.dataset.ctFilteredOut = (matchText && matchStatus) ? "0" : "1";
     });
+    if (tbl._ctRepaginate) tbl._ctRepaginate(true);
   }
+
   function liveSearchTeachers() {
-    var q = (document.getElementById("teacherSearchInput").value || "").toLowerCase();
-    document.querySelectorAll("#teachersTable tbody tr").forEach(function (row) {
-      var u = (row.querySelector(".teacher-username") && row.querySelector(".teacher-username").textContent.toLowerCase()) || "";
-      var c = (row.querySelector(".teacher-class") && row.querySelector(".teacher-class").textContent.toLowerCase()) || "";
-      row.style.display = (u.indexOf(q) > -1 || c.indexOf(q) > -1) ? "" : "none";
+    var q = (document.getElementById("teacherSearchInput").value || "").trim().toLowerCase();
+    var tbl = document.getElementById("teachersTable");
+    if (!tbl) return;
+    tbl.querySelectorAll("tbody .teacher-row").forEach(function (row) {
+      var hay = row.getAttribute("data-search") || row.textContent.toLowerCase();
+      row.dataset.ctFilteredOut = (!q || hay.indexOf(q) > -1) ? "0" : "1";
     });
+    if (tbl._ctRepaginate) tbl._ctRepaginate(true);
   }
+
   function liveSearchStudents() {
-    var q = (document.getElementById("studentSearchInput").value || "").toLowerCase();
-    document.querySelectorAll("#studentsTable tbody tr").forEach(function (row) {
-      var u = (row.querySelector(".student-username") && row.querySelector(".student-username").textContent.toLowerCase()) || "";
-      var c = (row.querySelector(".student-class") && row.querySelector(".student-class").textContent.toLowerCase()) || "";
-      row.style.display = (u.indexOf(q) > -1 || c.indexOf(q) > -1) ? "" : "none";
+    var q = (document.getElementById("studentSearchInput").value || "").trim().toLowerCase();
+    var cls = (document.getElementById("studentClassFilter").value || "all");
+    var tbl = document.getElementById("studentsTable");
+    if (!tbl) return;
+    tbl.querySelectorAll("tbody .student-row").forEach(function (row) {
+      var hay = row.getAttribute("data-search") || row.textContent.toLowerCase();
+      var matchQ = !q || hay.indexOf(q) > -1;
+      var matchC = cls === "all" || (row.getAttribute("data-class") || "") === cls;
+      row.dataset.ctFilteredOut = (matchQ && matchC) ? "0" : "1";
     });
+    if (tbl._ctRepaginate) tbl._ctRepaginate(true);
   }
 </script>
 </body>

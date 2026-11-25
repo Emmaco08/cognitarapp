@@ -1,4 +1,4 @@
-{%- from '_ct_shell.html' import ico, ct_boot_script -%}
+{%- from '_ct_shell.html' import ico, ct_boot_script with context -%}
 {%- set ICONS = url_for('static', filename='icons/cognitara-icons.svg') -%}
 {%- set _school = school_branding if school_branding is defined and school_branding else {'school_name': 'CogniTara School', 'current_term': 'First Term', 'academic_session': '2026/2027'} -%}
 <!DOCTYPE html>
@@ -36,17 +36,27 @@
     </header>
 
     <main class="st-folio-stage">
-      <section class="st-brief" aria-label="Examination briefing">
+      <section class="st-brief st-brief--motion" aria-label="Examination briefing">
         <div class="st-folio__top">
           <span class="st-folio__doc-id">Pre-Exam Briefing · {{ exam.class }}</span>
-          <span class="st-pill st-mono">{{ exam.duration }} MIN</span>
+          <span class="st-pill st-pill--accent st-mono">{{ exam.duration }} MIN</span>
         </div>
 
         <div class="st-brief__body">
-          <div class="st-folio__headline">
-            <span class="st-eyebrow">Candidate: {{ student_name }}</span>
-            <h1>{{ exam.name }}</h1>
-            <p>Review your examination details below. Once you begin, your server-synced countdown timer starts immediately and every answer is auto-saved.</p>
+          <div class="st-brief__stage">
+            <div class="st-brief__crest" aria-hidden="true">
+              <svg viewBox="0 0 56 56">
+                <circle class="st-crest-ring" cx="28" cy="28" r="24"/>
+                <circle class="st-crest-orbit-rev" cx="28" cy="28" r="19"/>
+                <path class="st-crest-shield" d="M28 11 L40 16 V26 C40 34 34.8 40.5 28 43.5 C21.2 40.5 16 34 16 26 V16 Z"/>
+                <path class="st-crest-spark" d="M23 27.5 L26.5 31 L33.5 23.5"/>
+              </svg>
+            </div>
+            <div class="st-folio__headline">
+              <span class="st-brief__candidate"><i class="st-brief__dot"></i>Candidate · {{ student_name }}</span>
+              <h1>{{ exam.name }}</h1>
+              <p>Review your examination details below. Once you begin, your server-synced countdown timer starts immediately and every answer is auto-saved.</p>
+            </div>
           </div>
 
           <div class="st-ledger">
@@ -76,7 +86,7 @@
           <a href="/dashboard" class="st-btn st-btn--secondary st-btn--lg st-btn--block">{{ ico('i-arrow-left', 'ct-ico--sm') }}<span>Back to Dashboard</span></a>
           {% else %}
           <div style="display:grid;gap:10px">
-            <button type="button" class="st-btn st-btn--primary st-btn--lg st-btn--block" onclick="openStartModal()">
+            <button type="button" class="st-btn st-btn--primary st-btn--lg st-btn--block st-brief__cta" onclick="openStartModal()">
               <span>Begin Examination</span>
               {{ ico('i-arrow-right', 'ct-ico--sm st-arrow') }}
             </button>
@@ -84,9 +94,10 @@
           </div>
           {% endif %}
 
-          <div style="display:flex;align-items:center;justify-content:center;gap:7px;font-size:12px;color:var(--st-ink-3);padding-top:4px;border-top:1px solid var(--st-line)">
+          <div class="st-brief__integrity">
+            <span class="st-brief__integrity-pulse" aria-hidden="true"></span>
             {{ ico('i-shield', 'ct-ico--xs') }}
-            <span>Integrity monitoring active · 5 focus warnings auto-submit</span>
+            <span>Integrity monitoring active · {{ exam.max_warnings if exam.max_warnings else 5 }} focus warnings auto-submit</span>
           </div>
         </div>
       </section>

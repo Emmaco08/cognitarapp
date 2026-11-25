@@ -1,1167 +1,1080 @@
-{%- from '_ct_shell.html' import ico, ct_boot_script, admin_shell_start, teacher_shell_start, student_topbar, shell_end -%}
+{%- from '_ct_shell.html' import ico, ct_boot_script, admin_shell_start, shell_end with context -%}
 <!DOCTYPE html>
 <html lang="en" data-theme="dark">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>School Settings & Grading Schemes | COGNITARA EXAM SYSTEM</title>
-    <link href="{{ url_for('static', filename='vendor/bootstrap/css/bootstrap.min.css') }}" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='vendor/fontawesome/css/all.min.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='vendor/sweetalert2/sweetalert2.min.css') }}">
-    <style>
-        :root {
-            --primary: var(--ct-primary);
-            --primary-dark: #0E3B9E;
-            --secondary: #06B6D4;
-            --bg-canvas: #F8FAFC;
-            --card-bg: var(--ct-surface);
-            --text-main: #0F172A;
-            --text-muted: var(--ct-ink-3);
-            --border-color: var(--ct-line-2);
-        }
-
-        body {
-            background-color: var(--bg-canvas);
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            color: var(--text-main);
-            min-height: 100vh;
-        }
-
-        .settings-header {
-            background: linear-gradient(135deg, #1E293B 0%, #0F172A 100%);
-            color: white;
-            padding: 32px 0;
-            margin-bottom: 30px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.06);
-        }
-
-        .settings-header .brand-crumb {
-            font-size: 13px;
-            color: #94A3B8;
-            font-weight: 500;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin-bottom: 8px;
-        }
-
-        .settings-header h1 {
-            font-size: 26px;
-            font-weight: 700;
-            margin: 0;
-        }
-
-        .settings-card {
-            background: var(--card-bg);
-            border-radius: 20px;
-            border: 1px solid var(--border-color);
-            box-shadow: 0 4px 15px rgba(0,0,0,0.03);
-            overflow: hidden;
-            margin-bottom: 30px;
-        }
-
-        .nav-tabs-custom {
-            display: flex;
-            background: var(--ct-surface);
-            padding: 6px;
-            border-radius: 14px;
-            gap: 6px;
-            border: none;
-            margin-bottom: 24px;
-        }
-
-        .nav-tabs-custom .nav-link {
-            flex: 1;
-            text-align: center;
-            border: none;
-            border-radius: 10px;
-            padding: 12px 16px;
-            font-size: 14px;
-            font-weight: 600;
-            color: var(--ct-ink-2);
-            transition: all 0.2s;
-            cursor: pointer;
-        }
-
-        .nav-tabs-custom .nav-link.active {
-            background: var(--ct-surface);
-            color: var(--primary);
-            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
-        }
-
-        .form-label-custom {
-            font-size: 13px;
-            font-weight: 600;
-            color: var(--ct-ink-2);
-            margin-bottom: 6px;
-        }
-
-        .form-control-custom, .form-select-custom {
-            border: 1.5px solid var(--border-color);
-            border-radius: 12px;
-            padding: 10px 14px;
-            font-size: 14px;
-            transition: all 0.2s;
-            width: 100%;
-        }
-
-        .form-control-custom:focus, .form-select-custom:focus {
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(26, 86, 219, 0.12);
-            outline: none;
-        }
-
-        .btn-primary-custom {
-            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
-            color: white;
-            border: none;
-            padding: 12px 24px;
-            border-radius: 12px;
-            font-weight: 600;
-            font-size: 14px;
-            transition: all 0.2s;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            cursor: pointer;
-        }
-
-        .btn-primary-custom:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 6px 16px rgba(26, 86, 219, 0.3);
-            color: white;
-        }
-
-        .preset-badge-btn {
-            background: var(--ct-surface);
-            border: 1.5px solid var(--ct-line-2);
-            border-radius: 12px;
-            padding: 10px 16px;
-            font-weight: 600;
-            font-size: 13px;
-            color: var(--ct-ink-2);
-            cursor: pointer;
-            transition: all 0.2s;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .preset-badge-btn:hover {
-            background: var(--ct-surface);
-            border-color: var(--primary);
-            color: var(--primary);
-        }
-
-        /* Spectrum Bar for Grading Studio */
-        .grading-spectrum-wrap {
-            margin: 20px 0;
-            background: var(--ct-surface);
-            border-radius: 12px;
-            padding: 16px;
-            border: 1px solid var(--border-color);
-        }
-
-        .spectrum-bar-container {
-            height: 36px;
-            width: 100%;
-            display: flex;
-            border-radius: 8px;
-            overflow: hidden;
-            box-shadow: inset 0 2px 4px rgba(0,0,0,0.06);
-        }
-
-        .spectrum-segment {
-            height: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-weight: 700;
-            font-size: 12px;
-            text-shadow: 0 1px 2px rgba(0,0,0,0.3);
-            transition: width 0.3s ease;
-            position: relative;
-        }
-
-        .tier-rule-row {
-            background: var(--ct-surface);
-            border: 1px solid var(--border-color);
-            border-radius: 12px;
-            padding: 12px;
-            margin-bottom: 8px;
-            display: grid;
-            grid-template-columns: 80px 100px 100px 80px 1fr 60px 40px;
-            gap: 10px;
-            align-items: center;
-        }
-
-        .live-calc-box {
-            background: var(--ct-surface-2);
-            border: 1.5px solid var(--ct-line-2);
-            border-radius: 16px;
-            padding: 20px;
-            margin-top: 20px;
-        }
-
-        .legacy-dropzone {
-            border: 1.5px dashed var(--ct-line-2);
-            border-radius: 14px;
-            padding: 28px 20px;
-            text-align: center;
-            background: var(--ct-surface-2);
-            cursor: pointer;
-            transition: border-color 160ms ease, background-color 160ms ease;
-        }
-        .legacy-dropzone:hover, .legacy-dropzone.is-drag {
-            border-color: var(--ct-primary);
-            background: color-mix(in srgb, var(--ct-primary) 7%, var(--ct-surface-2));
-        }
-        .legacy-stat-grid {
-            display: grid;
-            grid-template-columns: repeat(6, minmax(0, 1fr));
-            gap: 10px;
-        }
-        .legacy-stat-box {
-            padding: 12px 10px;
-            border-radius: 10px;
-            background: var(--ct-surface-2);
-            border: 1px solid var(--ct-line);
-            text-align: center;
-        }
-        .legacy-stat-box b {
-            display: block;
-            font-size: 20px;
-            font-weight: 720;
-            color: var(--ct-ink);
-            font-variant-numeric: tabular-nums;
-        }
-        .legacy-stat-box span {
-            display: block;
-            font-size: 11.5px;
-            color: var(--ct-ink-3);
-            margin-top: 2px;
-        }
-        @media (max-width: 768px) {
-            .legacy-stat-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-        }
-        #tab-migration code {
-            color: var(--ct-ink) !important;
-            background: var(--ct-surface-3, rgba(148, 163, 184, 0.14));
-            border: 1px solid var(--ct-line);
-            padding: 1px 6px;
-            border-radius: 6px;
-            font-size: 0.88em;
-        }
-        .legacy-ready-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            padding: 5px 12px;
-            border-radius: 999px;
-            font-size: 12px;
-            font-weight: 600;
-            background: rgba(16, 185, 129, 0.14);
-            color: #10b981;
-            border: 1px solid rgba(16, 185, 129, 0.32);
-        }
-    </style>
-    <meta name="csrf-token" content="{{ csrf_token() }}">
-
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+  <meta name="color-scheme" content="dark light">
+  <title>School Settings — {{ school_branding.school_name }} | CogniTara</title>
+  <link rel="icon" href="{{ url_for('static', filename='images/cognitara-favicon.ico') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/cognitara-web.css') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/cognitara-portal-unified.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/cognitara-teacher-studio.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/cognitara-admin-studio.css') }}">
   {{ ct_boot_script() }}
+  <style>
+    .ss-tabs {
+      display: flex;
+      gap: 4px;
+      padding: 5px;
+      border-radius: 13px;
+      background: var(--tc-surface);
+      border: 1px solid var(--tc-line-2);
+      margin-bottom: 20px;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+    .ss-tab {
+      flex: 1;
+      min-width: max-content;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 10px 14px;
+      border-radius: 9px;
+      border: 1px solid transparent;
+      background: transparent;
+      color: var(--tc-ink-2);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background-color 150ms ease, color 150ms ease, border-color 150ms ease;
+    }
+    .ss-tab:hover { color: var(--tc-ink); background: var(--ct-hover); }
+    .ss-tab.is-active {
+      background: var(--tc-surface-2);
+      color: var(--tc-ink);
+      border-color: var(--tc-line-2);
+    }
+    .ss-pane[hidden] { display: none !important; }
+    .ss-pane { animation: ct-rise-in 240ms cubic-bezier(0.22, 1, 0.36, 1) both; }
+    .ss-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+    }
+    @media (max-width: 820px) { .ss-grid { grid-template-columns: 1fr; } }
+    .ss-field { display: grid; gap: 6px; }
+    .ss-field--full { grid-column: 1 / -1; }
+    .ss-label { font-size: 13px; font-weight: 620; color: var(--tc-ink); }
+    .ss-help { font-size: 12px; color: var(--tc-ink-3); }
+    .ss-input, .ss-select {
+      width: 100%;
+      height: 41px;
+      padding: 0 13px;
+      border-radius: 10px;
+      border: 1px solid var(--tc-line-2);
+      background: var(--tc-surface-2);
+      color: var(--tc-ink);
+      font-size: 13.8px;
+      font-family: inherit;
+      transition: border-color 150ms ease, box-shadow 150ms ease, background-color 150ms ease;
+    }
+    .ss-input:focus, .ss-select:focus {
+      outline: none;
+      border-color: var(--ct-accent);
+      background: var(--tc-surface);
+      box-shadow: 0 0 0 3px var(--ct-accent-soft);
+    }
+    .ss-input-group { display: flex; align-items: stretch; }
+    .ss-input-group .ss-input { border-radius: 10px 0 0 10px; border-right: 0; }
+    .ss-input-group span {
+      display: inline-grid;
+      place-items: center;
+      padding: 0 13px;
+      border-radius: 0 10px 10px 0;
+      border: 1px solid var(--tc-line-2);
+      background: var(--tc-surface);
+      color: var(--tc-ink-3);
+      font-size: 12.5px;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    .ss-foot {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+      padding: 16px 22px;
+      border-top: 1px solid var(--tc-line);
+      background: var(--tc-surface-2);
+    }
+    .ss-presets {
+      padding: 16px 18px;
+      border-radius: 12px;
+      border: 1px solid var(--tc-line-2);
+      background: var(--tc-surface-2);
+      margin-bottom: 18px;
+    }
+    .ss-preset-btns { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+    .ss-table th {
+      text-align: left;
+      height: 40px;
+      padding: 0 16px;
+      font-size: 11px;
+      font-weight: 650;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--tc-ink-3);
+      white-space: nowrap;
+    }
+    .ss-table td { padding: 12px 16px; vertical-align: middle; }
+    .ss-table th:last-child, .ss-table td:last-child { text-align: right; }
+    .ss-table th.is-center, .ss-table td.is-center { text-align: center; }
+
+    /* Grading Spectrum */
+    .ss-spectrum-wrap {
+      padding: 16px 18px;
+      border-radius: 12px;
+      border: 1px solid var(--tc-line-2);
+      background: var(--tc-surface-2);
+      margin-bottom: 18px;
+    }
+    .ss-spectrum {
+      height: 34px;
+      width: 100%;
+      display: flex;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid var(--tc-line);
+    }
+    .ss-spectrum-seg {
+      height: 100%;
+      display: grid;
+      place-items: center;
+      color: #FFFFFF;
+      font-weight: 700;
+      font-size: 11.5px;
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+      transition: width 260ms ease;
+    }
+    .ss-tier-head, .ss-tier-row {
+      display: grid;
+      grid-template-columns: 82px 96px 96px 80px 1fr 56px 36px;
+      gap: 10px;
+      align-items: center;
+    }
+    .ss-tier-head {
+      padding: 0 12px 8px;
+      font-size: 11px;
+      font-weight: 650;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--tc-ink-3);
+    }
+    .ss-tier-row {
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1px solid var(--tc-line-2);
+      background: var(--tc-surface-2);
+      margin-bottom: 8px;
+    }
+    .ss-tier-row input {
+      height: 34px;
+      padding: 0 9px;
+      border-radius: 7px;
+      border: 1px solid var(--tc-line-2);
+      background: var(--tc-surface);
+      color: var(--tc-ink);
+      font-size: 13px;
+      width: 100%;
+    }
+    .ss-tier-row input[type="color"] { padding: 2px 4px; cursor: pointer; }
+    @media (max-width: 820px) {
+      .ss-tier-head { display: none; }
+      .ss-tier-row { grid-template-columns: repeat(3, 1fr); }
+    }
+    .ss-sim-box {
+      margin-top: 18px;
+      padding: 16px 18px;
+      border-radius: 12px;
+      border: 1px solid var(--tc-line-2);
+      background: var(--tc-surface-2);
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+    .ss-sim-result {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      padding: 8px 14px;
+      border-radius: 10px;
+      border: 1px solid var(--tc-line-2);
+      background: var(--tc-surface);
+    }
+    .ss-sim-badge {
+      padding: 4px 12px;
+      border-radius: 7px;
+      color: #FFFFFF;
+      font-family: var(--ct-mono);
+      font-weight: 700;
+      font-size: 14px;
+    }
+
+    /* Database Health & Legacy Migration */
+    .ss-db-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    @media (max-width: 780px) { .ss-db-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+    .ss-db-stat {
+      padding: 14px 16px;
+      border-radius: 11px;
+      border: 1px solid var(--tc-line);
+      background: var(--tc-surface-2);
+    }
+    .ss-db-stat small { display: block; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--tc-ink-3); font-weight: 650; }
+    .ss-db-stat strong { display: block; margin-top: 4px; font-size: 19px; font-family: var(--ct-mono); color: var(--tc-ink); font-weight: 700; }
+    .legacy-dropzone {
+      border: 1.5px dashed var(--tc-line-2);
+      border-radius: 14px;
+      padding: 28px 20px;
+      text-align: center;
+      background: var(--tc-surface-2);
+      cursor: pointer;
+      transition: border-color 160ms ease, background-color 160ms ease;
+    }
+    .legacy-dropzone:hover, .legacy-dropzone.is-drag {
+      border-color: var(--ct-accent);
+      background: var(--ct-accent-soft);
+    }
+    .legacy-stat-grid {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+    @media (max-width: 780px) { .legacy-stat-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+    .legacy-stat-box {
+      padding: 12px 10px;
+      border-radius: 10px;
+      background: var(--tc-surface);
+      border: 1px solid var(--tc-line);
+      text-align: center;
+    }
+    .legacy-stat-box b { display: block; font-size: 19px; font-family: var(--ct-mono); font-weight: 720; color: var(--tc-ink); }
+    .legacy-stat-box span { display: block; font-size: 11.5px; color: var(--tc-ink-3); margin-top: 2px; }
+    .ss-code {
+      color: var(--tc-ink);
+      background: var(--tc-surface);
+      border: 1px solid var(--tc-line-2);
+      padding: 1px 6px;
+      border-radius: 6px;
+      font-family: var(--ct-mono);
+      font-size: 0.88em;
+    }
+  </style>
 </head>
-<body class="ct-app ct-bs ad-studio">
+<body class="ct-app ad-studio">
 {{ admin_shell_start(active='settings', crumb='School Settings') }}
 
-    <header class="tc-head">
-        <div class="tc-head__txt">
-            <span class="tc-eyebrow">Institution Configuration</span>
-            <h1>School Settings &amp; Grading Schemes</h1>
-            <p>Manage institutional branding, active academic calendar, class presets, custom grading tiers, and result release policies.</p>
+  <header class="tc-head ct-animate-rise">
+    <div class="tc-head__txt">
+      <h1>School Settings &amp; Grading</h1>
+      <p>Configure school identity, academic calendar, class naming conventions, grading schemes, result visibility, and SQLite health.</p>
+    </div>
+    <div class="tc-head__actions">
+      <a href="/admin" class="tc-btn tc-btn--secondary">{{ ico('i-arrow-left', 'ct-ico--sm') }}Dashboard</a>
+    </div>
+  </header>
+
+  <!-- 5-Tab Bar -->
+  <nav class="ss-tabs" role="tablist" aria-label="Settings sections">
+    <button type="button" class="ss-tab is-active" id="general-tab" data-ss-pane="tab-general" onclick="switchSsTab('tab-general', this)">{{ ico('i-home', 'ct-ico--sm') }}Identity &amp; Session</button>
+    <button type="button" class="ss-tab" id="classes-tab" data-ss-pane="tab-classes" onclick="switchSsTab('tab-classes', this)">{{ ico('i-layers', 'ct-ico--sm') }}Class Presets</button>
+    <button type="button" class="ss-tab" id="grading-tab" data-ss-pane="tab-grading" onclick="switchSsTab('tab-grading', this)">{{ ico('i-trophy', 'ct-ico--sm') }}Grading Studio</button>
+    <button type="button" class="ss-tab" id="results-tab" data-ss-pane="tab-results" onclick="switchSsTab('tab-results', this)">{{ ico('i-eye', 'ct-ico--sm') }}Result Release</button>
+    <button type="button" class="ss-tab" id="migration-tab" data-ss-pane="tab-migration" onclick="switchSsTab('tab-migration', this)">{{ ico('i-server', 'ct-ico--sm') }}Database &amp; Import</button>
+  </nav>
+
+  <!-- TAB 1: IDENTITY & SESSION -->
+  <section class="tc-card ss-pane" id="tab-general">
+    <div class="tc-card__head">
+      <div class="tc-card__title">
+        <h2>Institution Profile &amp; Academic Calendar</h2>
+        <p>Updates school branding across the console, student portal, and printed transcripts</p>
+      </div>
+    </div>
+    <form id="generalSettingsForm" onsubmit="event.preventDefault(); saveGeneralSettings(document.getElementById('saveGeneralBtn'));">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div style="padding:22px">
+        <div class="ss-grid">
+          <div class="ss-field">
+            <label class="ss-label" for="ssSchoolName">School / Institution Name</label>
+            <input id="ssSchoolName" type="text" name="school_name" class="ss-input" value="{{ school_settings.school_name or 'CogniTara High School' }}" required>
+          </div>
+          <div class="ss-field">
+            <label class="ss-label" for="ssMotto">Motto / Tagline</label>
+            <input id="ssMotto" type="text" name="school_motto" class="ss-input" value="{{ school_settings.school_motto or 'Knowledge, Integrity, Excellence' }}">
+          </div>
+          <div class="ss-field">
+            <label class="ss-label" for="ssSession">Active Academic Session</label>
+            <input id="ssSession" type="text" name="academic_session" class="ss-input" value="{{ school_settings.academic_session or '2026/2027' }}" placeholder="e.g. 2026/2027" required>
+          </div>
+          <div class="ss-field">
+            <label class="ss-label" for="ssTerm">Current Academic Term</label>
+            <select id="ssTerm" name="current_term" class="ss-select">
+              <option value="First Term" {% if school_settings.current_term == 'First Term' %}selected{% endif %}>First Term</option>
+              <option value="Second Term" {% if school_settings.current_term == 'Second Term' %}selected{% endif %}>Second Term</option>
+              <option value="Third Term" {% if school_settings.current_term == 'Third Term' %}selected{% endif %}>Third Term</option>
+            </select>
+          </div>
+          <div class="ss-field">
+            <label class="ss-label" for="ssEmail">Official Contact Email</label>
+            <input id="ssEmail" type="email" name="school_email" class="ss-input" value="{{ school_settings.school_email or '' }}" placeholder="admin@school.edu">
+          </div>
+          <div class="ss-field">
+            <label class="ss-label" for="ssPhone">Official Contact Phone</label>
+            <input id="ssPhone" type="text" name="school_phone" class="ss-input" value="{{ school_settings.school_phone or '' }}" placeholder="+234 800 000 0000">
+          </div>
+          <div class="ss-field ss-field--full">
+            <label class="ss-label" for="ssAddress">School Physical Address</label>
+            <input id="ssAddress" type="text" name="school_address" class="ss-input" value="{{ school_settings.school_address or '' }}" placeholder="Campus address">
+          </div>
+          <div class="ss-field">
+            <label class="ss-label" for="ssProfile">Default Integrity Profile</label>
+            <select id="ssProfile" name="anti_cheating_profile" class="ss-select">
+              <option value="low" {% if school_settings.anti_cheating_profile == 'low' %}selected{% endif %}>Low — 5 violations, tab switches only</option>
+              <option value="medium" {% if school_settings.anti_cheating_profile == 'medium' or not school_settings.anti_cheating_profile %}selected{% endif %}>Medium — 3 violations, tab switch &amp; blur</option>
+              <option value="high" {% if school_settings.anti_cheating_profile == 'high' %}selected{% endif %}>High — 2 violations, strict lockdown</option>
+            </select>
+          </div>
+          <div class="ss-field">
+            <label class="ss-label" for="ssMaxWarn">Default Maximum Exam Warnings</label>
+            <div class="ss-input-group">
+              <input id="ssMaxWarn" type="number" name="max_warnings" class="ss-input" value="{{ school_settings.max_warnings or 5 }}" min="1" max="20" required>
+              <span>Violations</span>
+            </div>
+            <span class="ss-help">Auto-submits an exam once a student reaches this violation count.</span>
+          </div>
+          <div class="ss-field">
+            <label class="ss-label" for="ssDefVis">Default Result Release Mode</label>
+            <select id="ssDefVis" name="default_result_visibility" class="ss-select">
+              <option value="immediate" {% if school_settings.default_result_visibility == 'immediate' %}selected{% endif %}>Immediate — Show score on submission</option>
+              <option value="withheld" {% if school_settings.default_result_visibility == 'withheld' %}selected{% endif %}>Withheld — Wait for admin release</option>
+            </select>
+          </div>
         </div>
-        <div class="tc-head__actions">
-            <a href="/admin" class="tc-btn tc-btn--secondary">{{ ico('i-arrow-left', 'ct-ico--sm') }}Dashboard</a>
+      </div>
+      <div class="ss-foot">
+        <span class="ss-help">Saved changes immediately update school branding and default exam policies.</span>
+        <button type="submit" id="saveGeneralBtn" class="tc-btn tc-btn--primary">{{ ico('i-save', 'ct-ico--sm') }}Save School Settings</button>
+      </div>
+    </form>
+  </section>
+
+  <!-- TAB 2: CLASS NAMING PRESETS -->
+  <section class="tc-card ss-pane" id="tab-classes" hidden>
+    <div class="tc-card__head">
+      <div class="tc-card__title">
+        <h2>Class Hierarchy &amp; Presets</h2>
+        <p>Apply a national curriculum preset or add custom class levels</p>
+      </div>
+      <div class="tc-card__tools">
+        <button type="button" class="tc-btn tc-btn--primary tc-btn--sm" onclick="openAddClassModal()">{{ ico('i-plus', 'ct-ico--xs') }}Add Custom Class</button>
+      </div>
+    </div>
+    <div style="padding:22px 22px 12px">
+      <div class="ss-presets">
+        <strong style="font-size:12px;text-transform:uppercase;letter-spacing:0.04em;color:var(--tc-ink-3)">One-Click Curriculum Presets</strong>
+        <div class="ss-preset-btns">
+          <button type="button" class="tc-btn tc-btn--secondary tc-btn--sm" onclick="applyClassPreset('nerdc')">Nigerian 6-3-3-4 (Primary 1–6, JSS 1–3, SSS 1–3)</button>
+          <button type="button" class="tc-btn tc-btn--secondary tc-btn--sm" onclick="applyClassPreset('british')">British System (Year 1 – Year 13)</button>
+          <button type="button" class="tc-btn tc-btn--secondary tc-btn--sm" onclick="applyClassPreset('american')">American K-12 (Grade 1 – Grade 12)</button>
         </div>
-    </header>
+      </div>
+    </div>
+    <div class="tc-table-wrap ct-table-wrap">
+      <table class="tc-table ss-table" id="classesTable" data-ct-paginate="10" data-ct-paginate-sizes="10,25,50">
+        <thead>
+          <tr>
+            <th style="width:90px">Order</th>
+            <th>Class Name</th>
+            <th>Category</th>
+            <th class="is-center" style="width:110px">Status</th>
+            <th style="width:100px;text-align:right">Action</th>
+          </tr>
+        </thead>
+        <tbody id="classesTableBody">
+          {% for c in classes %}
+          <tr id="class-row-{{ c.id }}">
+            <td class="tc-mono" style="color:var(--tc-ink-3)">{{ c.display_order }}</td>
+            <td style="font-weight:650">{{ c.name }}</td>
+            <td><span class="tc-pill">{{ c.level_category or 'Secondary' }}</span></td>
+            <td class="is-center">
+              {% if c.active %}<span class="tc-pill tc-pill--ok"><i class="tc-dot"></i>Active</span>
+              {% else %}<span class="tc-pill">Inactive</span>{% endif %}
+            </td>
+            <td>
+              <button type="button" class="tc-btn tc-btn--ghost tc-btn--icon" style="color:var(--tc-bad)" onclick="deleteClass({{ c.id }}, {{ c.name|tojson|forceescape }})" title="Remove class" aria-label="Remove {{ c.name }}">{{ ico('i-trash', 'ct-ico--sm') }}</button>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
 
-    <main class="container pb-5">
-        <ul class="nav nav-tabs-custom" id="settingsTabs" role="tablist">
-            <li class="nav-item flex-fill" role="presentation">
-                <button class="nav-link active" id="general-tab" data-bs-toggle="tab" data-bs-target="#tab-general" type="button" role="tab">
-                    <i class="fas fa-school me-2"></i> School Identity & Session
-                </button>
-            </li>
-            <li class="nav-item flex-fill" role="presentation">
-                <button class="nav-link" id="classes-tab" data-bs-toggle="tab" data-bs-target="#tab-classes" type="button" role="tab">
-                    <i class="fas fa-layer-group me-2"></i> Class Naming Presets
-                </button>
-            </li>
-            <li class="nav-item flex-fill" role="presentation">
-                <button class="nav-link" id="grading-tab" data-bs-toggle="tab" data-bs-target="#tab-grading" type="button" role="tab">
-                    <i class="fas fa-award me-2"></i> Grading Scheme Studio
-                </button>
-            </li>
-            <li class="nav-item flex-fill" role="presentation">
-                <button class="nav-link" id="results-tab" data-bs-toggle="tab" data-bs-target="#tab-results" type="button" role="tab">
-                    <i class="fas fa-eye-slash me-2"></i> Result Release Policies
-                </button>
-            </li>
-            <li class="nav-item flex-fill" role="presentation">
-                <button class="nav-link" id="migration-tab" data-bs-toggle="tab" data-bs-target="#tab-migration" type="button" role="tab">
-                    <i class="fas fa-database me-2"></i> Import Former Database
-                </button>
-            </li>
-        </ul>
-
-        <div class="tab-content" id="settingsTabContent">
-            <!-- TAB 1: GENERAL & ACADEMIC SESSION -->
-            <div class="tab-pane fade show active" id="tab-general" role="tabpanel">
-                <div class="settings-card p-4">
-                    <h4 class="fw-bold mb-3"><i class="fas fa-sliders-h text-primary me-2"></i> Institution Profile & Calendar</h4>
-                    <p class="text-muted small mb-4">Configure school identity, active academic session, and system-wide examination defaults.</p>
-
-                    <form id="generalSettingsForm">
-                        <div class="row g-3">
-                            <div class="col-md-6">
-                                <label class="form-label-custom">School / Institution Name</label>
-                                <input type="text" name="school_name" class="form-control-custom" value="{{ school_settings.school_name or 'CogniTara High School' }}" required>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label-custom">Motto / Tagline</label>
-                                <input type="text" name="school_motto" class="form-control-custom" value="{{ school_settings.school_motto or 'Knowledge, Integrity, Excellence' }}">
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label-custom">Active Academic Session</label>
-                                <input type="text" name="academic_session" class="form-control-custom" value="{{ school_settings.academic_session or '2026/2027' }}" placeholder="e.g. 2026/2027" required>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label-custom">Current Academic Term</label>
-                                <select name="current_term" class="form-select-custom">
-                                    <option value="First Term" {% if school_settings.current_term == 'First Term' %}selected{% endif %}>First Term</option>
-                                    <option value="Second Term" {% if school_settings.current_term == 'Second Term' %}selected{% endif %}>Second Term</option>
-                                    <option value="Third Term" {% if school_settings.current_term == 'Third Term' %}selected{% endif %}>Third Term</option>
-                                </select>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label-custom">Official Contact Email</label>
-                                <input type="email" name="school_email" class="form-control-custom" value="{{ school_settings.school_email or '' }}" placeholder="admin@school.edu">
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label-custom">Official Contact Phone</label>
-                                <input type="text" name="school_phone" class="form-control-custom" value="{{ school_settings.school_phone or '' }}" placeholder="+234 800 000 0000">
-                            </div>
-                            <div class="col-12">
-                                <label class="form-label-custom">School Physical Address</label>
-                                <input type="text" name="school_address" class="form-control-custom" value="{{ school_settings.school_address or '' }}">
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label-custom">Default Examination Integrity Profile</label>
-                                <select name="anti_cheating_profile" class="form-select-custom">
-                                    <option value="low" {% if school_settings.anti_cheating_profile == 'low' %}selected{% endif %}>Low (5 max violations, tab switches only)</option>
-                                    <option value="medium" {% if school_settings.anti_cheating_profile == 'medium' or not school_settings.anti_cheating_profile %}selected{% endif %}>Medium (3 max violations, tab switch & blur)</option>
-                                    <option value="high" {% if school_settings.anti_cheating_profile == 'high' %}selected{% endif %}>High (2 max violations, devtools, copy/paste locked)</option>
-                                </select>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label-custom">Default Maximum Exam Warnings</label>
-                                <div class="input-group">
-                                    <input type="number" name="max_warnings" class="form-control-custom" value="{{ school_settings.max_warnings or 5 }}" min="1" max="20" required>
-                                    <span class="input-group-text">Violations</span>
-                                </div>
-                                <small class="text-muted d-block mt-1">Exams automatically lock and submit when a student reaches this threshold.</small>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label-custom">Default Result Release Mode</label>
-                                <select name="default_result_visibility" class="form-select-custom">
-                                    <option value="immediate" {% if school_settings.default_result_visibility == 'immediate' %}selected{% endif %}>Immediate (Disclose score upon submission)</option>
-                                    <option value="withheld" {% if school_settings.default_result_visibility == 'withheld' %}selected{% endif %}>Withheld (Results locked until official release)</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <div class="mt-4 pt-3 border-top d-flex justify-content-end">
-                            <button type="button" class="btn-primary-custom" onclick="saveGeneralSettings(this)">
-                                <i class="fas fa-save"></i> Save School Settings
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-
-            <!-- TAB 2: CLASS NAMING PRESETS -->
-            <div class="tab-pane fade" id="tab-classes" role="tabpanel">
-                <div class="settings-card p-4">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <div>
-                            <h4 class="fw-bold mb-1"><i class="fas fa-chalkboard-teacher text-primary me-2"></i> Standard Class Conventions</h4>
-                            <p class="text-muted small mb-0">Switch class structure between standard educational formats or configure custom levels.</p>
-                        </div>
-                        <button class="btn btn-outline-primary btn-sm" style="border-radius:10px;" onclick="openAddClassModal()">
-                            <i class="fas fa-plus me-1"></i> Add Custom Class
-                        </button>
-                    </div>
-
-                    <div class="p-3 bg-light rounded-3 mb-4 border">
-                        <span class="fw-bold small text-muted d-block mb-2">1-CLICK SYSTEM PRESETS:</span>
-                        <div class="d-flex flex-wrap gap-2">
-                            <button type="button" class="preset-badge-btn" onclick="applyClassPreset('nerdc')">
-                                <i class="fas fa-flag text-success"></i> Nigerian 6-3-3-4 (Primary 1–6, JSS 1–3, SSS 1–3)
-                            </button>
-                            <button type="button" class="preset-badge-btn" onclick="applyClassPreset('british')">
-                                <i class="fas fa-graduation-cap text-primary"></i> British System (Year 1 through Year 13)
-                            </button>
-                            <button type="button" class="preset-badge-btn" onclick="applyClassPreset('american')">
-                                <i class="fas fa-school text-info"></i> American K-12 (Grade 1 through Grade 12)
-                            </button>
-                        </div>
-                    </div>
-
-                    <div class="table-responsive">
-                        <table class="table table-hover align-middle">
-                            <thead class="table-light">
-                                <tr>
-                                    <th style="width: 80px;">Order</th>
-                                    <th>Class Name</th>
-                                    <th>Level Category</th>
-                                    <th>Status</th>
-                                    <th style="width: 100px; text-align: right;">Action</th>
-                                </tr>
-                            </thead>
-                            <tbody id="classesTableBody">
-                                {% for c in classes %}
-                                <tr id="class-row-{{ c.id }}">
-                                    <td><span class="badge bg-secondary">{{ c.display_order }}</span></td>
-                                    <td class="fw-bold">{{ c.name }}</td>
-                                    <td><span class="badge bg-light text-dark border">{{ c.level_category or 'Secondary' }}</span></td>
-                                    <td>
-                                        {% if c.active %}
-                                        <span class="badge bg-success">Active</span>
-                                        {% else %}
-                                        <span class="badge bg-secondary">Inactive</span>
-                                        {% endif %}
-                                    </td>
-                                    <td style="text-align: right;">
-                                        <button class="btn btn-sm btn-outline-danger" onclick="deleteClass({{ c.id }}, '{{ c.name }}')">
-                                            <i class="fas fa-trash-alt"></i>
-                                        </button>
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-
-            <!-- TAB 3: GRADING SCHEME STUDIO -->
-            <div class="tab-pane fade" id="tab-grading" role="tabpanel">
-                <div class="settings-card p-4">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <div>
-                            <h4 class="fw-bold mb-1"><i class="fas fa-award text-primary me-2"></i> Grading Scheme Studio</h4>
-                            <p class="text-muted small mb-0">Define grade bands with mathematical contiguity and complete [0, 100]% coverage validation.</p>
-                        </div>
-                        <div class="d-flex gap-2">
-                            <button class="btn btn-outline-secondary btn-sm" onclick="loadSchemePreset('waec')">Load WAEC 9-Point</button>
-                            <button class="btn btn-outline-secondary btn-sm" onclick="loadSchemePreset('letter')">Load Letter (A–F)</button>
-                        </div>
-                    </div>
-
-                    <!-- Visual Spectrum Bar -->
-                    <div class="grading-spectrum-wrap">
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                            <span class="small fw-bold text-muted">VISUAL COVERAGE SPECTRUM (0% to 100%)</span>
-                            <span id="spectrumStatus" class="badge bg-success">100% Contiguous Coverage</span>
-                        </div>
-                        <div class="spectrum-bar-container" id="spectrumBar"></div>
-                    </div>
-
-                    <!-- Scheme Configuration Form -->
-                    <form id="gradingSchemeForm">
-                        <input type="hidden" name="scheme_id" id="schemeId" value="{{ school_settings.active_grading_scheme_id or '' }}">
-                        <div class="row g-3 mb-3">
-                            <div class="col-md-6">
-                                <label class="form-label-custom">Grading Scheme Title</label>
-                                <input type="text" id="schemeName" name="name" class="form-control-custom" value="WAEC 9-Point Scale" required>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label-custom">Description</label>
-                                <input type="text" id="schemeDesc" name="description" class="form-control-custom" value="Standard secondary examination scale">
-                            </div>
-                        </div>
-
-                        <!-- Rule Rows Header -->
-                        <div class="d-none d-md-grid text-muted small fw-bold mb-2" style="grid-template-columns: 80px 100px 100px 80px 1fr 60px 40px; gap: 10px; padding: 0 12px;">
-                            <div>Grade</div>
-                            <div>Min %</div>
-                            <div>Max %</div>
-                            <div>Point</div>
-                            <div>Official Remark</div>
-                            <div>Color</div>
-                            <div></div>
-                        </div>
-
-                        <!-- Rule Rows Container -->
-                        <div id="rulesContainer"></div>
-
-                        <div class="d-flex justify-content-between align-items-center mt-3">
-                            <button type="button" class="btn btn-outline-primary btn-sm" onclick="addNewTierRule()">
-                                <i class="fas fa-plus me-1"></i> Add Tier Rule
-                            </button>
-                            <button type="button" class="btn-primary-custom" onclick="saveGradingScheme(this)">
-                                <i class="fas fa-check-circle"></i> Validate & Save Scheme
-                            </button>
-                        </div>
-                    </form>
-
-                    <!-- Real-Time Simulator -->
-                    <div class="live-calc-box">
-                        <h6 class="fw-bold mb-2"><i class="fas fa-calculator text-primary me-2"></i> Live Grade Preview Simulator</h6>
-                        <p class="small text-muted mb-3">Test any percentage score to verify how your scheme resolves grades in real time.</p>
-                        <div class="row align-items-center g-3">
-                            <div class="col-md-4">
-                                <div class="input-group">
-                                    <input type="number" id="simScoreInput" class="form-control" value="74.5" step="0.1" min="0" max="100" oninput="runGradeSimulator()">
-                                    <span class="input-group-text">%</span>
-                                </div>
-                            </div>
-                            <div class="col-md-8">
-                                <div class="p-2 bg-white rounded-3 border d-flex align-items-center gap-3">
-                                    <span class="text-muted small">Resolved Output:</span>
-                                    <span id="simGradeBadge" class="badge" style="background:#059669; font-size:16px; padding:6px 14px;">B2</span>
-                                    <span id="simRemarkText" class="fw-bold">Very Good (3.5 GP)</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- TAB 4: RESULT RELEASE POLICIES -->
-            <div class="tab-pane fade" id="tab-results" role="tabpanel">
-                <div class="settings-card p-4">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <div>
-                            <h4 class="fw-bold mb-1"><i class="fas fa-lock text-primary me-2"></i> Result Visibility & Disclosure Control</h4>
-                            <p class="text-muted small mb-0">Control whether students see examination grades immediately upon completion or wait for official administrative release.</p>
-                        </div>
-                        <div class="d-flex gap-2">
-                            <button class="btn btn-success btn-sm" onclick="batchReleaseResults('release')">
-                                <i class="fas fa-unlock me-1"></i> Release All Selected
-                            </button>
-                            <button class="btn btn-warning btn-sm" onclick="batchReleaseResults('withhold')">
-                                <i class="fas fa-lock me-1"></i> Withhold All Selected
-                            </button>
-                        </div>
-                    </div>
-
-                    <div class="table-responsive">
-                        <table class="table table-hover align-middle">
-                            <thead class="table-light">
-                                <tr>
-                                    <th style="width: 40px;"><input type="checkbox" id="selectAllExams" onchange="toggleSelectAllExams(this)"></th>
-                                    <th>Class</th>
-                                    <th>Exam Title</th>
-                                    <th>Subject Tag</th>
-                                    <th>Completed Attempts</th>
-                                    <th>Current Visibility</th>
-                                    <th style="width: 140px; text-align: right;">Action</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for ex in exams %}
-                                <tr>
-                                    <td><input type="checkbox" class="exam-select-box" value="{{ ex.id }}"></td>
-                                    <td><span class="badge bg-secondary">{{ ex.class }}</span></td>
-                                    <td class="fw-bold">{{ ex.name }}</td>
-                                    <td><span class="badge bg-light text-dark border">{{ ex.subject_tag or 'General' }}</span></td>
-                                    <td><span class="badge bg-info text-dark">{{ ex.total_completed }} submitted</span></td>
-                                    <td>
-                                        {% if ex.results_released %}
-                                        <span class="badge bg-success"><i class="fas fa-unlock me-1"></i> Released</span>
-                                        {% else %}
-                                        <span class="badge bg-warning text-dark"><i class="fas fa-lock me-1"></i> Withheld</span>
-                                        {% endif %}
-                                    </td>
-                                    <td style="text-align: right;">
-                                        {% if ex.results_released %}
-                                        <button class="btn btn-sm btn-outline-warning" onclick="toggleExamResultRelease({{ ex.id }}, 'withhold')">
-                                            Withhold
-                                        </button>
-                                        {% else %}
-                                        <button class="btn btn-sm btn-outline-success" onclick="toggleExamResultRelease({{ ex.id }}, 'release')">
-                                            Release
-                                        </button>
-                                        {% endif %}
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-
-            <!-- TAB 5: IMPORT FORMER DATABASE (LEGACY EXAM.DB MIGRATION) -->
-            <div class="tab-pane fade" id="tab-migration" role="tabpanel">
-                <div class="settings-card p-4">
-                    <h4 class="fw-bold mb-2"><i class="fas fa-database text-primary me-2"></i> Import Former School Database (exam.db)</h4>
-                    <p class="text-muted small mb-4">Upgrading from an older CogniTara installation? Select your former <code>exam.db</code> file to inspect its contents and migrate all students, teachers, exams, questions, scores, and Common Entrance records automatically. A verified safety backup of your current database is saved first, and your Desktop licence remains intact.</p>
-
-                    <div id="adminLegacyDropzone" class="legacy-dropzone" role="button" tabindex="0">
-                        <input type="file" id="adminLegacyFileInput" accept=".db,.sqlite,.sqlite3" style="display:none">
-                        <div class="mb-2" style="font-size:28px;color:var(--ct-primary)"><i class="fas fa-cloud-upload-alt"></i></div>
-                        <div class="fw-bold mb-1" style="color:var(--ct-ink)">Select or drop your former <code>exam.db</code> file</div>
-                        <div class="small" style="color:var(--ct-ink-3)">Supports SQLite database files (.db, .sqlite, .sqlite3). Nothing is modified until you review and confirm.</div>
-                        <button type="button" class="btn btn-primary btn-sm mt-3" id="adminLegacyBrowseBtn">Choose exam.db…</button>
-                    </div>
-
-                    <div id="adminLegacyError" class="alert alert-danger mt-3 mb-0 d-none" role="alert"></div>
-
-                    <div id="adminLegacyPreview" class="mt-4 p-3 rounded-3 d-none" style="background:var(--ct-surface-2);border:1px solid var(--ct-line-2)">
-                        <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-3">
-                            <div>
-                                <div class="text-uppercase fw-bold" style="font-size:11px;letter-spacing:.06em;color:var(--ct-primary)">SQLite Integrity Verified</div>
-                                <h5 class="fw-bold mb-0 mt-1" id="adminLegSchoolName" style="color:var(--ct-ink)">Legacy CogniTara School</h5>
-                                <div class="small text-muted" id="adminLegFileMeta">exam.db</div>
-                            </div>
-                            <span class="legacy-ready-badge"><i class="fas fa-check-circle"></i> Ready to migrate</span>
-                        </div>
-
-                        <div class="legacy-stat-grid mb-3">
-                            <div class="legacy-stat-box"><b id="adminLegStudents">0</b><span>Students</span></div>
-                            <div class="legacy-stat-box"><b id="adminLegTeachers">0</b><span>Teachers</span></div>
-                            <div class="legacy-stat-box"><b id="adminLegExams">0</b><span>Exams</span></div>
-                            <div class="legacy-stat-box"><b id="adminLegQuestions">0</b><span>Questions</span></div>
-                            <div class="legacy-stat-box"><b id="adminLegScores">0</b><span>Results</span></div>
-                            <div class="legacy-stat-box"><b id="adminLegCe">0</b><span>CE Records</span></div>
-                        </div>
-
-                        <ul id="adminLegNotes" class="small mb-3 ps-3" style="color:var(--ct-ink-2);line-height:1.55"></ul>
-
-                        <div class="form-check form-switch mb-3 pt-2" style="border-top:1px solid var(--ct-line)">
-                            <input class="form-check-input" type="checkbox" id="adminLegacyPreserveAdmin" checked>
-                            <label class="form-check-label fw-semibold" for="adminLegacyPreserveAdmin" style="color:var(--ct-ink)">
-                                Keep my current Admin login &amp; Desktop recovery codes
-                            </label>
-                            <div class="small text-muted">Recommended so your current session and recovery codes remain active alongside imported accounts.</div>
-                        </div>
-
-                        <div class="d-flex justify-content-end gap-2">
-                            <button type="button" class="btn btn-outline-secondary btn-sm" id="adminLegacyCancelBtn">Cancel</button>
-                            <button type="button" class="btn btn-primary btn-sm" id="adminLegacyImportBtn">
-                                <i class="fas fa-file-import me-1"></i> Import &amp; Upgrade Database
-                            </button>
-                        </div>
-                    </div>
-
-                    <div id="adminLegacySuccess" class="alert alert-success mt-3 mb-0 d-none" role="status">
-                        <div class="fw-bold mb-1" id="adminLegDoneTitle">Former database imported successfully!</div>
-                        <div class="small mb-2" id="adminLegDoneMeta"></div>
-                        <a href="/admin" class="btn btn-success btn-sm">Open Admin Dashboard</a>
-                    </div>
-                </div>
-            </div>
+  <!-- TAB 3: GRADING SCHEME STUDIO -->
+  <section class="tc-card ss-pane" id="tab-grading" hidden>
+    <div class="tc-card__head">
+      <div class="tc-card__title">
+        <h2>Grading Scheme Studio</h2>
+        <p>Contiguous 0–100% grade bands automatically applied when scoring examinations</p>
+      </div>
+      <div class="tc-card__tools">
+        <button type="button" class="tc-btn tc-btn--secondary tc-btn--sm" onclick="loadSchemePreset('waec')">WAEC 9-Point</button>
+        <button type="button" class="tc-btn tc-btn--secondary tc-btn--sm" onclick="loadSchemePreset('letter')">Letter (A–F)</button>
+      </div>
+    </div>
+    <div style="padding:22px">
+      <div class="ss-spectrum-wrap">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;gap:10px;flex-wrap:wrap">
+          <span style="font-size:11.5px;font-weight:650;text-transform:uppercase;letter-spacing:0.04em;color:var(--tc-ink-3)">Coverage Spectrum (0% to 100%)</span>
+          <span id="spectrumStatus" class="tc-pill tc-pill--ok">100% Contiguous</span>
         </div>
-    </main>
+        <div class="ss-spectrum" id="spectrumBar"></div>
+      </div>
 
-    <script src="{{ url_for('static', filename='vendor/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
-    <script src="{{ url_for('static', filename='vendor/sweetalert2/sweetalert2.all.min.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/cognitara-actions.js') }}"></script>
+      <form id="gradingSchemeForm" onsubmit="event.preventDefault(); saveGradingScheme(document.getElementById('saveGradingBtn'));">
+        <input type="hidden" name="scheme_id" id="schemeId" value="{{ school_settings.active_grading_scheme_id or '' }}">
+        <div class="ss-grid" style="margin-bottom:18px">
+          <div class="ss-field">
+            <label class="ss-label" for="schemeName">Scheme Title</label>
+            <input type="text" id="schemeName" name="name" class="ss-input" value="WAEC 9-Point Scale" required>
+          </div>
+          <div class="ss-field">
+            <label class="ss-label" for="schemeDesc">Description</label>
+            <input type="text" id="schemeDesc" name="description" class="ss-input" value="Standard secondary examination scale">
+          </div>
+        </div>
 
-    <script>
-    // Initial schemes state from server
-    const SCHEMES_CACHE = {{ schemes|tojson }};
-    let currentRules = [];
+        <div class="ss-tier-head">
+          <div>Grade</div><div>Min %</div><div>Max %</div><div>Point</div><div>Remark</div><div>Color</div><div></div>
+        </div>
+        <div id="rulesContainer"></div>
 
-    // Predefined Scheme Presets
-    const PRESET_WAEC = [
-        { grade_label: 'A1', min_percentage: 75, max_percentage: 100, grade_point: 4.0, remark: 'Excellent', badge_color: '#059669' },
-        { grade_label: 'B2', min_percentage: 70, max_percentage: 75, grade_point: 3.5, remark: 'Very Good', badge_color: '#10b981' },
-        { grade_label: 'B3', min_percentage: 65, max_percentage: 70, grade_point: 3.0, remark: 'Good', badge_color: '#34d399' },
-        { grade_label: 'C4', min_percentage: 60, max_percentage: 65, grade_point: 2.5, remark: 'Credit', badge_color: '#3b82f6' },
-        { grade_label: 'C5', min_percentage: 55, max_percentage: 60, grade_point: 2.0, remark: 'Credit', badge_color: '#60a5fa' },
-        { grade_label: 'C6', min_percentage: 50, max_percentage: 55, grade_point: 1.5, remark: 'Credit', badge_color: '#818cf8' },
-        { grade_label: 'D7', min_percentage: 45, max_percentage: 50, grade_point: 1.0, remark: 'Pass', badge_color: '#f59e0b' },
-        { grade_label: 'E8', min_percentage: 40, max_percentage: 45, grade_point: 0.5, remark: 'Pass', badge_color: '#fb923c' },
-        { grade_label: 'F9', min_percentage: 0, max_percentage: 40, grade_point: 0.0, remark: 'Fail', badge_color: '#ef4444' }
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-top:14px">
+          <button type="button" class="tc-btn tc-btn--secondary tc-btn--sm" onclick="addNewTierRule()">{{ ico('i-plus', 'ct-ico--xs') }}Add Tier Rule</button>
+          <button type="submit" id="saveGradingBtn" class="tc-btn tc-btn--primary">{{ ico('i-check-circle', 'ct-ico--sm') }}Validate &amp; Activate Scheme</button>
+        </div>
+      </form>
+
+      <div class="ss-sim-box">
+        <div>
+          <strong style="display:block;font-size:13.5px;color:var(--tc-ink)">Live Grade Simulator</strong>
+          <span class="ss-help">Enter any percentage to preview resolved grade &amp; remark</span>
+        </div>
+        <div class="ss-input-group" style="width:140px">
+          <input type="number" id="simScoreInput" class="ss-input" style="height:36px" value="74.5" step="0.1" min="0" max="100" oninput="runGradeSimulator()">
+          <span>%</span>
+        </div>
+        <div class="ss-sim-result">
+          <span id="simGradeBadge" class="ss-sim-badge" style="background:#059669">B2</span>
+          <strong id="simRemarkText" style="font-size:13.5px;color:var(--tc-ink)">Very Good (3.5 GP)</strong>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TAB 4: RESULT RELEASE POLICIES -->
+  <section class="tc-card ss-pane" id="tab-results" hidden>
+    <div class="tc-card__head">
+      <div class="tc-card__title">
+        <h2>Result Visibility &amp; Release Control</h2>
+        <p>Release or withhold examination grades for students individually or in batch</p>
+      </div>
+      <div class="tc-card__tools">
+        <label class="tc-search" style="width:200px">
+          {{ ico('i-search', 'ct-ico--sm') }}
+          <input type="search" data-ct-filter="#releaseTable" placeholder="Filter exam or class…" aria-label="Filter exams">
+        </label>
+        <button type="button" class="tc-btn tc-btn--ok tc-btn--sm" onclick="batchReleaseResults('release')">{{ ico('i-unlock', 'ct-ico--xs') }}Release Selected</button>
+        <button type="button" class="tc-btn tc-btn--secondary tc-btn--sm" onclick="batchReleaseResults('withhold')">{{ ico('i-lock', 'ct-ico--xs') }}Withhold Selected</button>
+      </div>
+    </div>
+    <div class="tc-table-wrap ct-table-wrap">
+      <table class="tc-table ss-table" id="releaseTable" data-ct-paginate="10" data-ct-paginate-sizes="10,25,50">
+        <thead>
+          <tr>
+            <th style="width:42px"><input type="checkbox" id="selectAllExams" onchange="toggleSelectAllExams(this)" aria-label="Select all visible exams"></th>
+            <th style="width:110px">Class</th>
+            <th>Examination</th>
+            <th style="width:130px">Subject</th>
+            <th class="is-center" style="width:120px">Submitted</th>
+            <th class="is-center" style="width:130px">Visibility</th>
+            <th style="width:130px;text-align:right">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for ex in exams %}
+          <tr data-search="{{ (ex.name or '')|lower }} {{ (ex.class or '')|lower }} {{ (ex.subject_tag or '')|lower }}">
+            <td><input type="checkbox" class="exam-select-box" value="{{ ex.id }}"></td>
+            <td><span class="tc-pill">{{ ex.class }}</span></td>
+            <td style="font-weight:640">{{ ex.name }}</td>
+            <td><span class="tc-pill">{{ ex.subject_tag or 'General' }}</span></td>
+            <td class="tc-mono is-center">{{ ex.total_completed }}</td>
+            <td class="is-center">
+              {% if ex.results_released %}
+              <span class="tc-pill tc-pill--ok"><i class="tc-dot"></i>Released</span>
+              {% else %}
+              <span class="tc-pill tc-pill--warn"><i class="tc-dot"></i>Withheld</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if ex.results_released %}
+              <button type="button" class="tc-btn tc-btn--secondary tc-btn--sm" onclick="toggleExamResultRelease({{ ex.id }}, 'withhold')">Withhold</button>
+              {% else %}
+              <button type="button" class="tc-btn tc-btn--ok tc-btn--sm" onclick="toggleExamResultRelease({{ ex.id }}, 'release')">Release</button>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- TAB 5: DATABASE HEALTH & LEGACY EXAM.DB MIGRATION -->
+  <div class="ss-pane" id="tab-migration" hidden>
+    <!-- Live Database Health & Optimizer -->
+    <section class="tc-card" style="margin-bottom:20px">
+      <div class="tc-card__head">
+        <div class="tc-card__title">
+          <h2>Database Health &amp; Performance Engine</h2>
+          <p>SQLite WAL telemetry, integrity verification, and one-click index optimization</p>
+        </div>
+        <div class="tc-card__tools">
+          <button type="button" class="tc-btn tc-btn--secondary tc-btn--sm" onclick="loadDbHealth()">{{ ico('i-refresh', 'ct-ico--xs') }}Check Health</button>
+          <button type="button" class="tc-btn tc-btn--primary tc-btn--sm" id="dbOptimizeBtn" onclick="optimizeDatabase(this)">{{ ico('i-activity', 'ct-ico--xs') }}Optimize Database</button>
+        </div>
+      </div>
+      <div style="padding:22px">
+        <div class="ss-db-grid">
+          <div class="ss-db-stat"><small>Integrity</small><strong id="dbStatIntegrity" style="color:var(--ct-ok)">Checking…</strong></div>
+          <div class="ss-db-stat"><small>Database Size</small><strong id="dbStatSize">—</strong></div>
+          <div class="ss-db-stat"><small>Journal Mode</small><strong id="dbStatJournal">WAL</strong></div>
+          <div class="ss-db-stat"><small>Tables / Indexes</small><strong id="dbStatObjects">—</strong></div>
+        </div>
+        <div class="ss-help" id="dbStatMeta">Composite indexes and 16 MB page cache are enabled automatically on startup for fast multi-terminal exams.</div>
+      </div>
+    </section>
+
+    <!-- Legacy exam.db Importer -->
+    <section class="tc-card">
+      <div class="tc-card__head">
+        <div class="tc-card__title">
+          <h2>Import Former School Database (<code class="ss-code">exam.db</code>)</h2>
+          <p>Safely inspect and migrate an older CogniTara database with automatic schema upgrade and safety backup</p>
+        </div>
+      </div>
+      <div style="padding:22px">
+        <div id="adminLegacyDropzone" class="legacy-dropzone" role="button" tabindex="0">
+          <input type="file" id="adminLegacyFileInput" accept=".db,.sqlite,.sqlite3" style="display:none">
+          <div style="margin-bottom:10px;color:var(--ct-accent)">{{ ico('i-upload') }}</div>
+          <strong style="display:block;font-size:15px;color:var(--tc-ink);margin-bottom:4px">Select or drop your former <code class="ss-code">exam.db</code> file</strong>
+          <span class="ss-help" style="display:block;margin-bottom:14px">Supports SQLite files (.db, .sqlite, .sqlite3). Nothing is replaced until you review and confirm.</span>
+          <button type="button" class="tc-btn tc-btn--primary tc-btn--sm" id="adminLegacyBrowseBtn">Choose exam.db…</button>
+        </div>
+
+        <div id="adminLegacyError" class="ct-alert ct-alert--bad" style="margin-top:14px;display:none" role="alert"></div>
+
+        <div id="adminLegacyPreview" style="margin-top:18px;padding:18px;border-radius:14px;background:var(--tc-surface-2);border:1px solid var(--tc-line-2);display:none">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px;margin-bottom:14px">
+            <div>
+              <span style="font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--ct-accent)">SQLite Integrity Verified</span>
+              <h3 id="adminLegSchoolName" style="margin:4px 0 2px;font-size:17px;color:var(--tc-ink)">Legacy CogniTara School</h3>
+              <div class="ss-help" id="adminLegFileMeta">exam.db</div>
+            </div>
+            <span class="tc-pill tc-pill--ok"><i class="tc-dot"></i>Ready to migrate</span>
+          </div>
+
+          <div class="legacy-stat-grid">
+            <div class="legacy-stat-box"><b id="adminLegStudents">0</b><span>Students</span></div>
+            <div class="legacy-stat-box"><b id="adminLegTeachers">0</b><span>Teachers</span></div>
+            <div class="legacy-stat-box"><b id="adminLegExams">0</b><span>Exams</span></div>
+            <div class="legacy-stat-box"><b id="adminLegQuestions">0</b><span>Questions</span></div>
+            <div class="legacy-stat-box"><b id="adminLegScores">0</b><span>Results</span></div>
+            <div class="legacy-stat-box"><b id="adminLegCe">0</b><span>CE Records</span></div>
+          </div>
+
+          <ul id="adminLegNotes" style="font-size:12.5px;color:var(--tc-ink-2);line-height:1.6;padding-left:18px;margin-bottom:14px"></ul>
+
+          <label style="display:flex;align-items:flex-start;gap:10px;padding-top:12px;border-top:1px solid var(--tc-line);cursor:pointer;margin-bottom:16px">
+            <input type="checkbox" id="adminLegacyPreserveAdmin" checked style="margin-top:3px;accent-color:var(--ct-primary)">
+            <span>
+              <strong style="display:block;font-size:13px;color:var(--tc-ink)">Keep my current Admin login &amp; Desktop recovery codes</strong>
+              <span class="ss-help">Recommended so your active administrator session stays signed in alongside imported accounts.</span>
+            </span>
+          </label>
+
+          <div style="display:flex;justify-content:flex-end;gap:10px">
+            <button type="button" class="tc-btn tc-btn--secondary tc-btn--sm" id="adminLegacyCancelBtn">Cancel</button>
+            <button type="button" class="tc-btn tc-btn--primary tc-btn--sm" id="adminLegacyImportBtn">{{ ico('i-upload', 'ct-ico--xs') }}Import &amp; Upgrade Database</button>
+          </div>
+        </div>
+
+        <div id="adminLegacySuccess" class="ct-alert ct-alert--ok" style="margin-top:14px;display:none" role="status">
+          {{ ico('i-check-circle') }}
+          <div class="ct-alert__body">
+            <strong id="adminLegDoneTitle">Former database imported cleanly!</strong>
+            <span id="adminLegDoneMeta"></span>
+            <div style="margin-top:10px"><a href="/admin" class="tc-btn tc-btn--primary tc-btn--sm">Open Admin Dashboard</a></div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- Custom Class Modal (Neutral Carbon) -->
+  <div class="ct-modal-backdrop" id="addClassModal" data-ct-dismissable aria-hidden="true">
+    <div class="ct-modal ct-confirm-modal" data-tone="primary" role="dialog" aria-modal="true">
+      <div class="ct-confirm-accent"></div>
+      <div class="ct-confirm-head">
+        <div class="ct-confirm-badge"><span class="ct-confirm-badge__ring"></span><span class="ct-confirm-badge__ico">{{ ico('i-layers') }}</span></div>
+        <div class="ct-confirm-copy">
+          <h3>Add Custom Class</h3>
+          <div class="ct-confirm-desc">Create a new level in your school's class hierarchy.</div>
+        </div>
+        <button type="button" class="ct-iconbtn ct-iconbtn--ghost ct-modal__close" data-ct-modal-close aria-label="Close">{{ ico('i-x', 'ct-ico--sm') }}</button>
+      </div>
+      <div style="padding:14px 24px 6px;display:grid;gap:12px">
+        <div class="ss-field">
+          <label class="ss-label" for="customClassName">Class Name</label>
+          <input id="customClassName" type="text" class="ss-input" placeholder="e.g. Grade 13, SSS 3 Science, Reception">
+        </div>
+        <div class="ss-field">
+          <label class="ss-label" for="customClassLevel">Level Category</label>
+          <select id="customClassLevel" class="ss-select">
+            <option value="Primary">Primary</option>
+            <option value="Junior Secondary">Junior Secondary</option>
+            <option value="Senior Secondary" selected>Senior Secondary</option>
+            <option value="Custom">Custom</option>
+          </select>
+        </div>
+      </div>
+      <div class="ct-confirm-actions">
+        <button type="button" class="ct-btn ct-btn--ghost" data-ct-modal-close>Cancel</button>
+        <button type="button" class="ct-btn ct-btn--primary" onclick="submitCustomClass(this)">Add Class</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="{{ url_for('static', filename='js/cognitara-actions.js') }}"></script>
+  <script>
+    function switchSsTab(paneId, btn) {
+      document.querySelectorAll(".ss-pane").forEach(function (p) { p.hidden = p.id !== paneId; });
+      document.querySelectorAll(".ss-tab").forEach(function (b) { b.classList.toggle("is-active", b === btn); });
+      if (paneId === "tab-migration") loadDbHealth();
+    }
+
+    var SCHEMES_CACHE = {{ schemes|tojson }};
+    var currentRules = [];
+    var PRESET_WAEC = [
+      { grade_label: "A1", min_percentage: 75, max_percentage: 100, grade_point: 4.0, remark: "Excellent", badge_color: "#059669" },
+      { grade_label: "B2", min_percentage: 70, max_percentage: 75, grade_point: 3.5, remark: "Very Good", badge_color: "#10b981" },
+      { grade_label: "B3", min_percentage: 65, max_percentage: 70, grade_point: 3.0, remark: "Good", badge_color: "#34d399" },
+      { grade_label: "C4", min_percentage: 60, max_percentage: 65, grade_point: 2.5, remark: "Credit", badge_color: "#3b82f6" },
+      { grade_label: "C5", min_percentage: 55, max_percentage: 60, grade_point: 2.0, remark: "Credit", badge_color: "#60a5fa" },
+      { grade_label: "C6", min_percentage: 50, max_percentage: 55, grade_point: 1.5, remark: "Credit", badge_color: "#818cf8" },
+      { grade_label: "D7", min_percentage: 45, max_percentage: 50, grade_point: 1.0, remark: "Pass", badge_color: "#f59e0b" },
+      { grade_label: "E8", min_percentage: 40, max_percentage: 45, grade_point: 0.5, remark: "Pass", badge_color: "#fb923c" },
+      { grade_label: "F9", min_percentage: 0, max_percentage: 40, grade_point: 0.0, remark: "Fail", badge_color: "#ef4444" }
+    ];
+    var PRESET_LETTER = [
+      { grade_label: "A", min_percentage: 90, max_percentage: 100, grade_point: 4.0, remark: "Excellent", badge_color: "#10b981" },
+      { grade_label: "B", min_percentage: 80, max_percentage: 90, grade_point: 3.0, remark: "Very Good", badge_color: "#3b82f6" },
+      { grade_label: "C", min_percentage: 70, max_percentage: 80, grade_point: 2.0, remark: "Good", badge_color: "#8b5cf6" },
+      { grade_label: "D", min_percentage: 60, max_percentage: 70, grade_point: 1.0, remark: "Pass", badge_color: "#f59e0b" },
+      { grade_label: "F", min_percentage: 0, max_percentage: 60, grade_point: 0.0, remark: "Fail", badge_color: "#ef4444" }
     ];
 
-    const PRESET_LETTER = [
-        { grade_label: 'A', min_percentage: 90, max_percentage: 100, grade_point: 4.0, remark: 'Excellent', badge_color: '#10b981' },
-        { grade_label: 'B', min_percentage: 80, max_percentage: 90, grade_point: 3.0, remark: 'Very Good', badge_color: '#3b82f6' },
-        { grade_label: 'C', min_percentage: 70, max_percentage: 80, grade_point: 2.0, remark: 'Good', badge_color: '#8b5cf6' },
-        { grade_label: 'D', min_percentage: 60, max_percentage: 70, grade_point: 1.0, remark: 'Pass', badge_color: '#f59e0b' },
-        { grade_label: 'F', min_percentage: 0, max_percentage: 60, grade_point: 0.0, remark: 'Fail', badge_color: '#ef4444' }
-    ];
-
-    document.addEventListener('DOMContentLoaded', function() {
-        if (SCHEMES_CACHE.length > 0 && SCHEMES_CACHE[0].rules.length > 0) {
-            currentRules = JSON.parse(JSON.stringify(SCHEMES_CACHE[0].rules));
-            document.getElementById('schemeId').value = SCHEMES_CACHE[0].id;
-            document.getElementById('schemeName').value = SCHEMES_CACHE[0].name;
-            document.getElementById('schemeDesc').value = SCHEMES_CACHE[0].description || '';
-        } else {
-            currentRules = JSON.parse(JSON.stringify(PRESET_WAEC));
-        }
-        renderRulesTable();
+    document.addEventListener("DOMContentLoaded", function () {
+      var activeId = document.getElementById("schemeId").value;
+      var activeScheme = SCHEMES_CACHE.find(function (s) { return String(s.id) === String(activeId); }) || SCHEMES_CACHE[0];
+      if (activeScheme && activeScheme.rules && activeScheme.rules.length) {
+        currentRules = JSON.parse(JSON.stringify(activeScheme.rules));
+        document.getElementById("schemeId").value = activeScheme.id;
+        document.getElementById("schemeName").value = activeScheme.name;
+        document.getElementById("schemeDesc").value = activeScheme.description || "";
+      } else {
+        currentRules = JSON.parse(JSON.stringify(PRESET_WAEC));
+      }
+      renderRulesTable();
     });
 
     function renderRulesTable() {
-        const container = document.getElementById('rulesContainer');
-        container.innerHTML = '';
-
-        currentRules.sort((a, b) => b.min_percentage - a.min_percentage);
-
-        currentRules.forEach((rule, idx) => {
-            const row = document.createElement('div');
-            row.className = 'tier-rule-row';
-            row.innerHTML = `
-                <div><input type="text" class="form-control form-control-sm fw-bold" value="${rule.grade_label}" onchange="updateRuleField(${idx}, 'grade_label', this.value)"></div>
-                <div><input type="number" step="0.1" class="form-control form-control-sm" value="${rule.min_percentage}" onchange="updateRuleField(${idx}, 'min_percentage', parseFloat(this.value))"></div>
-                <div><input type="number" step="0.1" class="form-control form-control-sm" value="${rule.max_percentage}" onchange="updateRuleField(${idx}, 'max_percentage', parseFloat(this.value))"></div>
-                <div><input type="number" step="0.5" class="form-control form-control-sm" value="${rule.grade_point || 0}" onchange="updateRuleField(${idx}, 'grade_point', parseFloat(this.value))"></div>
-                <div><input type="text" class="form-control form-control-sm" value="${rule.remark || ''}" onchange="updateRuleField(${idx}, 'remark', this.value)"></div>
-                <div><input type="color" class="form-control form-control-color form-control-sm w-100" value="${rule.badge_color || '#10b981'}" onchange="updateRuleField(${idx}, 'badge_color', this.value)"></div>
-                <div><button type="button" class="btn btn-sm btn-link text-danger p-0" onclick="removeRule(${idx})"><i class="fas fa-times"></i></button></div>
-            `;
-            container.appendChild(row);
-        });
-
-        renderSpectrumBar();
-        runGradeSimulator();
+      var container = document.getElementById("rulesContainer");
+      container.innerHTML = "";
+      currentRules.sort(function (a, b) { return b.min_percentage - a.min_percentage; });
+      currentRules.forEach(function (rule, idx) {
+        var row = document.createElement("div");
+        row.className = "ss-tier-row";
+        row.innerHTML =
+          '<input type="text" value="' + CT.esc(rule.grade_label) + '" onchange="updateRuleField(' + idx + ',\'grade_label\',this.value)" aria-label="Grade label">' +
+          '<input type="number" step="0.1" value="' + rule.min_percentage + '" onchange="updateRuleField(' + idx + ',\'min_percentage\',parseFloat(this.value))" aria-label="Min percentage">' +
+          '<input type="number" step="0.1" value="' + rule.max_percentage + '" onchange="updateRuleField(' + idx + ',\'max_percentage\',parseFloat(this.value))" aria-label="Max percentage">' +
+          '<input type="number" step="0.5" value="' + (rule.grade_point || 0) + '" onchange="updateRuleField(' + idx + ',\'grade_point\',parseFloat(this.value))" aria-label="Grade point">' +
+          '<input type="text" value="' + CT.esc(rule.remark || "") + '" onchange="updateRuleField(' + idx + ',\'remark\',this.value)" aria-label="Remark">' +
+          '<input type="color" value="' + (rule.badge_color || "#10b981") + '" onchange="updateRuleField(' + idx + ',\'badge_color\',this.value)" aria-label="Badge color">' +
+          '<button type="button" class="tc-btn tc-btn--ghost tc-btn--icon" style="color:var(--tc-bad)" onclick="removeRule(' + idx + ')" aria-label="Remove tier">' + CT.icon("i-x", "ct-ico--sm") + '</button>';
+        container.appendChild(row);
+      });
+      renderSpectrumBar();
+      runGradeSimulator();
     }
 
     function updateRuleField(idx, field, val) {
-        currentRules[idx][field] = val;
-        renderSpectrumBar();
-        runGradeSimulator();
+      currentRules[idx][field] = val;
+      renderSpectrumBar();
+      runGradeSimulator();
     }
-
     function removeRule(idx) {
-        if (currentRules.length <= 2) {
-            CogniTaraActions.toast('A scheme must have at least 2 tiers.', 'error');
-            return;
-        }
-        currentRules.splice(idx, 1);
-        renderRulesTable();
+      if (currentRules.length <= 2) { CT.toast("A grading scheme must have at least 2 tiers.", "bad"); return; }
+      currentRules.splice(idx, 1);
+      renderRulesTable();
     }
-
     function addNewTierRule() {
-        currentRules.push({
-            grade_label: 'New',
-            min_percentage: 0,
-            max_percentage: 10,
-            grade_point: 0.0,
-            remark: 'Tier',
-            badge_color: '#3b82f6'
-        });
-        renderRulesTable();
+      currentRules.push({ grade_label: "New", min_percentage: 0, max_percentage: 10, grade_point: 0.0, remark: "Tier", badge_color: "#3b82f6" });
+      renderRulesTable();
     }
 
     function renderSpectrumBar() {
-        const bar = document.getElementById('spectrumBar');
-        const statusEl = document.getElementById('spectrumStatus');
-        bar.innerHTML = '';
-
-        // Validate coverage
-        const sorted = [...currentRules].sort((a, b) => a.min_percentage - b.min_percentage);
-        let valid = true;
-        let errorMsg = '';
-
-        if (sorted.length < 2) {
+      var bar = document.getElementById("spectrumBar");
+      var statusEl = document.getElementById("spectrumStatus");
+      bar.innerHTML = "";
+      var sorted = currentRules.slice().sort(function (a, b) { return a.min_percentage - b.min_percentage; });
+      var valid = true, msg = "";
+      if (sorted.length < 2) { valid = false; msg = "Need at least 2 tiers"; }
+      else if (Math.abs(sorted[0].min_percentage - 0) > 0.001) { valid = false; msg = "Must start at 0% (starts at " + sorted[0].min_percentage + "%)"; }
+      else if (Math.abs(sorted[sorted.length - 1].max_percentage - 100) > 0.001) { valid = false; msg = "Must end at 100% (ends at " + sorted[sorted.length - 1].max_percentage + "%)"; }
+      else {
+        for (var i = 1; i < sorted.length; i++) {
+          var gap = sorted[i].min_percentage - sorted[i - 1].max_percentage;
+          if (Math.abs(gap) > 0.001) {
             valid = false;
-            errorMsg = 'Need at least 2 tiers';
-        } else if (Math.abs(sorted[0].min_percentage - 0) > 0.001) {
-            valid = false;
-            errorMsg = `Must start at 0% (starts at ${sorted[0].min_percentage}%)`;
-        } else if (Math.abs(sorted[sorted.length - 1].max_percentage - 100) > 0.001) {
-            valid = false;
-            errorMsg = `Must end at 100% (ends at ${sorted[sorted.length - 1].max_percentage}%)`;
-        } else {
-            for (let i = 1; i < sorted.length; i++) {
-                const gap = sorted[i].min_percentage - sorted[i - 1].max_percentage;
-                if (Math.abs(gap) > 0.001) {
-                    valid = false;
-                    errorMsg = gap > 0 ? `Gap of ${gap}% detected` : `Overlap of ${Math.abs(gap)}% detected`;
-                    break;
-                }
-            }
+            msg = gap > 0 ? ("Gap of " + gap.toFixed(1) + "%") : ("Overlap of " + Math.abs(gap).toFixed(1) + "%");
+            break;
+          }
         }
-
-        if (valid) {
-            statusEl.className = 'badge bg-success';
-            statusEl.textContent = '100% Contiguous Coverage';
-            sorted.forEach(rule => {
-                const width = Math.max(2, rule.max_percentage - rule.min_percentage);
-                const seg = document.createElement('div');
-                seg.className = 'spectrum-segment';
-                seg.style.width = width + '%';
-                seg.style.background = rule.badge_color || '#10b981';
-                seg.textContent = rule.grade_label;
-                seg.title = `${rule.grade_label}: [${rule.min_percentage}% - ${rule.max_percentage}%]`;
-                bar.appendChild(seg);
-            });
-        } else {
-            statusEl.className = 'badge bg-danger';
-            statusEl.textContent = 'Coverage Error: ' + errorMsg;
-            bar.innerHTML = `<div style="width:100%; height:100%; background:repeating-linear-gradient(45deg, #ef4444, #ef4444 10px, #dc2626 10px, #dc2626 20px); color:white; font-size:12px; font-weight:700; display:flex; align-items:center; justify-content:center;">${errorMsg}</div>`;
-        }
+      }
+      if (valid) {
+        statusEl.className = "tc-pill tc-pill--ok";
+        statusEl.textContent = "100% Contiguous Coverage";
+        sorted.forEach(function (r) {
+          var seg = document.createElement("div");
+          seg.className = "ss-spectrum-seg";
+          seg.style.width = Math.max(2, r.max_percentage - r.min_percentage) + "%";
+          seg.style.background = r.badge_color || "#10b981";
+          seg.textContent = r.grade_label;
+          seg.title = r.grade_label + ": " + r.min_percentage + "% – " + r.max_percentage + "%";
+          bar.appendChild(seg);
+        });
+      } else {
+        statusEl.className = "tc-pill tc-pill--bad";
+        statusEl.textContent = "Coverage error: " + msg;
+        bar.innerHTML = '<div style="width:100%;height:100%;background:#DC2626;color:#fff;font-size:12px;font-weight:700;display:grid;place-items:center">' + CT.esc(msg) + '</div>';
+      }
     }
 
     function runGradeSimulator() {
-        const score = parseFloat(document.getElementById('simScoreInput').value) || 0;
-        const sorted = [...currentRules].sort((a, b) => a.min_percentage - b.min_percentage);
-
-        let match = null;
-        for (let i = 0; i < sorted.length; i++) {
-            const min = sorted[i].min_percentage;
-            const max = sorted[i].max_percentage;
-            if (i === sorted.length - 1) {
-                if (score >= min && score <= 100.0) { match = sorted[i]; break; }
-            } else {
-                if (score >= min && score < max) { match = sorted[i]; break; }
-            }
+      var score = parseFloat(document.getElementById("simScoreInput").value) || 0;
+      var sorted = currentRules.slice().sort(function (a, b) { return a.min_percentage - b.min_percentage; });
+      var match = null;
+      for (var i = 0; i < sorted.length; i++) {
+        var r = sorted[i];
+        if (i === sorted.length - 1 ? (score >= r.min_percentage && score <= 100) : (score >= r.min_percentage && score < r.max_percentage)) {
+          match = r; break;
         }
-        if (!match && sorted.length > 0) {
-            match = score >= 100 ? sorted[sorted.length - 1] : sorted[0];
-        }
-
-        if (match) {
-            const badge = document.getElementById('simGradeBadge');
-            badge.textContent = match.grade_label;
-            badge.style.background = match.badge_color || '#10b981';
-            document.getElementById('simRemarkText').textContent = `${match.remark || ''} (${match.grade_point || 0} GP)`;
-        }
+      }
+      if (!match && sorted.length) match = score >= 100 ? sorted[sorted.length - 1] : sorted[0];
+      if (match) {
+        var b = document.getElementById("simGradeBadge");
+        b.textContent = match.grade_label;
+        b.style.background = match.badge_color || "#10b981";
+        document.getElementById("simRemarkText").textContent = (match.remark || "") + " (" + (match.grade_point || 0) + " GP)";
+      }
     }
 
     function loadSchemePreset(preset) {
-        if (preset === 'waec') {
-            currentRules = JSON.parse(JSON.stringify(PRESET_WAEC));
-            document.getElementById('schemeName').value = 'WAEC 9-Point Scale';
-            document.getElementById('schemeDesc').value = 'Official West African Examinations Council secondary standard';
-        } else {
-            currentRules = JSON.parse(JSON.stringify(PRESET_LETTER));
-            document.getElementById('schemeName').value = 'Standard Letter Scale (A–F)';
-            document.getElementById('schemeDesc').value = 'Universal 5-point letter grade system';
-        }
-        renderRulesTable();
-        CogniTaraActions.toast(`Loaded ${preset.toUpperCase()} grading template.`, 'success');
+      if (preset === "waec") {
+        currentRules = JSON.parse(JSON.stringify(PRESET_WAEC));
+        document.getElementById("schemeName").value = "WAEC 9-Point Scale";
+        document.getElementById("schemeDesc").value = "West African Examinations Council standard";
+      } else {
+        currentRules = JSON.parse(JSON.stringify(PRESET_LETTER));
+        document.getElementById("schemeName").value = "Standard Letter Scale (A–F)";
+        document.getElementById("schemeDesc").value = "Universal 5-point letter grade scale";
+      }
+      renderRulesTable();
+      CT.toast("Loaded " + preset.toUpperCase() + " preset", "ok");
     }
 
     async function saveGeneralSettings(btn) {
-        const form = document.getElementById('generalSettingsForm');
-        const formData = new FormData(form);
-        const data = Object.fromEntries(formData.entries());
-
-        await CogniTaraActions.execute({
-            url: '/admin/school-settings/update',
-            method: 'POST',
-            data,
-            triggerEl: btn,
-            loadingText: 'Saving Settings...'
-        });
+      var data = Object.fromEntries(new FormData(document.getElementById("generalSettingsForm")).entries());
+      await CogniTaraActions.execute({
+        url: "/admin/school-settings/update",
+        method: "POST",
+        data: data,
+        triggerEl: btn,
+        loadingText: "Saving…"
+      });
     }
 
     async function saveGradingScheme(btn) {
-        const name = document.getElementById('schemeName').value.trim();
-        const description = document.getElementById('schemeDesc').value.trim();
-        const scheme_id = document.getElementById('schemeId').value;
-
-        await CogniTaraActions.execute({
-            url: '/admin/school-settings/grading/save',
-            method: 'POST',
-            data: {
-                scheme_id: scheme_id ? parseInt(scheme_id) : null,
-                name,
-                description,
-                scheme_type: 'school',
-                rules: currentRules
-            },
-            triggerEl: btn,
-            loadingText: 'Validating & Saving...',
-            onSuccess: (res) => {
-                if (res.scheme_id) {
-                    document.getElementById('schemeId').value = res.scheme_id;
-                }
-            }
-        });
+      var sid = document.getElementById("schemeId").value;
+      await CogniTaraActions.execute({
+        url: "/admin/school-settings/grading/save",
+        method: "POST",
+        data: {
+          scheme_id: sid ? parseInt(sid, 10) : null,
+          name: document.getElementById("schemeName").value.trim(),
+          description: document.getElementById("schemeDesc").value.trim(),
+          scheme_type: "school",
+          rules: currentRules
+        },
+        triggerEl: btn,
+        loadingText: "Saving…",
+        onSuccess: function (res) { if (res.scheme_id) document.getElementById("schemeId").value = res.scheme_id; }
+      });
     }
 
     async function applyClassPreset(preset) {
-        const confirmed = await CogniTaraActions.confirm({
-            title: `Apply ${preset.toUpperCase()} Preset?`,
-            message: 'This will align your class hierarchy with the selected national convention. Existing students will maintain their records.',
-            confirmText: 'Yes, Apply Preset'
-        });
-        if (!confirmed) return;
-
-        await CogniTaraActions.execute({
-            url: '/admin/school-settings/classes/preset',
-            method: 'POST',
-            data: { preset },
-            onSuccess: (res) => {
-                if (res.classes) {
-                    const tbody = document.getElementById('classesTableBody');
-                    tbody.innerHTML = '';
-                    res.classes.forEach(c => {
-                        const tr = document.createElement('tr');
-                        tr.id = `class-row-${c.id}`;
-                        tr.innerHTML = `
-                            <td><span class="badge bg-secondary">${c.display_order}</span></td>
-                            <td class="fw-bold">${c.name}</td>
-                            <td><span class="badge bg-light text-dark border">${c.level_category || 'Secondary'}</span></td>
-                            <td><span class="badge bg-success">Active</span></td>
-                            <td style="text-align: right;">
-                                <button class="btn btn-sm btn-outline-danger" onclick="deleteClass(${c.id}, '${c.name}')">
-                                    <i class="fas fa-trash-alt"></i>
-                                </button>
-                            </td>
-                        `;
-                        tbody.appendChild(tr);
-                    });
-                }
-            }
-        });
+      var ok = await CT.confirm({
+        title: "Apply " + preset.toUpperCase() + " preset?",
+        html: "Align your class hierarchy with the <strong>" + preset.toUpperCase() + "</strong> naming convention. Existing student records remain safe.",
+        tone: "primary",
+        icon: "i-layers",
+        confirmText: "Apply preset"
+      });
+      if (!ok) return;
+      await CogniTaraActions.execute({
+        url: "/admin/school-settings/classes/preset",
+        method: "POST",
+        data: { preset: preset },
+        onSuccess: function () { setTimeout(function () { location.reload(); }, 450); }
+      });
     }
 
-    async function openAddClassModal() {
-        const res = await Swal.fire({
-            title: 'Add Custom Class',
-            html:
-                '<input id="swalClassName" class="swal2-input" placeholder="e.g., Grade 13, SS 3 Science, Reception">' +
-                '<select id="swalClassLevel" class="swal2-select" style="width:82%;margin-top:8px;">' +
-                '<option value="primary">Primary</option>' +
-                '<option value="junior_secondary">Junior Secondary</option>' +
-                '<option value="senior_secondary" selected>Senior Secondary</option>' +
-                '<option value="custom">Custom</option>' +
-                '</select>',
-            showCancelButton: true,
-            confirmButtonText: 'Add Class',
-            focusConfirm: false,
-            preConfirm: () => {
-                const name = (document.getElementById('swalClassName')?.value || '').trim();
-                const level_category = document.getElementById('swalClassLevel')?.value || 'custom';
-                if (!name) {
-                    Swal.showValidationMessage('Please enter a class name');
-                    return false;
-                }
-                return { name, level_category };
-            }
-        });
-        if (!res.isConfirmed || !res.value) return;
-        await CogniTaraActions.execute({
-            url: '/admin/school-settings/classes/add',
-            method: 'POST',
-            data: res.value,
-            onSuccess: () => setTimeout(() => location.reload(), 500)
-        });
+    function openAddClassModal() {
+      document.getElementById("customClassName").value = "";
+      CT.modal.open("#addClassModal");
+    }
+
+    async function submitCustomClass(btn) {
+      var name = (document.getElementById("customClassName").value || "").trim();
+      var level_category = document.getElementById("customClassLevel").value;
+      if (!name) { CT.toast("Please enter a class name.", "bad"); return; }
+      await CogniTaraActions.execute({
+        url: "/admin/school-settings/classes/add",
+        method: "POST",
+        data: { name: name, level_category: level_category },
+        triggerEl: btn,
+        loadingText: "Adding…",
+        onSuccess: function () { CT.modal.close("#addClassModal"); setTimeout(function () { location.reload(); }, 450); }
+      });
     }
 
     async function deleteClass(classId, className) {
-        await CogniTaraActions.execute({
-            url: `/admin/school-settings/classes/${classId}/delete`,
-            method: 'POST',
-            confirm: {
-                title: `Remove Class '${className}'?`,
-                message: 'If students are currently in this class, it will be safely deactivated instead of deleted.',
-                confirmColor: '#dc2626'
-            },
-            onSuccess: () => {
-                const row = document.getElementById(`class-row-${classId}`);
-                if (row) {
-                    row.style.opacity = '0';
-                    setTimeout(() => row.remove(), 300);
-                }
-            }
-        });
+      var ok = await CT.confirm({
+        title: "Remove class '" + className + "'?",
+        html: "If students or exams reference <strong>" + CT.esc(className) + "</strong>, it will be safely deactivated rather than deleted.",
+        tone: "danger",
+        icon: "i-trash",
+        confirmText: "Remove class"
+      });
+      if (!ok) return;
+      await CogniTaraActions.execute({
+        url: "/admin/school-settings/classes/" + classId + "/delete",
+        method: "POST",
+        onSuccess: function () {
+          var row = document.getElementById("class-row-" + classId);
+          if (row) row.remove();
+          var tbl = document.getElementById("classesTable");
+          if (tbl && tbl._ctRepaginate) tbl._ctRepaginate(false);
+        }
+      });
     }
 
     async function toggleExamResultRelease(examId, action) {
-        await CogniTaraActions.execute({
-            url: '/admin/school-settings/release-results',
-            method: 'POST',
-            data: { exam_ids: [examId], action },
-            onSuccess: () => {
-                setTimeout(() => location.reload(), 600);
-            }
-        });
+      await CogniTaraActions.execute({
+        url: "/admin/school-settings/release-results",
+        method: "POST",
+        data: { exam_ids: [examId], action: action },
+        onSuccess: function () { setTimeout(function () { location.reload(); }, 450); }
+      });
     }
 
     async function batchReleaseResults(action) {
-        const checked = Array.from(document.querySelectorAll('.exam-select-box:checked')).map(cb => parseInt(cb.value));
-        if (checked.length === 0) {
-            CogniTaraActions.toast('Please select at least one exam.', 'error');
-            return;
-        }
-
-        await CogniTaraActions.execute({
-            url: '/admin/school-settings/release-results',
-            method: 'POST',
-            data: { exam_ids: checked, action },
-            confirm: {
-                title: `${action === 'release' ? 'Release' : 'Withhold'} Selected Results?`,
-                message: `This will ${action} grades for ${checked.length} examinations immediately.`,
-                confirmText: `Yes, ${action.toUpperCase()}`
-            },
-            onSuccess: () => {
-                setTimeout(() => location.reload(), 600);
-            }
-        });
+      var checked = Array.from(document.querySelectorAll(".exam-select-box:checked")).map(function (cb) { return parseInt(cb.value, 10); });
+      if (!checked.length) { CT.toast("Select at least one examination first.", "warn"); return; }
+      var ok = await CT.confirm({
+        title: (action === "release" ? "Release" : "Withhold") + " selected results?",
+        html: "Update visibility immediately for <strong>" + checked.length + " examination(s)</strong>?",
+        tone: action === "release" ? "ok" : "warn",
+        icon: action === "release" ? "i-unlock" : "i-lock",
+        confirmText: action === "release" ? "Release results" : "Withhold results"
+      });
+      if (!ok) return;
+      await CogniTaraActions.execute({
+        url: "/admin/school-settings/release-results",
+        method: "POST",
+        data: { exam_ids: checked, action: action },
+        onSuccess: function () { setTimeout(function () { location.reload(); }, 450); }
+      });
     }
 
     function toggleSelectAllExams(masterCb) {
-        document.querySelectorAll('.exam-select-box').forEach(cb => {
-            cb.checked = masterCb.checked;
-        });
+      document.querySelectorAll("#releaseTable tbody tr").forEach(function (tr) {
+        if (tr.style.display === "none") return;
+        var cb = tr.querySelector(".exam-select-box");
+        if (cb) cb.checked = masterCb.checked;
+      });
     }
 
-    // ---- Legacy School Database (exam.db) Inspection & Import ----
+    /* Database Health & Optimization */
+    function fmtBytes(b) {
+      b = Number(b || 0);
+      if (b >= 1048576) return (b / 1048576).toFixed(2) + " MB";
+      if (b >= 1024) return Math.round(b / 1024) + " KB";
+      return b + " B";
+    }
+
+    async function loadDbHealth() {
+      try {
+        var r = await fetch("/admin/school-settings/db-health");
+        var d = await r.json();
+        if (!d.ok) return;
+        document.getElementById("dbStatIntegrity").textContent = (d.integrity || "ok").toUpperCase();
+        document.getElementById("dbStatSize").textContent = fmtBytes(d.size_bytes);
+        document.getElementById("dbStatJournal").textContent = String(d.journal_mode || "wal").toUpperCase();
+        document.getElementById("dbStatObjects").textContent = d.tables + " / " + d.indexes;
+        var c = d.counts || {};
+        document.getElementById("dbStatMeta").textContent =
+          "Active rows: " + (c.students || 0) + " students · " + (c.teachers || 0) + " teachers · " + (c.exams || 0) + " exams · " + (c.questions || 0) + " questions · " + (c.scores || 0) + " scores";
+      } catch (e) {}
+    }
+
+    async function optimizeDatabase(btn) {
+      await CogniTaraActions.execute({
+        url: "/admin/school-settings/db-optimize",
+        method: "POST",
+        triggerEl: btn,
+        loadingText: "Optimizing…",
+        onSuccess: function () { loadDbHealth(); }
+      });
+    }
+
+    /* Legacy exam.db Inspector & Importer */
     (function initAdminLegacyImport() {
-        const dropzone = document.getElementById('adminLegacyDropzone');
-        const input = document.getElementById('adminLegacyFileInput');
-        const browseBtn = document.getElementById('adminLegacyBrowseBtn');
-        const errBox = document.getElementById('adminLegacyError');
-        const previewBox = document.getElementById('adminLegacyPreview');
-        const doneBox = document.getElementById('adminLegacySuccess');
-        const cancelBtn = document.getElementById('adminLegacyCancelBtn');
-        const importBtn = document.getElementById('adminLegacyImportBtn');
-        if (!dropzone || !input) return;
+      var dropzone = document.getElementById("adminLegacyDropzone");
+      var input = document.getElementById("adminLegacyFileInput");
+      var browseBtn = document.getElementById("adminLegacyBrowseBtn");
+      var errBox = document.getElementById("adminLegacyError");
+      var previewBox = document.getElementById("adminLegacyPreview");
+      var doneBox = document.getElementById("adminLegacySuccess");
+      var cancelBtn = document.getElementById("adminLegacyCancelBtn");
+      var importBtn = document.getElementById("adminLegacyImportBtn");
+      if (!dropzone || !input) return;
 
-        let selectedFile = null;
-        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+      var selectedFile = null;
+      var csrfToken = window.CSRF_TOKEN || "";
 
-        function showErr(msg) {
-            if (!msg) {
-                errBox.classList.add('d-none');
-                errBox.textContent = '';
-                return;
-            }
-            errBox.textContent = msg;
-            errBox.classList.remove('d-none');
-        }
+      function showErr(msg) {
+        if (!msg) { errBox.style.display = "none"; errBox.textContent = ""; return; }
+        errBox.textContent = msg;
+        errBox.style.display = "flex";
+      }
 
-        function fmtSize(bytes) {
-            const b = Number(bytes || 0);
-            if (b >= 1048576) return (b / 1048576).toFixed(2) + ' MB';
-            if (b >= 1024) return Math.round(b / 1024) + ' KB';
-            return b + ' B';
-        }
-
-        async function inspectFile(file) {
-            if (!file) return;
-            selectedFile = file;
-            showErr('');
-            doneBox.classList.add('d-none');
-            browseBtn.disabled = true;
-            browseBtn.textContent = 'Inspecting…';
-            try {
-                const fd = new FormData();
-                fd.append('db_file', file);
-                const res = await fetch('/admin/school-settings/inspect-legacy-db', {
-                    method: 'POST',
-                    headers: { 'X-CSRFToken': csrfToken },
-                    body: fd
-                });
-                const data = await res.json();
-                if (!res.ok || !data.ok) {
-                    previewBox.classList.add('d-none');
-                    selectedFile = null;
-                    showErr(data.message || 'Selected file is not a valid CogniTara SQLite database.');
-                    return;
-                }
-                document.getElementById('adminLegSchoolName').textContent = data.school_name || 'Legacy CogniTara School';
-                document.getElementById('adminLegFileMeta').textContent =
-                    `${data.file_name || file.name} · ${fmtSize(data.file_size_bytes)} · ${data.table_count || 0} tables · ${data.academic_session || '2026/2027'}`;
-                const c = data.counts || {};
-                document.getElementById('adminLegStudents').textContent = String(c.students || 0);
-                document.getElementById('adminLegTeachers').textContent = String(c.teachers || 0);
-                document.getElementById('adminLegExams').textContent = String(c.exams || 0);
-                document.getElementById('adminLegQuestions').textContent = String(c.questions || 0);
-                document.getElementById('adminLegScores').textContent = String(c.scores || 0);
-                document.getElementById('adminLegCe').textContent = String((c.ce_exams || 0) + (c.ce_students || 0) + (c.ce_attempts || 0));
-
-                const ul = document.getElementById('adminLegNotes');
-                ul.innerHTML = '';
-                (data.notes || []).forEach(line => {
-                    const li = document.createElement('li');
-                    li.textContent = line;
-                    ul.appendChild(li);
-                });
-                previewBox.classList.remove('d-none');
-            } catch (e) {
-                showErr('Could not inspect selected file: ' + (e.message || 'Network error'));
-            } finally {
-                browseBtn.disabled = false;
-                browseBtn.textContent = 'Choose exam.db…';
-            }
-        }
-
-        browseBtn.addEventListener('click', (e) => { e.stopPropagation(); input.click(); });
-        dropzone.addEventListener('click', () => input.click());
-        dropzone.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); input.click(); } });
-        dropzone.addEventListener('dragover', (e) => { e.preventDefault(); dropzone.classList.add('is-drag'); });
-        dropzone.addEventListener('dragleave', () => dropzone.classList.remove('is-drag'));
-        dropzone.addEventListener('drop', (e) => {
-            e.preventDefault();
-            dropzone.classList.remove('is-drag');
-            if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]) {
-                inspectFile(e.dataTransfer.files[0]);
-            }
-        });
-        input.addEventListener('change', () => {
-            if (input.files && input.files[0]) inspectFile(input.files[0]);
-        });
-        cancelBtn.addEventListener('click', () => {
+      async function inspectFile(file) {
+        if (!file) return;
+        selectedFile = file;
+        showErr("");
+        doneBox.style.display = "none";
+        browseBtn.disabled = true;
+        browseBtn.textContent = "Inspecting…";
+        try {
+          var fd = new FormData();
+          fd.append("db_file", file);
+          var res = await fetch("/admin/school-settings/inspect-legacy-db", { method: "POST", headers: { "X-CSRFToken": csrfToken }, body: fd });
+          var data = await res.json();
+          if (!res.ok || !data.ok) {
+            previewBox.style.display = "none";
             selectedFile = null;
-            input.value = '';
-            showErr('');
-            previewBox.classList.add('d-none');
-        });
-        importBtn.addEventListener('click', async () => {
-            if (!selectedFile) { showErr('Please select an exam.db file first.'); return; }
-            showErr('');
-            importBtn.disabled = true;
-            importBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Importing &amp; Upgrading…';
-            try {
-                const fd = new FormData();
-                fd.append('db_file', selectedFile);
-                fd.append('preserve_current_admin', document.getElementById('adminLegacyPreserveAdmin').checked ? 'true' : 'false');
-                const res = await fetch('/admin/school-settings/import-legacy-db', {
-                    method: 'POST',
-                    headers: { 'X-CSRFToken': csrfToken },
-                    body: fd
-                });
-                const data = await res.json();
-                if (!res.ok || !data.ok) {
-                    showErr(data.message || 'Database import failed.');
-                    return;
-                }
-                previewBox.classList.add('d-none');
-                selectedFile = null;
-                input.value = '';
-                const cnt = data.counts || {};
-                const pl = (n, s, p) => `${Number(n || 0)} ${Number(n || 0) === 1 ? s : p}`;
-                document.getElementById('adminLegDoneTitle').textContent = `${data.school_name || 'Former school database'} imported cleanly!`;
-                document.getElementById('adminLegDoneMeta').textContent =
-                    `${pl(cnt.students, 'student', 'students')} · ${pl(cnt.teachers, 'teacher', 'teachers')} · ${pl(cnt.exams, 'exam', 'exams')} · ${pl(cnt.questions, 'question', 'questions')}` +
-                    (data.passwords_upgraded ? ` · ${pl(data.passwords_upgraded, 'legacy password secured', 'legacy passwords secured')}` : '') +
-                    (data.safety_snapshot ? ` · Safety backup: ${data.safety_snapshot}` : '');
-                doneBox.classList.remove('d-none');
-                if (window.CogniTaraActions) CogniTaraActions.toast('Legacy database imported successfully!', 'success');
-            } catch (e) {
-                showErr('Import failed: ' + (e.message || 'Network error'));
-            } finally {
-                importBtn.disabled = false;
-                importBtn.innerHTML = '<i class="fas fa-file-import me-1"></i> Import &amp; Upgrade Database';
-            }
-        });
+            showErr(data.message || "Selected file is not a valid CogniTara SQLite database.");
+            return;
+          }
+          document.getElementById("adminLegSchoolName").textContent = data.school_name || "Legacy CogniTara School";
+          document.getElementById("adminLegFileMeta").textContent = (data.file_name || file.name) + " · " + fmtBytes(data.file_size_bytes) + " · " + (data.table_count || 0) + " tables · " + (data.academic_session || "2026/2027");
+          var c = data.counts || {};
+          document.getElementById("adminLegStudents").textContent = String(c.students || 0);
+          document.getElementById("adminLegTeachers").textContent = String(c.teachers || 0);
+          document.getElementById("adminLegExams").textContent = String(c.exams || 0);
+          document.getElementById("adminLegQuestions").textContent = String(c.questions || 0);
+          document.getElementById("adminLegScores").textContent = String(c.scores || 0);
+          document.getElementById("adminLegCe").textContent = String((c.ce_exams || 0) + (c.ce_students || 0) + (c.ce_attempts || 0));
+          var ul = document.getElementById("adminLegNotes");
+          ul.innerHTML = "";
+          (data.notes || []).forEach(function (line) {
+            var li = document.createElement("li"); li.textContent = line; ul.appendChild(li);
+          });
+          previewBox.style.display = "block";
+        } catch (e) {
+          showErr("Could not inspect selected file: " + (e.message || "Network error"));
+        } finally {
+          browseBtn.disabled = false;
+          browseBtn.textContent = "Choose exam.db…";
+        }
+      }
+
+      browseBtn.addEventListener("click", function (e) { e.stopPropagation(); input.click(); });
+      dropzone.addEventListener("click", function () { input.click(); });
+      dropzone.addEventListener("keydown", function (e) { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); input.click(); } });
+      dropzone.addEventListener("dragover", function (e) { e.preventDefault(); dropzone.classList.add("is-drag"); });
+      dropzone.addEventListener("dragleave", function () { dropzone.classList.remove("is-drag"); });
+      dropzone.addEventListener("drop", function (e) {
+        e.preventDefault(); dropzone.classList.remove("is-drag");
+        if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]) inspectFile(e.dataTransfer.files[0]);
+      });
+      input.addEventListener("change", function () { if (input.files && input.files[0]) inspectFile(input.files[0]); });
+      cancelBtn.addEventListener("click", function () { selectedFile = null; input.value = ""; showErr(""); previewBox.style.display = "none"; });
+      importBtn.addEventListener("click", async function () {
+        if (!selectedFile) { showErr("Please select an exam.db file first."); return; }
+        showErr("");
+        importBtn.disabled = true;
+        importBtn.textContent = "Importing & Upgrading…";
+        try {
+          var fd = new FormData();
+          fd.append("db_file", selectedFile);
+          fd.append("preserve_current_admin", document.getElementById("adminLegacyPreserveAdmin").checked ? "true" : "false");
+          var res = await fetch("/admin/school-settings/import-legacy-db", { method: "POST", headers: { "X-CSRFToken": csrfToken }, body: fd });
+          var data = await res.json();
+          if (!res.ok || !data.ok) { showErr(data.message || "Database import failed."); return; }
+          previewBox.style.display = "none";
+          selectedFile = null; input.value = "";
+          var cnt = data.counts || {};
+          document.getElementById("adminLegDoneTitle").textContent = (data.school_name || "Former school database") + " imported cleanly!";
+          document.getElementById("adminLegDoneMeta").textContent =
+            (cnt.students || 0) + " students · " + (cnt.teachers || 0) + " teachers · " + (cnt.exams || 0) + " exams · " + (cnt.questions || 0) + " questions" +
+            (data.passwords_upgraded ? " · " + data.passwords_upgraded + " passwords secured" : "");
+          doneBox.style.display = "flex";
+          CT.toast("Legacy database imported successfully!", "ok");
+          loadDbHealth();
+        } catch (e) {
+          showErr("Import failed: " + (e.message || "Network error"));
+        } finally {
+          importBtn.disabled = false;
+          importBtn.innerHTML = CT.icon("i-upload", "ct-ico--xs") + "Import & Upgrade Database";
+        }
+      });
     })();
-    </script>
+  </script>
 
 {{ shell_end(role='admin') }}
 </body>

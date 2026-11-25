@@ -412,14 +412,13 @@ def teacher_exams_management():
 @teacher_bp.route("/teacher/exam/<int:exam_id>/questions")
 def teacher_exam_quick_questions(exam_id):
     """One-click jump from an exam card directly to its question manager (auto-creates a default section if empty)."""
-    if "teacher_id" not in session and "admin_id" not in session:
+    if "teacher_id" not in session:
+        if "admin_id" in session:
+            return redirect(f"/admin/exam/{exam_id}/preview")
         return redirect("/")
 
     conn = get_db_connection()
-    if "admin_id" in session:
-        exam = conn.execute("SELECT * FROM exams WHERE id=?", (exam_id,)).fetchone()
-    else:
-        exam = conn.execute("SELECT * FROM exams WHERE id=? AND teacher_id=?", (exam_id, session["teacher_id"])).fetchone()
+    exam = conn.execute("SELECT * FROM exams WHERE id=? AND teacher_id=?", (exam_id, session["teacher_id"])).fetchone()
 
     if not exam:
         conn.close()
@@ -449,22 +448,21 @@ def teacher_exam_quick_questions(exam_id):
 
 @teacher_bp.route("/teacher/exam/<int:exam_id>/settings")
 def teacher_exam_settings(exam_id):
-    """Teacher (or Admin) view/edit exam settings"""
-    if "teacher_id" not in session and "admin_id" not in session:
+    """Teacher view/edit exam settings (Admins use read-only exam preview)"""
+    if "admin_id" in session and "teacher_id" not in session:
+        return redirect(f"/admin/exam/{exam_id}/preview")
+    if "teacher_id" not in session:
         return redirect("/")
     
     conn = get_db_connection()
-    is_admin_viewer = "admin_id" in session and "teacher_id" not in session
+    is_admin_viewer = False
     teacher_id = session.get("teacher_id")
     
-    if is_admin_viewer:
-        exam = conn.execute("SELECT * FROM exams WHERE id=?", (exam_id,)).fetchone()
-    else:
-        exam = conn.execute("SELECT * FROM exams WHERE id=? AND teacher_id=?", (exam_id, teacher_id)).fetchone()
+    exam = conn.execute("SELECT * FROM exams WHERE id=? AND teacher_id=?", (exam_id, teacher_id)).fetchone()
     
     if not exam:
         conn.close()
-        return redirect("/admin" if is_admin_viewer else "/teacher")
+        return redirect("/teacher")
     
     # Get assigned classes for the dropdown
     teaching_classes = []
@@ -547,16 +545,15 @@ def teacher_exam_settings(exam_id):
 
 @teacher_bp.route("/teacher/exam/<int:exam_id>/settings", methods=["POST"])
 def teacher_exam_settings_update(exam_id):
-    """Teacher or Admin updates exam settings"""
-    if "teacher_id" not in session and "admin_id" not in session:
+    """Teacher updates exam settings (Admins cannot edit regular exams)"""
+    if "admin_id" in session and "teacher_id" not in session:
+        return {"error": "Administrators have read-only access to exam content and settings."}, 403
+    if "teacher_id" not in session:
         return {"error": "Unauthorized"}, 401
     
     conn = get_db_connection()
-    is_admin_viewer = "admin_id" in session and "teacher_id" not in session
-    if is_admin_viewer:
-        exam = conn.execute("SELECT id FROM exams WHERE id=?", (exam_id,)).fetchone()
-    else:
-        exam = conn.execute("SELECT id FROM exams WHERE id=? AND teacher_id=?", (exam_id, session["teacher_id"])).fetchone()
+    is_admin_viewer = False
+    exam = conn.execute("SELECT id FROM exams WHERE id=? AND teacher_id=?", (exam_id, session["teacher_id"])).fetchone()
     if not exam:
         conn.close()
         return {"error": "Unauthorized"}, 403
@@ -724,8 +721,10 @@ def teacher_create_exam_post():
 
 @teacher_bp.route("/teacher/exam/<int:exam_id>/sections", methods=["POST"])
 def add_exam_section(exam_id):
-    """Add a new section to regular exam"""
-    if "teacher_id" not in session and "admin_id" not in session:
+    """Add a new section to regular exam (teachers only)"""
+    if "admin_id" in session and "teacher_id" not in session:
+        return {"error": "Administrators cannot add or modify exam sections."}, 403
+    if "teacher_id" not in session:
         return {"error": "Unauthorized"}, 401
     
     conn = get_db_connection()
@@ -840,7 +839,7 @@ def delete_exam_section(section_id):
 
 @teacher_bp.route("/teacher/exam_section/<int:section_id>/questions")
 def exam_section_questions(section_id):
-    """View questions in a regular exam section"""
+    """View/edit questions in a regular exam section (teachers only; admins use read-only preview)"""
     if "teacher_id" not in session and "admin_id" not in session:
         return redirect("/")
     
@@ -854,8 +853,12 @@ def exam_section_questions(section_id):
     
     if not section:
         conn.close()
-        return redirect("/teacher" if "teacher_id" in session else "/admin")
-    if "admin_id" not in session and section["teacher_id"] != session.get("teacher_id"):
+        return redirect("/teacher" if "teacher_id" in session else "/admin/exams-management")
+    if "admin_id" in session and "teacher_id" not in session:
+        exam_id = section["exam_id"]
+        conn.close()
+        return redirect(f"/admin/exam/{exam_id}/preview")
+    if section["teacher_id"] != session.get("teacher_id"):
         conn.close()
         return redirect("/teacher")
     
@@ -872,8 +875,10 @@ def exam_section_questions(section_id):
 
 @teacher_bp.route("/teacher/exam_section/<int:section_id>/questions", methods=["POST"])
 def add_exam_question(section_id):
-    """Add a question to regular exam section"""
-    if "teacher_id" not in session and "admin_id" not in session:
+    """Add a question to regular exam section (teachers only)"""
+    if "admin_id" in session and "teacher_id" not in session:
+        return {"error": "Administrators cannot add or modify exam questions."}, 403
+    if "teacher_id" not in session:
         return redirect("/")
     
     conn = get_db_connection()
@@ -886,8 +891,8 @@ def add_exam_question(section_id):
     
     if not section:
         conn.close()
-        return redirect("/teacher" if "teacher_id" in session else "/admin")
-    if "admin_id" not in session and section["teacher_id"] != session.get("teacher_id"):
+        return redirect("/teacher")
+    if section["teacher_id"] != session.get("teacher_id"):
         conn.close()
         return redirect("/teacher")
     
@@ -3008,6 +3013,10 @@ def teacher_progression():
         return redirect("/teacher")
     
     assigned_class = teacher["class_teacher_of"] if ("class_teacher_of" in teacher.keys() and teacher["class_teacher_of"]) else None
+    if not assigned_class or not str(assigned_class).strip():
+        conn.close()
+        return redirect("/teacher")
+    assigned_class = str(assigned_class).strip()
     
     current_session = conn.execute("SELECT name FROM academic_sessions WHERE is_current=1 LIMIT 1").fetchone()
     current_session_name = current_session["name"] if current_session else "2026/2027"

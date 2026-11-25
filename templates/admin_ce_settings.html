@@ -1,302 +1,276 @@
-{%- from '_ct_shell.html' import ico, ct_boot_script, admin_shell_start, teacher_shell_start, student_topbar, shell_end -%}
+{%- from '_ct_shell.html' import ico, ct_boot_script, admin_shell_start, shell_end with context -%}
 <!DOCTYPE html>
 <html lang="en" data-theme="dark">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Common Entrance Settings | COGNITARA EXAM SYSTEM</title>
-    <link href="{{ url_for('static', filename='vendor/bootstrap/css/bootstrap.min.css') }}" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='vendor/fontawesome/css/all.min.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='vendor/sweetalert2/sweetalert2.min.css') }}">
-    <style>
-        :root {
-            --primary: var(--ct-primary);
-            --primary-dark: #3730A3;
-            --bg-canvas: #F8FAFC;
-            --card-bg: var(--ct-surface);
-            --text-main: #0F172A;
-            --text-muted: var(--ct-ink-3);
-            --border-color: var(--ct-line-2);
-        }
-
-        body {
-            background-color: var(--bg-canvas);
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            color: var(--text-main);
-            min-height: 100vh;
-        }
-
-        .settings-header {
-            background: linear-gradient(135deg, #312E81 0%, #1E1B4B 100%);
-            color: white;
-            padding: 32px 0;
-            margin-bottom: 30px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.06);
-        }
-
-        .settings-header .brand-crumb {
-            font-size: 13px;
-            color: #C7D2FE;
-            font-weight: 500;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin-bottom: 8px;
-        }
-
-        .settings-header h1 {
-            font-size: 26px;
-            font-weight: 700;
-            margin: 0;
-        }
-
-        .settings-card {
-            background: var(--card-bg);
-            border-radius: 20px;
-            border: 1px solid var(--border-color);
-            box-shadow: 0 4px 15px rgba(0,0,0,0.03);
-            overflow: hidden;
-            margin-bottom: 30px;
-        }
-
-        .form-label-custom {
-            font-size: 13px;
-            font-weight: 600;
-            color: var(--ct-ink-2);
-            margin-bottom: 6px;
-        }
-
-        .form-control-custom, .form-select-custom {
-            border: 1.5px solid var(--border-color);
-            border-radius: 12px;
-            padding: 10px 14px;
-            font-size: 14px;
-            transition: all 0.2s;
-            width: 100%;
-        }
-
-        .form-control-custom:focus, .form-select-custom:focus {
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.12);
-            outline: none;
-        }
-
-        .btn-primary-custom {
-            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
-            color: white;
-            border: none;
-            padding: 12px 24px;
-            border-radius: 12px;
-            font-weight: 600;
-            font-size: 14px;
-            transition: all 0.2s;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            cursor: pointer;
-        }
-
-        .btn-primary-custom:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 6px 16px rgba(79, 70, 229, 0.3);
-            color: white;
-        }
-
-        .disclosure-option-card {
-            border: 1.5px solid var(--border-color);
-            border-radius: 14px;
-            padding: 16px;
-            margin-bottom: 12px;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .disclosure-option-card:hover {
-            border-color: var(--primary);
-            background: var(--ct-accent-soft);
-        }
-
-        .disclosure-option-card.selected {
-            border-color: var(--primary);
-            background: var(--ct-surface);
-        }
-    </style>
-    <meta name="csrf-token" content="{{ csrf_token() }}">
-
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+  <meta name="color-scheme" content="dark light">
+  <title>Common Entrance Settings — {{ school_branding.school_name }} | CogniTara</title>
+  <link rel="icon" href="{{ url_for('static', filename='images/cognitara-favicon.ico') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/cognitara-web.css') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/cognitara-portal-unified.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/cognitara-teacher-studio.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/cognitara-admin-studio.css') }}">
   {{ ct_boot_script() }}
+  <style>
+    .ces-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+    }
+    @media (max-width: 820px) { .ces-grid { grid-template-columns: 1fr; } }
+    .ces-field { display: grid; gap: 6px; }
+    .ces-field--full { grid-column: 1 / -1; }
+    .ces-label { font-size: 13px; font-weight: 620; color: var(--tc-ink); }
+    .ces-help { font-size: 12px; color: var(--tc-ink-3); }
+    .ces-input, .ces-select, .ces-textarea {
+      width: 100%;
+      padding: 10px 13px;
+      border-radius: 10px;
+      border: 1px solid var(--tc-line-2);
+      background: var(--tc-surface-2);
+      color: var(--tc-ink);
+      font-size: 13.8px;
+      font-family: inherit;
+      transition: border-color 150ms ease, box-shadow 150ms ease, background-color 150ms ease;
+    }
+    .ces-input:focus, .ces-select:focus, .ces-textarea:focus {
+      outline: none;
+      border-color: var(--ct-accent);
+      background: var(--tc-surface);
+      box-shadow: 0 0 0 3px var(--ct-accent-soft);
+    }
+    .ces-input-suffix {
+      display: flex;
+      align-items: stretch;
+    }
+    .ces-input-suffix input {
+      border-radius: 10px 0 0 10px;
+      border-right: 0;
+    }
+    .ces-input-suffix span {
+      display: inline-grid;
+      place-items: center;
+      padding: 0 14px;
+      border-radius: 0 10px 10px 0;
+      border: 1px solid var(--tc-line-2);
+      background: var(--tc-surface);
+      color: var(--tc-ink-3);
+      font-family: var(--ct-mono);
+      font-size: 13px;
+      font-weight: 650;
+    }
+    .ces-policies {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 4px;
+    }
+    @media (max-width: 760px) { .ces-policies { grid-template-columns: 1fr; } }
+    .ces-policy {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 15px 16px;
+      border-radius: 12px;
+      border: 1px solid var(--tc-line-2);
+      background: var(--tc-surface-2);
+      cursor: pointer;
+      transition: border-color 160ms ease, background-color 160ms ease, transform 140ms ease;
+    }
+    .ces-policy:hover { border-color: var(--ct-accent-line); transform: translateY(-1px); }
+    .ces-policy.is-selected {
+      border-color: var(--ct-accent);
+      background: var(--ct-accent-soft);
+    }
+    .ces-policy input { margin-top: 3px; accent-color: var(--ct-primary); flex: none; }
+    .ces-policy strong { display: block; font-size: 13.5px; color: var(--tc-ink); margin-bottom: 3px; }
+    .ces-policy small { display: block; font-size: 12px; line-height: 1.5; color: var(--tc-ink-2); }
+    .ces-foot {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+      padding: 16px 22px;
+      border-top: 1px solid var(--tc-line);
+      background: var(--tc-surface-2);
+    }
+  </style>
 </head>
-<body class="ct-app ct-bs ad-studio">
-{{ admin_shell_start(active='ce_settings', crumb='CE Settings') }}
+<body class="ct-app ad-studio">
+{{ admin_shell_start(active='ce_settings', crumb='CE Settings', parent_href='/admin/common-entrance', parent_label='Common Entrance') }}
 
-    <header class="settings-header">
-        <div class="container">
-            <div class="brand-crumb">
-                <a href="/admin/common-entrance" style="color:#C7D2FE; text-decoration:none;"><i class="fas fa-arrow-left"></i> CE Management</a>
-                <span>/</span>
-                <span>Common Entrance Settings</span>
-            </div>
-            <div class="d-flex justify-content-between align-items-center">
-                <h1>Common Entrance Admissions Settings</h1>
-                <a href="/admin/common-entrance" class="btn btn-outline-light btn-sm" style="border-radius:10px;">
-                    <i class="fas fa-times"></i> Back to CE Dashboard
-                </a>
-            </div>
+  <header class="tc-head ct-animate-rise">
+    <div class="tc-head__txt">
+      <h1>Common Entrance Settings</h1>
+      <p>Configure prospective candidate branding, admission pass cut-offs, result disclosure policies, and review messages.</p>
+    </div>
+    <div class="tc-head__actions">
+      <a href="/ce_login" target="_blank" class="tc-btn tc-btn--secondary">{{ ico('i-external', 'ct-ico--sm') }}Candidate Portal</a>
+      <a href="/admin/common-entrance" class="tc-btn tc-btn--secondary">{{ ico('i-arrow-left', 'ct-ico--sm') }}Common Entrance</a>
+    </div>
+  </header>
+
+  <form id="ceSettingsForm" onsubmit="event.preventDefault(); saveCeSettings(document.getElementById('saveCeBtn'));">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    <!-- Portal Identity & Rules -->
+    <section class="tc-card" data-ct-reveal style="margin-bottom:20px">
+      <div class="tc-card__head">
+        <div class="tc-card__title">
+          <h2>Admissions Portal &amp; Examination Rules</h2>
+          <p>Isolated from internal school grading — applies strictly to Common Entrance candidates</p>
         </div>
-    </header>
-
-    <main class="container pb-5">
-        <div class="settings-card p-4">
-            <h4 class="fw-bold mb-3"><i class="fas fa-user-graduate text-primary me-2"></i> Entrance Portal & Admissions Configuration</h4>
-            <p class="text-muted small mb-4">Manage candidate registration rules, pass cut-offs, and result disclosure policies (fully isolated from internal school grading).</p>
-
-            <form id="ceSettingsForm">
-                <div class="row g-3">
-                    <div class="col-md-6">
-                        <label class="form-label-custom">Entrance Portal Title</label>
-                        <input type="text" name="portal_title" class="form-control-custom" value="{{ ce_settings.portal_title or 'Entrance Examination Portal' }}" required>
-                    </div>
-                    <div class="col-md-6">
-                        <label class="form-label-custom">Institution / Academy Name</label>
-                        <input type="text" name="institution_name" class="form-control-custom" value="{{ ce_settings.institution_name or 'CogniTara Academy' }}" required>
-                    </div>
-                    <div class="col-md-6">
-                        <label class="form-label-custom">Admission Academic Year</label>
-                        <input type="text" name="admission_session" class="form-control-custom" value="{{ ce_settings.admission_session or '2026/2027' }}" placeholder="e.g. 2026/2027" required>
-                    </div>
-                    <div class="col-md-6">
-                        <label class="form-label-custom">Admission Batch / Phase</label>
-                        <input type="text" name="admission_batch" class="form-control-custom" value="{{ ce_settings.admission_batch or 'Batch A' }}" placeholder="e.g. Batch A">
-                    </div>
-                    <div class="col-md-6">
-                        <label class="form-label-custom">Default Passing Cut-Off Mark (%)</label>
-                        <div class="input-group">
-                            <input type="number" name="default_passing_score" class="form-control-custom" value="{{ ce_settings.default_passing_score or 50 }}" min="1" max="100" required>
-                            <span class="input-group-text">%</span>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <label class="form-label-custom">Candidate Self-Registration</label>
-                        <select name="registration_open" class="form-select-custom">
-                            <option value="1" {% if ce_settings.registration_open %}selected{% endif %}>Open (New applicants can register)</option>
-                            <option value="0" {% if not ce_settings.registration_open %}selected{% endif %}>Closed (Registration portal locked)</option>
-                        </select>
-                    </div>
-                    <div class="col-md-6">
-                        <label class="form-label-custom">CE Anti-Cheating Profile</label>
-                        <select name="anti_cheating_profile" class="form-select-custom">
-                            <option value="low" {% if ce_settings.anti_cheating_profile == 'low' %}selected{% endif %}>Low (5 max violations)</option>
-                            <option value="medium" {% if ce_settings.anti_cheating_profile == 'medium' or not ce_settings.anti_cheating_profile %}selected{% endif %}>Medium (3 max violations)</option>
-                            <option value="high" {% if ce_settings.anti_cheating_profile == 'high' %}selected{% endif %}>High (2 max violations, strict lockdown)</option>
-                        </select>
-                    </div>
-                    <div class="col-md-6">
-                        <label class="form-label-custom">Direct Submit / Instant Admission</label>
-                        <select name="direct_submit" class="form-select-custom">
-                            <option value="0" {% if not ce_settings.direct_submit %}selected{% endif %}>Disabled (Submissions queue for manual admin review)</option>
-                            <option value="1" {% if ce_settings.direct_submit %}selected{% endif %}>Enabled (Auto-approve if cut-off met, auto-reject otherwise)</option>
-                        </select>
-                    </div>
-
-                    <div class="col-12 mt-4">
-                        <label class="form-label-custom mb-2">Candidate Result Disclosure Policy</label>
-                        
-                        <div class="row g-2">
-                            <div class="col-md-6">
-                                <label class="disclosure-option-card d-block {% if ce_settings.result_visibility == 'hidden' or not ce_settings.result_visibility %}selected{% endif %}">
-                                    <div class="d-flex align-items-center gap-2">
-                                        <input type="radio" name="result_visibility" value="hidden" {% if ce_settings.result_visibility == 'hidden' or not ce_settings.result_visibility %}checked{% endif %}>
-                                        <span class="fw-bold">Admissions Review Only [Recommended]</span>
-                                    </div>
-                                    <small class="text-muted d-block mt-1 ps-4">Score is strictly hidden from applicants. Displays "Under Administrative Review" until officially accepted.</small>
-                                </label>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="disclosure-option-card d-block {% if ce_settings.result_visibility == 'decision_only' %}selected{% endif %}">
-                                    <div class="d-flex align-items-center gap-2">
-                                        <input type="radio" name="result_visibility" value="decision_only" {% if ce_settings.result_visibility == 'decision_only' %}checked{% endif %}>
-                                        <span class="fw-bold">Qualification Decision Only</span>
-                                    </div>
-                                    <small class="text-muted d-block mt-1 ps-4">Discloses whether candidate met admissions criteria without revealing exact marks.</small>
-                                </label>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="disclosure-option-card d-block {% if ce_settings.result_visibility == 'score_and_decision' %}selected{% endif %}">
-                                    <div class="d-flex align-items-center gap-2">
-                                        <input type="radio" name="result_visibility" value="score_and_decision" {% if ce_settings.result_visibility == 'score_and_decision' %}checked{% endif %}>
-                                        <span class="fw-bold">Score & Cut-Off Benchmark</span>
-                                    </div>
-                                    <small class="text-muted d-block mt-1 ps-4">Discloses raw score alongside official admission cut-off benchmark upon admin approval.</small>
-                                </label>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="disclosure-option-card d-block {% if ce_settings.result_visibility == 'immediate' %}selected{% endif %}">
-                                    <div class="d-flex align-items-center gap-2">
-                                        <input type="radio" name="result_visibility" value="immediate" {% if ce_settings.result_visibility == 'immediate' %}checked{% endif %}>
-                                        <span class="fw-bold">Immediate Score Display</span>
-                                    </div>
-                                    <small class="text-muted d-block mt-1 ps-4">Displays instant score and percentage directly on exam submission.</small>
-                                </label>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="col-12 mt-4">
-                        <label class="form-label-custom">Custom Review Messages</label>
-                        <div class="mb-3">
-                            <span class="small text-muted d-block mb-1">Under Review Status Message:</span>
-                            <textarea name="pending_message" class="form-control-custom" rows="2">{{ ce_settings.pending_message or 'Your examination has been completed and is currently under administrative review.' }}</textarea>
-                        </div>
-                        <div class="mb-3">
-                            <span class="small text-muted d-block mb-1">Admitted / Approved Message:</span>
-                            <textarea name="approved_message" class="form-control-custom" rows="2">{{ ce_settings.approved_message or 'Congratulations! Your application has been approved for admission.' }}</textarea>
-                        </div>
-                        <div>
-                            <span class="small text-muted d-block mb-1">Unsuccessful Application Message:</span>
-                            <textarea name="rejected_message" class="form-control-custom" rows="2">{{ ce_settings.rejected_message or 'We regret to inform you that your application was unsuccessful for this session.' }}</textarea>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="mt-4 pt-3 border-top d-flex justify-content-end">
-                    <button type="button" class="btn-primary-custom" onclick="saveCeSettings(this)">
-                        <i class="fas fa-save"></i> Save CE Settings
-                    </button>
-                </div>
-            </form>
+        <span class="tc-pill tc-pill--accent">{{ ce_exams|length }} CE Exam{% if ce_exams|length != 1 %}s{% endif %}</span>
+      </div>
+      <div style="padding:22px">
+        <div class="ces-grid">
+          <div class="ces-field">
+            <label class="ces-label" for="cePortalTitle">Entrance Portal Title</label>
+            <input id="cePortalTitle" type="text" name="portal_title" class="ces-input" value="{{ ce_settings.portal_title or 'Entrance Examination Portal' }}" required>
+          </div>
+          <div class="ces-field">
+            <label class="ces-label" for="ceInstitution">Institution / Academy Name</label>
+            <input id="ceInstitution" type="text" name="institution_name" class="ces-input" value="{{ ce_settings.institution_name or 'CogniTara Academy' }}" required>
+          </div>
+          <div class="ces-field">
+            <label class="ces-label" for="ceSession">Admission Academic Year</label>
+            <input id="ceSession" type="text" name="admission_session" class="ces-input" value="{{ ce_settings.admission_session or '2026/2027' }}" placeholder="e.g. 2026/2027" required>
+          </div>
+          <div class="ces-field">
+            <label class="ces-label" for="ceBatch">Admission Batch / Phase</label>
+            <input id="ceBatch" type="text" name="admission_batch" class="ces-input" value="{{ ce_settings.admission_batch or 'Batch A' }}" placeholder="e.g. Batch A">
+          </div>
+          <div class="ces-field">
+            <label class="ces-label" for="cePassScore">Default Passing Cut-Off Mark</label>
+            <div class="ces-input-suffix">
+              <input id="cePassScore" type="number" name="default_passing_score" class="ces-input" value="{{ ce_settings.default_passing_score or 50 }}" min="1" max="100" required>
+              <span>%</span>
+            </div>
+          </div>
+          <div class="ces-field">
+            <label class="ces-label" for="ceRegOpen">Candidate Registration Status</label>
+            <select id="ceRegOpen" name="registration_open" class="ces-select">
+              <option value="1" {% if ce_settings.registration_open %}selected{% endif %}>Open — Applicants can be registered</option>
+              <option value="0" {% if not ce_settings.registration_open %}selected{% endif %}>Closed — Registration portal locked</option>
+            </select>
+          </div>
+          <div class="ces-field">
+            <label class="ces-label" for="ceAntiCheat">Anti-Cheating Profile</label>
+            <select id="ceAntiCheat" name="anti_cheating_profile" class="ces-select">
+              <option value="low" {% if ce_settings.anti_cheating_profile == 'low' %}selected{% endif %}>Low (5 max violations)</option>
+              <option value="medium" {% if ce_settings.anti_cheating_profile == 'medium' or not ce_settings.anti_cheating_profile %}selected{% endif %}>Medium (3 max violations)</option>
+              <option value="high" {% if ce_settings.anti_cheating_profile == 'high' %}selected{% endif %}>High (2 max violations, strict lockdown)</option>
+            </select>
+          </div>
+          <div class="ces-field">
+            <label class="ces-label" for="ceDirectSubmit">Instant Admission Decision</label>
+            <select id="ceDirectSubmit" name="direct_submit" class="ces-select">
+              <option value="0" {% if not ce_settings.direct_submit %}selected{% endif %}>Manual Review — Submissions queue for admin approval</option>
+              <option value="1" {% if ce_settings.direct_submit %}selected{% endif %}>Automatic — Auto-approve if cut-off met, otherwise reject</option>
+            </select>
+          </div>
         </div>
-    </main>
+      </div>
+    </section>
 
-    <script src="{{ url_for('static', filename='vendor/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
-    <script src="{{ url_for('static', filename='vendor/sweetalert2/sweetalert2.all.min.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/cognitara-actions.js') }}"></script>
+    <!-- Result Disclosure Policy -->
+    <section class="tc-card" data-ct-reveal style="margin-bottom:20px">
+      <div class="tc-card__head">
+        <div class="tc-card__title">
+          <h2>Candidate Result Disclosure Policy</h2>
+          <p>Controls what applicants see on the post-submission screen after finishing their entrance exam</p>
+        </div>
+      </div>
+      <div style="padding:22px">
+        {% set rv = ce_settings.result_visibility or 'hidden' %}
+        <div class="ces-policies">
+          <label class="ces-policy{% if rv == 'hidden' %} is-selected{% endif %}">
+            <input type="radio" name="result_visibility" value="hidden" {% if rv == 'hidden' %}checked{% endif %}>
+            <div>
+              <strong>Admissions Review Only (Recommended)</strong>
+              <small>Score stays hidden from applicants. Displays an Under Administrative Review confirmation until officially decided.</small>
+            </div>
+          </label>
+          <label class="ces-policy{% if rv == 'decision_only' %} is-selected{% endif %}">
+            <input type="radio" name="result_visibility" value="decision_only" {% if rv == 'decision_only' %}checked{% endif %}>
+            <div>
+              <strong>Qualification Decision Only</strong>
+              <small>Shows whether the candidate met admissions criteria without revealing raw marks.</small>
+            </div>
+          </label>
+          <label class="ces-policy{% if rv == 'score_and_decision' %} is-selected{% endif %}">
+            <input type="radio" name="result_visibility" value="score_and_decision" {% if rv == 'score_and_decision' %}checked{% endif %}>
+            <div>
+              <strong>Score &amp; Cut-Off Benchmark</strong>
+              <small>Reveals raw percentage score alongside the official admission cut-off once reviewed.</small>
+            </div>
+          </label>
+          <label class="ces-policy{% if rv == 'immediate' %} is-selected{% endif %}">
+            <input type="radio" name="result_visibility" value="immediate" {% if rv == 'immediate' %}checked{% endif %}>
+            <div>
+              <strong>Immediate Score Display</strong>
+              <small>Displays the candidate's score and percentage immediately upon exam submission.</small>
+            </div>
+          </label>
+        </div>
+      </div>
+    </section>
 
-    <script>
-    // Radio selection card styling
-    document.querySelectorAll('input[name="result_visibility"]').forEach(radio => {
-        radio.addEventListener('change', () => {
-            document.querySelectorAll('.disclosure-option-card').forEach(card => card.classList.remove('selected'));
-            radio.closest('.disclosure-option-card').classList.add('selected');
-        });
+    <!-- Custom Candidate Messages -->
+    <section class="tc-card" data-ct-reveal>
+      <div class="tc-card__head">
+        <div class="tc-card__title">
+          <h2>Custom Candidate Status Messages</h2>
+          <p>Shown to applicants on their Common Entrance completion &amp; status screen</p>
+        </div>
+      </div>
+      <div style="padding:22px;display:grid;gap:16px">
+        <div class="ces-field">
+          <label class="ces-label" for="cePendingMsg">Under Review Message</label>
+          <textarea id="cePendingMsg" name="pending_message" class="ces-textarea" rows="2">{{ ce_settings.pending_message or 'Your examination has been completed and is currently under administrative review.' }}</textarea>
+        </div>
+        <div class="ces-field">
+          <label class="ces-label" for="ceApprovedMsg">Admitted / Approved Message</label>
+          <textarea id="ceApprovedMsg" name="approved_message" class="ces-textarea" rows="2">{{ ce_settings.approved_message or 'Congratulations! Your application has been approved for admission.' }}</textarea>
+        </div>
+        <div class="ces-field">
+          <label class="ces-label" for="ceRejectedMsg">Unsuccessful Application Message</label>
+          <textarea id="ceRejectedMsg" name="rejected_message" class="ces-textarea" rows="2">{{ ce_settings.rejected_message or 'We regret to inform you that your application was unsuccessful for this session.' }}</textarea>
+        </div>
+      </div>
+      <div class="ces-foot">
+        <span class="ces-help">Changes apply immediately across the Common Entrance login and submission portals.</span>
+        <button type="submit" id="saveCeBtn" class="tc-btn tc-btn--primary">
+          {{ ico('i-save', 'ct-ico--sm') }}Save CE Settings
+        </button>
+      </div>
+    </section>
+  </form>
+
+  <script src="{{ url_for('static', filename='js/cognitara-actions.js') }}"></script>
+  <script>
+    document.querySelectorAll('input[name="result_visibility"]').forEach(function (radio) {
+      radio.addEventListener("change", function () {
+        document.querySelectorAll(".ces-policy").forEach(function (card) { card.classList.remove("is-selected"); });
+        var host = radio.closest(".ces-policy");
+        if (host) host.classList.add("is-selected");
+      });
     });
 
     async function saveCeSettings(btn) {
-        const form = document.getElementById('ceSettingsForm');
-        const formData = new FormData(form);
-        const data = Object.fromEntries(formData.entries());
-
-        await CogniTaraActions.execute({
-            url: '/admin/ce-settings/update',
-            method: 'POST',
-            data,
-            triggerEl: btn,
-            loadingText: 'Saving CE Settings...'
-        });
+      var form = document.getElementById("ceSettingsForm");
+      var data = Object.fromEntries(new FormData(form).entries());
+      await CogniTaraActions.execute({
+        url: "/admin/ce-settings/update",
+        method: "POST",
+        data: data,
+        triggerEl: btn,
+        loadingText: "Saving…"
+      });
     }
-    </script>
+  </script>
 
 {{ shell_end(role='admin') }}
 </body>
