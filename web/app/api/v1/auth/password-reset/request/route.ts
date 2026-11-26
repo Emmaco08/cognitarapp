@@ -38,7 +38,8 @@ export async function POST(req: NextRequest) {
     `;
 
     // Generic response to prevent email enumeration
-    if (users.length && users[0].status === "active" && users[0].role === "school_owner") {
+    const allowedRoles = new Set(["school_owner", "hq_admin", "hq_super_admin"]);
+    if (users.length && users[0].status === "active" && allowedRoles.has(String(users[0].role))) {
       const u = users[0] as Record<string, any>;
       await createAndSendEmailOtp({
         settings,

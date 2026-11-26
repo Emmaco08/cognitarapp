@@ -55,7 +55,7 @@ export async function POST(req: NextRequest) {
     await sql`
       UPDATE users_hq
       SET password_hash = ${newHash}, updated_at = NOW()
-      WHERE id = ${verifyRes.userId}::uuid AND role = 'school_owner'
+      WHERE id = ${verifyRes.userId}::uuid AND role IN ('school_owner', 'hq_admin', 'hq_super_admin')
     `;
     await sql`
       UPDATE cloud_sessions
