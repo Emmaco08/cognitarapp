@@ -182,45 +182,55 @@
   </section>
   {% endif %}
 
-  <!-- Native Review Confirmation Modal -->
+  <!-- Native Review Confirmation Modal (Kinetic Modal System) -->
   <div class="ct-modal-backdrop" id="progressionReviewModal" role="dialog" aria-modal="true" aria-labelledby="progModalTitle" aria-hidden="true" data-ct-dismissable>
-    <div class="ct-modal" style="max-width:480px">
-      <div class="ct-modal__head">
-        <b class="ct-tile ct-tile--lg ct-tile--ok">{{ ico('i-check-circle') }}</b>
-        <div style="display:grid;gap:4px;min-width:0">
-          <h3 id="progModalTitle">Confirm Academic Progression</h3>
-          <p style="margin:0;color:var(--tc-ink-2);font-size:13px;line-height:1.5">Verify the batch summary below. Historical class snapshots and examination scores remain permanently archived.</p>
+    <div class="ct-modal ct-confirm-modal" data-tone="ok" style="max-width:480px">
+      <div class="ct-m-head">
+        <div class="ct-m-medallion">
+          <span class="ct-m-medallion__halo" aria-hidden="true"></span>
+          <svg class="ct-m-medallion__svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle class="ct-svg-draw" style="--d:40ms" pathLength="100" cx="12" cy="12" r="8.5"/>
+            <path class="ct-svg-draw" style="--d:155ms" pathLength="100" d="m8.5 12.2 2.35 2.45 4.75-5.1"/>
+          </svg>
         </div>
+        <div class="ct-m-copy">
+          <h3 id="progModalTitle">Confirm academic progression</h3>
+          <div class="ct-m-desc">Verify the batch summary below. Historical class snapshots and examination scores remain permanently archived.</div>
+        </div>
+        <button type="button" class="ct-iconbtn ct-iconbtn--ghost ct-modal__close" onclick="closeReviewModal()" aria-label="Close">{{ ico('i-x', 'ct-ico--sm') }}</button>
       </div>
-      <div style="display:grid;gap:14px;padding:16px 0 6px">
-        <div style="padding:14px 16px;border-radius:12px;background:var(--tc-well);border:1px solid var(--tc-line);display:grid;gap:9px;font-size:13px">
+      <div class="ct-m-body">
+        <div style="padding:14px 16px;border-radius:12px;background:var(--ct-m-well);border:1px solid var(--ct-m-divider);display:grid;gap:9px;font-size:13px">
           <div style="display:flex;justify-content:space-between;align-items:center">
-            <span style="color:var(--tc-ink-2)">Total Selected for Processing</span>
+            <span style="color:var(--tc-ink-2)">Total selected for processing</span>
             <strong class="tc-mono" id="modalSummaryTotal">0</strong>
           </div>
           <div style="display:flex;justify-content:space-between;align-items:center">
-            <span style="color:var(--tc-ok)">Promoting to Next Class</span>
+            <span style="color:var(--tc-ok)">Promoting to next class</span>
             <strong class="tc-mono" style="color:var(--tc-ok)" id="modalSummaryPromote">0</strong>
           </div>
           <div style="display:flex;justify-content:space-between;align-items:center">
-            <span style="color:var(--tc-warn)">Retaining in Current Class</span>
+            <span style="color:var(--tc-warn)">Retaining in current class</span>
             <strong class="tc-mono" style="color:var(--tc-warn)" id="modalSummaryRetain">0</strong>
           </div>
           <div style="display:flex;justify-content:space-between;align-items:center">
-            <span style="color:var(--tc-accent)">Graduating as Alumni</span>
+            <span style="color:var(--tc-accent)">Graduating as alumni</span>
             <strong class="tc-mono" style="color:var(--tc-accent)" id="modalSummaryGraduate">0</strong>
           </div>
         </div>
         <div class="tc-field">
-          <label class="tc-label" for="targetSessionInput">Target Academic Session</label>
+          <label class="tc-label" for="targetSessionInput">Target academic session</label>
           <input type="text" class="tc-input tc-mono" id="targetSessionInput" value="2027/2028">
         </div>
       </div>
-      <div class="ct-modal__actions">
-        <button type="button" class="tc-btn tc-btn--ghost" onclick="closeReviewModal()">Cancel</button>
-        <button type="button" class="tc-btn tc-btn--primary" id="btnExecuteProgression">
-          {{ ico('i-check', 'ct-ico--sm') }}Confirm &amp; Execute Batch
-        </button>
+      <div class="ct-m-foot">
+        <span class="ct-m-kbd"><kbd>Esc</kbd><span>Cancel</span></span>
+        <div class="ct-m-foot__btns">
+          <button type="button" class="tc-btn tc-btn--ghost" onclick="closeReviewModal()">Cancel</button>
+          <button type="button" class="tc-btn tc-btn--primary" id="btnExecuteProgression">
+            {{ ico('i-check', 'ct-ico--sm') }}Confirm &amp; execute batch
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -330,7 +340,7 @@
               title: "Batch Complete!",
               text: res.message || "All selected student progression records have been updated.",
               icon: "success",
-              confirmButtonColor: "#10b981"
+              confirmButtonColor: "#575551"
             }).then(function () { window.location.reload(); });
           } else {
             window.location.reload();

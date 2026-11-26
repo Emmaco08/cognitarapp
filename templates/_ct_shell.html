@@ -23,7 +23,7 @@
   var d = document.documentElement, saved = null, side = null;
   try { saved = localStorage.getItem("ct-theme"); side = localStorage.getItem("ct-sidebar"); } catch (e) {}
   var q = new URLSearchParams(location.search).get("theme");
-  var theme = (q === "light" || q === "dark") ? q : (saved === "light" ? "light" : "dark");
+  var theme = (q === "light" || q === "dark") ? q : (saved === "dark" ? "dark" : "light");
   d.setAttribute("data-theme", theme);
   if (side === "collapsed") d.setAttribute("data-ct-sidebar", "collapsed");
   if (!(window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches)) d.classList.add("ct-motion");
@@ -86,8 +86,10 @@ window.CSRF_TOKEN = "{{ csrf_token() }}";
 
 {%- macro admin_shell_start(active='overview', crumb='Dashboard', parent_href='/admin', parent_label='Admin') -%}
 {%- set ICONS = url_for('static', filename='icons/cognitara-icons.svg') -%}
-{%- set _school = school_branding if school_branding is defined and school_branding else {'school_name': 'CogniTara School', 'initials': 'CT', 'current_term': 'Active Term', 'academic_session': '2026/2027', 'school_logo': ''} -%}
+{%- set _school = school_branding if school_branding is defined and school_branding else {'school_name': 'CogniTara School', 'initials': 'CT', 'current_term': 'Active Term', 'academic_session': '2026/2027', 'school_logo': '', 'school_logo_url': ''} -%}
+{%- set _counts = admin_nav_counts if admin_nav_counts is defined and admin_nav_counts else {'exams_count': 0, 'ce_exams_count': 0, 'pending_count': 0} -%}
 {%- set _user = session.get('username') or session.get('user') or (username if username is defined else 'Administrator') -%}
+<div class="ct-veil" id="loadingOverlay" aria-hidden="true"><div class="ct-spinner"></div></div>
 <div class="ct-toasts" id="ctToasts" role="status" aria-live="polite"></div>
 <div class="ct-scrim" data-ct-drawer-close></div>
 
@@ -118,40 +120,48 @@ window.CSRF_TOKEN = "{{ csrf_token() }}";
     </div>
 
     <div class="ct-sidebar__scroll">
-      <a class="ct-school" href="/admin/school-settings" title="Edit school profile &amp; term">
-        <span class="ct-school__crest"{% if _school.school_logo %} style="background-image:url('{{ url_for('static', filename='images/' + _school.school_logo) }}')"{% endif %}>{% if not _school.school_logo %}{{ _school.initials or 'CT' }}{% endif %}</span>
+      <a class="ct-school" id="ctSidebarSchoolLink" href="/admin/school-settings" title="Edit school profile &amp; logo">
+        <span class="ct-school__crest" id="ctSidebarSchoolCrest">
+          {%- if _school.school_logo_url -%}
+          <img src="{{ _school.school_logo_url }}" alt="{{ _school.school_name }} logo" onerror="this.remove();this.parentNode.textContent={{ (_school.initials or 'CT')|tojson|forceescape }};">
+          {%- elif _school.school_logo -%}
+          <img src="{{ url_for('serve_uploaded_image', filename=_school.school_logo) }}" alt="{{ _school.school_name }} logo" onerror="this.remove();this.parentNode.textContent={{ (_school.initials or 'CT')|tojson|forceescape }};">
+          {%- else -%}
+          {{ _school.initials or 'CT' }}
+          {%- endif -%}
+        </span>
         <span class="ct-school__txt">
-          <strong>{{ _school.school_name }}</strong>
-          <em>{{ _school.current_term }}, {{ _school.academic_session }}</em>
+          <strong id="ctSidebarSchoolName">{{ _school.school_name }}</strong>
+          <em id="ctSidebarSchoolMeta">{{ _school.current_term }}, {{ _school.academic_session }}</em>
         </span>
       </a>
 
       <nav class="ct-nav" aria-label="Workspace">
         <span class="ct-nav__label">Workspace</span>
-        <a class="ct-nav__link{% if active == 'overview' %} is-active{% endif %}" href="/admin">{{ ico('i-home') }}<span class="ct-nav__text">Overview</span></a>
-        <a class="ct-nav__link{% if active == 'exams' %} is-active{% endif %}" href="/admin#sec-exams">{{ ico('i-doc') }}<span class="ct-nav__text">Exams</span></a>
-        <a class="ct-nav__link{% if active == 'control' %} is-active{% endif %}" href="/admin/exams-management">{{ ico('i-live') }}<span class="ct-nav__text">Exam Control Center</span></a>
-        <a class="ct-nav__link{% if active == 'support' %} is-active{% endif %}" href="/admin/exam_technical_support">{{ ico('i-activity') }}<span class="ct-nav__text">Live Support &amp; Pause</span></a>
-        <a class="ct-nav__link{% if active == 'ce' %} is-active{% endif %}" href="/admin/common-entrance">{{ ico('i-door') }}<span class="ct-nav__text">Common Entrance</span></a>
+        <a class="ct-nav__link{% if active == 'overview' %} is-active{% endif %}" data-nav-key="overview" href="/admin">{{ ico('i-home') }}<span class="ct-nav__text">Overview</span></a>
+        <a class="ct-nav__link{% if active == 'exams' %} is-active{% endif %}" data-nav-key="exams" href="/admin#sec-exams">{{ ico('i-doc') }}<span class="ct-nav__text">Exams</span>{% if _counts.exams_count %}<span class="ct-nav__badge" id="railExamsCount">{{ _counts.exams_count }}</span>{% endif %}</a>
+        <a class="ct-nav__link{% if active == 'control' %} is-active{% endif %}" data-nav-key="control" href="/admin/exams-management">{{ ico('i-live') }}<span class="ct-nav__text">Exam Control Center</span></a>
+        <a class="ct-nav__link{% if active == 'support' %} is-active{% endif %}" data-nav-key="support" href="/admin/exam_technical_support">{{ ico('i-activity') }}<span class="ct-nav__text">Live Support &amp; Pause</span></a>
+        <a class="ct-nav__link{% if active == 'ce' %} is-active{% endif %}" data-nav-key="ce" href="/admin/common-entrance">{{ ico('i-door') }}<span class="ct-nav__text">Common Entrance</span>{% if _counts.ce_exams_count %}<span class="ct-nav__badge">{{ _counts.ce_exams_count }}</span>{% endif %}</a>
       </nav>
 
       <nav class="ct-nav" aria-label="People">
         <span class="ct-nav__label">People</span>
-        <a class="ct-nav__link{% if active == 'teachers' %} is-active{% endif %}" href="/admin/add_teacher">{{ ico('i-teacher') }}<span class="ct-nav__text">Teachers</span></a>
-        <a class="ct-nav__link{% if active == 'students' %} is-active{% endif %}" href="/admin/add_student">{{ ico('i-users') }}<span class="ct-nav__text">Students</span></a>
-        <a class="ct-nav__link{% if active == 'approvals' %} is-active{% endif %}" href="/admin/pending_students">{{ ico('i-clock') }}<span class="ct-nav__text">Approvals</span></a>
-        <a class="ct-nav__link{% if active == 'add_admin' %} is-active{% endif %}" href="/admin/add_admin">{{ ico('i-shield') }}<span class="ct-nav__text">Administrators</span></a>
+        <a class="ct-nav__link{% if active == 'teachers' %} is-active{% endif %}" data-nav-key="teachers" href="/admin#sec-teachers">{{ ico('i-teacher') }}<span class="ct-nav__text">Teachers</span></a>
+        <a class="ct-nav__link{% if active == 'students' %} is-active{% endif %}" data-nav-key="students" href="/admin#sec-students">{{ ico('i-users') }}<span class="ct-nav__text">Students</span></a>
+        <a class="ct-nav__link{% if active == 'approvals' %} is-active{% endif %}" data-nav-key="approvals" href="/admin/pending_students">{{ ico('i-clock') }}<span class="ct-nav__text">Approvals</span>{% if _counts.pending_count %}<span class="ct-nav__badge ct-nav__badge--warn">{{ _counts.pending_count }}</span>{% endif %}</a>
+        <a class="ct-nav__link{% if active == 'add_admin' %} is-active{% endif %}" data-nav-key="add_admin" href="/admin/add_admin">{{ ico('i-shield') }}<span class="ct-nav__text">Administrators</span></a>
       </nav>
 
       <nav class="ct-nav" aria-label="Reports and settings">
         <span class="ct-nav__label">Reports &amp; Settings</span>
-        <a class="ct-nav__link{% if active == 'results' %} is-active{% endif %}" href="/admin/results">{{ ico('i-chart') }}<span class="ct-nav__text">Results</span></a>
-        <a class="ct-nav__link{% if active == 'analytics' %} is-active{% endif %}" href="/admin/school-analytics">{{ ico('i-trend') }}<span class="ct-nav__text">School Analytics</span></a>
-        <a class="ct-nav__link{% if active == 'attempts' %} is-active{% endif %}" href="/admin/exam_attempts">{{ ico('i-layers') }}<span class="ct-nav__text">Exam Attempts</span></a>
-        <a class="ct-nav__link{% if active == 'settings' %} is-active{% endif %}" href="/admin/school-settings">{{ ico('i-settings') }}<span class="ct-nav__text">School Settings</span></a>
-        <a class="ct-nav__link{% if active == 'ce_settings' %} is-active{% endif %}" href="/admin/ce-settings">{{ ico('i-sliders') }}<span class="ct-nav__text">CE Settings</span></a>
-        <a class="ct-nav__link{% if active == 'logs' %} is-active{% endif %}" href="/admin/logs">{{ ico('i-book') }}<span class="ct-nav__text">Audit Logs</span></a>
-        <a class="ct-nav__link{% if active == 'warnings' %} is-active{% endif %}" href="/admin/warning_logs">{{ ico('i-alert') }}<span class="ct-nav__text">Warning Logs</span></a>
+        <a class="ct-nav__link{% if active == 'results' %} is-active{% endif %}" data-nav-key="results" href="/admin/results">{{ ico('i-chart') }}<span class="ct-nav__text">Results</span></a>
+        <a class="ct-nav__link{% if active == 'analytics' %} is-active{% endif %}" data-nav-key="analytics" href="/admin/school-analytics">{{ ico('i-trend') }}<span class="ct-nav__text">School Analytics</span></a>
+        <a class="ct-nav__link{% if active == 'attempts' %} is-active{% endif %}" data-nav-key="attempts" href="/admin/exam_attempts">{{ ico('i-layers') }}<span class="ct-nav__text">Exam Attempts</span></a>
+        <a class="ct-nav__link{% if active == 'settings' %} is-active{% endif %}" data-nav-key="settings" href="/admin/school-settings">{{ ico('i-settings') }}<span class="ct-nav__text">School Settings</span></a>
+        <a class="ct-nav__link{% if active == 'ce_settings' %} is-active{% endif %}" data-nav-key="ce_settings" href="/admin/ce-settings">{{ ico('i-sliders') }}<span class="ct-nav__text">CE Settings</span></a>
+        <a class="ct-nav__link{% if active == 'logs' %} is-active{% endif %}" data-nav-key="logs" href="/admin/logs">{{ ico('i-book') }}<span class="ct-nav__text">Audit Logs</span></a>
+        <a class="ct-nav__link{% if active == 'warnings' %} is-active{% endif %}" data-nav-key="warnings" href="/admin/warning_logs">{{ ico('i-alert') }}<span class="ct-nav__text">Warning Logs</span></a>
       </nav>
     </div>
 
@@ -179,6 +189,10 @@ window.CSRF_TOKEN = "{{ csrf_token() }}";
         <button type="button" class="ct-iconbtn" data-ct-theme-toggle aria-label="Switch theme" title="Switch light or dark theme">
           <span class="ct-theme-ico">{{ ico('i-moon', 'ct-theme-ico__moon') }}{{ ico('i-sun', 'ct-theme-ico__sun') }}</span>
         </button>
+        <a class="ct-iconbtn" href="/admin/pending_students" title="Pending student approvals" aria-label="Pending student approvals">
+          {{ ico('i-bell') }}
+          {% if _counts.pending_count %}<b class="ct-iconbtn__badge" id="pendingBadge">{{ _counts.pending_count }}</b>{% endif %}
+        </a>
         <div class="ct-dropdown" data-ct-dropdown>
           <button type="button" class="ct-userpill" data-ct-dropdown-trigger aria-haspopup="menu" aria-expanded="false">
             {{ person_avatar('', _user, 'xs') }}
@@ -186,22 +200,24 @@ window.CSRF_TOKEN = "{{ csrf_token() }}";
             {{ ico('i-chevron-down') }}
           </button>
           <div class="ct-menu" role="menu">
-            <div class="ct-menu__head"><strong>{{ _user }}</strong><span>Administrator</span></div>
+            <div class="ct-menu__head"><strong>{{ _user }}</strong><span>Administrator · {{ _school.school_name }}</span></div>
             <a class="ct-menu__item" role="menuitem" href="/admin">{{ ico('i-home') }}Admin Dashboard</a>
             <a class="ct-menu__item" role="menuitem" href="/admin/school-settings">{{ ico('i-settings') }}School Settings</a>
+            <a class="ct-menu__item" role="menuitem" href="/admin/add_admin">{{ ico('i-shield') }}Manage Administrators</a>
+            <a class="ct-menu__item" role="menuitem" href="/admin/logs">{{ ico('i-book') }}Audit Logs</a>
             <div class="ct-menu__sep"></div>
-            <a class="ct-menu__item ct-menu__item--danger" role="menuitem" href="/logout">{{ ico('i-logout') }}Log out</a>
+            <a class="ct-menu__item ct-menu__item--danger" role="menuitem" href="/logout" data-no-pjax>{{ ico('i-logout') }}Log out</a>
           </div>
         </div>
       </div>
     </header>
 
-    <main class="ct-content ct-enter" id="main">
+    <main class="ct-content ct-enter" id="main" data-nav-active="{{ active }}">
 {%- endmacro -%}
 
 {%- macro teacher_shell_start(active='dashboard', crumb='Teacher Portal') -%}
 {%- set ICONS = url_for('static', filename='icons/cognitara-icons.svg') -%}
-{%- set _school = school_branding if school_branding is defined and school_branding else {'school_name': 'CogniTara School', 'initials': 'CT', 'current_term': 'Active Term', 'academic_session': '2026/2027', 'school_logo': ''} -%}
+{%- set _school = school_branding if school_branding is defined and school_branding else {'school_name': 'CogniTara School', 'initials': 'CT', 'current_term': 'Active Term', 'academic_session': '2026/2027', 'school_logo': '', 'school_logo_url': ''} -%}
 {%- set _user = session.get('username') or session.get('user') or (teacher.username if teacher is defined and teacher and teacher.username is defined else 'Teacher') -%}
 {%- set _photo = teacher.photo if (teacher is defined and teacher and teacher.photo is defined and teacher.photo) else '' -%}
 <div class="ct-toasts" id="ctToasts" role="status" aria-live="polite"></div>
@@ -235,7 +251,15 @@ window.CSRF_TOKEN = "{{ csrf_token() }}";
 
     <div class="ct-sidebar__scroll">
       <div class="ct-school">
-        <span class="ct-school__crest"{% if _school.school_logo %} style="background-image:url('{{ url_for('static', filename='images/' + _school.school_logo) }}')"{% endif %}>{% if not _school.school_logo %}{{ _school.initials or 'CT' }}{% endif %}</span>
+        <span class="ct-school__crest">
+          {%- if _school.school_logo_url -%}
+          <img src="{{ _school.school_logo_url }}" alt="{{ _school.school_name }} logo" onerror="this.remove();this.parentNode.textContent={{ (_school.initials or 'CT')|tojson|forceescape }};">
+          {%- elif _school.school_logo -%}
+          <img src="{{ url_for('serve_uploaded_image', filename=_school.school_logo) }}" alt="{{ _school.school_name }} logo" onerror="this.remove();this.parentNode.textContent={{ (_school.initials or 'CT')|tojson|forceescape }};">
+          {%- else -%}
+          {{ _school.initials or 'CT' }}
+          {%- endif -%}
+        </span>
         <span class="ct-school__txt">
           <strong>{{ _school.school_name }}</strong>
           <em>{{ _school.current_term }}, {{ _school.academic_session }}</em>
@@ -338,6 +362,9 @@ window.CSRF_TOKEN = "{{ csrf_token() }}";
   </div>
 </div>
 <script src="{{ url_for('static', filename='js/cognitara-web.js') }}"></script>
+{% if role == 'admin' %}
+<script src="{{ url_for('static', filename='js/cognitara-pjax.js') }}"></script>
+{% endif %}
 <script>
 document.addEventListener("DOMContentLoaded", function () {
   if (!window.CT || !document.getElementById("ctShellPalette")) return;
@@ -356,10 +383,15 @@ document.addEventListener("DOMContentLoaded", function () {
     { label: "Exam Control Center", hint: "Oversight & status", icon: "i-live", go: "/admin/exams-management" },
     { label: "Live Support & Pause", hint: "Invigilation", icon: "i-activity", go: "/admin/exam_technical_support" },
     { label: "Common Entrance", hint: "Admissions", icon: "i-door", go: "/admin/common-entrance" },
-    { label: "Results & Grades", hint: "Reports", icon: "i-chart", go: "/admin/results" },
-    { label: "School Analytics", hint: "Insights", icon: "i-trend", go: "/admin/school-analytics" },
+    { label: "Teachers Directory", hint: "People", icon: "i-teacher", go: "/admin#sec-teachers" },
+    { label: "Add Teacher", hint: "Register faculty", icon: "i-plus", go: "/admin/add_teacher" },
+    { label: "Students Directory", hint: "People", icon: "i-users", go: "/admin#sec-students" },
+    { label: "Add Student", hint: "Register student", icon: "i-plus", go: "/admin/add_student" },
     { label: "Pending Student Approvals", hint: "People", icon: "i-clock", go: "/admin/pending_students" },
     { label: "Administrators", hint: "Manage admins", icon: "i-shield", go: "/admin/add_admin" },
+    { label: "Results & Grades", hint: "Reports", icon: "i-chart", go: "/admin/results" },
+    { label: "School Analytics", hint: "Insights", icon: "i-trend", go: "/admin/school-analytics" },
+    { label: "Exam Attempts", hint: "History", icon: "i-layers", go: "/admin/exam_attempts" },
     { label: "School Settings", hint: "Branding & Database", icon: "i-settings", go: "/admin/school-settings" },
     { label: "CE Settings", hint: "Common Entrance", icon: "i-sliders", go: "/admin/ce-settings" },
     { label: "Audit Logs", hint: "Security", icon: "i-book", go: "/admin/logs" },

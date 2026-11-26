@@ -6,10 +6,21 @@ import { IconCopy } from "@/components/Icons";
 export interface HqSchoolRow {
   school_id: string;
   school_name: string;
+  school_motto?: string | null;
+  academic_session?: string | null;
+  current_term?: string | null;
+  logo_data_url?: string | null;
+  admin_full_name?: string | null;
+  admin_username?: string | null;
+  onboarding_completed_at?: string | null;
+  last_lan_ip?: string | null;
+  last_machine_hostname?: string | null;
+  last_os_version?: string | null;
   country_code: string;
   state_region: string | null;
   contact_email: string;
   contact_phone: string | null;
+  phone?: string | null;
   school_status: string;
   ban_reason: string | null;
   custom_notice: string | null;
@@ -33,6 +44,18 @@ export interface HqSchoolRow {
   license_expires_at: string | null;
   bonus_days_total: number | null;
   active_hwids: number | null;
+}
+
+function schoolInitials(name: string): string {
+  return (
+    String(name || "")
+      .trim()
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((w) => w[0]?.toUpperCase() || "")
+      .join("") || "CT"
+  );
 }
 
 export interface HqPlanRow {
@@ -141,10 +164,14 @@ export function HqSchoolsTab({
     if (!q) return true;
     return (
       String(s.school_name || "").toLowerCase().includes(q) ||
+      String(s.school_motto || "").toLowerCase().includes(q) ||
       String(s.email || "").toLowerCase().includes(q) ||
       String(s.full_name || "").toLowerCase().includes(q) ||
+      String(s.admin_full_name || "").toLowerCase().includes(q) ||
+      String(s.admin_username || "").toLowerCase().includes(q) ||
       String(s.license_key || "").toLowerCase().includes(q) ||
-      String(s.last_hwid || "").toLowerCase().includes(q)
+      String(s.last_hwid || "").toLowerCase().includes(q) ||
+      String(s.last_machine_hostname || "").toLowerCase().includes(q)
     );
   });
 
@@ -181,7 +208,7 @@ export function HqSchoolsTab({
           <p>
             {mode === "bans"
               ? "Review suspended or banned school accounts, inspect ban reasons, and restore or permanently lock devices."
-              : "Every registered school, licence status, active devices, and lifetime spend. Open any school for remote controls."}
+              : "Every registered school, onboarding profile, licence status, active devices, and lifetime spend. Open any school for full details & remote controls."}
           </p>
         </div>
         <button type="button" className="btn btn--ghost btn--sm" onClick={() => void onRefresh()}>
@@ -218,7 +245,7 @@ export function HqSchoolsTab({
         <input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search school, email, licence key, or HWID"
+          placeholder="Search school, owner, superadmin, licence key, or HWID"
           className="hq-search"
         />
       </div>
@@ -255,10 +282,61 @@ export function HqSchoolsTab({
                   }}
                 >
                   <td>
-                    <div style={{ fontWeight: 620 }}>{s.school_name}</div>
-                    <div style={{ fontSize: 12, color: "var(--ink-3)" }}>
-                      {s.last_app_version ? `Studio v${s.last_app_version}` : "Web account"}
-                      {s.active_hwids ? ` · ${s.active_hwids} PC` : ""}
+                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                      <div
+                        style={{
+                          width: 34,
+                          height: 34,
+                          borderRadius: 9,
+                          overflow: "hidden",
+                          flexShrink: 0,
+                          display: "grid",
+                          placeItems: "center",
+                          fontSize: 12,
+                          fontWeight: 700,
+                          color: "#fff",
+                          background: s.logo_data_url ? "var(--surface-2)" : "linear-gradient(155deg, #2B2926, #141312)",
+                          border: "1px solid var(--border-2)",
+                        }}
+                      >
+                        {s.logo_data_url ? (
+                          <img
+                            src={s.logo_data_url}
+                            alt={`${s.school_name} crest`}
+                            style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+                          />
+                        ) : (
+                          schoolInitials(s.school_name)
+                        )}
+                      </div>
+                      <div style={{ minWidth: 0 }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+                          <span style={{ fontWeight: 620 }}>{s.school_name}</span>
+                          {s.onboarding_completed_at ? (
+                            <span
+                              style={{
+                                fontSize: 10.5,
+                                fontWeight: 650,
+                                padding: "1px 7px",
+                                borderRadius: 999,
+                                background: "var(--ok-soft)",
+                                color: "var(--ok)",
+                                border: "1px solid var(--border-2)",
+                              }}
+                            >
+                              Onboarded
+                            </span>
+                          ) : null}
+                        </div>
+                        <div style={{ fontSize: 12, color: "var(--ink-3)" }}>
+                          {s.current_term && s.academic_session
+                            ? `${s.current_term} · ${s.academic_session}`
+                            : s.last_app_version
+                              ? `Studio v${s.last_app_version}`
+                              : "Web account"}
+                          {s.active_hwids ? ` · ${s.active_hwids} PC` : ""}
+                        </div>
+                      </div>
                     </div>
                   </td>
                   <td>
@@ -298,10 +376,43 @@ export function HqSchoolsTab({
         <div className="hq-drawer-bg" onClick={() => setSelected(null)}>
           <aside className="hq-drawer" onClick={(e) => e.stopPropagation()} aria-label="School controls">
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
-              <div>
-                <h2 style={{ margin: 0, fontSize: 19 }}>{selected.school_name}</h2>
-                <div className="mono" style={{ fontSize: 12, color: "var(--ink-3)", marginTop: 2 }}>
-                  {selected.email} · {selected.active_sessions} active session(s)
+              <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0 }}>
+                <div
+                  style={{
+                    width: 46,
+                    height: 46,
+                    borderRadius: 12,
+                    overflow: "hidden",
+                    flexShrink: 0,
+                    display: "grid",
+                    placeItems: "center",
+                    fontSize: 15,
+                    fontWeight: 750,
+                    color: "#fff",
+                    background: selected.logo_data_url ? "var(--surface-2)" : "linear-gradient(155deg, #2B2926, #141312)",
+                    border: "1px solid var(--border-2)",
+                  }}
+                >
+                  {selected.logo_data_url ? (
+                    <img
+                      src={selected.logo_data_url}
+                      alt={`${selected.school_name} logo`}
+                      style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+                    />
+                  ) : (
+                    schoolInitials(selected.school_name)
+                  )}
+                </div>
+                <div style={{ minWidth: 0 }}>
+                  <h2 style={{ margin: 0, fontSize: 19 }}>{selected.school_name}</h2>
+                  {selected.school_motto ? (
+                    <div style={{ fontSize: 12.5, color: "var(--ink-2)", fontStyle: "italic", marginTop: 2 }}>
+                      “{selected.school_motto}”
+                    </div>
+                  ) : null}
+                  <div className="mono" style={{ fontSize: 12, color: "var(--ink-3)", marginTop: 2 }}>
+                    {selected.email} · {selected.active_sessions} active session(s)
+                  </div>
                 </div>
               </div>
               <button type="button" className="btn btn--ghost btn--sm" onClick={() => setSelected(null)}>
@@ -314,6 +425,79 @@ export function HqSchoolsTab({
                 <strong>Disabled reason:</strong> {selected.ban_reason}
               </div>
             ) : null}
+
+            {/* Synced Desktop Onboarding & School Profile Details */}
+            <div className="hq-section-block">
+              <h3>School onboarding &amp; desktop profile</h3>
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+                  gap: "10px 14px",
+                  fontSize: 12.5,
+                  padding: "12px 14px",
+                  borderRadius: 10,
+                  background: "var(--field)",
+                  border: "1px solid var(--border-2)",
+                }}
+              >
+                <div>
+                  <div style={{ fontSize: 11, color: "var(--ink-3)" }}>Session &amp; Term</div>
+                  <div style={{ fontWeight: 600, marginTop: 2 }}>
+                    {selected.current_term || selected.academic_session
+                      ? `${selected.current_term || "—"} · ${selected.academic_session || "—"}`
+                      : "Not configured yet"}
+                  </div>
+                </div>
+                <div>
+                  <div style={{ fontSize: 11, color: "var(--ink-3)" }}>Onboarding status</div>
+                  <div style={{ fontWeight: 600, marginTop: 2, color: selected.onboarding_completed_at ? "var(--ink)" : "var(--ink-2)" }}>
+                    {selected.onboarding_completed_at
+                      ? `Completed ${new Date(selected.onboarding_completed_at).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })}`
+                      : "Pending desktop finish"}
+                  </div>
+                </div>
+                <div>
+                  <div style={{ fontSize: 11, color: "var(--ink-3)" }}>Cloud owner &amp; phone</div>
+                  <div style={{ fontWeight: 600, marginTop: 2 }}>
+                    {selected.full_name}
+                    {selected.contact_phone || selected.phone ? ` · ${selected.contact_phone || selected.phone}` : ""}
+                  </div>
+                </div>
+                <div>
+                  <div style={{ fontSize: 11, color: "var(--ink-3)" }}>Local Super Admin</div>
+                  <div style={{ fontWeight: 600, marginTop: 2 }}>
+                    {selected.admin_full_name || selected.admin_username
+                      ? `${selected.admin_full_name || "Super Admin"}${selected.admin_username ? ` (@${selected.admin_username})` : ""}`
+                      : "Not synced yet"}
+                  </div>
+                </div>
+                <div>
+                  <div style={{ fontSize: 11, color: "var(--ink-3)" }}>Machine HWID</div>
+                  <div className="mono" style={{ fontSize: 11.5, marginTop: 2, wordBreak: "break-all" }}>
+                    {selected.last_hwid || "—"}
+                  </div>
+                </div>
+                <div>
+                  <div style={{ fontSize: 11, color: "var(--ink-3)" }}>Host · LAN IP · Studio</div>
+                  <div className="mono" style={{ fontSize: 11.5, marginTop: 2 }}>
+                    {[
+                      selected.last_machine_hostname,
+                      selected.last_lan_ip,
+                      selected.last_app_version ? `v${selected.last_app_version}` : null,
+                    ]
+                      .filter(Boolean)
+                      .join(" · ") || "—"}
+                  </div>
+                </div>
+                {selected.last_os_version ? (
+                  <div style={{ gridColumn: "1 / -1" }}>
+                    <div style={{ fontSize: 11, color: "var(--ink-3)" }}>Operating system</div>
+                    <div className="mono" style={{ fontSize: 11.5, marginTop: 2 }}>{selected.last_os_version}</div>
+                  </div>
+                ) : null}
+              </div>
+            </div>
 
             <div className="field">
               <label htmlFor="hqReason">Audit reason (optional note for actions below)</label>

@@ -96,6 +96,11 @@ async function buildSettingsResponse(req: NextRequest) {
     allow_self_signup: s.allow_self_signup,
     allow_paystack_checkout: s.allow_paystack_checkout,
     allow_trial_activation: s.allow_trial_activation,
+    free_trial_days: s.free_trial_days,
+    promo_banner_enabled: s.promo_banner_enabled,
+    promo_banner_event: s.promo_banner_event,
+    promo_banner_text: s.promo_banner_text,
+    promo_banner_code: s.promo_banner_code,
     updated_at: s.updated_at,
 
     webhook_url: `${origin}/api/v1/payments/paystack/webhook`,
@@ -203,7 +208,26 @@ export async function PUT(req: NextRequest) {
       : cur.global_announcement_level;
     const allowSelfSignup = body.allow_self_signup !== undefined ? Boolean(body.allow_self_signup) : cur.allow_self_signup;
     const allowPaystackCheckout = body.allow_paystack_checkout !== undefined ? Boolean(body.allow_paystack_checkout) : cur.allow_paystack_checkout;
-    const allowTrialActivation = body.allow_trial_activation !== undefined ? Boolean(body.allow_trial_activation) : cur.allow_trial_activation;
+    const allowTrialActivation =
+      body.allow_trial_activation !== undefined
+        ? Boolean(body.allow_trial_activation)
+        : body.free_trial_enabled !== undefined
+        ? Boolean(body.free_trial_enabled)
+        : cur.allow_trial_activation;
+    const freeTrialDays =
+      body.free_trial_days !== undefined
+        ? Math.max(1, Math.min(90, Math.floor(Number(body.free_trial_days) || 7)))
+        : cur.free_trial_days;
+    const promoBannerEnabled =
+      body.promo_banner_enabled !== undefined ? Boolean(body.promo_banner_enabled) : cur.promo_banner_enabled;
+    const promoBannerEvent =
+      body.promo_banner_event !== undefined ? String(body.promo_banner_event || "").trim().slice(0, 48) : cur.promo_banner_event;
+    const promoBannerText =
+      body.promo_banner_text !== undefined ? String(body.promo_banner_text || "").trim().slice(0, 120) : cur.promo_banner_text;
+    const promoBannerCode =
+      body.promo_banner_code !== undefined
+        ? String(body.promo_banner_code || "").trim().toUpperCase().replace(/[^A-Z0-9_-]/g, "").slice(0, 32)
+        : cur.promo_banner_code;
 
     const encLiveSec = effectiveLiveSec ? encryptSecret(effectiveLiveSec) : null;
     const encTestSec = effectiveTestSec ? encryptSecret(effectiveTestSec) : null;
@@ -243,6 +267,11 @@ export async function PUT(req: NextRequest) {
           allow_self_signup = ${allowSelfSignup},
           allow_paystack_checkout = ${allowPaystackCheckout},
           allow_trial_activation = ${allowTrialActivation},
+          free_trial_days = ${freeTrialDays},
+          promo_banner_enabled = ${promoBannerEnabled},
+          promo_banner_event = ${promoBannerEvent},
+          promo_banner_text = ${promoBannerText},
+          promo_banner_code = ${promoBannerCode},
           updated_by = ${hq.user.id}::uuid,
           updated_at = NOW()
       WHERE id = 1
@@ -265,6 +294,11 @@ export async function PUT(req: NextRequest) {
         require_hq_2fa: requireHq2fa,
         require_email_otp: requireEmailOtp,
         maintenance_mode: maintenanceMode,
+        allow_trial_activation: allowTrialActivation,
+        free_trial_days: freeTrialDays,
+        promo_banner_enabled: promoBannerEnabled,
+        promo_banner_event: promoBannerEvent,
+        promo_banner_code: promoBannerCode,
       },
     });
 

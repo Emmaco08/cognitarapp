@@ -205,60 +205,133 @@ def create_app(config_class=Config):
         branding = {
             "school_name": "CogniTara School",
             "school_motto": "Knowledge, Discipline, Excellence",
+            "school_address": "",
+            "school_phone": "",
+            "school_email": "",
             "academic_session": "2026/2027",
             "current_term": "First Term",
             "school_logo": None,
+            "school_logo_url": None,
             "initials": "CT",
+            "anti_cheating_profile": "medium",
+            "max_warnings": 5,
+            "default_result_visibility": "immediate",
         }
-        try:
-            conn = get_db_connection()
-            try:
-                row = conn.execute(
-                    "SELECT school_name, school_motto, academic_session, current_term, school_logo "
-                    "FROM school_settings WHERE id = 1"
-                ).fetchone()
-                if row:
-                    if row["school_name"]:
-                        branding["school_name"] = row["school_name"]
-                    if row["school_motto"]:
-                        branding["school_motto"] = row["school_motto"]
-                    if row["academic_session"]:
-                        branding["academic_session"] = row["academic_session"]
-                    if row["current_term"]:
-                        branding["current_term"] = row["current_term"]
-                    if row["school_logo"]:
-                        logo_name = str(row["school_logo"]).strip()
-                        upload_dir = app.config.get("UPLOAD_FOLDER") or Config.UPLOAD_FOLDER
-                        has_upload = bool(upload_dir and os.path.isfile(os.path.join(upload_dir, logo_name)))
-                        has_static = os.path.isfile(os.path.join(static_dir, "images", logo_name))
-                        if has_upload or has_static:
-                            branding["school_logo"] = logo_name
-            finally:
-                conn.close()
-        except Exception:
-            pass
-        parts = [w[0].upper() for w in str(branding["school_name"]).split() if w]
-        branding["initials"] = "".join(parts[:2]) or "CT"
+        ce_branding = {
+            "portal_title": "Entrance Examination Portal",
+            "institution_name": "CogniTara Academy",
+            "admission_session": "2026/2027",
+            "admission_batch": "Batch A",
+            "registration_open": 1,
+            "direct_submit": 0,
+            "result_visibility": "hidden",
+            "default_passing_score": 50,
+            "anti_cheating_profile": "medium",
+            "pending_message": "Your examination has been completed and is currently under administrative review.",
+            "approved_message": "Congratulations! Your application has been approved for admission.",
+            "rejected_message": "We regret to inform you that your application was unsuccessful for this session.",
+        }
+        school_classes = []
+        admin_nav_counts = {"exams_count": 0, "ce_exams_count": 0, "pending_count": 0}
         is_class_teacher = False
         teacher_form_class = ""
         try:
             from flask import session as _sess
-            if "teacher_id" in _sess:
-                t_conn = get_db_connection()
+            conn = get_db_connection()
+            try:
+                row = conn.execute("SELECT * FROM school_settings WHERE id = 1").fetchone()
+                if row:
+                    rdict = dict(row)
+                    if rdict.get("school_name"):
+                        branding["school_name"] = rdict["school_name"]
+                    if rdict.get("school_motto") is not None:
+                        branding["school_motto"] = rdict["school_motto"]
+                    if rdict.get("school_address") is not None:
+                        branding["school_address"] = rdict["school_address"]
+                    if rdict.get("school_phone") is not None:
+                        branding["school_phone"] = rdict["school_phone"]
+                    if rdict.get("school_email") is not None:
+                        branding["school_email"] = rdict["school_email"]
+                    if rdict.get("academic_session"):
+                        branding["academic_session"] = rdict["academic_session"]
+                    if rdict.get("current_term"):
+                        branding["current_term"] = rdict["current_term"]
+                    if rdict.get("anti_cheating_profile"):
+                        branding["anti_cheating_profile"] = rdict["anti_cheating_profile"]
+                    if rdict.get("max_warnings"):
+                        try:
+                            branding["max_warnings"] = max(1, int(rdict["max_warnings"]))
+                        except (TypeError, ValueError):
+                            pass
+                    if rdict.get("default_result_visibility"):
+                        branding["default_result_visibility"] = rdict["default_result_visibility"]
+                    if rdict.get("school_logo"):
+                        raw_logo = str(rdict["school_logo"]).strip().replace("\\", "/")
+                        logo_name = os.path.basename(raw_logo)
+                        if logo_name and logo_name not in ("None", "null", "default.png", "default_logo.png"):
+                            upload_dir = app.config.get("UPLOAD_FOLDER") or Config.UPLOAD_FOLDER
+                            upload_path = os.path.join(upload_dir, logo_name) if upload_dir else ""
+                            static_path = os.path.join(static_dir, "images", logo_name)
+                            found_path = upload_path if (upload_path and os.path.isfile(upload_path)) else (static_path if os.path.isfile(static_path) else None)
+                            if found_path:
+                                branding["school_logo"] = logo_name
+                                try:
+                                    ver = int(os.path.getmtime(found_path))
+                                except OSError:
+                                    ver = 1
+                                branding["school_logo_url"] = f"/uploads/images/{logo_name}?v={ver}"
                 try:
-                    t_row = t_conn.execute(
-                        "SELECT COALESCE(class_teacher_of, '') AS class_teacher_of FROM teachers WHERE id = ?",
-                        (_sess["teacher_id"],),
-                    ).fetchone()
-                    if t_row and str(t_row["class_teacher_of"] or "").strip():
-                        is_class_teacher = True
-                        teacher_form_class = str(t_row["class_teacher_of"]).strip()
-                finally:
-                    t_conn.close()
+                    ce_row = conn.execute("SELECT * FROM ce_settings WHERE id = 1").fetchone()
+                    if ce_row:
+                        for k, v in dict(ce_row).items():
+                            if v is not None:
+                                ce_branding[k] = v
+                except Exception:
+                    pass
+                try:
+                    cls_rows = conn.execute(
+                        "SELECT id, name, level_category, display_order FROM classes WHERE active = 1 ORDER BY display_order ASC, name ASC"
+                    ).fetchall()
+                    school_class_rows = [dict(c) for c in cls_rows]
+                    school_classes = [str(c["name"]).strip() for c in cls_rows if c["name"] and str(c["name"]).strip()]
+                except Exception:
+                    school_class_rows = []
+                    school_classes = []
+                if "admin_id" in _sess:
+                    try:
+                        admin_nav_counts["exams_count"] = int(conn.execute("SELECT COUNT(*) FROM exams").fetchone()[0] or 0)
+                        admin_nav_counts["ce_exams_count"] = int(conn.execute("SELECT COUNT(*) FROM ce_exams").fetchone()[0] or 0)
+                        admin_nav_counts["pending_count"] = int(
+                            conn.execute("SELECT COUNT(*) FROM pending_registrations WHERE status='pending'").fetchone()[0] or 0
+                        )
+                    except Exception:
+                        pass
+                if "teacher_id" in _sess:
+                    try:
+                        t_row = conn.execute(
+                            "SELECT COALESCE(class_teacher_of, '') AS class_teacher_of FROM teachers WHERE id = ?",
+                            (_sess["teacher_id"],),
+                        ).fetchone()
+                        if t_row and str(t_row["class_teacher_of"] or "").strip():
+                            is_class_teacher = True
+                            teacher_form_class = str(t_row["class_teacher_of"]).strip()
+                    except Exception:
+                        pass
+            finally:
+                conn.close()
         except Exception:
-            pass
+            school_class_rows = []
+        if not school_classes:
+            school_classes = [f"Grade {i}" for i in range(1, 13)]
+            school_class_rows = [{"id": i, "name": f"Grade {i}", "level_category": "General", "display_order": i * 10} for i in range(1, 13)]
+        parts = [w[0].upper() for w in str(branding["school_name"]).split() if w]
+        branding["initials"] = "".join(parts[:2]) or "CT"
         return {
             "school_branding": branding,
+            "ce_branding": ce_branding,
+            "school_classes": school_classes,
+            "school_class_rows": school_class_rows,
+            "admin_nav_counts": admin_nav_counts,
             "is_class_teacher": is_class_teacher,
             "teacher_form_class": teacher_form_class,
         }

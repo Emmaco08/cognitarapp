@@ -15,14 +15,14 @@
         /* NAV */
         .top-nav { background:var(--ct-surface); border-bottom:1px solid var(--ct-line-2); padding:16px 28px; display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; z-index:100; box-shadow:0 1px 3px rgba(0,0,0,0.05); }
         .nav-brand { display:flex; align-items:center; gap:12px; font-size:18px; font-weight:700; color:var(--ct-ink); }
-        .nav-brand-icon { width:40px; height:40px; background:linear-gradient(135deg,#f59e0b,#d97706); border-radius:12px; display:flex; align-items:center; justify-content:center; }
+        .nav-brand-icon { width:40px; height:40px; background:linear-gradient(135deg,#D6D4CF,#575551); border-radius:12px; display:flex; align-items:center; justify-content:center; }
         .nav-brand-icon i { color:white; font-size:18px; }
         .nav-back { color:var(--ct-ink-3); text-decoration:none; font-size:14px; display:flex; align-items:center; gap:6px; transition:color .2s; padding:8px 16px; border-radius:10px; background:var(--ct-surface); }
         .nav-back:hover { color:var(--ct-primary); background:var(--ct-surface); }
 
         /* HERO */
         .page-hero { padding:32px 32px 24px; max-width:1400px; margin:0 auto; }
-        .hero-badge { display:inline-flex; align-items:center; gap:8px; background:var(--ct-warn-soft); border:1px solid #fde68a; border-radius:30px; padding:6px 16px; font-size:12px; font-weight:600; color:#d97706; margin-bottom:16px; }
+        .hero-badge { display:inline-flex; align-items:center; gap:8px; background:var(--ct-warn-soft); border:1px solid #F8F8F8; border-radius:30px; padding:6px 16px; font-size:12px; font-weight:600; color:#575551; margin-bottom:16px; }
         .hero-title { font-size:32px; font-weight:800; color:var(--ct-ink); margin-bottom:8px; }
         .hero-sub { color:var(--ct-ink-3); font-size:15px; }
 
@@ -47,10 +47,10 @@
         /* ATTEMPT CARD */
         .attempt-card { background:var(--ct-surface); border:1px solid var(--ct-line-2); border-radius:20px; padding:20px 24px; margin-bottom:14px; transition:all 0.3s ease; position:relative; overflow:hidden; }
         .attempt-card::before { content:''; position:absolute; left:0; top:0; bottom:0; width:4px; transition:background 0.3s; }
-        .attempt-card.card-resume { border-color: #f59e0b; box-shadow: 0 4px 15px rgba(245, 158, 11, 0.1); }
-        .attempt-card.card-resume::before { background:#f59e0b; }
-        .attempt-card.card-paused::before { background:#3b82f6; }
-        .attempt-card.card-active::before { background:#10b981; }
+        .attempt-card.card-resume { border-color: #D6D4CF; box-shadow: 0 4px 15px rgba(23, 22, 20, 0.1); }
+        .attempt-card.card-resume::before { background:#D6D4CF; }
+        .attempt-card.card-paused::before { background:#575551; }
+        .attempt-card.card-active::before { background:#575551; }
         .attempt-card:hover { border-color:var(--ct-line-2); box-shadow:0 4px 12px rgba(0,0,0,0.05); }
 
         .card-top { display:flex; align-items:flex-start; justify-content:space-between; gap:16px; flex-wrap:wrap; margin-bottom:16px; }
@@ -60,41 +60,41 @@
         .student-meta { font-size:13px; color:var(--ct-ink-3); }
 
         .status-badge { display:inline-flex; align-items:center; gap:6px; border-radius:30px; padding:5px 14px; font-size:12px; font-weight:600; transition:all 0.3s; }
-        .badge-resume { background:var(--ct-warn-soft); color:#d97706; }
-        .badge-paused { background:var(--ct-accent-soft); color:#1d4ed8; }
-        .badge-active { background:var(--ct-ok-soft); color:#065f46; }
+        .badge-resume { background:var(--ct-warn-soft); color:#575551; }
+        .badge-paused { background:var(--ct-accent-soft); color:#2B2926; }
+        .badge-active { background:var(--ct-ok-soft); color:#171614; }
 
         .info-row { display:flex; flex-wrap:wrap; gap:16px; margin-bottom:16px; }
         .info-chip { display:flex; align-items:center; gap:6px; font-size:13px; color:var(--ct-ink-3); background:var(--ct-surface); padding:5px 12px; border-radius:20px; }
-        .info-chip i { width:14px; color:#94a3b8; }
+        .info-chip i { width:14px; color:#D6D4CF; }
 
         /* TIME CONTROLS */
         .time-control-group { display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-top:12px; padding-top:12px; border-top:1px solid var(--ct-line-2); }
         .time-display { background:var(--ct-surface); padding:6px 14px; border-radius:30px; font-family:monospace; font-size:15px; font-weight:600; color:var(--ct-ink); }
         .time-btn { background:var(--ct-surface); border:1px solid var(--ct-line-2); border-radius:30px; padding:5px 14px; font-size:12px; font-weight:600; cursor:pointer; transition:all 0.2s; display:inline-flex; align-items:center; gap:5px; }
-        .time-btn.add { background:var(--ct-ok-soft); border-color:#10b981; color:#065f46; }
-        .time-btn.add:hover { background:#a7f3d0; transform:scale(1.02); }
-        .time-btn.subtract { background:var(--ct-bad-soft); border-color:#ef4444; color:#991b1b; }
+        .time-btn.add { background:var(--ct-ok-soft); border-color:#575551; color:#171614; }
+        .time-btn.add:hover { background:#F3F2F0; transform:scale(1.02); }
+        .time-btn.subtract { background:var(--ct-bad-soft); border-color:#2B2926; color:#171614; }
         .time-btn.subtract:hover { background:var(--ct-bad-soft); transform:scale(1.02); }
 
         /* ACTION BUTTONS */
         .action-row { display:flex; flex-wrap:wrap; gap:10px; margin-top:12px; padding-top:12px; border-top:1px solid #f1f5f9; }
         .action-btn { display:inline-flex; align-items:center; gap:7px; border:none; border-radius:12px; padding:9px 18px; font-size:13px; font-weight:600; cursor:pointer; transition:all 0.2s; }
         .action-btn:hover { transform:scale(1.02); filter:brightness(1.06); }
-        .btn-approve      { background:#10b981; color:white; }
-        .btn-pause        { background:#3b82f6; color:white; }
+        .btn-approve      { background:#575551; color:white; }
+        .btn-pause        { background:#575551; color:white; }
         .btn-resume       { background:var(--ct-primary); color:white; }
-        .btn-force-submit { background:#dc2626; color:white; }
+        .btn-force-submit { background:#2B2926; color:white; }
 
         /* EMPTY */
         .empty-state { text-align:center; padding:60px 20px; background:var(--ct-surface); border-radius:24px; border:1px solid var(--ct-line-2); }
         .empty-icon  { font-size:52px; margin-bottom:16px; opacity:0.5; }
         .empty-title { font-size:18px; font-weight:700; color:var(--ct-ink-2); margin-bottom:8px; }
-        .empty-sub   { font-size:14px; color:#94a3b8; }
+        .empty-sub   { font-size:14px; color:#D6D4CF; }
 
         /* REFRESH */
-        .live-dot { display:inline-block; width:8px; height:8px; border-radius:50%; background:#10b981; box-shadow:0 0 0 0 rgba(16,185,129,0.6); animation:livePing 1.5s infinite; }
-        @keyframes livePing { 0% { box-shadow:0 0 0 0 rgba(16,185,129,0.6); } 70% { box-shadow:0 0 0 10px rgba(16,185,129,0); } 100% { box-shadow:0 0 0 0 rgba(16,185,129,0); } }
+        .live-dot { display:inline-block; width:8px; height:8px; border-radius:50%; background:#575551; box-shadow:0 0 0 0 rgba(23, 22, 20,0.6); animation:livePing 1.5s infinite; }
+        @keyframes livePing { 0% { box-shadow:0 0 0 0 rgba(23, 22, 20,0.6); } 70% { box-shadow:0 0 0 10px rgba(23, 22, 20,0); } 100% { box-shadow:0 0 0 0 rgba(23, 22, 20,0); } }
 
         /* FLUID LIST ANIMATION */
         #active-sessions-container { display: flex; flex-direction: column; gap: 14px; }
@@ -189,10 +189,10 @@
         Technical Support
     </div>
     <div style="display:flex;align-items:center;gap:14px;">
-        <span style="font-size:13px;color:#64748b;">
+        <span style="font-size:13px;color:#2B2926;">
             <span class="live-dot"></span>&nbsp;Live monitoring
         </span>
-        <a href="/admin/ce-settings" class="nav-back" style="background:#eef2ff; color:#4338ca; border-color:#c7d2fe;">
+        <a href="/admin/ce-settings" class="nav-back" style="background:#F8F8F8; color:#2B2926; border-color:#F3F2F0;">
             <i class="fas fa-sliders-h"></i> CE Settings
         </a>
         <a href="/admin/common-entrance" class="nav-back">
@@ -215,31 +215,31 @@
 <div class="stats-row">
     <div class="stat-card">
         <div class="stat-left">
-            <div class="stat-number" id="stat-active" style="color:#10b981;">{{ total_active }}</div>
+            <div class="stat-number" id="stat-active" style="color:#575551;">{{ total_active }}</div>
             <div class="stat-label">Total Active Sessions</div>
         </div>
-        <div class="stat-icon" style="background: var(--ct-ok-soft);"><i class="fas fa-users" style="color:#10b981;"></i></div>
+        <div class="stat-icon" style="background: var(--ct-ok-soft);"><i class="fas fa-users" style="color:#575551;"></i></div>
     </div>
     <div class="stat-card">
         <div class="stat-left">
-            <div class="stat-number" id="stat-running" style="color:#3b82f6;">{{ total_running }}</div>
+            <div class="stat-number" id="stat-running" style="color:#575551;">{{ total_running }}</div>
             <div class="stat-label">Currently Writing</div>
         </div>
-        <div class="stat-icon" style="background:#dbeafe;"><i class="fas fa-pen-fancy" style="color:#3b82f6;"></i></div>
+        <div class="stat-icon" style="background:#F8F8F8;"><i class="fas fa-pen-fancy" style="color:#575551;"></i></div>
     </div>
     <div class="stat-card">
         <div class="stat-left">
-            <div class="stat-number" id="stat-paused" style="color:#f59e0b;">{{ total_paused }}</div>
+            <div class="stat-number" id="stat-paused" style="color:#D6D4CF;">{{ total_paused }}</div>
             <div class="stat-label">Paused</div>
         </div>
-        <div class="stat-icon" style="background:#fef3c7;"><i class="fas fa-pause-circle" style="color:#f59e0b;"></i></div>
+        <div class="stat-icon" style="background:#F8F8F8;"><i class="fas fa-pause-circle" style="color:#D6D4CF;"></i></div>
     </div>
     <div class="stat-card">
         <div class="stat-left">
-            <div class="stat-number" id="stat-requests" style="color:#ef4444;">{{ total_requests }}</div>
+            <div class="stat-number" id="stat-requests" style="color:#2B2926;">{{ total_requests }}</div>
             <div class="stat-label">Pending Requests</div>
         </div>
-        <div class="stat-icon" style="background:#fee2e2;"><i class="fas fa-exclamation-triangle" style="color:#ef4444;"></i></div>
+        <div class="stat-icon" style="background:#F8F8F8;"><i class="fas fa-exclamation-triangle" style="color:#2B2926;"></i></div>
     </div>
 </div>
 
@@ -248,19 +248,19 @@
     <div class="section-heading" style="justify-content: space-between; flex-wrap: wrap;">
         <div style="display: flex; align-items: center; gap: 12px;">
             <div class="section-icon" style="background: var(--ct-ok-soft);">
-                <i class="fas fa-play-circle" style="color:#10b981;"></i>
+                <i class="fas fa-play-circle" style="color:#575551;"></i>
             </div>
             <span class="section-title">All Live Sessions</span>
         </div>
         
         <div style="display: flex; gap: 10px;">
-            <button class="action-btn" style="background:#10b981; color:white;" onclick="resumeAllExams()">
+            <button class="action-btn" style="background:#575551; color:white;" onclick="resumeAllExams()">
                 <i class="fas fa-play-circle"></i> Resume All
             </button>
-            <button class="action-btn" style="background:#f59e0b; color:white;" onclick="pauseAllExams()">
+            <button class="action-btn" style="background:#D6D4CF; color:white;" onclick="pauseAllExams()">
                 <i class="fas fa-pause-circle"></i> Pause All
             </button>
-            <button class="action-btn" style="background:#dc2626; color:white;" onclick="forceSubmitAllExams()">
+            <button class="action-btn" style="background:#2B2926; color:white;" onclick="forceSubmitAllExams()">
                 <i class="fas fa-paper-plane"></i> Force Submit All
             </button>
         </div>
@@ -277,9 +277,9 @@
                 <div class="card-top">
                     <div class="student-info">
                         <div class="student-avatar" style="background:linear-gradient(135deg,
-                            {% if a.resume_requested %}#f59e0b,#d97706
-                            {% elif a.is_paused %}#3b82f6,#2563eb
-                            {% else %}#10b981,#059669{% endif %});color:white;">
+                            {% if a.resume_requested %}#D6D4CF,#575551
+                            {% elif a.is_paused %}#575551,#2B2926
+                            {% else %}#575551,#2B2926{% endif %});color:white;">
                             {{ a.full_name[0].upper() }}
                         </div>
                         <div>
@@ -315,7 +315,7 @@
                 <div class="time-control-group">
                     <span class="time-display" id="time-value-{{ a.id }}">{{ (a.remaining_time // 60) }}:{{ '%02d' % (a.remaining_time % 60) }}</span>
                     
-                    <input type="number" id="custom-time-{{ a.id }}" placeholder="Mins" min="1" style="width: 75px; padding: 5px 10px; border: 1px solid #cbd5e1; border-radius: 30px; font-size: 13px; outline: none; transition: border-color 0.2s;">
+                    <input type="number" id="custom-time-{{ a.id }}" placeholder="Mins" min="1" style="width: 75px; padding: 5px 10px; border: 1px solid #F3F2F0; border-radius: 30px; font-size: 13px; outline: none; transition: border-color 0.2s;">
                     
                     <button class="time-btn add" onclick="adjustCustomTime({{ a.id }}, 'add')">
                         <i class="fas fa-plus-circle"></i> Add
@@ -345,7 +345,7 @@
                     <button class="action-btn btn-force-submit" onclick="forceSubmit({{ a.id }}, '{{ a.full_name | replace("'", "\\'") }}')">
                         <i class="fas fa-paper-plane"></i> Force Submit
                     </button>
-                    <button class="action-btn" style="background:#f59e0b; color:white;" onclick="resetWarnings({{ a.id }})">
+                    <button class="action-btn" style="background:#D6D4CF; color:white;" onclick="resetWarnings({{ a.id }})">
                         <i class="fas fa-undo"></i> Reset Warnings
                     </button>
                 </div>
@@ -379,7 +379,7 @@ async function approveResume(attemptId) {
         title: 'Approve Resume Request?',
         text: 'This will unlock the exam and allow the student to continue on their new computer.',
         icon: 'question', showCancelButton: true,
-        confirmButtonColor: '#10b981', confirmButtonText: 'Yes, Approve', cancelButtonText: 'Cancel'
+        confirmButtonColor: '#575551', confirmButtonText: 'Yes, Approve', cancelButtonText: 'Cancel'
     });
     if (!r.isConfirmed) return;
     try {
@@ -396,7 +396,7 @@ async function pauseExam(attemptId) {
         title: 'Pause Exam?',
         text: "The student's timer will freeze and they won't be able to continue until resumed.",
         icon: 'question', showCancelButton: true,
-        confirmButtonColor: '#3b82f6', confirmButtonText: 'Yes, Pause', cancelButtonText: 'Cancel'
+        confirmButtonColor: '#575551', confirmButtonText: 'Yes, Pause', cancelButtonText: 'Cancel'
     });
     if (!r.isConfirmed) return;
     try {
@@ -413,7 +413,7 @@ async function resumeExam(attemptId) {
         title: 'Resume Exam?',
         text: 'The student will be able to continue where they left off.',
         icon: 'question', showCancelButton: true,
-        confirmButtonColor: '#8b5cf6', confirmButtonText: 'Yes, Resume', cancelButtonText: 'Cancel'
+        confirmButtonColor: '#575551', confirmButtonText: 'Yes, Resume', cancelButtonText: 'Cancel'
     });
     if (!r.isConfirmed) return;
     try {
@@ -435,7 +435,7 @@ async function adjustCustomTime(attemptId, action) {
         title: `${isAdd ? 'Add' : 'Subtract'} Time?`,
         text: `${isAdd ? 'Add' : 'Remove'} ${minutes} minute${minutes > 1 ? 's' : ''} ${isAdd ? 'to' : 'from'} this student's exam.`,
         icon: 'question', showCancelButton: true,
-        confirmButtonColor: isAdd ? '#10b981' : '#ef4444', confirmButtonText: `Yes, ${isAdd ? 'Add' : 'Subtract'}`, cancelButtonText: 'Cancel'
+        confirmButtonColor: isAdd ? '#575551' : '#2B2926', confirmButtonText: `Yes, ${isAdd ? 'Add' : 'Subtract'}`, cancelButtonText: 'Cancel'
     });
     if (!r.isConfirmed) return;
     
@@ -454,7 +454,7 @@ async function resetWarnings(attemptId) {
     const r = await Swal.fire({
         title: 'Reset Warnings?',
         text: 'This will clear all warnings for this student back to 0.',
-        icon: 'question', showCancelButton: true, confirmButtonColor: '#f59e0b', confirmButtonText: '<i class="fas fa-undo"></i> Yes, Reset', cancelButtonText: 'Cancel'
+        icon: 'question', showCancelButton: true, confirmButtonColor: '#D6D4CF', confirmButtonText: '<i class="fas fa-undo"></i> Yes, Reset', cancelButtonText: 'Cancel'
     });
     if (!r.isConfirmed) return;
     try {
@@ -470,9 +470,9 @@ async function forceSubmit(attemptId, studentName) {
         title: 'Force Submit Exam?',
         html: `<div style="text-align:left;line-height:1.9;">
                  <b>${studentName}</b>'s exam will be submitted immediately with their current answers.<br>
-                 <span style="color:#dc2626;font-weight:600;"><i class="fas fa-exclamation-triangle"></i> This cannot be undone.</span>
+                 <span style="color:#2B2926;font-weight:600;"><i class="fas fa-exclamation-triangle"></i> This cannot be undone.</span>
                </div>`,
-        icon: 'warning', showCancelButton: true, confirmButtonColor: '#dc2626', confirmButtonText: '<i class="fas fa-paper-plane"></i>&nbsp;Yes, Force Submit', cancelButtonText: 'Cancel', focusCancel: true
+        icon: 'warning', showCancelButton: true, confirmButtonColor: '#2B2926', confirmButtonText: '<i class="fas fa-paper-plane"></i>&nbsp;Yes, Force Submit', cancelButtonText: 'Cancel', focusCancel: true
     });
     if (!r.isConfirmed) return;
     Swal.fire({ title: 'Submitting...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
@@ -495,7 +495,7 @@ async function forceSubmit(attemptId, studentName) {
 
 // Bulk Actions
 async function pauseAllExams() {
-    const r = await Swal.fire({ title: 'Pause ALL Active Exams?', text: "Instantly freeze all timers.", icon: 'warning', showCancelButton: true, confirmButtonColor: '#f59e0b', confirmButtonText: 'Yes, Pause All', cancelButtonText: 'Cancel' });
+    const r = await Swal.fire({ title: 'Pause ALL Active Exams?', text: "Instantly freeze all timers.", icon: 'warning', showCancelButton: true, confirmButtonColor: '#D6D4CF', confirmButtonText: 'Yes, Pause All', cancelButtonText: 'Cancel' });
     if (!r.isConfirmed) return;
     Swal.fire({ title: 'Pausing everyone...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
     try { 
@@ -509,7 +509,7 @@ async function pauseAllExams() {
 }
 
 async function forceSubmitAllExams() {
-    const r = await Swal.fire({ title: 'Force Submit ALL Exams?', html: `<span style="color:#dc2626;font-weight:600;"><i class="fas fa-exclamation-triangle"></i> THIS ACTION CANNOT BE UNDONE.</span>`, icon: 'error', showCancelButton: true, confirmButtonColor: '#dc2626', confirmButtonText: 'Yes, Submit EVERYTHING', cancelButtonText: 'Cancel', focusCancel: true });
+    const r = await Swal.fire({ title: 'Force Submit ALL Exams?', html: `<span style="color:#2B2926;font-weight:600;"><i class="fas fa-exclamation-triangle"></i> THIS ACTION CANNOT BE UNDONE.</span>`, icon: 'error', showCancelButton: true, confirmButtonColor: '#2B2926', confirmButtonText: 'Yes, Submit EVERYTHING', cancelButtonText: 'Cancel', focusCancel: true });
     if (!r.isConfirmed) return;
     Swal.fire({ title: 'Submitting all exams...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
     try { 
@@ -523,7 +523,7 @@ async function forceSubmitAllExams() {
 }
 
 async function resumeAllExams() {
-    const r = await Swal.fire({ title: 'Resume ALL Paused Exams?', text: "Instantly unfreeze all currently paused exams.", icon: 'question', showCancelButton: true, confirmButtonColor: '#10b981', confirmButtonText: 'Yes, Resume All', cancelButtonText: 'Cancel' });
+    const r = await Swal.fire({ title: 'Resume ALL Paused Exams?', text: "Instantly unfreeze all currently paused exams.", icon: 'question', showCancelButton: true, confirmButtonColor: '#575551', confirmButtonText: 'Yes, Resume All', cancelButtonText: 'Cancel' });
     if (!r.isConfirmed) return;
     Swal.fire({ title: 'Resuming everyone...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
     try { 
@@ -595,7 +595,7 @@ setInterval(async () => {
                 const secs = ((session.remaining_time || 0) % 60).toString().padStart(2, '0');
                 const studentName = session.student_name || session.full_name || 'Candidate';
                 const initial = studentName[0].toUpperCase();
-                const avatarBg = session.resume_requested ? 'linear-gradient(135deg,#f59e0b,#d97706)' : (session.is_paused ? 'linear-gradient(135deg,#3b82f6,#2563eb)' : 'linear-gradient(135deg,#10b981,#059669)');
+                const avatarBg = session.resume_requested ? 'linear-gradient(135deg,#2B2926,#171614)' : (session.is_paused ? 'linear-gradient(135deg,#171614,#2B2926)' : 'linear-gradient(135deg,#171614,#2B2926)');
                 const photoContent = session.photo ? `<img src="/static/images/${session.photo}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;" onerror="this.outerHTML='${initial}'">` : initial;
 
                 cardEl.innerHTML = `
@@ -636,7 +636,7 @@ setInterval(async () => {
 
                     <div class="time-control-group">
                         <span class="time-display" id="time-value-${session.id}">${mins}:${secs}</span>
-                        <input type="number" id="custom-time-${session.id}" placeholder="Mins" min="1" style="width: 75px; padding: 5px 10px; border: 1px solid #cbd5e1; border-radius: 30px; font-size: 13px; outline: none;">
+                        <input type="number" id="custom-time-${session.id}" placeholder="Mins" min="1" style="width: 75px; padding: 5px 10px; border: 1px solid #F3F2F0; border-radius: 30px; font-size: 13px; outline: none;">
                         <button class="time-btn add" onclick="adjustCustomTime(${session.id}, 'add')">
                             <i class="fas fa-plus-circle"></i> Add
                         </button>
@@ -658,7 +658,7 @@ setInterval(async () => {
                         <button class="action-btn btn-force-submit" onclick="forceSubmit(${session.id}, '${studentName.replace(/'/g, "\\'")}')">
                             <i class="fas fa-paper-plane"></i> Force Submit
                         </button>
-                        <button class="action-btn" style="background:#f59e0b; color:white;" onclick="resetWarnings(${session.id})">
+                        <button class="action-btn" style="background:#D6D4CF; color:white;" onclick="resetWarnings(${session.id})">
                             <i class="fas fa-undo"></i> Reset Warnings
                         </button>
                     </div>
@@ -696,7 +696,7 @@ setInterval(async () => {
                     if (session.resume_requested) {
                         cardEl.className = "attempt-card card-resume";
                         cardEl.style.order = "-2";
-                        if (avatarEl) avatarEl.style.background = "linear-gradient(135deg,#f59e0b,#d97706)";
+                        if (avatarEl) avatarEl.style.background = "linear-gradient(135deg,#2B2926,#171614)";
                         if (statusEl) {
                             statusEl.className = "status-badge badge-resume";
                             statusEl.innerHTML = `<i class="fas fa-clock"></i> Waiting for Approval`;
@@ -707,7 +707,7 @@ setInterval(async () => {
                     } else if (session.is_paused) {
                         cardEl.className = "attempt-card card-paused";
                         cardEl.style.order = "-1";
-                        if (avatarEl) avatarEl.style.background = "linear-gradient(135deg,#3b82f6,#2563eb)";
+                        if (avatarEl) avatarEl.style.background = "linear-gradient(135deg,#171614,#2B2926)";
                         if (statusEl) {
                             statusEl.className = "status-badge badge-paused";
                             statusEl.innerHTML = `<i class="fas fa-pause-circle"></i> Paused`;
@@ -718,7 +718,7 @@ setInterval(async () => {
                     } else {
                         cardEl.className = "attempt-card card-active";
                         cardEl.style.order = "0";
-                        if (avatarEl) avatarEl.style.background = "linear-gradient(135deg,#10b981,#059669)";
+                        if (avatarEl) avatarEl.style.background = "linear-gradient(135deg,#171614,#2B2926)";
                         if (statusEl) {
                             statusEl.className = "status-badge badge-active";
                             statusEl.innerHTML = `<i class="fas fa-circle-notch fa-spin"></i> Active`;

@@ -158,10 +158,26 @@ def edit_teacher(teacher_id):
                 teacher_assignments = [{"class_name": teacher_dict["class"], "specialisation": "General"}]
         
         if request.method == "POST":
-            username = request.form["username"]
+            full_name = request.form.get("full_name", "").strip()
+            username = request.form["username"].strip()
             password = request.form.get("password", "")
             class_teacher_of = request.form.get("class_teacher_of", "")
-            
+
+            if not full_name:
+                return render_template(
+                    "edit_teacher.html",
+                    teacher=teacher_dict,
+                    teacher_assignments=teacher_assignments,
+                    error="Teacher full name is required.",
+                )
+
+            # Ensure full_name column exists on legacy databases
+            try:
+                conn.execute("ALTER TABLE teachers ADD COLUMN full_name TEXT DEFAULT ''")
+            except sqlite3.OperationalError:
+                pass
+            conn.execute("UPDATE teachers SET full_name=? WHERE id=?", (full_name, teacher_id))
+
             # Get multiple class assignments
             class_names = request.form.getlist("class_name")
             specialisations = request.form.getlist("specialisation")
@@ -216,13 +232,14 @@ def edit_teacher(teacher_id):
                 if class_names:
                     conn.execute("UPDATE teachers SET class=? WHERE id=?", (class_names[0], teacher_id))
             
-            log_action("Admin", session["username"], f"Updated teacher '{teacher_dict['username']}'", conn=conn)
+            log_action("Admin", session["username"], f"Updated teacher '{full_name}' (@{teacher_dict['username']})", conn=conn)
             conn.commit()
-            return redirect("/admin")
+            return redirect("/admin#sec-teachers")
         
         return render_template("edit_teacher.html", 
                                teacher=teacher_dict, 
-                               teacher_assignments=teacher_assignments)
+                               teacher_assignments=teacher_assignments,
+                               error=None)
     finally:
         conn.close()
 
@@ -249,12 +266,11 @@ def edit_student(student_id):
             student_dict['specialisation'] = 'General'
         
         if request.method == "POST":
-            username = request.form["username"]
+            username = request.form["username"].strip()
             password = request.form.get("password", "")
-            class_name = request.form["class"]
-            full_name = request.form.get("full_name", "")
-            email = request.form.get("email", "")
-            specialisation = request.form.get("specialisation", "General")
+            class_name = request.form["class"].strip()
+            full_name = request.form.get("full_name", "").strip()
+            specialisation = request.form.get("specialisation", "General").strip() or "General"
             
             file = request.files.get('photo')
             
@@ -262,13 +278,13 @@ def edit_student(student_id):
             if password:
                 conn.execute("UPDATE students SET password=? WHERE id=?", (generate_password_hash(password), student_id))
             
-            # Update student details
+            # Update student details (email field removed from student records)
             try:
                 conn.execute("""
                     UPDATE students 
-                    SET full_name=?, email=?, class=?, specialisation=? 
+                    SET full_name=?, class=?, specialisation=? 
                     WHERE id=?
-                """, (full_name, email, class_name, specialisation, student_id))
+                """, (full_name, class_name, specialisation, student_id))
             except sqlite3.OperationalError:
                 conn.execute("UPDATE students SET class=? WHERE id=?", (class_name, student_id))
             
@@ -291,7 +307,7 @@ def edit_student(student_id):
             
             log_action("Admin", session.get("username", "admin"), f"Updated student '{username}'", conn=conn)
             conn.commit()
-            return redirect("/admin")
+            return redirect("/admin#sec-students")
         
         return render_template("edit_student.html", student=student_dict)
     finally:
@@ -303,18 +319,19 @@ def add_student():
     if "admin_id" not in session:
         return redirect("/")
     if request.method == "POST":
-        full_name = request.form.get("full_name", "")
-        username = request.form["username"]
+        full_name = request.form.get("full_name", "").strip()
+        username = request.form["username"].strip()
         password = generate_password_hash(request.form["password"])
-        class_name = request.form["class"]
-        
-        specialisation = request.form.get("specialisation", "General")
-        email = request.form.get("email", "").strip()
-        
+        class_name = request.form["class"].strip()
+        specialisation = request.form.get("specialisation", "General").strip() or "General"
+
+        if not full_name:
+            return render_template("add_student.html", error="Student full name is required.")
+
         file = request.files.get('photo')
         
         conn = get_db_connection()
-        existing = conn.execute("SELECT id FROM students WHERE username = ?", (username,)).fetchone()
+        existing = conn.execute("SELECT id FROM students WHERE LOWER(username) = LOWER(?)", (username,)).fetchone()
         
         if existing:
             conn.close()
@@ -329,20 +346,20 @@ def add_student():
                 filename = cand_name
         
         conn.execute("""INSERT INTO students (full_name, username, password, class, specialisation, email, photo, status, approved_at) 
-                       VALUES (?, ?, ?, ?, ?, ?, ?, 'approved', CURRENT_TIMESTAMP)""",
-                     (full_name, username, password, class_name, specialisation, email, filename))
-        log_action("Admin", session.get("username", "admin"), f"Created student '{username}' ({class_name})", conn=conn)
+                       VALUES (?, ?, ?, ?, ?, '', ?, 'approved', CURRENT_TIMESTAMP)""",
+                     (full_name, username, password, class_name, specialisation, filename))
+        log_action("Admin", session.get("username", "admin"), f"Created student '{full_name}' (@{username}, {class_name})", conn=conn)
         conn.commit()
         conn.close()
-        return redirect("/admin")
+        return redirect("/admin#sec-students")
     return render_template("add_student.html", error=None)
 
 
 @admin_users_bp.route("/check_student_username")
 def check_student_username():
-    username = request.args.get("username")
+    username = request.args.get("username", "").strip()
     conn = get_db_connection()
-    existing = conn.execute("SELECT id FROM students WHERE username = ?", (username,)).fetchone()
+    existing = conn.execute("SELECT id FROM students WHERE LOWER(username) = LOWER(?)", (username,)).fetchone()
     conn.close()
     return {"exists": existing is not None}
 
@@ -353,21 +370,33 @@ def add_teacher():
         return redirect("/")
     
     if request.method == "POST":
-        username = request.form["username"]
-        password = generate_password_hash(request.form["password"])
-        class_teacher_of = request.form.get("class_teacher_of", "")
+        full_name = request.form.get("full_name", "").strip()
+        username = request.form.get("username", "").strip()
+        raw_password = request.form.get("password", "")
+        class_teacher_of = request.form.get("class_teacher_of", "").strip()
+        
+        if not full_name:
+            return render_template("add_teacher.html", error="Teacher full name is required.")
+        if not username or len(username) < 3:
+            return render_template("add_teacher.html", error="Username must be at least 3 characters.")
+        if not raw_password or len(raw_password) < 6:
+            return render_template("add_teacher.html", error="Password must be at least 6 characters.")
+
+        password = generate_password_hash(raw_password)
         
         # Get multiple class assignments from form
-        # The form will send arrays like: class_name[], specialisation[]
         class_names = request.form.getlist("class_name")
         specialisations = request.form.getlist("specialisation")
         
-        email = request.form.get("email", "").strip()
         file = request.files.get('photo')
         
         conn = get_db_connection()
+        try:
+            conn.execute("ALTER TABLE teachers ADD COLUMN full_name TEXT DEFAULT ''")
+        except sqlite3.OperationalError:
+            pass
         
-        existing = conn.execute("SELECT id FROM teachers WHERE username = ?", (username,)).fetchone()
+        existing = conn.execute("SELECT id FROM teachers WHERE LOWER(username) = LOWER(?)", (username,)).fetchone()
         if existing:
             conn.close()
             return render_template("add_teacher.html", error="Username already exists!")
@@ -382,14 +411,13 @@ def add_teacher():
         
         # Insert teacher with primary class (for backward compatibility)
         primary_class = class_names[0] if class_names else ""
-        primary_specialisation = specialisations[0] if specialisations else "General"
         
         cursor = conn.cursor()
         try:
             cursor.execute("""
-                INSERT INTO teachers (username, password, class, photo, class_teacher_of, email) 
+                INSERT INTO teachers (username, full_name, password, class, photo, class_teacher_of) 
                 VALUES (?, ?, ?, ?, ?, ?)
-            """, (username, password, primary_class, filename, class_teacher_of, email))
+            """, (username, full_name, password, primary_class, filename, class_teacher_of))
         except sqlite3.OperationalError:
             cursor.execute("""
                 INSERT INTO teachers (username, password, class, photo, class_teacher_of) 
@@ -398,16 +426,10 @@ def add_teacher():
         
         teacher_id = cursor.lastrowid
         
-        # 🚨 NEW: Create a set to track unique assignments
         seen_assignments = set()
-        
-        # Insert all class assignments
         for class_name, specialisation in zip(class_names, specialisations):
             if class_name and specialisation:
-                # Clean the strings and create a unique key
                 assignment_key = (class_name.strip(), specialisation.strip())
-                
-                # Only insert if we haven't seen this exact pair yet
                 if assignment_key not in seen_assignments:
                     conn.execute("""
                         INSERT INTO teacher_class_assignments (teacher_id, class_name, specialisation)
@@ -415,10 +437,10 @@ def add_teacher():
                     """, (teacher_id, assignment_key[0], assignment_key[1]))
                     seen_assignments.add(assignment_key)
         
-        log_action("Admin", session.get("username", "admin"), f"Created teacher '{username}'", conn=conn)
+        log_action("Admin", session.get("username", "admin"), f"Created teacher '{full_name}' (@{username})", conn=conn)
         conn.commit()
         conn.close()
-        return redirect("/admin")
+        return redirect("/admin#sec-teachers")
     
     return render_template("add_teacher.html", error=None)
 

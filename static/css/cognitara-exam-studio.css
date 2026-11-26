@@ -7,110 +7,110 @@
    ========================================================================== */
 
 :root,
-[data-theme="dark"] {
-  --ex-canvas: #111111;
-  --ex-surface: #191919;
-  --ex-surface-2: #202020;
-  --ex-elevated: #282828;
-  --ex-well: #141414;
-  --ex-ink: #ECECEC;
-  --ex-ink-2: #9E9E9E;
-  --ex-ink-3: #6C6C6C;
-  --ex-line: rgba(255, 255, 255, 0.055);
-  --ex-line-2: rgba(255, 255, 255, 0.085);
-  --ex-line-3: rgba(255, 255, 255, 0.14);
+[data-theme="light"] {
+  --ex-canvas: #F8F8F8;
+  --ex-surface: #FFFFFF;
+  --ex-surface-2: #F3F2F0;
+  --ex-elevated: #EAE8E4;
+  --ex-well: #F3F2F0;
+  --ex-ink: #171614;
+  --ex-ink-2: #575551;
+  --ex-ink-3: #83807B;
+  --ex-line: rgba(23, 22, 20, 0.08);
+  --ex-line-2: rgba(23, 22, 20, 0.13);
+  --ex-line-3: rgba(23, 22, 20, 0.22);
   --ex-specular: 0 0 0 0 transparent;
-  --ex-shadow: 0 12px 32px -18px rgba(0, 0, 0, 0.55);
-  --ex-cta-bg: #3B82F6;
+  --ex-shadow: 0 14px 36px -22px rgba(23, 22, 20, 0.10), 0 1px 2px rgba(23, 22, 20, 0.03);
+  --ex-cta-bg: #171614;
   --ex-cta-ink: #FFFFFF;
-  --ex-cta-hover: #4F8BFF;
-  --ex-sel: #3B82F6;
-  --ex-sel-soft: rgba(59, 130, 246, 0.08);
-  --ex-ok: #3ECF8E;
-  --ex-ok-soft: rgba(62, 207, 142, 0.09);
-  --ex-ok-line: rgba(62, 207, 142, 0.20);
-  --ex-warn: #D4A14C;
-  --ex-warn-soft: rgba(212, 161, 76, 0.10);
-  --ex-warn-line: rgba(212, 161, 76, 0.22);
-  --ex-bad: #E57373;
-  --ex-bad-soft: rgba(229, 115, 115, 0.10);
-  --ex-bad-line: rgba(229, 115, 115, 0.22);
+  --ex-cta-hover: #2B2926;
+  --ex-sel: #171614;
+  --ex-sel-soft: rgba(23, 22, 20, 0.065);
+  --ex-ok: #171614;
+  --ex-ok-soft: #F3F2F0;
+  --ex-ok-line: rgba(23, 22, 20, 0.16);
+  --ex-warn: #171614;
+  --ex-warn-soft: #F3F2F0;
+  --ex-warn-line: rgba(23, 22, 20, 0.16);
+  --ex-bad: #171614;
+  --ex-bad-soft: rgba(23, 22, 20, 0.08);
+  --ex-bad-line: rgba(23, 22, 20, 0.22);
 
-  /* Hardware Scientific Calculator Tokens — Anodized Neutral Carbon */
-  --calc-chassis: #181818;
-  --calc-chassis-edge: rgba(255, 255, 255, 0.08);
-  --calc-head: #141414;
-  --calc-lcd: #0D0D0D;
-  --calc-lcd-edge: rgba(255, 255, 255, 0.06);
-  --calc-key-sci: #202020;
-  --calc-key-sci-hover: #282828;
-  --calc-key-sci-ink: #A6A6A6;
-  --calc-key-num: #2A2A2A;
-  --calc-key-num-hover: #333333;
-  --calc-key-num-ink: #F2F2F2;
-  --calc-key-op: #21252F;
-  --calc-key-op-hover: #293040;
-  --calc-key-op-ink: #7BA8F8;
-  --calc-key-util: #222222;
-  --calc-key-util-hover: #2B2B2B;
-  --calc-key-clear-ink: #E08269;
-  --calc-key-eq: #C98435;
-  --calc-key-eq-hover: #D69141;
-  --calc-key-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04), 0 1px 2px rgba(0, 0, 0, 0.36);
-  --calc-key-num-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 1px 3px rgba(0, 0, 0, 0.34);
+  /* Hardware Scientific Calculator Tokens — Cream-White & Obsidian Monochrome */
+  --calc-chassis: #EFEFEF;
+  --calc-chassis-edge: rgba(23, 22, 20, 0.12);
+  --calc-head: #E8E7E4;
+  --calc-lcd: #FFFFFF;
+  --calc-lcd-edge: rgba(23, 22, 20, 0.09);
+  --calc-key-sci: #E6E5E2;
+  --calc-key-sci-hover: #DBD9D5;
+  --calc-key-sci-ink: #3D3B37;
+  --calc-key-num: #FFFFFF;
+  --calc-key-num-hover: #F5F4F2;
+  --calc-key-num-ink: #171614;
+  --calc-key-op: #E8E7E4;
+  --calc-key-op-hover: #DDDCD8;
+  --calc-key-op-ink: #171614;
+  --calc-key-util: #E6E5E2;
+  --calc-key-util-hover: #DBD9D5;
+  --calc-key-clear-ink: #171614;
+  --calc-key-eq: #171614;
+  --calc-key-eq-hover: #2B2926;
+  --calc-key-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.65), 0 1px 2px rgba(23, 22, 20, 0.06);
+  --calc-key-num-shadow: inset 0 1px 0 #FFFFFF, 0 1px 2px rgba(23, 22, 20, 0.08);
 }
 
-[data-theme="light"] {
-  --ex-canvas: #F7F7F8;
-  --ex-surface: #FFFFFF;
-  --ex-surface-2: #F2F2F4;
-  --ex-elevated: #E8E8EC;
-  --ex-well: #F3F3F5;
-  --ex-ink: #141416;
-  --ex-ink-2: #52525B;
-  --ex-ink-3: #71717A;
-  --ex-line: rgba(20, 20, 22, 0.075);
-  --ex-line-2: rgba(20, 20, 22, 0.12);
-  --ex-line-3: rgba(20, 20, 22, 0.20);
+[data-theme="dark"] {
+  --ex-canvas: #151517;
+  --ex-surface: #1B1B1E;
+  --ex-surface-2: #222226;
+  --ex-elevated: #2A2A2E;
+  --ex-well: #131315;
+  --ex-ink: #F5F5F4;
+  --ex-ink-2: #A8A6A1;
+  --ex-ink-3: #76746F;
+  --ex-line: rgba(255, 255, 255, 0.07);
+  --ex-line-2: rgba(255, 255, 255, 0.11);
+  --ex-line-3: rgba(255, 255, 255, 0.18);
   --ex-specular: 0 0 0 0 transparent;
-  --ex-shadow: 0 14px 36px -22px rgba(20, 20, 22, 0.10), 0 1px 2px rgba(20, 20, 22, 0.03);
-  --ex-cta-bg: #18181B;
-  --ex-cta-ink: #FFFFFF;
-  --ex-cta-hover: #27272A;
-  --ex-sel: #2563EB;
-  --ex-sel-soft: rgba(37, 99, 235, 0.06);
-  --ex-ok: #0F9D68;
-  --ex-ok-soft: rgba(15, 157, 104, 0.08);
-  --ex-ok-line: rgba(15, 157, 104, 0.20);
-  --ex-warn: #B47A1E;
-  --ex-warn-soft: rgba(180, 122, 30, 0.09);
-  --ex-warn-line: rgba(180, 122, 30, 0.22);
-  --ex-bad: #C83E3E;
-  --ex-bad-soft: rgba(200, 62, 62, 0.08);
-  --ex-bad-line: rgba(200, 62, 62, 0.22);
+  --ex-shadow: 0 12px 32px -18px rgba(0, 0, 0, 0.55);
+  --ex-cta-bg: #F5F5F4;
+  --ex-cta-ink: #171614;
+  --ex-cta-hover: #FFFFFF;
+  --ex-sel: #F5F5F4;
+  --ex-sel-soft: rgba(255, 255, 255, 0.09);
+  --ex-ok: #F5F5F4;
+  --ex-ok-soft: rgba(255, 255, 255, 0.08);
+  --ex-ok-line: rgba(255, 255, 255, 0.18);
+  --ex-warn: #E7E5E0;
+  --ex-warn-soft: rgba(255, 255, 255, 0.07);
+  --ex-warn-line: rgba(255, 255, 255, 0.16);
+  --ex-bad: #F5F5F4;
+  --ex-bad-soft: rgba(255, 255, 255, 0.10);
+  --ex-bad-line: rgba(255, 255, 255, 0.22);
 
-  /* Hardware Scientific Calculator Tokens — Light Brushed Aluminum */
-  --calc-chassis: #F1F1F3;
-  --calc-chassis-edge: rgba(20, 20, 22, 0.12);
-  --calc-head: #E9E9EC;
-  --calc-lcd: #FFFFFF;
-  --calc-lcd-edge: rgba(20, 20, 22, 0.09);
-  --calc-key-sci: #E6E6EA;
-  --calc-key-sci-hover: #DCDCE1;
-  --calc-key-sci-ink: #3F3F46;
-  --calc-key-num: #FFFFFF;
-  --calc-key-num-hover: #FAFAFB;
-  --calc-key-num-ink: #141416;
-  --calc-key-op: #E4EAF5;
-  --calc-key-op-hover: #D8E2F2;
-  --calc-key-op-ink: #1D4ED8;
-  --calc-key-util: #E4E4E8;
-  --calc-key-util-hover: #D8D8DF;
-  --calc-key-clear-ink: #B45328;
-  --calc-key-eq: #C97D28;
-  --calc-key-eq-hover: #B56E1F;
-  --calc-key-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.65), 0 1px 2px rgba(20, 20, 22, 0.06);
-  --calc-key-num-shadow: inset 0 1px 0 #FFFFFF, 0 1px 2px rgba(20, 20, 22, 0.08);
+  /* Hardware Scientific Calculator Tokens — Anodized Neutral Carbon */
+  --calc-chassis: #18181A;
+  --calc-chassis-edge: rgba(255, 255, 255, 0.08);
+  --calc-head: #131315;
+  --calc-lcd: #0E0E10;
+  --calc-lcd-edge: rgba(255, 255, 255, 0.07);
+  --calc-key-sci: #202024;
+  --calc-key-sci-hover: #29292D;
+  --calc-key-sci-ink: #A8A6A1;
+  --calc-key-num: #29292D;
+  --calc-key-num-hover: #333338;
+  --calc-key-num-ink: #F5F5F4;
+  --calc-key-op: #242428;
+  --calc-key-op-hover: #2F2F34;
+  --calc-key-op-ink: #F5F5F4;
+  --calc-key-util: #222226;
+  --calc-key-util-hover: #2C2C30;
+  --calc-key-clear-ink: #F5F5F4;
+  --calc-key-eq: #F5F5F4;
+  --calc-key-eq-hover: #FFFFFF;
+  --calc-key-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04), 0 1px 2px rgba(0, 0, 0, 0.36);
+  --calc-key-num-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 1px 3px rgba(0, 0, 0, 0.34);
 }
 
 body.ct-exam-studio {
@@ -125,7 +125,7 @@ body.ct-exam-studio {
 /* Fix logo mark contrast across both themes */
 body.ct-exam-studio .ct-appicon {
   --ct-logo-c: #FFFFFF;
-  --ct-logo-star: #5B95F9;
+  --ct-logo-star: #FFFFFF;
   background: #1B1B1B !important;
   border: 1px solid rgba(255, 255, 255, 0.08) !important;
 }
@@ -622,7 +622,7 @@ body.ct-exam-studio .radio-option:hover {
 }
 body.ct-exam-studio .radio-option.selected,
 body.ct-exam-studio .radio-option:has(input:checked) {
-  border-color: rgba(59, 130, 246, 0.55) !important;
+  border-color: var(--ex-sel) !important;
   background: var(--ex-sel-soft) !important;
   box-shadow: none !important;
 }
@@ -1169,15 +1169,15 @@ body.ct-exam-studio #saveStatusIndicator {
 /* Zone E — Iconic Dieter Rams Warm Amber Equals Key */
 #calculatorModal .calc-btn.equals {
   background: var(--calc-key-eq) !important;
-  color: #FFFFFF !important;
+  color: var(--ex-cta-ink) !important;
   font-size: 18px !important;
   font-weight: 700 !important;
   border-color: transparent !important;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.28), 0 2px 6px rgba(217, 119, 6, 0.30) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16), 0 2px 6px rgba(23, 22, 20, 0.24) !important;
 }
 #calculatorModal .calc-btn.equals:hover {
   background: var(--calc-key-eq-hover) !important;
-  color: #FFFFFF !important;
+  color: var(--ex-cta-ink) !important;
 }
 #calculatorModal .calc-span-2 { grid-column: span 2 !important; }
 #calculatorModal .calc-ripple { background: rgba(255, 255, 255, 0.16) !important; }
@@ -1521,7 +1521,7 @@ body.ct-exam-studio .submit-premium-footer .btn-submit:hover,
 body.ct-exam-studio .btn-submit:hover {
   background: var(--ex-cta-hover) !important;
   transform: translateY(-1px) !important;
-  box-shadow: 0 8px 20px -8px rgba(59, 130, 246, 0.45) !important;
+  box-shadow: 0 8px 20px -8px rgba(23, 22, 20, 0.25) !important;
 }
 
 /* ---------- Result Popup Modal (#resultModal) — Dark & Light Native ---------- */
@@ -1545,7 +1545,7 @@ body.ct-exam-studio #resultModal .ex-result-card[data-grade="B"],
 body.ct-exam-studio #resultModal .ex-result-card[data-grade="withheld"] {
   --res-accent: var(--ex-sel);
   --res-soft: var(--ex-sel-soft);
-  --res-line: rgba(59, 130, 246, 0.26);
+  --res-line: var(--ex-line-2);
 }
 body.ct-exam-studio #resultModal .ex-result-card[data-grade="C"],
 body.ct-exam-studio #resultModal .ex-result-card[data-grade="D"] {

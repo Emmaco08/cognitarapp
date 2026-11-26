@@ -299,25 +299,46 @@ def admin_exams_management():
     conn = get_db_connection()
     
     # Get ALL exams with full details
-    exams = conn.execute("""
-        SELECT e.*, 
-               t.username as teacher_name,
-               t.photo as teacher_photo,
-               (SELECT COUNT(*) FROM scores WHERE exam_id = e.id) as student_count,
-               (SELECT COUNT(*) FROM scores WHERE exam_id = e.id AND status = 'completed') as completed_count,
-               (SELECT ROUND(AVG(percentage), 1) FROM scores WHERE exam_id = e.id AND status = 'completed') as avg_score,
-               (SELECT ROUND(AVG(percentage), 1) FROM scores WHERE exam_id = e.id AND status = 'completed' AND percentage >= 50) as avg_passing_score,
-               (SELECT COUNT(*) FROM scores WHERE exam_id = e.id AND status = 'completed' AND percentage >= 50) as passed_count,
-               (SELECT COUNT(*) FROM scores WHERE exam_id = e.id AND status = 'in_progress') as in_progress_count,
-               (SELECT MAX(percentage) FROM scores WHERE exam_id = e.id AND status = 'completed') as highest_score,
-               (SELECT MIN(percentage) FROM scores WHERE exam_id = e.id AND status = 'completed' AND total > 0) as lowest_score
-        FROM exams e
-        LEFT JOIN teachers t ON e.teacher_id = t.id
-        ORDER BY e.id DESC
-    """).fetchall()
-    
-    # Get all teachers for filter
-    teachers = conn.execute("SELECT id, username FROM teachers ORDER BY username").fetchall()
+    try:
+        exams = conn.execute("""
+            SELECT e.*, 
+                   COALESCE(NULLIF(TRIM(t.full_name), ''), t.username) as teacher_name,
+                   t.username as teacher_username,
+                   t.photo as teacher_photo,
+                   (SELECT COUNT(*) FROM scores WHERE exam_id = e.id) as student_count,
+                   (SELECT COUNT(*) FROM scores WHERE exam_id = e.id AND status = 'completed') as completed_count,
+                   (SELECT ROUND(AVG(percentage), 1) FROM scores WHERE exam_id = e.id AND status = 'completed') as avg_score,
+                   (SELECT ROUND(AVG(percentage), 1) FROM scores WHERE exam_id = e.id AND status = 'completed' AND percentage >= 50) as avg_passing_score,
+                   (SELECT COUNT(*) FROM scores WHERE exam_id = e.id AND status = 'completed' AND percentage >= 50) as passed_count,
+                   (SELECT COUNT(*) FROM scores WHERE exam_id = e.id AND status = 'in_progress') as in_progress_count,
+                   (SELECT MAX(percentage) FROM scores WHERE exam_id = e.id AND status = 'completed') as highest_score,
+                   (SELECT MIN(percentage) FROM scores WHERE exam_id = e.id AND status = 'completed' AND total > 0) as lowest_score
+            FROM exams e
+            LEFT JOIN teachers t ON e.teacher_id = t.id
+            ORDER BY e.id DESC
+        """).fetchall()
+        teachers = conn.execute(
+            "SELECT id, username, COALESCE(NULLIF(TRIM(full_name), ''), username) as display_name FROM teachers ORDER BY display_name"
+        ).fetchall()
+    except sqlite3.OperationalError:
+        exams = conn.execute("""
+            SELECT e.*, 
+                   t.username as teacher_name,
+                   t.username as teacher_username,
+                   t.photo as teacher_photo,
+                   (SELECT COUNT(*) FROM scores WHERE exam_id = e.id) as student_count,
+                   (SELECT COUNT(*) FROM scores WHERE exam_id = e.id AND status = 'completed') as completed_count,
+                   (SELECT ROUND(AVG(percentage), 1) FROM scores WHERE exam_id = e.id AND status = 'completed') as avg_score,
+                   (SELECT ROUND(AVG(percentage), 1) FROM scores WHERE exam_id = e.id AND status = 'completed' AND percentage >= 50) as avg_passing_score,
+                   (SELECT COUNT(*) FROM scores WHERE exam_id = e.id AND status = 'completed' AND percentage >= 50) as passed_count,
+                   (SELECT COUNT(*) FROM scores WHERE exam_id = e.id AND status = 'in_progress') as in_progress_count,
+                   (SELECT MAX(percentage) FROM scores WHERE exam_id = e.id AND status = 'completed') as highest_score,
+                   (SELECT MIN(percentage) FROM scores WHERE exam_id = e.id AND status = 'completed' AND total > 0) as lowest_score
+            FROM exams e
+            LEFT JOIN teachers t ON e.teacher_id = t.id
+            ORDER BY e.id DESC
+        """).fetchall()
+        teachers = conn.execute("SELECT id, username, username as display_name FROM teachers ORDER BY username").fetchall()
     
     # Get all distinct subjects
     subjects = conn.execute("SELECT DISTINCT subject_tag FROM exams WHERE subject_tag IS NOT NULL ORDER BY subject_tag").fetchall()
@@ -598,15 +619,28 @@ def admin_exam_details(exam_id):
     if "admin_id" not in session:
         return {"error": "Unauthorized"}, 401
     
+    from cognitara.services.grading_service import get_active_grading_rules, GradingSchemeValidator
     conn = get_db_connection()
     
     # Exam info
-    exam = conn.execute("""
-        SELECT e.*, t.username as teacher_name, t.photo as teacher_photo, t.id as teacher_id
-        FROM exams e
-        LEFT JOIN teachers t ON e.teacher_id = t.id
-        WHERE e.id = ?
-    """, (exam_id,)).fetchone()
+    try:
+        exam = conn.execute("""
+            SELECT e.*,
+                   COALESCE(NULLIF(TRIM(t.full_name), ''), t.username) as teacher_name,
+                   t.username as teacher_username,
+                   t.photo as teacher_photo,
+                   t.id as teacher_id
+            FROM exams e
+            LEFT JOIN teachers t ON e.teacher_id = t.id
+            WHERE e.id = ?
+        """, (exam_id,)).fetchone()
+    except sqlite3.OperationalError:
+        exam = conn.execute("""
+            SELECT e.*, t.username as teacher_name, t.username as teacher_username, t.photo as teacher_photo, t.id as teacher_id
+            FROM exams e
+            LEFT JOIN teachers t ON e.teacher_id = t.id
+            WHERE e.id = ?
+        """, (exam_id,)).fetchone()
     
     if not exam:
         conn.close()
@@ -615,7 +649,7 @@ def admin_exam_details(exam_id):
     # Student results
     students = conn.execute("""
         SELECT s.id, s.username, s.full_name, s.photo, s.class,
-               sc.score, sc.total, sc.percentage, sc.status,
+               sc.score, sc.total, sc.percentage, sc.grade_label, sc.grade_remark, sc.status,
                sc.start_time, sc.end_time,
                (strftime('%s', sc.end_time) - strftime('%s', sc.start_time)) as time_spent
         FROM scores sc
@@ -623,6 +657,10 @@ def admin_exam_details(exam_id):
         WHERE sc.exam_id = ? AND sc.status = 'completed'
         ORDER BY sc.percentage DESC
     """, (exam_id,)).fetchall()
+
+    in_progress_count = int(
+        conn.execute("SELECT COUNT(*) FROM scores WHERE exam_id = ? AND status = 'in_progress'", (exam_id,)).fetchone()[0] or 0
+    )
     
     # Question analysis
     try:
@@ -636,48 +674,56 @@ def admin_exam_details(exam_id):
             LEFT JOIN exam_question_responses eqr ON q.id = eqr.question_id
             WHERE q.exam_id = ?
             GROUP BY q.id
-            ORDER BY es.section_order, q.display_order
+            ORDER BY COALESCE(es.section_order, 9999), COALESCE(q.display_order, 0), q.id
         """, (exam_id,)).fetchall()
-    except:
+    except Exception:
         questions = conn.execute("""
             SELECT q.*, es.section_name
             FROM questions q
             LEFT JOIN exam_sections es ON q.section_id = es.id
             WHERE q.exam_id = ?
-            ORDER BY es.section_order, q.display_order
+            ORDER BY COALESCE(es.section_order, 9999), COALESCE(q.display_order, 0), q.id
         """, (exam_id,)).fetchall()
     
-    # Grade distribution
-    grade_dist = conn.execute("""
-        SELECT 
-            CASE 
-                WHEN percentage >= 90 THEN 'A'
-                WHEN percentage >= 80 THEN 'B'
-                WHEN percentage >= 70 THEN 'C'
-                WHEN percentage >= 65 THEN 'D'
-                ELSE 'F'
-            END as grade,
-            COUNT(*) as count
-        FROM scores 
-        WHERE exam_id = ? AND status = 'completed' AND percentage IS NOT NULL
-        GROUP BY grade
-        ORDER BY 
-            CASE grade WHEN 'A' THEN 1 WHEN 'B' THEN 2 WHEN 'C' THEN 3 WHEN 'D' THEN 4 ELSE 5 END
-    """, (exam_id,)).fetchall()
+    # Grade distribution resolved dynamically using the school's active grading scheme
+    rules = get_active_grading_rules(conn, exam_id=exam_id, scheme_type="school")
+    ordered_rules = sorted(rules, key=lambda r: float(r.get("min_percentage", 0)), reverse=True) if rules else [
+        {"grade_label": "A", "badge_color": "#10b981"},
+        {"grade_label": "B", "badge_color": "#3b82f6"},
+        {"grade_label": "C", "badge_color": "#f59e0b"},
+        {"grade_label": "D", "badge_color": "#f97316"},
+        {"grade_label": "F", "badge_color": "#ef4444"},
+    ]
+    bucket_map = {r["grade_label"]: {"grade": r["grade_label"], "count": 0, "color": r.get("badge_color") or "#3b82f6"} for r in ordered_rules}
+    for s in students:
+        if s["percentage"] is None:
+            continue
+        resolved = GradingSchemeValidator.resolve_grade(s["percentage"], rules)
+        lbl = resolved.get("grade_label") or "F"
+        if lbl not in bucket_map:
+            bucket_map[lbl] = {"grade": lbl, "count": 0, "color": resolved.get("badge_color") or "#64748b"}
+        bucket_map[lbl]["count"] += 1
+    grade_dist = list(bucket_map.values())
     
-    # Version history
-    versions = conn.execute("""
-        SELECT * FROM exam_versions WHERE exam_id = ? ORDER BY created_at DESC LIMIT 10
-    """, (exam_id,)).fetchall()
+    # Version history (optional table on legacy databases)
+    try:
+        versions = conn.execute("""
+            SELECT * FROM exam_versions WHERE exam_id = ? ORDER BY created_at DESC LIMIT 10
+        """, (exam_id,)).fetchall()
+    except Exception:
+        versions = []
     
     conn.close()
     
     return {
+        "ok": True,
         "success": True,
         "exam": dict(exam),
+        "question_count": len(questions),
+        "in_progress_count": in_progress_count,
         "students": [dict(s) for s in students],
         "questions": [dict(q) for q in questions],
-        "grade_distribution": [dict(g) for g in grade_dist],
+        "grade_distribution": grade_dist,
         "versions": [dict(v) for v in versions] if versions else []
     }
 

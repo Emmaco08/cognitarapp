@@ -467,10 +467,64 @@ export class CloudAuthManager {
     return res.ok ? res.data : { ok: false, error: res.data?.error, message: res.data?.message || "Redeem failed." };
   }
 
+  public async syncSchoolProfileToCloud(payload: {
+    school_name?: string;
+    school_motto?: string;
+    academic_session?: string;
+    current_term?: string;
+    logo_data_url?: string | null;
+    remove_logo?: boolean;
+    admin_full_name?: string;
+    admin_username?: string;
+    onboarding_completed?: boolean;
+    last_lan_ip?: string;
+    display_hwid?: string;
+  }): Promise<{ ok: boolean; offline?: boolean; school?: any; message?: string; error?: string }> {
+    const token = this.getAccessToken();
+    if (!token) {
+      return { ok: false, error: "unauthorized", message: "Sign in to CogniTara Cloud to sync your school profile." };
+    }
+    const res = await this.requestJson(
+      "/api/v1/school/profile",
+      "POST",
+      {
+        ...payload,
+        machine_hostname: os.hostname(),
+        os_version: `${os.platform()} ${os.release()}`,
+        app_version: app.getVersion(),
+      },
+      token,
+      30_000
+    );
+    if (res.networkError) {
+      return {
+        ok: false,
+        offline: true,
+        error: "network_offline",
+        message: res.data?.message || "Offline — saved locally and will sync when connected.",
+      };
+    }
+    if (res.ok && res.data?.school && this.cached) {
+      this.writeCacheFile({
+        ...this.cached,
+        lastSyncedAt: Date.now(),
+        school: {
+          ...(this.cached.school || ({} as any)),
+          ...res.data.school,
+        },
+      });
+    }
+    return res.ok
+      ? { ok: true, school: res.data.school, message: res.data.message }
+      : { ok: false, error: res.data?.error || "profile_sync_failed", message: res.data?.message || "Could not sync school profile to CogniTara Cloud." };
+  }
+
   public async initializePaystack(payload: {
     plan_id: string;
     currency?: string;
     promo_code?: string;
+    channels?: string[];
+    payment_method?: string;
     hwid_hash?: string;
     display_hwid?: string;
   }): Promise<any> {
@@ -485,6 +539,26 @@ export class CloudAuthManager {
       token
     );
     return res.ok ? res.data : { ok: false, error: res.data?.error, message: res.data?.message || "Checkout failed." };
+  }
+
+  public async startPaystackBankTransfer(payload: {
+    plan_id: string;
+    currency?: string;
+    promo_code?: string;
+    hwid_hash?: string;
+    display_hwid?: string;
+  }): Promise<any> {
+    const token = this.getAccessToken();
+    if (!token) {
+      return { ok: false, error: "unauthorized", message: "Sign in to your CogniTara Cloud account first." };
+    }
+    const res = await this.requestJson(
+      "/api/v1/payments/paystack/bank-transfer",
+      "POST",
+      { ...payload, source: "desktop" },
+      token
+    );
+    return res.ok ? res.data : { ok: false, error: res.data?.error, message: res.data?.message || "Could not create bank transfer account." };
   }
 
   public async verifyPaystack(payload: {

@@ -84,7 +84,7 @@
     .ecc-table th {
       text-align: left;
       height: 42px;
-      padding: 0 14px;
+      padding: 0 10px;
       font-size: 11px;
       font-weight: 650;
       text-transform: uppercase;
@@ -92,11 +92,11 @@
       color: var(--tc-ink-3);
       white-space: nowrap;
     }
-    .ecc-table td { padding: 13px 14px; vertical-align: middle; }
-    .ecc-table th:first-child, .ecc-table td:first-child { padding-left: 18px; width: 42px; }
-    .ecc-table th:last-child, .ecc-table td:last-child { padding-right: 18px; text-align: right; }
+    .ecc-table td { padding: 12px 10px; vertical-align: middle; }
+    .ecc-table th:first-child, .ecc-table td:first-child { padding-left: 14px; width: 38px; }
+    .ecc-table th:last-child, .ecc-table td:last-child { padding-right: 14px; text-align: right; }
     .ecc-table th.is-center, .ecc-table td.is-center { text-align: center; }
-    .ecc-table td:last-child .tc-actions { justify-content: flex-end; }
+    .ecc-table td:last-child .tc-actions { justify-content: flex-end; gap: 5px; flex-wrap: nowrap; }
     .ecc-table tr.is-deactivated { opacity: 0.68; }
     .ecc-table tr.is-selected { background: var(--ct-accent-soft); }
 
@@ -118,34 +118,45 @@
       color: #FFFFFF;
     }
 
-    /* Slide-over Details Drawer */
+    /* Slide-over Details Drawer (Apple/Ionic drawer physics: 400ms in, 240ms out) */
     .ecc-drw-scrim {
       position: fixed;
       inset: 0;
-      background: var(--ct-scrim);
-      backdrop-filter: blur(5px);
+      background: var(--ct-m-scrim, var(--ct-scrim));
+      backdrop-filter: blur(8px) saturate(130%);
+      -webkit-backdrop-filter: blur(8px) saturate(130%);
       z-index: 1050;
       opacity: 0;
       visibility: hidden;
-      transition: opacity 220ms ease, visibility 0s linear 220ms;
+      pointer-events: none;
+      transition: opacity 210ms cubic-bezier(0.23, 1, 0.32, 1), visibility 0s linear 210ms;
     }
-    .ecc-drw-scrim.is-open { opacity: 1; visibility: visible; transition: opacity 220ms ease, visibility 0s; }
+    .ecc-drw-scrim.is-open {
+      opacity: 1;
+      visibility: visible;
+      pointer-events: auto;
+      transition: opacity 280ms cubic-bezier(0.23, 1, 0.32, 1), visibility 0s;
+    }
     .ecc-drw {
       position: fixed;
       top: 0;
       right: 0;
       bottom: 0;
       width: min(680px, 95vw);
-      background: var(--tc-surface);
-      border-left: 1px solid var(--tc-line-2);
-      box-shadow: -16px 0 48px rgba(0, 0, 0, 0.42);
+      background: var(--ct-m-bg, var(--tc-surface));
+      border-left: 1px solid var(--ct-m-border, var(--tc-line-2));
+      box-shadow: -24px 0 64px rgba(0, 0, 0, 0.48), inset 1px 0 0 rgba(255, 255, 255, 0.06);
       z-index: 1060;
       display: flex;
       flex-direction: column;
-      transform: translateX(100%);
-      transition: transform 280ms cubic-bezier(0.22, 1, 0.36, 1);
+      transform: translate3d(100%, 0, 0);
+      transition: transform 240ms cubic-bezier(0.32, 0.72, 0, 1);
+      will-change: transform;
     }
-    .ecc-drw.is-open { transform: translateX(0); }
+    .ecc-drw.is-open {
+      transform: translate3d(0, 0, 0);
+      transition: transform 400ms cubic-bezier(0.32, 0.72, 0, 1);
+    }
     .ecc-drw__head {
       padding: 20px 24px 16px;
       border-bottom: 1px solid var(--tc-line);
@@ -154,7 +165,7 @@
       justify-content: space-between;
       gap: 12px;
     }
-    .ecc-drw__head h3 { margin: 0; font-size: 17px; font-weight: 700; color: var(--tc-ink); }
+    .ecc-drw__head h3 { margin: 0; font-size: 17px; font-weight: 680; letter-spacing: -0.02em; color: var(--tc-ink); }
     .ecc-drw__tabs {
       display: flex;
       gap: 6px;
@@ -164,21 +175,32 @@
     }
     .ecc-drw__tab {
       padding: 7px 14px;
-      border-radius: 8px;
+      border-radius: 9px;
       border: 1px solid transparent;
       background: transparent;
       color: var(--tc-ink-2);
       font-size: 12.5px;
       font-weight: 600;
       cursor: pointer;
-      transition: background-color 140ms ease, color 140ms ease, border-color 140ms ease;
+      transition: background-color 150ms ease, color 150ms ease, border-color 150ms ease, transform 130ms cubic-bezier(0.23, 1, 0.32, 1);
     }
+    .ecc-drw__tab:active { transform: scale(0.97); }
     .ecc-drw__tab.is-active {
       background: var(--tc-surface);
       color: var(--tc-ink);
       border-color: var(--tc-line-2);
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.14);
     }
     .ecc-drw__body { flex: 1; overflow-y: auto; padding: 20px 24px; }
+    .ecc-drw__body > * { animation: ecc-tab-in 210ms cubic-bezier(0.23, 1, 0.32, 1) both; }
+    @keyframes ecc-tab-in {
+      from { opacity: 0; transform: translate3d(0, 6px, 0); }
+      to   { opacity: 1; transform: translate3d(0, 0, 0); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .ecc-drw, .ecc-drw.is-open { transition: opacity 180ms ease !important; }
+      .ecc-drw__body > * { animation: none !important; }
+    }
     .ecc-ins-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
@@ -253,7 +275,7 @@
     </div>
     <div class="tc-head__actions">
       <a class="tc-btn tc-btn--secondary" href="/admin/exam_technical_support">{{ ico('i-activity', 'ct-ico--sm') }}Live Support</a>
-      <button type="button" class="tc-btn tc-btn--secondary" onclick="location.reload()">{{ ico('i-refresh', 'ct-ico--sm') }}Refresh</button>
+      <button type="button" class="tc-btn tc-btn--secondary" onclick="window.CTPjax ? CTPjax.refresh() : location.reload()">{{ ico('i-refresh', 'ct-ico--sm') }}Refresh</button>
     </div>
   </header>
 
@@ -297,7 +319,7 @@
     </select>
     <select class="ecc-select" id="fTeacher" onchange="applyFilters()" aria-label="Filter by teacher">
       <option value="all">All Teachers</option>
-      {% for t in teachers %}<option value="{{ t.username }}">{{ t.username }}</option>{% endfor %}
+      {% for t in teachers %}{% set t_label = t.display_name if (t.display_name is defined and t.display_name) else t.username %}<option value="{{ t_label }}">{{ t_label }}</option>{% endfor %}
     </select>
     <select class="ecc-select" id="fStatus" onchange="applyFilters()" aria-label="Filter by status">
       <option value="all">All Status</option>
@@ -331,14 +353,14 @@
                 {{ ico('i-check', 'ct-ico--xs') }}
               </button>
             </th>
-            <th style="min-width:210px">Examination</th>
-            <th style="width:110px">Class</th>
-            <th style="min-width:165px">Subject &amp; Track</th>
-            <th style="width:130px">Teacher</th>
-            <th class="is-center" style="width:100px">Students</th>
-            <th class="is-center" style="width:95px">Avg</th>
-            <th class="is-center" style="width:120px">Status</th>
-            <th style="width:270px;text-align:right">Actions</th>
+            <th style="min-width:175px">Examination</th>
+            <th style="width:82px">Class</th>
+            <th style="min-width:130px">Subject &amp; Track</th>
+            <th style="width:108px">Teacher</th>
+            <th class="is-center" style="width:78px">Students</th>
+            <th class="is-center" style="width:64px">Avg</th>
+            <th class="is-center" style="width:94px">Status</th>
+            <th style="width:236px;text-align:right">Actions</th>
           </tr>
         </thead>
         <tbody>
@@ -436,22 +458,33 @@
     <div class="ecc-drw__body" id="drwBody"></div>
   </aside>
 
-  <!-- Deactivate Reason Modal (Spring-animated Neutral Carbon) -->
+  <!-- Deactivate Reason Modal (CogniTara Kinetic Modal System) -->
   <div class="ct-modal-backdrop" id="deactModal" data-ct-dismissable aria-hidden="true">
-    <div class="ct-modal ct-confirm-modal" data-tone="warn" role="dialog" aria-modal="true">
-      <div class="ct-confirm-accent"></div>
-      <div class="ct-confirm-head">
-        <div class="ct-confirm-badge"><span class="ct-confirm-badge__ring"></span><span class="ct-confirm-badge__ico">{{ ico('i-ban') }}</span></div>
-        <div class="ct-confirm-copy">
-          <h3>Deactivate examination?</h3>
-          <div class="ct-confirm-desc" id="deactMsg">This exam will be hidden and stopped immediately.</div>
-          <textarea class="ecc-ta" id="deactReason" placeholder="Optional reason for audit log…"></textarea>
+    <div class="ct-modal ct-confirm-modal" data-tone="warn" role="dialog" aria-modal="true" aria-labelledby="deactTitle">
+      <div class="ct-m-head">
+        <div class="ct-m-medallion">
+          <span class="ct-m-medallion__halo" aria-hidden="true"></span>
+          <svg class="ct-m-medallion__svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle class="ct-svg-draw" style="--d:40ms" pathLength="100" cx="12" cy="12" r="9"/>
+            <path class="ct-svg-draw" style="--d:175ms" pathLength="100" d="M5.7 5.7 18.3 18.3"/>
+          </svg>
+        </div>
+        <div class="ct-m-copy">
+          <h3 id="deactTitle">Deactivate examination</h3>
+          <div class="ct-m-desc" id="deactMsg">This exam will be hidden and stopped immediately.</div>
         </div>
         <button type="button" class="ct-iconbtn ct-iconbtn--ghost ct-modal__close" data-ct-modal-close aria-label="Close">{{ ico('i-x', 'ct-ico--sm') }}</button>
       </div>
-      <div class="ct-confirm-actions">
-        <button type="button" class="ct-btn ct-btn--ghost" data-ct-modal-close>Cancel</button>
-        <button type="button" class="ct-btn ct-btn--warn-solid" id="deactConfirmBtn" onclick="confirmDeact()">Deactivate exam</button>
+      <div class="ct-m-body">
+        <label for="deactReason" style="font-size:12px;font-weight:600;color:var(--tc-ink-2);margin-bottom:-6px">Audit note <span style="font-weight:400;color:var(--tc-ink-3)">(optional)</span></label>
+        <textarea class="ecc-ta" id="deactReason" style="margin-top:0" placeholder="Optional reason recorded in the admin audit log…"></textarea>
+      </div>
+      <div class="ct-m-foot">
+        <span class="ct-m-kbd"><kbd>Esc</kbd><span>Cancel</span></span>
+        <div class="ct-m-foot__btns">
+          <button type="button" class="ct-btn ct-btn--ghost" data-ct-modal-close>Cancel</button>
+          <button type="button" class="ct-btn ct-btn--warn-solid" id="deactConfirmBtn" onclick="confirmDeact()">Deactivate exam</button>
+        </div>
       </div>
     </div>
   </div>
@@ -632,10 +665,10 @@
 
     async function deleteOneExam(id, name) {
       var ok = await CT.confirm({
-        title: "Delete examination?",
-        html: "Permanently delete <strong>" + CT.esc(name) + "</strong> along with all questions and scores? This cannot be undone.",
+        title: "Delete examination",
+        message: "This permanently removes the examination paper, its questions, and all recorded student scores. You can restore from backups if needed.",
+        subject: { label: "Examination", value: name, meta: "#" + id },
         tone: "danger",
-        icon: "i-trash",
         confirmText: "Delete exam"
       });
       if (!ok) return;
@@ -712,24 +745,49 @@
     /* Slide-over Drawer */
     async function openDrawer(id) {
       drwId = id;
-      document.getElementById("drwScrim").classList.add("is-open");
-      document.getElementById("drw").classList.add("is-open");
-      document.getElementById("drwPreviewLink").href = "/admin/exam/" + id + "/preview";
-      document.getElementById("drwBody").innerHTML = '<p style="color:var(--tc-ink-3);text-align:center;padding:48px 0">Loading examination telemetry…</p>';
+      var scrim = document.getElementById("drwScrim");
+      var drw = document.getElementById("drw");
+      var body = document.getElementById("drwBody");
+      var titleEl = document.getElementById("drwTitle");
+      var prevLink = document.getElementById("drwPreviewLink");
+      if (!drw || !body) return;
+      if (scrim) scrim.classList.add("is-open");
+      drw.classList.add("is-open");
+      if (prevLink) prevLink.href = "/admin/exam/" + id + "/preview";
+      if (titleEl) titleEl.textContent = "Loading…";
+      body.innerHTML = '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:64px 0;color:var(--tc-ink-3)"><div class="ct-spinner"></div><span style="font-size:13px">Loading examination telemetry…</span></div>';
       document.querySelectorAll(".ecc-drw__tab").forEach(function (t, i) { t.classList.toggle("is-active", i === 0); });
       try {
-        var r = await fetch("/admin/exam/" + id + "/details");
-        drwData = await r.json();
-        document.getElementById("drwTitle").textContent = (drwData.exam && drwData.exam.name) || "Exam Details";
+        var r = await fetch("/admin/exam/" + id + "/details", { headers: { "Accept": "application/json" } });
+        var payload = await r.json();
+        if (!r.ok || payload.error || payload.success === false) {
+          throw new Error(payload.error || "Unable to load examination details.");
+        }
+        drwData = payload;
+        if (titleEl) titleEl.textContent = (drwData.exam && drwData.exam.name) || "Exam Details";
         renderDrw("overview");
       } catch (e) {
-        document.getElementById("drwBody").innerHTML = '<p style="color:var(--ct-bad);text-align:center;padding:40px 0">Failed to load exam details.</p>';
+        if (titleEl) titleEl.textContent = "Exam Details";
+        body.innerHTML = '<div class="tc-empty" style="padding:48px 16px"><span class="tc-empty__ico">' + CT.icon("i-alert") + '</span><strong>Could not load exam details</strong><p>' + CT.esc((e && e.message) || "Please try again.") + '</p></div>';
       }
     }
 
     function closeDrawer() {
-      document.getElementById("drwScrim").classList.remove("is-open");
-      document.getElementById("drw").classList.remove("is-open");
+      var scrim = document.getElementById("drwScrim");
+      var drw = document.getElementById("drw");
+      if (scrim) scrim.classList.remove("is-open");
+      if (drw) drw.classList.remove("is-open");
+    }
+
+    function _eccDrwKey(e) {
+      if (e.key === "Escape") {
+        var drw = document.getElementById("drw");
+        if (drw && drw.classList.contains("is-open")) closeDrawer();
+      }
+    }
+    document.addEventListener("keydown", _eccDrwKey);
+    if (window.CT && typeof CT.onCleanup === "function") {
+      CT.onCleanup(function () { document.removeEventListener("keydown", _eccDrwKey); });
     }
 
     document.querySelectorAll(".ecc-drw__tab").forEach(function (btn) {
@@ -742,8 +800,8 @@
 
     function personAvatarHtml(photo) {
       var glyph = '<svg class="ct-avatar__glyph" viewBox="0 0 24 24" aria-hidden="true"><use href="' + CT.sprite + '#i-person-avatar"/></svg>';
-      if (photo && photo !== "default.png") {
-        return '<span class="ct-avatar ct-avatar--sm ct-avatar--person"><img src="/static/images/' + CT.esc(photo) + '" alt="" onerror="this.remove();">' + glyph + '</span>';
+      if (photo && photo !== "default.png" && photo !== "None") {
+        return '<span class="ct-avatar ct-avatar--sm ct-avatar--person"><img src="/uploads/images/' + encodeURIComponent(photo) + '" alt="" onerror="this.remove();">' + glyph + '</span>';
       }
       return '<span class="ct-avatar ct-avatar--sm ct-avatar--person">' + glyph + '</span>';
     }
@@ -758,8 +816,14 @@
     function renderDrw(tab) {
       if (!drwData) return;
       var body = document.getElementById("drwBody");
+      if (!body) return;
       var ex = drwData.exam || {};
       if (tab === "overview") {
+        var qCount = drwData.question_count != null ? drwData.question_count : (drwData.questions ? drwData.questions.length : 0);
+        var liveCount = drwData.in_progress_count || 0;
+        var completedCount = drwData.students ? drwData.students.length : 0;
+        var dist = drwData.grade_distribution || [];
+        var hasGrades = dist.some(function (x) { return Number(x.count || 0) > 0; });
         body.innerHTML =
           '<div class="ecc-ins-grid">' +
             '<div class="ecc-ins-card"><small>Class</small><strong>' + CT.esc(ex.class || "—") + '</strong></div>' +
@@ -767,24 +831,46 @@
             '<div class="ecc-ins-card"><small>Track</small><strong>' + CT.esc(ex.specialisation_tag || "General") + '</strong></div>' +
             '<div class="ecc-ins-card"><small>Duration</small><strong>' + CT.esc(ex.duration || 0) + ' min</strong></div>' +
             '<div class="ecc-ins-card"><small>Teacher</small><strong>' + CT.esc(ex.teacher_name || "—") + '</strong></div>' +
-            '<div class="ecc-ins-card"><small>Attempts</small><strong>' + (drwData.students ? drwData.students.length : 0) + '</strong></div>' +
-            '<div class="ecc-ins-card"><small>Avg Score</small><strong style="color:var(--ct-ok)">' + calcAvg(drwData.students) + '%</strong></div>' +
+            '<div class="ecc-ins-card"><small>Questions</small><strong>' + qCount + '</strong></div>' +
+            '<div class="ecc-ins-card"><small>Completed</small><strong>' + completedCount + (liveCount ? ' <span style="font-size:11.5px;color:var(--ct-warn)">(' + liveCount + ' live)</span>' : '') + '</strong></div>' +
+            '<div class="ecc-ins-card"><small>Avg Score</small><strong style="color:var(--ct-ok)">' + (completedCount ? calcAvg(drwData.students) + '%' : '—') + '</strong></div>' +
           '</div>' +
-          '<div style="height:240px;padding:14px;border-radius:12px;border:1px solid var(--tc-line);background:var(--tc-surface-2)"><canvas id="eccGradeChart"></canvas></div>';
-        setTimeout(function () {
-          var ctx = document.getElementById("eccGradeChart");
-          if (!ctx || !window.Chart) return;
-          if (gradeChart) gradeChart.destroy();
-          var grades = ["A", "B", "C", "D", "F"];
-          var colors = ["#10B981", "#3B82F6", "#F59E0B", "#F97316", "#EF4444"];
-          var dist = drwData.grade_distribution || [];
-          var counts = grades.map(function (g) { var f = dist.find(function (x) { return x.grade === g; }); return f ? f.count : 0; });
-          gradeChart = new Chart(ctx, {
-            type: "bar",
-            data: { labels: grades, datasets: [{ data: counts, backgroundColor: colors, borderRadius: 6, maxBarThickness: 40 }] },
-            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
-          });
-        }, 60);
+          '<div style="padding:16px;border-radius:12px;border:1px solid var(--tc-line);background:var(--tc-surface-2)">' +
+            '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">' +
+              '<strong style="font-size:13px;color:var(--tc-ink)">Grade Distribution</strong>' +
+              '<span style="font-size:11.5px;color:var(--tc-ink-3)">Active school grading scale</span>' +
+            '</div>' +
+            (hasGrades
+              ? '<div style="height:220px;position:relative"><canvas id="eccGradeChart"></canvas></div>'
+              : '<p style="text-align:center;color:var(--tc-ink-3);padding:38px 0;margin:0;font-size:13px">No graded submissions yet to chart.</p>') +
+          '</div>';
+        if (hasGrades) {
+          setTimeout(function () {
+            var ctx = document.getElementById("eccGradeChart");
+            if (!ctx || !window.Chart) return;
+            if (gradeChart) { try { gradeChart.destroy(); } catch (e) {} gradeChart = null; }
+            var palette = ["#575551", "#575551", "#2B2926", "#D6D4CF", "#575551", "#2B2926"];
+            var labels = dist.map(function (x) { return String(x.grade || "—"); });
+            var counts = dist.map(function (x) { return Number(x.count || 0); });
+            var colors = dist.map(function (x, i) { return x.color || palette[i % palette.length]; });
+            var isLight = document.documentElement.getAttribute("data-theme") === "light";
+            var tickCol = isLight ? "#52525B" : "#9E9E9E";
+            var gridCol = isLight ? "rgba(20,20,22,0.06)" : "rgba(255,255,255,0.06)";
+            gradeChart = new Chart(ctx, {
+              type: "bar",
+              data: { labels: labels, datasets: [{ data: counts, backgroundColor: colors, borderRadius: 6, maxBarThickness: 38 }] },
+              options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                  x: { grid: { display: false }, ticks: { color: tickCol } },
+                  y: { beginAtZero: true, grid: { color: gridCol }, ticks: { stepSize: 1, color: tickCol } }
+                }
+              }
+            });
+          }, 40);
+        }
       } else if (tab === "students") {
         var list = drwData.students || [];
         if (!list.length) {
@@ -838,7 +924,14 @@
       }
     }
 
-    document.addEventListener("keydown", function (e) { if (e.key === "Escape") closeDrawer(); });
+    var onEccKeydown = function (e) { if (e.key === "Escape") closeDrawer(); };
+    document.addEventListener("keydown", onEccKeydown);
+    if (window.CT && CT.onCleanup) {
+      CT.onCleanup(function () {
+        document.removeEventListener("keydown", onEccKeydown);
+        if (gradeChart) { try { gradeChart.destroy(); } catch (e) {} gradeChart = null; }
+      });
+    }
   </script>
 
 {{ shell_end(role='admin') }}

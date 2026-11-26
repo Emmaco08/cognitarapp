@@ -48,20 +48,36 @@ def admin_exam_technical_support():
     
     conn = get_db_connection()
     
-    active_attempts = conn.execute("""
-        SELECT s.id, s.student_id, s.warnings_count, s.remaining_time, 
-               s.is_paused, s.paused_by, s.pause_reason, s.last_heartbeat,
-               s.resume_requested, s.start_time as started_at,
-               st.full_name, st.username, st.class as student_class,
-               e.name as exam_name, e.class as target_class, e.duration,
-               t.username as teacher_name
-        FROM scores s
-        JOIN students st ON s.student_id = st.id
-        JOIN exams e ON s.exam_id = e.id
-        JOIN teachers t ON e.teacher_id = t.id
-        WHERE s.status = 'in_progress'
-        ORDER BY s.resume_requested DESC, s.start_time DESC
-    """).fetchall()
+    try:
+        active_attempts = conn.execute("""
+            SELECT s.id, s.student_id, s.warnings_count, s.remaining_time, 
+                   s.is_paused, s.paused_by, s.pause_reason, s.last_heartbeat,
+                   s.resume_requested, s.start_time as started_at,
+                   st.full_name, st.username, st.class as student_class, st.photo,
+                   e.name as exam_name, e.class as target_class, e.duration,
+                   COALESCE(NULLIF(TRIM(t.full_name), ''), t.username, 'Staff') as teacher_name
+            FROM scores s
+            JOIN students st ON s.student_id = st.id
+            JOIN exams e ON s.exam_id = e.id
+            LEFT JOIN teachers t ON e.teacher_id = t.id
+            WHERE s.status = 'in_progress'
+            ORDER BY s.resume_requested DESC, s.start_time DESC
+        """).fetchall()
+    except sqlite3.OperationalError:
+        active_attempts = conn.execute("""
+            SELECT s.id, s.student_id, s.warnings_count, s.remaining_time, 
+                   s.is_paused, s.paused_by, s.pause_reason, s.last_heartbeat,
+                   s.resume_requested, s.start_time as started_at,
+                   st.full_name, st.username, st.class as student_class, st.photo,
+                   e.name as exam_name, e.class as target_class, e.duration,
+                   COALESCE(t.username, 'Staff') as teacher_name
+            FROM scores s
+            JOIN students st ON s.student_id = st.id
+            JOIN exams e ON s.exam_id = e.id
+            LEFT JOIN teachers t ON e.teacher_id = t.id
+            WHERE s.status = 'in_progress'
+            ORDER BY s.resume_requested DESC, s.start_time DESC
+        """).fetchall()
     
     conn.close()
     
@@ -302,20 +318,36 @@ def admin_api_technical_support_status():
     sweep_disconnected_attempts(conn)
 
     now_dt = get_utc_now()
-    rows = conn.execute("""
-        SELECT s.id, s.student_id, s.exam_id, s.warnings_count, s.max_warnings,
-               s.remaining_time, s.is_paused, s.paused_by, s.pause_reason,
-               s.last_heartbeat, s.resume_requested, s.start_time as started_at,
-               st.full_name, st.username, st.class as student_class,
-               e.name as exam_name, e.class as target_class, e.duration, e.max_warnings as exam_max_w,
-               t.username as teacher_name
-        FROM scores s
-        JOIN students st ON s.student_id = st.id
-        JOIN exams e ON s.exam_id = e.id
-        LEFT JOIN teachers t ON e.teacher_id = t.id
-        WHERE s.status = 'in_progress'
-        ORDER BY s.resume_requested DESC, s.start_time DESC
-    """).fetchall()
+    try:
+        rows = conn.execute("""
+            SELECT s.id, s.student_id, s.exam_id, s.warnings_count, s.max_warnings,
+                   s.remaining_time, s.is_paused, s.paused_by, s.pause_reason,
+                   s.last_heartbeat, s.resume_requested, s.start_time as started_at,
+                   st.full_name, st.username, st.class as student_class, st.photo,
+                   e.name as exam_name, e.class as target_class, e.duration, e.max_warnings as exam_max_w,
+                   COALESCE(NULLIF(TRIM(t.full_name), ''), t.username, 'Staff') as teacher_name
+            FROM scores s
+            JOIN students st ON s.student_id = st.id
+            JOIN exams e ON s.exam_id = e.id
+            LEFT JOIN teachers t ON e.teacher_id = t.id
+            WHERE s.status = 'in_progress'
+            ORDER BY s.resume_requested DESC, s.start_time DESC
+        """).fetchall()
+    except sqlite3.OperationalError:
+        rows = conn.execute("""
+            SELECT s.id, s.student_id, s.exam_id, s.warnings_count, s.max_warnings,
+                   s.remaining_time, s.is_paused, s.paused_by, s.pause_reason,
+                   s.last_heartbeat, s.resume_requested, s.start_time as started_at,
+                   st.full_name, st.username, st.class as student_class, st.photo,
+                   e.name as exam_name, e.class as target_class, e.duration, e.max_warnings as exam_max_w,
+                   COALESCE(t.username, 'Staff') as teacher_name
+            FROM scores s
+            JOIN students st ON s.student_id = st.id
+            JOIN exams e ON s.exam_id = e.id
+            LEFT JOIN teachers t ON e.teacher_id = t.id
+            WHERE s.status = 'in_progress'
+            ORDER BY s.resume_requested DESC, s.start_time DESC
+        """).fetchall()
 
     attempts = []
     total_running = 0
@@ -360,6 +392,7 @@ def admin_api_technical_support_status():
             "student_name": r["full_name"] or r["username"] or "Student",
             "username": r["username"],
             "student_class": r["student_class"],
+            "photo": r["photo"] or "",
             "exam_name": r["exam_name"],
             "teacher_name": r["teacher_name"] or "Staff",
             "duration": r["duration"],

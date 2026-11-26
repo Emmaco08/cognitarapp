@@ -50,6 +50,11 @@ export interface HqSettingsData {
   allow_self_signup: boolean;
   allow_paystack_checkout: boolean;
   allow_trial_activation: boolean;
+  free_trial_days: number;
+  promo_banner_enabled: boolean;
+  promo_banner_event: string;
+  promo_banner_text: string;
+  promo_banner_code: string;
 }
 
 interface HqPaymentSettingsTabProps {

@@ -902,7 +902,10 @@ def exam_page(exam_id):
         }
     
     warning_count = attempt["warnings_count"] if "warnings_count" in attempt.keys() and attempt["warnings_count"] is not None else 0
-    max_w = exam["max_warnings"] if "max_warnings" in exam.keys() and exam["max_warnings"] else (attempt.get("max_warnings") or 5)
+    s_cfg = conn.execute("SELECT max_warnings, anti_cheating_profile FROM school_settings WHERE id=1").fetchone()
+    cfg_max_w = int(s_cfg["max_warnings"]) if (s_cfg and s_cfg["max_warnings"]) else 5
+    anti_cheat_profile = str(s_cfg["anti_cheating_profile"] or "medium").lower() if s_cfg else "medium"
+    max_w = exam["max_warnings"] if "max_warnings" in exam.keys() and exam["max_warnings"] else (attempt.get("max_warnings") or cfg_max_w)
 
     max_rev_row = conn.execute("SELECT MAX(client_revision) as max_rev FROM exam_question_responses WHERE attempt_id=?", (attempt["id"],)).fetchone()
     max_rev = int(max_rev_row["max_rev"] or 0) if max_rev_row else 0
@@ -917,6 +920,7 @@ def exam_page(exam_id):
                          session_key=sess_key,
                          warning_count=warning_count,
                          max_warnings=max_w,
+                         anti_cheating_profile=anti_cheat_profile,
                          max_revision=max_rev)
 
 

@@ -21,36 +21,37 @@
     var light = isLight();
     return {
       light: light,
-      surface: light ? "#FFFFFF" : "#191919",
-      tooltipBg: light ? "#18181B" : "#242424",
-      tooltipInk: "#F4F4F5",
-      tooltipSub: "#A1A1AA",
-      tooltipBorder: light ? "rgba(20,20,22,0.12)" : "rgba(255,255,255,0.08)",
-      ink: light ? "#141416" : "#ECECEC",
-      ink2: light ? "#52525B" : "#9E9E9E",
-      ink3: light ? "#71717A" : "#6E6E6E",
-      grid: light ? "rgba(20, 20, 22, 0.06)" : "rgba(255, 255, 255, 0.05)",
-      benchLine: light ? "rgba(20, 20, 22, 0.24)" : "rgba(236, 236, 236, 0.22)",
-      benchLabel: light ? "#52525B" : "#8A8A8A",
-      avgLine: light ? "rgba(37, 99, 235, 0.42)" : "rgba(91, 149, 249, 0.45)",
+      surface: light ? "#FFFFFF" : "#1B1B1E",
+      tooltipBg: light ? "#171614" : "#242427",
+      tooltipInk: "#F5F5F4",
+      tooltipSub: "#A8A6A1",
+      tooltipBorder: light ? "rgba(23,22,20,0.12)" : "rgba(255,255,255,0.09)",
+      ink: light ? "#171614" : "#F5F5F4",
+      ink2: light ? "#575551" : "#A8A6A1",
+      ink3: light ? "#83807B" : "#76746F",
+      grid: light ? "rgba(23, 22, 20, 0.06)" : "rgba(255, 255, 255, 0.06)",
+      benchLine: light ? "rgba(23, 22, 20, 0.24)" : "rgba(245, 245, 244, 0.22)",
+      benchLabel: light ? "#575551" : "#A8A6A1",
+      avgLine: light ? "rgba(23, 22, 20, 0.42)" : "rgba(245, 245, 244, 0.42)",
       grades: {
-        A: light ? "#0F9D68" : "#3ECF8E",
-        B: light ? "#2563EB" : "#5B95F9",
-        C: light ? "#B47A1E" : "#D4A14C",
-        D: light ? "#C86A28" : "#D98A4E",
-        F: light ? "#C83E3E" : "#E57373"
+        A: light ? "#171614" : "#F5F5F4",
+        B: light ? "#3D3B37" : "#C8C6C1",
+        C: light ? "#63605B" : "#9B9994",
+        D: light ? "#8B8780" : "#716F6B",
+        E: light ? "#B4B0A8" : "#504F4B",
+        F: light ? "#D5D2CC" : "#343330"
       },
       tierColor: function (val) {
-        if (val >= 75) return light ? "#0F9D68" : "#3ECF8E";
-        if (val >= 60) return light ? "#2563EB" : "#5B95F9";
-        if (val >= 50) return light ? "#B47A1E" : "#D4A14C";
-        return light ? "#C83E3E" : "#E57373";
+        if (val >= 75) return light ? "#171614" : "#F5F5F4";
+        if (val >= 60) return light ? "#44423E" : "#C5C3BE";
+        if (val >= 50) return light ? "#787570" : "#8F8D88";
+        return light ? "#ACA8A0" : "#565552";
       },
       tierSoft: function (val) {
-        if (val >= 75) return light ? "rgba(15, 157, 104, 0.84)" : "rgba(62, 207, 142, 0.82)";
-        if (val >= 60) return light ? "rgba(37, 99, 235, 0.82)" : "rgba(91, 149, 249, 0.82)";
-        if (val >= 50) return light ? "rgba(180, 122, 30, 0.82)" : "rgba(212, 161, 76, 0.82)";
-        return light ? "rgba(200, 62, 62, 0.82)" : "rgba(229, 115, 115, 0.82)";
+        if (val >= 75) return light ? "rgba(23, 22, 20, 0.90)" : "rgba(245, 245, 244, 0.88)";
+        if (val >= 60) return light ? "rgba(23, 22, 20, 0.68)" : "rgba(245, 245, 244, 0.66)";
+        if (val >= 50) return light ? "rgba(23, 22, 20, 0.46)" : "rgba(245, 245, 244, 0.44)";
+        return light ? "rgba(23, 22, 20, 0.26)" : "rgba(245, 245, 244, 0.26)";
       }
     };
   }

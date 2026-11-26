@@ -457,3 +457,27 @@ CREATE TABLE IF NOT EXISTS school_reviews (
 );
 CREATE INDEX IF NOT EXISTS idx_school_reviews_status ON school_reviews(status, featured DESC, created_at DESC);
 
+-- 21. v2.3: HQ-Controlled Hero Discount Banner, Configurable Free Trial Days & /download Email Capture Leads
+ALTER TABLE platform_settings ADD COLUMN IF NOT EXISTS promo_banner_enabled BOOLEAN NOT NULL DEFAULT FALSE;
+ALTER TABLE platform_settings ADD COLUMN IF NOT EXISTS promo_banner_event TEXT NOT NULL DEFAULT '';
+ALTER TABLE platform_settings ADD COLUMN IF NOT EXISTS promo_banner_text TEXT NOT NULL DEFAULT '';
+ALTER TABLE platform_settings ADD COLUMN IF NOT EXISTS promo_banner_code TEXT NOT NULL DEFAULT '';
+ALTER TABLE platform_settings ADD COLUMN IF NOT EXISTS free_trial_days INTEGER NOT NULL DEFAULT 7;
+
+CREATE TABLE IF NOT EXISTS download_leads (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    email TEXT NOT NULL,
+    source TEXT NOT NULL DEFAULT 'download_page',
+    app_version TEXT NOT NULL DEFAULT 'v2.2.7',
+    ip_address TEXT,
+    user_agent TEXT,
+    email_sent BOOLEAN NOT NULL DEFAULT FALSE,
+    clicked_at TIMESTAMPTZ,
+    download_count INTEGER NOT NULL DEFAULT 0,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_download_leads_email ON download_leads(LOWER(email));
+CREATE INDEX IF NOT EXISTS idx_download_leads_created ON download_leads(created_at DESC);
+
+

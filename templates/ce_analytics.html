@@ -18,7 +18,7 @@
         
         .analytics-container { max-width: 1400px; margin: 0 auto; padding: 40px 30px; position: relative; z-index: 10; }
         
-        .edu-icon { position: absolute; color: rgba(26, 86, 219, 0.05); pointer-events: none; z-index: 0; animation: floatIcon 20s infinite ease-in-out; }
+        .edu-icon { position: absolute; color: rgba(23, 22, 20, 0.05); pointer-events: none; z-index: 0; animation: floatIcon 20s infinite ease-in-out; }
         @keyframes floatIcon { 0% { transform: translate(0, 0) rotate(0deg); opacity: 0; } 10% { opacity: 0.08; } 90% { opacity: 0.08; } 100% { transform: translate(100px, -100px) rotate(360deg); opacity: 0; } }
         
         .page-header { text-align: center; margin-bottom: 30px; }
@@ -37,8 +37,8 @@
         
         .btn-back { background: var(--ct-surface); border: 2px solid var(--ct-line-2); padding: 8px 20px; border-radius: 12px; color: var(--ct-ink-3); font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; transition: all 0.3s; font-size: 13px; }
         .btn-back:hover { border-color: var(--ct-primary); color: var(--ct-primary); background: var(--ct-accent-soft); }
-        .btn-export { background: #10b981; color: white; border: none; padding: 8px 20px; border-radius: 12px; font-weight: 600; cursor: pointer; transition: all 0.3s; font-size: 13px; display: inline-flex; align-items: center; gap: 8px; }
-        .btn-export:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(16,185,129,0.3); }
+        .btn-export { background: #575551; color: white; border: none; padding: 8px 20px; border-radius: 12px; font-weight: 600; cursor: pointer; transition: all 0.3s; font-size: 13px; display: inline-flex; align-items: center; gap: 8px; }
+        .btn-export:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(23, 22, 20,0.3); }
         
         .card-custom { background: var(--ct-surface); border-radius: 24px; border: 1px solid var(--ct-line-2); margin-bottom: 25px; overflow: hidden; }
         .card-header-custom { padding: 15px 20px; border-bottom: 1px solid var(--ct-line-2); background: var(--ct-surface); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; }
@@ -61,15 +61,15 @@
         .data-table td { padding: 10px 12px; border-bottom: 1px solid #f0f2f5; font-size: 13px; vertical-align: middle; }
         .data-table tr:hover { background: var(--ct-surface); }
         
-        .badge-pass { background: var(--ct-ok-soft); color: #065f46; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; display: inline-block; }
-        .badge-fail { background: var(--ct-bad-soft); color: #991b1b; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; display: inline-block; }
-        .badge-pending { background: var(--ct-warn-soft); color: #d97706; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; display: inline-block; }
+        .badge-pass { background: var(--ct-ok-soft); color: #171614; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; display: inline-block; }
+        .badge-fail { background: var(--ct-bad-soft); color: #171614; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; display: inline-block; }
+        .badge-pending { background: var(--ct-warn-soft); color: #575551; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; display: inline-block; }
         .badge-rejected { background: var(--ct-surface); color: var(--ct-ink-3); padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; display: inline-block; }
         .badge-not-started { background: var(--ct-line-2); color: var(--ct-ink-3); padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; display: inline-block; }
         
-        .difficulty-easy { background: var(--ct-ok-soft); color: #065f46; padding: 2px 8px; border-radius: 20px; font-size: 10px; }
-        .difficulty-medium { background: var(--ct-warn-soft); color: #d97706; padding: 2px 8px; border-radius: 20px; font-size: 10px; }
-        .difficulty-hard { background: var(--ct-bad-soft); color: #991b1b; padding: 2px 8px; border-radius: 20px; font-size: 10px; }
+        .difficulty-easy { background: var(--ct-ok-soft); color: #171614; padding: 2px 8px; border-radius: 20px; font-size: 10px; }
+        .difficulty-medium { background: var(--ct-warn-soft); color: #575551; padding: 2px 8px; border-radius: 20px; font-size: 10px; }
+        .difficulty-hard { background: var(--ct-bad-soft); color: #171614; padding: 2px 8px; border-radius: 20px; font-size: 10px; }
         .difficulty-very-hard { background: var(--ct-accent-soft); color: var(--ct-primary); padding: 2px 8px; border-radius: 20px; font-size: 10px; }
         
         .nav-tabs { border: none; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; }
@@ -197,10 +197,10 @@
 
     <!-- Compact Stats Cards -->
     <div class="stats-grid">
-        <div class="stat-card"><i class="fas fa-trophy" style="color: #f59e0b;"></i><h4>{{ max_score }}%</h4><p>Highest Score</p></div>
-        <div class="stat-card"><i class="fas fa-arrow-down" style="color: #ef4444;"></i><h4>{{ min_score }}%</h4><p>Lowest Score</p></div>
-        <div class="stat-card"><i class="fas fa-check-double" style="color: #10b981;"></i><h4>{{ approved }}</h4><p>Approved</p></div>
-        <div class="stat-card"><i class="fas fa-ban" style="color: #ef4444;"></i><h4>{{ rejected }}</h4><p>Rejected</p></div>
+        <div class="stat-card"><i class="fas fa-trophy" style="color: #D6D4CF;"></i><h4>{{ max_score }}%</h4><p>Highest Score</p></div>
+        <div class="stat-card"><i class="fas fa-arrow-down" style="color: #2B2926;"></i><h4>{{ min_score }}%</h4><p>Lowest Score</p></div>
+        <div class="stat-card"><i class="fas fa-check-double" style="color: #575551;"></i><h4>{{ approved }}</h4><p>Approved</p></div>
+        <div class="stat-card"><i class="fas fa-ban" style="color: #2B2926;"></i><h4>{{ rejected }}</h4><p>Rejected</p></div>
     </div>
 
     <!-- Tabs -->
@@ -231,15 +231,15 @@
                         <div class="card-body-custom">
                             <div style="margin-bottom: 15px;">
                                 <div style="display: flex; justify-content: space-between; font-size: 13px;"><span>Pass Rate</span><span><strong>{{ (passed / total_attempts * 100)|round|int if total_attempts > 0 else 0 }}%</strong></span></div>
-                                <div class="progress-custom"><div class="progress-fill" style="width: {{ (passed / total_attempts * 100) if total_attempts > 0 else 0 }}%; background: #10b981;"></div></div>
+                                <div class="progress-custom"><div class="progress-fill" style="width: {{ (passed / total_attempts * 100) if total_attempts > 0 else 0 }}%; background: #575551;"></div></div>
                             </div>
                             <div style="margin-bottom: 15px;">
                                 <div style="display: flex; justify-content: space-between; font-size: 13px;"><span>Average Score</span><span><strong>{{ avg_score }}%</strong></span></div>
-                                <div class="progress-custom"><div class="progress-fill" style="width: {{ avg_score }}%; background: #8b5cf6;"></div></div>
+                                <div class="progress-custom"><div class="progress-fill" style="width: {{ avg_score }}%; background: #575551;"></div></div>
                             </div>
                             <div>
                                 <div style="display: flex; justify-content: space-between; font-size: 13px;"><span>Highest Score</span><span><strong>{{ max_score }}%</strong></span></div>
-                                <div class="progress-custom"><div class="progress-fill" style="width: {{ max_score }}%; background: #f59e0b;"></div></div>
+                                <div class="progress-custom"><div class="progress-fill" style="width: {{ max_score }}%; background: #D6D4CF;"></div></div>
                             </div>
                         </div>
                     </div>
@@ -428,15 +428,15 @@
                         <div class="card-body-custom">
                             <div style="margin-bottom: 12px;">
                                 <div style="display: flex; justify-content: space-between; font-size: 13px;"><span>Average Time</span><span><strong>{{ avg_total_time }} min</strong></span></div>
-                                <div class="progress-custom"><div class="progress-fill" style="width: {{ (avg_total_time / exam.duration * 100) if exam.duration > 0 else 0 }}%; background: #8b5cf6;"></div></div>
+                                <div class="progress-custom"><div class="progress-fill" style="width: {{ (avg_total_time / exam.duration * 100) if exam.duration > 0 else 0 }}%; background: #575551;"></div></div>
                             </div>
                             <div style="margin-bottom: 12px;">
                                 <div style="display: flex; justify-content: space-between; font-size: 13px;"><span>Fastest</span><span><strong>{{ min_total_time }} min</strong></span></div>
-                                <div class="progress-custom"><div class="progress-fill" style="width: {{ (min_total_time / exam.duration * 100) if exam.duration > 0 else 0 }}%; background: #10b981;"></div></div>
+                                <div class="progress-custom"><div class="progress-fill" style="width: {{ (min_total_time / exam.duration * 100) if exam.duration > 0 else 0 }}%; background: #575551;"></div></div>
                             </div>
                             <div>
                                 <div style="display: flex; justify-content: space-between; font-size: 13px;"><span>Slowest</span><span><strong>{{ max_total_time }} min</strong></span></div>
-                                <div class="progress-custom"><div class="progress-fill" style="width: {{ (max_total_time / exam.duration * 100) if exam.duration > 0 else 0 }}%; background: #ef4444;"></div></div>
+                                <div class="progress-custom"><div class="progress-fill" style="width: {{ (max_total_time / exam.duration * 100) if exam.duration > 0 else 0 }}%; background: #2B2926;"></div></div>
                             </div>
                         </div>
                     </div>
@@ -495,21 +495,21 @@
     // Score Distribution Chart
     new Chart(document.getElementById('scoreChart'), {
         type: 'doughnut',
-        data: { labels: {{ distribution_labels|safe }}, datasets: [{ data: {{ distribution_counts|safe }}, backgroundColor: ['#ef4444', '#f59e0b', '#fbbf24', '#34d399', '#10b981'], borderWidth: 0 }] },
+        data: { labels: {{ distribution_labels|safe }}, datasets: [{ data: {{ distribution_counts|safe }}, backgroundColor: ['#2B2926', '#D6D4CF', '#D6D4CF', '#575551', '#575551'], borderWidth: 0 }] },
         options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 10 } } } } }
     });
 
     // Difficulty Chart
     new Chart(document.getElementById('difficultyChart'), {
         type: 'doughnut',
-        data: { labels: ['Easy', 'Medium', 'Hard', 'Very Hard'], datasets: [{ data: [{{ difficulty_counts.Easy|default(0) }}, {{ difficulty_counts.Medium|default(0) }}, {{ difficulty_counts.Hard|default(0) }}, {{ difficulty_counts['Very Hard']|default(0) }}], backgroundColor: ['#10b981', '#f59e0b', '#ef4444', '#8b5cf6'], borderWidth: 0 }] },
+        data: { labels: ['Easy', 'Medium', 'Hard', 'Very Hard'], datasets: [{ data: [{{ difficulty_counts.Easy|default(0) }}, {{ difficulty_counts.Medium|default(0) }}, {{ difficulty_counts.Hard|default(0) }}, {{ difficulty_counts['Very Hard']|default(0) }}], backgroundColor: ['#575551', '#D6D4CF', '#2B2926', '#575551'], borderWidth: 0 }] },
         options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 10 } } } } }
     });
 
     // Time Distribution Chart
     new Chart(document.getElementById('timeChart'), {
         type: 'pie',
-        data: { labels: {{ time_distribution_labels|safe }}, datasets: [{ data: {{ time_distribution_counts|safe }}, backgroundColor: ['#10b981', '#34d399', '#fbbf24', '#f59e0b', '#ef4444'], borderWidth: 0 }] },
+        data: { labels: {{ time_distribution_labels|safe }}, datasets: [{ data: {{ time_distribution_counts|safe }}, backgroundColor: ['#575551', '#575551', '#D6D4CF', '#D6D4CF', '#2B2926'], borderWidth: 0 }] },
         options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 10 } } } } }
     });
 

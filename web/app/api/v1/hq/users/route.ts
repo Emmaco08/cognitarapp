@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSql } from "@/lib/db";
 import { requireHqAdmin } from "@/lib/auth";
+import { ensureSchoolProfileColumns } from "@/lib/school-profile";
 
 export const dynamic = "force-dynamic";
 
@@ -14,11 +15,22 @@ export async function GET(req: NextRequest) {
     const q = (req.nextUrl.searchParams.get("q") || "").trim().toLowerCase();
     const statusFilter = (req.nextUrl.searchParams.get("status") || "all").trim().toLowerCase();
     const sql = getSql();
+    await ensureSchoolProfileColumns(sql);
 
     const rows = await sql`
       SELECT
         s.id AS school_id,
         s.school_name,
+        s.school_motto,
+        s.academic_session,
+        s.current_term,
+        s.logo_data_url,
+        s.admin_full_name,
+        s.admin_username,
+        s.onboarding_completed_at,
+        s.last_lan_ip,
+        s.last_machine_hostname,
+        s.last_os_version,
         s.country_code,
         s.state_region,
         s.contact_email,
@@ -83,10 +95,14 @@ export async function GET(req: NextRequest) {
       if (!q) return true;
       return (
         String(r.school_name || "").toLowerCase().includes(q) ||
+        String(r.school_motto || "").toLowerCase().includes(q) ||
         String(r.full_name || "").toLowerCase().includes(q) ||
+        String(r.admin_full_name || "").toLowerCase().includes(q) ||
+        String(r.admin_username || "").toLowerCase().includes(q) ||
         String(r.email || "").toLowerCase().includes(q) ||
         String(r.license_key || "").toLowerCase().includes(q) ||
-        String(r.last_hwid || "").toLowerCase().includes(q)
+        String(r.last_hwid || "").toLowerCase().includes(q) ||
+        String(r.last_machine_hostname || "").toLowerCase().includes(q)
       );
     });
 

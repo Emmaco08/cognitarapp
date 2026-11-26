@@ -1,429 +1,233 @@
-{%- from '_ct_shell.html' import ico, ct_boot_script, admin_shell_start, teacher_shell_start, student_topbar, shell_end with context -%}
+{%- from '_ct_shell.html' import ico, person_avatar, ct_boot_script, admin_shell_start, shell_end with context -%}
+{%- set st_name = student.full_name or student.username -%}
 <!DOCTYPE html>
 <html lang="en" data-theme="dark">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ student.full_name or student.username }} - {{ exam.name }} | Exam Detail</title>
-    <link href="{{ url_for('static', filename='vendor/bootstrap/css/bootstrap.min.css') }}" rel="stylesheet">
-    <link href="{{ url_for('static', filename='vendor/fontawesome/css/all.min.css') }}" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='vendor/katex/katex.min.css') }}">
-    <script src="{{ url_for('static', filename='vendor/katex/katex.min.js') }}"></script>
-    <script src="{{ url_for('static', filename='vendor/katex/contrib/mhchem.min.js') }}"></script>
-    <script src="{{ url_for('static', filename='vendor/katex/contrib/auto-render.min.js') }}"></script>
-    <script src="{{ url_for('static', filename='vendor/chartjs/chart.umd.min.js') }}"></script>
-    <style>
-        :root {
-            --primary: var(--ct-primary); --primary-dark: #0e3b9e; --success: #10b981;
-            --warning: #f59e0b; --danger: #ef4444; --purple: var(--ct-primary);
-            --bg: var(--ct-surface-2); --card: var(--ct-surface); --border: var(--ct-line-2);
-            --text: var(--ct-ink); --text-light: #6b7280;
-            --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
-            --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.07);
-            --shadow-lg: 0 10px 25px -5px rgba(0,0,0,0.08);
-            --shadow-xl: 0 20px 40px -10px rgba(0,0,0,0.1);
-        }
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { background: var(--ct-surface-2); font-family: 'Segoe UI', 'Inter', system-ui, sans-serif; color: var(--text); min-height: 100vh; }
-
-        .detail-container { max-width: 1100px; margin: 0 auto; padding: 28px 20px; }
-
-        .nav-bar {
-            background: var(--card); border-radius: 18px; padding: 14px 22px;
-            margin-bottom: 22px; display: flex; align-items: center;
-            justify-content: space-between; flex-wrap: wrap; gap: 12px;
-            border: 1px solid var(--border); box-shadow: var(--shadow-sm);
-            animation: slideDown 0.4s ease;
-        }
-        @keyframes slideDown { from { opacity: 0; transform: translateY(-15px); } to { opacity: 1; transform: translateY(0); } }
-        .btn-back {
-            background: var(--card); border: 1.5px solid var(--border); padding: 8px 16px;
-            border-radius: 10px; color: var(--text-light); text-decoration: none;
-            font-weight: 600; font-size: 12px; display: inline-flex; align-items: center; gap: 6px;
-            transition: all 0.25s;
-        }
-        .btn-back:hover { border-color: var(--primary); color: var(--primary); background: var(--ct-surface); transform: translateY(-1px); }
-
-        /* Score Hero */
-        .score-hero {
-            background: var(--ct-brand-grad);
-            border-radius: 24px; padding: 28px 30px; margin-bottom: 22px;
-            display: flex; align-items: center; gap: 30px; flex-wrap: wrap;
-            color: white; position: relative; overflow: hidden;
-            box-shadow: var(--shadow-xl); animation: fadeInUp 0.5s ease;
-        }
-        @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-        .score-hero::before {
-            content: ''; position: absolute; top: -40%; right: -15%;
-            width: 350px; height: 350px; background: rgba(255,255,255,0.03);
-            border-radius: 50%; pointer-events: none;
-        }
-        .score-ring {
-            width: 130px; height: 130px; position: relative; flex-shrink: 0; z-index: 1;
-        }
-        .score-ring svg { transform: rotate(-90deg); }
-        .ring-center {
-            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            text-align: center;
-        }
-        .ring-center .big-percent { font-size: 32px; font-weight: 800; line-height: 1; }
-        .ring-center .score-text { font-size: 12px; opacity: 0.85; }
-        .hero-info { position: relative; z-index: 1; }
-        .hero-info h2 { font-size: 22px; font-weight: 700; margin-bottom: 4px; }
-        .hero-info .meta-row { display: flex; gap: 12px; flex-wrap: wrap; font-size: 13px; opacity: 0.9; }
-        .hero-info .meta-row span { display: flex; align-items: center; gap: 5px; }
-        .grade-pill {
-            display: inline-block; padding: 6px 18px; border-radius: 25px;
-            font-weight: 800; font-size: 18px; background: rgba(255,255,255,0.2);
-        }
-
-        /* Stats Grid */
-        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 14px; margin-bottom: 22px; }
-        .stat-card {
-            background: var(--card); border-radius: 16px; padding: 18px; text-align: center;
-            border: 1px solid var(--border); transition: all 0.3s;
-            box-shadow: var(--shadow-sm); animation: popIn 0.4s ease forwards; opacity: 0;
-        }
-        @keyframes popIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
-        .stat-card:nth-child(1) { animation-delay: 0.1s; }
-        .stat-card:nth-child(2) { animation-delay: 0.15s; }
-        .stat-card:nth-child(3) { animation-delay: 0.2s; }
-        .stat-card:nth-child(4) { animation-delay: 0.25s; }
-        .stat-card:nth-child(5) { animation-delay: 0.3s; }
-        .stat-card:nth-child(6) { animation-delay: 0.35s; }
-        .stat-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-lg); }
-        .stat-icon { font-size: 24px; margin-bottom: 8px; display: block; }
-        .stat-value { font-size: 24px; font-weight: 800; }
-        .stat-label { font-size: 11px; color: var(--text-light); margin-top: 3px; }
-
-        /* Speed Highlight */
-        .speed-alert {
-            border-radius: 16px; padding: 16px 20px; margin-bottom: 18px;
-            border-left: 4px solid; display: flex; align-items: center; gap: 14px;
-            font-size: 14px; animation: fadeInUp 0.5s ease forwards; opacity: 0;
-            animation-delay: 0.4s;
-        }
-        .speed-alert.fast { background: var(--ct-surface-2); border-left-color: var(--success); color: #065f46; }
-        .speed-alert.slow { background: var(--ct-surface-2); border-left-color: var(--warning); color: #92400e; }
-        .speed-alert i { font-size: 32px; }
-
-        /* Question Card */
-        .section-card {
-            background: var(--card); border-radius: 20px; overflow: hidden;
-            border: 1px solid var(--border); margin-bottom: 20px;
-            box-shadow: var(--shadow-sm); animation: fadeInUp 0.5s ease forwards; opacity: 0;
-        }
-        .section-card:nth-child(6) { animation-delay: 0.5s; }
-        .section-card:nth-child(7) { animation-delay: 0.55s; }
-        .section-header {
-            padding: 14px 20px; border-bottom: 1px solid var(--border);
-            display: flex; align-items: center; gap: 10px; background: #fafbfc;
-        }
-        .section-header i { font-size: 17px; }
-        .section-header h3 { margin: 0; font-size: 15px; font-weight: 700; }
-        .section-body { padding: 14px 18px; }
-
-        .question-card {
-            background: #fafbfc; border-radius: 14px; padding: 16px 18px; margin-bottom: 10px;
-            border: 1px solid var(--border); transition: all 0.3s;
-        }
-        .question-card:hover { transform: translateX(3px); }
-        .question-card.correct { border-left: 3px solid var(--success); background: #f8fdf9; }
-        .question-card.incorrect { border-left: 3px solid var(--danger); background: #fefafa; }
-        .q-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 8px; }
-        .q-number { font-weight: 700; font-size: 13px; display: flex; align-items: center; gap: 8px; }
-        .section-chip {
-            background: var(--ct-line-2); padding: 2px 8px; border-radius: 10px; font-size: 10px;
-            color: var(--text-light); font-weight: 500;
-        }
-        .badge-correct { background: var(--ct-ok-soft); color: #065f46; padding: 3px 10px; border-radius: 12px; font-size: 10px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px; }
-        .badge-incorrect { background: var(--ct-bad-soft); color: #991b1b; padding: 3px 10px; border-radius: 12px; font-size: 10px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px; }
-        .q-text { font-size: 14px; margin-bottom: 10px; line-height: 1.5; word-wrap: break-word; }
-        .q-answers { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 8px; }
-        @media (max-width: 500px) { .q-answers { grid-template-columns: 1fr; } }
-        .q-answer-box { padding: 8px 12px; border-radius: 8px; font-size: 12px; }
-        .q-answer-box.wrong { background: var(--ct-bad-soft); border: 1px solid #fecaca; }
-        .q-answer-box.right { background: var(--ct-ok-soft); border: 1px solid #a7f3d0; }
-        .time-badge {
-            background: var(--ct-surface); padding: 3px 8px; border-radius: 10px;
-            font-size: 10px; color: var(--text-light); display: inline-flex; align-items: center; gap: 4px;
-        }
-
-        .filter-buttons { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
-        .filter-btn {
-            padding: 7px 16px; border-radius: 20px; border: 1.5px solid var(--border);
-            background: var(--ct-surface); cursor: pointer; font-weight: 600; font-size: 12px;
-            transition: all 0.2s; display: inline-flex; align-items: center; gap: 5px;
-        }
-        .filter-btn:hover { border-color: var(--primary); color: var(--primary); }
-        .filter-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
-
-        @media (max-width: 640px) {
-            .detail-container { padding: 14px 10px; }
-            .score-hero { padding: 20px; flex-direction: column; text-align: center; }
-            .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
-        }
-    </style>
-    <!-- CSRF Protection Shield -->
-    <meta name="csrf-token" content="{{ csrf_token() }}">
-    <script>
-    window.CSRF_TOKEN = "{{ csrf_token() }}";
-    (function() {
-        if (window.fetch) {
-            const _origFetch = window.fetch;
-            window.fetch = function(url, options) {
-                options = options || {};
-                const method = (options.method || 'GET').toUpperCase();
-                if (!['GET', 'HEAD', 'OPTIONS', 'TRACE'].includes(method)) {
-                    options.headers = options.headers || {};
-                    const token = window.CSRF_TOKEN || (document.querySelector('meta[name="csrf-token"]') && document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
-                    if (token) {
-                        if (typeof Headers !== 'undefined' && options.headers instanceof Headers) {
-                            if (!options.headers.has('X-CSRFToken')) options.headers.set('X-CSRFToken', token);
-                        } else if (Array.isArray(options.headers)) {
-                            options.headers.push(['X-CSRFToken', token]);
-                        } else {
-                            if (!options.headers['X-CSRFToken']) options.headers['X-CSRFToken'] = token;
-                        }
-                    }
-                }
-                return _origFetch(url, options);
-            };
-        }
-        if (window.$ && $.ajaxSetup) {
-            $.ajaxSetup({
-                beforeSend: function(xhr, settings) {
-                    if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type)) {
-                        xhr.setRequestHeader("X-CSRFToken", window.CSRF_TOKEN);
-                    }
-                }
-            });
-        }
-        if (navigator.sendBeacon) {
-            const _origBeacon = navigator.sendBeacon.bind(navigator);
-            navigator.sendBeacon = function(url, data) {
-                if (data instanceof FormData) {
-                    if (!data.has('csrf_token')) data.append('csrf_token', window.CSRF_TOKEN);
-                } else if (typeof data === 'string') {
-                    try {
-                        const obj = JSON.parse(data);
-                        if (typeof obj === 'object' && obj !== null && !obj.csrf_token) {
-                            obj.csrf_token = window.CSRF_TOKEN;
-                            data = JSON.stringify(obj);
-                        }
-                    } catch(e) {}
-                }
-                return _origBeacon(url, data);
-            };
-        }
-        document.addEventListener('DOMContentLoaded', function() {
-            document.querySelectorAll('form[method="POST"], form[method="post"]').forEach(function(form) {
-                if (!form.querySelector('input[name="csrf_token"]')) {
-                    var input = document.createElement('input');
-                    input.type = 'hidden';
-                    input.name = 'csrf_token';
-                    input.value = window.CSRF_TOKEN;
-                    form.appendChild(input);
-                }
-            });
-        });
-    })();
-    </script>
-
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+  <meta name="color-scheme" content="dark light">
+  <title>{{ st_name }} — {{ exam.name }} | CogniTara</title>
+  <link rel="icon" href="{{ url_for('static', filename='images/cognitara-favicon.ico') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='vendor/katex/katex.min.css') }}">
+  <script src="{{ url_for('static', filename='vendor/katex/katex.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='vendor/katex/contrib/mhchem.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='vendor/katex/contrib/auto-render.min.js') }}"></script>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/cognitara-web.css') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/cognitara-portal-unified.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/cognitara-teacher-studio.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/cognitara-admin-studio.css') }}">
   {{ ct_boot_script() }}
+  <style>
+    .sd-hero {
+      display: flex; align-items: center; justify-content: space-between; gap: 22px; flex-wrap: wrap;
+      padding: 22px 24px; border-radius: 16px; background: var(--tc-surface);
+      border: 1px solid var(--tc-line-2); margin-bottom: 18px;
+    }
+    .sd-hero__left { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
+    .sd-ring { width: 92px; height: 92px; position: relative; flex: none; }
+    .sd-ring svg { transform: rotate(-90deg); width: 100%; height: 100%; }
+    .sd-ring__center {
+      position: absolute; inset: 0; display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+    }
+    .sd-ring__pct { font-family: var(--ct-mono); font-size: 21px; font-weight: 760; color: var(--tc-ink); line-height: 1; }
+    .sd-ring__sub { font-family: var(--ct-mono); font-size: 11px; color: var(--tc-ink-3); margin-top: 3px; }
+    .sd-kpis {
+      display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 12px; margin-bottom: 18px;
+    }
+    @media (max-width: 1080px) { .sd-kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+    @media (max-width: 600px) { .sd-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+    .sd-kpi {
+      padding: 14px 16px; border-radius: 12px; background: var(--tc-surface); border: 1px solid var(--tc-line-2);
+    }
+    .sd-kpi small { display: block; font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--tc-ink-3); font-weight: 650; }
+    .sd-kpi strong { display: block; margin-top: 5px; font-family: var(--ct-mono); font-size: 21px; font-weight: 740; color: var(--tc-ink); }
+    .sd-seg {
+      display: inline-flex; padding: 4px; border-radius: 11px;
+      background: var(--tc-surface); border: 1px solid var(--tc-line-2); gap: 3px; margin-bottom: 16px;
+    }
+    .sd-seg button {
+      border: 0; background: transparent; color: var(--tc-ink-2); font-size: 12.5px; font-weight: 600;
+      padding: 7px 14px; border-radius: 8px; cursor: pointer;
+    }
+    .sd-seg button.is-active { background: var(--tc-surface-2); color: var(--tc-ink); border: 1px solid var(--tc-line-2); }
+    .sd-q {
+      padding: 16px 18px; border-radius: 12px; background: var(--tc-surface-2);
+      border: 1px solid var(--tc-line); border-left: 3px solid var(--ct-ok); margin-bottom: 10px;
+    }
+    .sd-q--bad { border-left-color: var(--ct-bad); }
+    .sd-q__head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
+    .sd-q__text { font-size: 14px; line-height: 1.55; color: var(--tc-ink); margin-bottom: 12px; }
+    .sd-ans-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    @media (max-width: 640px) { .sd-ans-grid { grid-template-columns: 1fr; } }
+    .sd-ans {
+      padding: 10px 12px; border-radius: 9px; font-size: 13px; border: 1px solid var(--tc-line); background: var(--tc-surface);
+    }
+    .sd-ans--bad { background: var(--ct-bad-soft); border-color: var(--ct-bad-line); }
+    .sd-ans--ok { background: var(--ct-ok-soft); border-color: var(--ct-ok-line); }
+    .sd-ans small { display: block; font-size: 10px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 4px; }
+  </style>
 </head>
-<body class="ct-app ct-bs ad-studio">
-{{ admin_shell_start(active='students', crumb='Student Exam Detail') }}
+<body class="ct-app ad-studio">
+{{ admin_shell_start(active='students', crumb='Exam Script Review') }}
 
-    <div class="detail-container">
-        <!-- Nav -->
-        <div class="nav-bar">
-            <span style="font-weight:700;font-size:15px;"><i class="fas fa-file-alt" style="color:var(--primary);"></i> Exam Detail</span>
-            <div style="display:flex;gap:8px;">
-                <a href="/admin/student/{{ student.id }}" class="btn-back"><i class="fas fa-arrow-left"></i> Profile</a>
-                <a href="/admin/results" class="btn-back"><i class="fas fa-home"></i> Results</a>
-            </div>
-        </div>
-
-        <!-- Score Hero -->
-        <div class="score-hero">
-            <div class="score-ring">
-                <svg width="130" height="130" viewBox="0 0 130 130">
-                    <circle cx="65" cy="65" r="56" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="8"/>
-                    <circle cx="65" cy="65" r="56" fill="none" stroke="white" stroke-width="8"
-                            stroke-dasharray="351.85" stroke-dashoffset="{{ 351.85 - (351.85 * percentage / 100) }}" stroke-linecap="round"/>
-                </svg>
-                <div class="ring-center">
-                    <div class="big-percent">{{ "%.0f"|format(percentage) }}%</div>
-                    <div class="score-text">{{ score.score }}/{{ score.total }}</div>
-                </div>
-            </div>
-            <div class="hero-info">
-                <h2>{{ exam.name }}</h2>
-                <div class="meta-row">
-                    <span><i class="fas fa-user"></i> {{ student.full_name or student.username }}</span>
-                    <span><i class="fas fa-star"></i> Grade: <span class="grade-pill">{{ grade }}</span></span>
-                </div>
-            </div>
-        </div>
-
-        <!-- Stats -->
-        <div class="stats-grid">
-            <div class="stat-card">
-                <span class="stat-icon"><i class="fas fa-trophy"></i></span>
-                <div class="stat-value" style="color:#1a56db;">#{{ rank }}</div>
-                <div class="stat-label">Rank of {{ total_students }}</div>
-            </div>
-            <div class="stat-card">
-                <span class="stat-icon"><i class="fas fa-check-circle"></i></span>
-                <div class="stat-value" style="color:#10b981;">{{ correct_questions|length }}</div>
-                <div class="stat-label">Correct Answers</div>
-            </div>
-            <div class="stat-card">
-                <span class="stat-icon"><i class="fas fa-times-circle"></i></span>
-                <div class="stat-value" style="color:#ef4444;">{{ missed_questions|length }}</div>
-                <div class="stat-label">Missed Questions</div>
-            </div>
-            <div class="stat-card">
-                <span class="stat-icon"><i class="fas fa-stopwatch"></i></span>
-                <div class="stat-value" style="color:#f59e0b;">{{ ((score.time_spent_seconds or 0) // 60)|int }}m</div>
-                <div class="stat-label">Total Time</div>
-            </div>
-            <div class="stat-card">
-                <span class="stat-icon"><i class="fas fa-bolt"></i></span>
-                <div class="stat-value" style="color:#3b82f6;">#{{ speed_rank }}</div>
-                <div class="stat-label">Speed Rank</div>
-            </div>
-            <div class="stat-card">
-                <span class="stat-icon"><i class="fas fa-chart-bar"></i></span>
-                <div class="stat-value" style="color: var(--ct-accent);">{{ ((avg_time or 0) // 60)|int }}m</div>
-                <div class="stat-label">Class Avg Time</div>
-            </div>
-        </div>
-
-        <!-- Speed Alert -->
-        {% if score.time_spent_seconds and avg_time and score.time_spent_seconds <= avg_time * 0.8 %}
-        <div class="speed-alert fast">
-            <i class="fas fa-bolt"></i>
-            <div><strong><i class="fas fa-bolt"></i> Lightning Fast!</strong> Completed {{ ((avg_time - score.time_spent_seconds) // 60)|int }}m faster than the class average of {{ (avg_time // 60)|int }}m.</div>
-        </div>
-        {% elif score.time_spent_seconds and avg_time and score.time_spent_seconds > avg_time * 1.3 %}
-        <div class="speed-alert slow">
-            <i class="fas fa-hourglass-end"></i>
-            <div><strong><i class="fas fa-hourglass-start"></i> Slower Pace</strong> Took {{ ((score.time_spent_seconds - avg_time) // 60)|int }}m longer than the class average of {{ (avg_time // 60)|int }}m.</div>
-        </div>
-        {% endif %}
-
-        <!-- Filter Buttons -->
-        <div class="filter-buttons">
-            <button class="filter-btn active" onclick="filterQuestions('all')"><i class="fas fa-list"></i> All ({{ missed_questions|length + correct_questions|length }})</button>
-            <button class="filter-btn" onclick="filterQuestions('incorrect')"><i class="fas fa-times-circle"></i> Missed ({{ missed_questions|length }})</button>
-            <button class="filter-btn" onclick="filterQuestions('correct')"><i class="fas fa-check-circle"></i> Correct ({{ correct_questions|length }})</button>
-        </div>
-
-        <!-- Missed Questions -->
-        {% if missed_questions %}
-        <div class="section-card" id="missedSection">
-            <div class="section-header" style="background:#fef2f2;">
-                <i class="fas fa-times-circle" style="color:#ef4444;"></i>
-                <h3 style="color:#991b1b;">Missed Questions</h3>
-                <span style="margin-left:auto;font-size:12px;color:#ef4444;font-weight:600;">{{ missed_questions|length }} questions</span>
-            </div>
-            <div class="section-body">
-                {% for q in missed_questions %}
-                <div class="question-card incorrect" data-status="incorrect">
-                    <div class="q-header">
-                        <div class="q-number">
-                            Q{{ loop.index }}
-                            <span class="section-chip">{{ q.section_name or 'General' }}</span>
-                        </div>
-                        <span class="badge-incorrect"><i class="fas fa-times"></i> Incorrect</span>
-                    </div>
-                    <div class="q-text">{{ (q.question or '')|sanitize|safe }}</div>
-                    <div class="q-answers">
-                        <div class="q-answer-box wrong">
-                            <strong style="color:#ef4444;display:block;font-size:10px;">YOUR ANSWER</strong>
-                            {{ q.chosen_letter }}. {{ (q.user_answer or 'Not answered')|sanitize|safe }}
-                        </div>
-                        <div class="q-answer-box right">
-                            <strong style="color:#10b981;display:block;font-size:10px;">CORRECT ANSWER</strong>
-                            {{ q.correct_letter }}. {{ (q.answer or '')|sanitize|safe }}
-                        </div>
-                    </div>
-                    <span class="time-badge"><i class="fas fa-clock"></i> {{ q.time_spent or 0 }}s spent</span>
-                </div>
-                {% endfor %}
-            </div>
-        </div>
-        {% endif %}
-
-        <!-- Correct Questions -->
-        {% if correct_questions %}
-        <div class="section-card" id="correctSection">
-            <div class="section-header" style="background: var(--ct-ok-soft);">
-                <i class="fas fa-check-circle" style="color:#10b981;"></i>
-                <h3 style="color:#065f46;">Correct Questions</h3>
-                <span style="margin-left:auto;font-size:12px;color:#10b981;font-weight:600;">{{ correct_questions|length }} questions</span>
-            </div>
-            <div class="section-body">
-                {% for q in correct_questions %}
-                <div class="question-card correct" data-status="correct">
-                    <div class="q-header">
-                        <div class="q-number">
-                            Q{{ loop.index }}
-                            <span class="section-chip">{{ q.section_name or 'General' }}</span>
-                        </div>
-                        <span class="badge-correct"><i class="fas fa-check"></i> Correct</span>
-                    </div>
-                    <div class="q-text">{{ (q.question or '')|sanitize|safe }}</div>
-                    <div style="font-size:12px;color:#10b981;font-weight:600;">{{ q.correct_letter }}. {{ (q.answer or '')|sanitize|safe }}</div>
-                    <span class="time-badge"><i class="fas fa-clock"></i> {{ q.time_spent or 0 }}s spent</span>
-                </div>
-                {% endfor %}
-            </div>
-        </div>
-        {% endif %}
+  <header class="tc-head ct-animate-rise">
+    <div class="tc-head__txt">
+      <h1>{{ exam.name }}</h1>
+      <p>Item-level response transcript for {{ st_name }} (@{{ student.username }}).</p>
     </div>
+    <div class="tc-head__actions">
+      <a href="/admin/student/{{ student.id }}" class="tc-btn tc-btn--secondary">{{ ico('i-user', 'ct-ico--sm') }}Student Profile</a>
+      <a href="/admin/results" class="tc-btn tc-btn--secondary">{{ ico('i-arrow-left', 'ct-ico--sm') }}Results</a>
+    </div>
+  </header>
 
-    <script>
-        function filterQuestions(type) {
-            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-            event.target.classList.add('active');
+  <section class="sd-hero" data-ct-reveal>
+    <div class="sd-hero__left">
+      {% set pct_clamped = [([percentage|float, 0]|max), 100]|min %}
+      <div class="sd-ring">
+        <svg viewBox="0 0 100 100">
+          <circle cx="50" cy="50" r="42" fill="none" stroke="var(--tc-line-2)" stroke-width="7"/>
+          <circle cx="50" cy="50" r="42" fill="none" stroke="{% if pct_clamped >= 70 %}var(--ct-ok){% elif pct_clamped >= 50 %}var(--ct-warn){% else %}var(--ct-bad){% endif %}" stroke-width="7" stroke-dasharray="263.89" stroke-dashoffset="{{ 263.89 - (263.89 * pct_clamped / 100) }}" stroke-linecap="round"/>
+        </svg>
+        <div class="sd-ring__center">
+          <span class="sd-ring__pct">{{ "%.0f"|format(pct_clamped) }}%</span>
+          <span class="sd-ring__sub">{{ score.score }}/{{ score.total }}</span>
+        </div>
+      </div>
+      <div>
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+          {{ person_avatar(student.photo, st_name, 'sm', '', 'uploads') }}
+          <strong style="font-size:17px;color:var(--tc-ink)">{{ st_name }}</strong>
+          <span class="tc-pill tc-pill--accent">Grade {{ grade }}</span>
+        </div>
+        <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">
+          <span class="tc-pill">{{ student.class }}</span>
+          <span class="tc-pill">{{ exam.subject_tag or 'General' }}</span>
+          <span class="tc-pill tc-mono">Rank #{{ rank }} of {{ total_students }}</span>
+        </div>
+      </div>
+    </div>
+    {% if score.time_spent_seconds and avg_time and score.time_spent_seconds <= avg_time * 0.8 %}
+    <span class="tc-pill tc-pill--ok">Fast Pace · {{ ((avg_time - score.time_spent_seconds) // 60)|int }}m ahead of class avg</span>
+    {% elif score.time_spent_seconds and avg_time and score.time_spent_seconds > avg_time * 1.3 %}
+    <span class="tc-pill tc-pill--warn">Deliberate Pace · {{ ((score.time_spent_seconds - avg_time) // 60)|int }}m above class avg</span>
+    {% endif %}
+  </section>
 
-            const missedSection = document.getElementById('missedSection');
-            const correctSection = document.getElementById('correctSection');
+  <section class="sd-kpis" data-ct-stagger>
+    <div class="sd-kpi"><small>Class Rank</small><strong style="color:var(--ct-accent)">#{{ rank }}</strong></div>
+    <div class="sd-kpi"><small>Correct</small><strong style="color:var(--ct-ok)">{{ correct_questions|length }}</strong></div>
+    <div class="sd-kpi"><small>Missed</small><strong style="color:var(--ct-bad)">{{ missed_questions|length }}</strong></div>
+    <div class="sd-kpi"><small>Time Spent</small><strong>{{ ((score.time_spent_seconds or 0) // 60)|int }}m</strong></div>
+    <div class="sd-kpi"><small>Speed Rank</small><strong>#{{ speed_rank }}</strong></div>
+    <div class="sd-kpi"><small>Class Avg Time</small><strong>{{ ((avg_time or 0) // 60)|int }}m</strong></div>
+  </section>
 
-            if (type === 'all') {
-                if (missedSection) missedSection.style.display = '';
-                if (correctSection) correctSection.style.display = '';
-            } else if (type === 'incorrect') {
-                if (missedSection) missedSection.style.display = '';
-                if (correctSection) correctSection.style.display = 'none';
-            } else if (type === 'correct') {
-                if (missedSection) missedSection.style.display = 'none';
-                if (correctSection) correctSection.style.display = '';
-            }
-        }
+  <div class="sd-seg" role="tablist">
+    <button type="button" class="is-active" onclick="filterScriptQs('all', this)">All ({{ missed_questions|length + correct_questions|length }})</button>
+    <button type="button" onclick="filterScriptQs('incorrect', this)">Missed ({{ missed_questions|length }})</button>
+    <button type="button" onclick="filterScriptQs('correct', this)">Correct ({{ correct_questions|length }})</button>
+  </div>
 
-        document.addEventListener('DOMContentLoaded', function() {
-            if (typeof renderMathInElement === 'function') {
-                renderMathInElement(document.body, {
-                    delimiters: [
-                        {left: '$$', right: '$$', display: true},
-                        {left: '$', right: '$', display: false},
-                        {left: '\\(', right: '\\)', display: false},
-                        {left: '\\[', right: '\\]', display: true}
-                    ],
-                    throwOnError: false
-                });
-            }
-        });
-    </script>
+  {% if missed_questions %}
+  <section class="tc-card" id="missedSection" style="margin-bottom:18px">
+    <div class="tc-card__head">
+      <div class="tc-card__title">
+        <h2>Missed Questions</h2>
+        <p>{{ missed_questions|length }} item{% if missed_questions|length != 1 %}s{% endif %} answered incorrectly or skipped</p>
+      </div>
+      <span class="tc-pill tc-pill--bad">{{ missed_questions|length }} missed</span>
+    </div>
+    <div style="padding:18px">
+      {% for q in missed_questions %}
+      <div class="sd-q sd-q--bad">
+        <div class="sd-q__head">
+          <div style="display:flex;align-items:center;gap:8px">
+            <span class="tc-pill tc-mono">Q{{ loop.index }}</span>
+            <span class="tc-pill">{{ q.section_name or 'General' }}</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <span class="tc-mono" style="font-size:11.5px;color:var(--tc-ink-3)">{{ q.time_spent or 0 }}s</span>
+            <span class="tc-pill tc-pill--bad">Incorrect</span>
+          </div>
+        </div>
+        <div class="sd-q__text">{{ (q.question or '')|sanitize|safe }}</div>
+        <div class="sd-ans-grid">
+          <div class="sd-ans sd-ans--bad">
+            <small style="color:var(--ct-bad)">Student Answer</small>
+            {{ q.chosen_letter }}. {{ (q.user_answer or 'Not answered')|sanitize|safe }}
+          </div>
+          <div class="sd-ans sd-ans--ok">
+            <small style="color:var(--ct-ok)">Correct Answer</small>
+            {{ q.correct_letter }}. {{ (q.answer or '')|sanitize|safe }}
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  {% if correct_questions %}
+  <section class="tc-card" id="correctSection">
+    <div class="tc-card__head">
+      <div class="tc-card__title">
+        <h2>Correct Answers</h2>
+        <p>{{ correct_questions|length }} item{% if correct_questions|length != 1 %}s{% endif %} answered accurately</p>
+      </div>
+      <span class="tc-pill tc-pill--ok">{{ correct_questions|length }} correct</span>
+    </div>
+    <div style="padding:18px">
+      {% for q in correct_questions %}
+      <div class="sd-q">
+        <div class="sd-q__head">
+          <div style="display:flex;align-items:center;gap:8px">
+            <span class="tc-pill tc-mono">Q{{ loop.index }}</span>
+            <span class="tc-pill">{{ q.section_name or 'General' }}</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <span class="tc-mono" style="font-size:11.5px;color:var(--tc-ink-3)">{{ q.time_spent or 0 }}s</span>
+            <span class="tc-pill tc-pill--ok">Correct</span>
+          </div>
+        </div>
+        <div class="sd-q__text">{{ (q.question or '')|sanitize|safe }}</div>
+        <div class="sd-ans sd-ans--ok">
+          <small style="color:var(--ct-ok)">Correct Answer</small>
+          {{ q.correct_letter }}. {{ (q.answer or '')|sanitize|safe }}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
 
 {{ shell_end(role='admin') }}
+<script>
+(function () {
+  window.filterScriptQs = function (type, btn) {
+    document.querySelectorAll(".sd-seg button").forEach(function (b) { b.classList.remove("is-active"); });
+    if (btn) btn.classList.add("is-active");
+    var m = document.getElementById("missedSection");
+    var c = document.getElementById("correctSection");
+    if (type === "all") { if (m) m.style.display = ""; if (c) c.style.display = ""; }
+    else if (type === "incorrect") { if (m) m.style.display = ""; if (c) c.style.display = "none"; }
+    else { if (m) m.style.display = "none"; if (c) c.style.display = ""; }
+  };
+
+  if (typeof renderMathInElement === "function") {
+    var main = document.getElementById("main") || document.body;
+    renderMathInElement(main, {
+      delimiters: [
+        { left: "$$", right: "$$", display: true },
+        { left: "$", right: "$", display: false },
+        { left: "\\(", right: "\\)", display: false },
+        { left: "\\[", right: "\\]", display: true }
+      ],
+      throwOnError: false
+    });
+  }
+})();
+</script>
 </body>
 </html>

@@ -8,82 +8,82 @@
    ========================================================================== */
 
 :root,
-[data-theme="dark"] {
-  --tc-canvas: #111111;
-  --tc-sidebar: #161616;
-  --tc-surface: #191919;
-  --tc-surface-2: #202020;
-  --tc-elevated: #282828;
-  --tc-well: #141414;
-  --tc-ink: #ECECEC;
-  --tc-ink-2: #9E9E9E;
-  --tc-ink-3: #6C6C6C;
-  --tc-line: rgba(255, 255, 255, 0.055);
-  --tc-line-2: rgba(255, 255, 255, 0.085);
-  --tc-line-3: rgba(255, 255, 255, 0.14);
+[data-theme="light"] {
+  --tc-canvas: #F8F8F8;
+  --tc-sidebar: #EFEFEF;
+  --tc-surface: #FFFFFF;
+  --tc-surface-2: #F3F2F0;
+  --tc-elevated: #EAE8E4;
+  --tc-well: #F3F2F0;
+  --tc-ink: #171614;
+  --tc-ink-2: #575551;
+  --tc-ink-3: #83807B;
+  --tc-line: rgba(23, 22, 20, 0.08);
+  --tc-line-2: rgba(23, 22, 20, 0.13);
+  --tc-line-3: rgba(23, 22, 20, 0.22);
   --tc-specular: 0 0 0 0 transparent;
-  --tc-shadow: 0 10px 28px -18px rgba(0, 0, 0, 0.55);
-  --tc-cta-bg: #3B82F6;
+  --tc-shadow: 0 12px 30px -20px rgba(23, 22, 20, 0.10), 0 1px 2px rgba(23, 22, 20, 0.03);
+  --tc-cta-bg: #171614;
   --tc-cta-ink: #FFFFFF;
-  --tc-cta-hover: #4F8BFF;
-  --tc-cta-shadow: 0 1px 2px rgba(0, 0, 0, 0.32);
-  --tc-sidebar-cta-bg: #232323;
-  --tc-sidebar-cta-hover: #2C2C2C;
-  --tc-sidebar-cta-ink: #ECECEC;
-  --tc-sidebar-cta-line: rgba(255, 255, 255, 0.07);
-  --tc-accent: #5B95F9;
-  --tc-accent-solid: #3B82F6;
-  --tc-accent-soft: rgba(59, 130, 246, 0.10);
-  --tc-accent-line: rgba(59, 130, 246, 0.22);
-  --tc-ok: #3ECF8E;
-  --tc-ok-soft: rgba(62, 207, 142, 0.09);
-  --tc-ok-line: rgba(62, 207, 142, 0.18);
-  --tc-warn: #D4A14C;
-  --tc-warn-soft: rgba(212, 161, 76, 0.10);
-  --tc-warn-line: rgba(212, 161, 76, 0.20);
-  --tc-bad: #E57373;
-  --tc-bad-soft: rgba(229, 115, 115, 0.09);
-  --tc-bad-line: rgba(229, 115, 115, 0.20);
-  --tc-orange: #D98A4E;
+  --tc-cta-hover: #2B2926;
+  --tc-cta-shadow: 0 1px 2px rgba(23, 22, 20, 0.14);
+  --tc-sidebar-cta-bg: #FFFFFF;
+  --tc-sidebar-cta-hover: #F3F2F0;
+  --tc-sidebar-cta-ink: #171614;
+  --tc-sidebar-cta-line: rgba(23, 22, 20, 0.10);
+  --tc-accent: #171614;
+  --tc-accent-solid: #171614;
+  --tc-accent-soft: rgba(23, 22, 20, 0.065);
+  --tc-accent-line: rgba(23, 22, 20, 0.16);
+  --tc-ok: #171614;
+  --tc-ok-soft: #F3F2F0;
+  --tc-ok-line: rgba(23, 22, 20, 0.16);
+  --tc-warn: #171614;
+  --tc-warn-soft: #F3F2F0;
+  --tc-warn-line: rgba(23, 22, 20, 0.16);
+  --tc-bad: #171614;
+  --tc-bad-soft: rgba(23, 22, 20, 0.08);
+  --tc-bad-line: rgba(23, 22, 20, 0.22);
+  --tc-orange: #575551;
 }
 
-[data-theme="light"] {
-  --tc-canvas: #F7F7F8;
-  --tc-sidebar: #FFFFFF;
-  --tc-surface: #FFFFFF;
-  --tc-surface-2: #F2F2F4;
-  --tc-elevated: #E8E8EC;
-  --tc-well: #F3F3F5;
-  --tc-ink: #141416;
-  --tc-ink-2: #52525B;
-  --tc-ink-3: #71717A;
-  --tc-line: rgba(20, 20, 22, 0.075);
-  --tc-line-2: rgba(20, 20, 22, 0.12);
-  --tc-line-3: rgba(20, 20, 22, 0.20);
+[data-theme="dark"] {
+  --tc-canvas: #151517;
+  --tc-sidebar: #111112;
+  --tc-surface: #1B1B1E;
+  --tc-surface-2: #222226;
+  --tc-elevated: #2A2A2E;
+  --tc-well: #131315;
+  --tc-ink: #F5F5F4;
+  --tc-ink-2: #A8A6A1;
+  --tc-ink-3: #76746F;
+  --tc-line: rgba(255, 255, 255, 0.07);
+  --tc-line-2: rgba(255, 255, 255, 0.11);
+  --tc-line-3: rgba(255, 255, 255, 0.18);
   --tc-specular: 0 0 0 0 transparent;
-  --tc-shadow: 0 12px 30px -20px rgba(20, 20, 22, 0.10), 0 1px 2px rgba(20, 20, 22, 0.03);
-  --tc-cta-bg: #18181B;
-  --tc-cta-ink: #FFFFFF;
-  --tc-cta-hover: #27272A;
-  --tc-cta-shadow: 0 1px 2px rgba(20, 20, 22, 0.14);
-  --tc-sidebar-cta-bg: #F2F2F4;
-  --tc-sidebar-cta-hover: #E8E8EC;
-  --tc-sidebar-cta-ink: #141416;
-  --tc-sidebar-cta-line: rgba(20, 20, 22, 0.08);
-  --tc-accent: #2563EB;
-  --tc-accent-solid: #2563EB;
-  --tc-accent-soft: rgba(37, 99, 235, 0.08);
-  --tc-accent-line: rgba(37, 99, 235, 0.20);
-  --tc-ok: #0F9D68;
-  --tc-ok-soft: rgba(15, 157, 104, 0.08);
-  --tc-ok-line: rgba(15, 157, 104, 0.20);
-  --tc-warn: #B47A1E;
-  --tc-warn-soft: rgba(180, 122, 30, 0.09);
-  --tc-warn-line: rgba(180, 122, 30, 0.20);
-  --tc-bad: #C83E3E;
-  --tc-bad-soft: rgba(200, 62, 62, 0.08);
-  --tc-bad-line: rgba(200, 62, 62, 0.20);
-  --tc-orange: #C86A28;
+  --tc-shadow: 0 10px 28px -18px rgba(0, 0, 0, 0.55);
+  --tc-cta-bg: #F5F5F4;
+  --tc-cta-ink: #171614;
+  --tc-cta-hover: #FFFFFF;
+  --tc-cta-shadow: 0 1px 2px rgba(0, 0, 0, 0.32);
+  --tc-sidebar-cta-bg: #222226;
+  --tc-sidebar-cta-hover: #2A2A2E;
+  --tc-sidebar-cta-ink: #F5F5F4;
+  --tc-sidebar-cta-line: rgba(255, 255, 255, 0.09);
+  --tc-accent: #F5F5F4;
+  --tc-accent-solid: #F5F5F4;
+  --tc-accent-soft: rgba(255, 255, 255, 0.09);
+  --tc-accent-line: rgba(255, 255, 255, 0.18);
+  --tc-ok: #F5F5F4;
+  --tc-ok-soft: rgba(255, 255, 255, 0.08);
+  --tc-ok-line: rgba(255, 255, 255, 0.18);
+  --tc-warn: #E7E5E0;
+  --tc-warn-soft: rgba(255, 255, 255, 0.07);
+  --tc-warn-line: rgba(255, 255, 255, 0.16);
+  --tc-bad: #F5F5F4;
+  --tc-bad-soft: rgba(255, 255, 255, 0.10);
+  --tc-bad-line: rgba(255, 255, 255, 0.22);
+  --tc-orange: #A8A6A1;
 }
 
 /* ==========================================================================
@@ -135,7 +135,7 @@ body.tc-studio .ct-sidebar__brand {
 }
 body.tc-studio .ct-appicon {
   --ct-logo-c: #FFFFFF;
-  --ct-logo-star: #5B95F9;
+  --ct-logo-star: #FFFFFF;
   background: #1B1B1B !important;
   border: 1px solid rgba(255, 255, 255, 0.08) !important;
   box-shadow: none !important;
@@ -161,9 +161,21 @@ body.tc-studio .ct-school:hover {
   background: var(--tc-surface-2) !important;
 }
 body.tc-studio .ct-school__crest {
-  background: var(--tc-elevated) !important;
+  background-color: var(--tc-elevated) !important;
+  background-size: cover !important;
+  background-position: center !important;
+  background-repeat: no-repeat !important;
   color: var(--tc-ink) !important;
-  border: 0 !important;
+  border: 1px solid var(--tc-line-2) !important;
+  overflow: hidden;
+  position: relative;
+}
+body.tc-studio .ct-school__crest img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  border-radius: inherit;
 }
 body.tc-studio .ct-nav__link {
   text-decoration: none !important;
@@ -749,26 +761,28 @@ body.tc-studio .ct-btn--primary:hover {
 /* Precision Grade Ring + Breakdown Legend Layout */
 .tc-ring-layout {
   display: grid;
-  grid-template-columns: 206px minmax(0, 1fr);
-  gap: 24px;
+  grid-template-columns: 176px minmax(0, 1fr);
+  gap: 18px;
   align-items: center;
 }
 .tc-ring-wrap {
   position: relative;
-  width: 206px;
-  height: 206px;
+  width: 176px;
+  height: 176px;
   margin: 0 auto;
 }
 .tc-legend {
   display: grid;
-  gap: 11px;
+  gap: 10px;
+  min-width: 0;
 }
 .tc-legend-row {
   display: grid;
-  grid-template-columns: 10px 62px minmax(0, 1fr) auto;
+  grid-template-columns: 8px 30px minmax(28px, 1fr) auto;
   align-items: center;
-  gap: 10px;
-  font-size: 12.5px;
+  gap: 8px;
+  font-size: 12px;
+  min-width: 0;
 }
 .tc-legend-dot {
   width: 8px;
@@ -781,11 +795,12 @@ body.tc-studio .ct-btn--primary:hover {
   border-radius: 99px;
   background: var(--tc-elevated);
   overflow: hidden;
+  min-width: 24px;
 }
 .tc-legend-track > i { display: block; height: 100%; border-radius: 99px; }
 .tc-legend-val {
   font-family: var(--ct-mono);
-  font-size: 12px;
+  font-size: 11.5px;
   font-weight: 620;
   color: var(--tc-ink-2);
   white-space: nowrap;

@@ -48,7 +48,7 @@ export function defaultSettings(): StudioSettings {
   const adapters = listNetworkAdapters();
   const primary = adapters.find((a) => a.recommended)?.ip || adapters[0]?.ip || "127.0.0.1";
   return {
-    theme: "dark",
+    theme: "light",
     startWithWindows: true,
     autoStartServer: false,
     port: 5000,

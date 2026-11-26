@@ -217,8 +217,11 @@ export default function PaymentDonePage() {
                     <div className="mono" style={{ fontSize: 18, fontWeight: 740, color: "var(--ok)", letterSpacing: "0.04em" }}>
                       {lic.license_key}
                     </div>
-                    <div style={{ fontSize: 12, color: "var(--ink-3)", marginTop: 3 }}>
+                    <div style={{ fontSize: 12, color: "var(--ink-3)", marginTop: 4 }}>
                       Valid until: {lic.expires_at ? new Date(lic.expires_at).toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" }) : "Perpetual (Never expires)"}
+                    </div>
+                    <div style={{ fontSize: 12, color: "var(--ink-2)", marginTop: 4 }}>
+                      Paste this key inside <strong>CogniTara Studio Desktop → Licence → Enter key</strong>.
                     </div>
                   </div>
                   <div className="hq-btn-row no-print">
@@ -231,7 +234,12 @@ export default function PaymentDonePage() {
                         <IconDownload size={14} />
                         <span>Download .cgnlic</span>
                       </button>
-                    ) : null}
+                    ) : (
+                      <Link href="/download" className="btn btn--primary btn--sm">
+                        <IconDownload size={14} />
+                        <span>Download Studio</span>
+                      </Link>
+                    )}
                   </div>
                 </div>
               ) : null}

@@ -13,7 +13,7 @@
         
         .admin-container { max-width: 1400px; margin: 0 auto; padding: 40px 30px; position: relative; z-index: 10; }
         
-        .edu-icon { position: absolute; color: rgba(26, 86, 219, 0.05); pointer-events: none; z-index: 0; animation: floatIcon 20s infinite ease-in-out; }
+        .edu-icon { position: absolute; color: rgba(23, 22, 20, 0.05); pointer-events: none; z-index: 0; animation: floatIcon 20s infinite ease-in-out; }
         @keyframes floatIcon { 0% { transform: translate(0, 0) rotate(0deg); opacity: 0; } 10% { opacity: 0.08; } 90% { opacity: 0.08; } 100% { transform: translate(100px, -100px) rotate(360deg); opacity: 0; } }
         
         .page-header { text-align: center; margin-bottom: 40px; }
@@ -34,13 +34,13 @@
         .btn-back { background: var(--ct-surface); border: 2px solid var(--ct-line-2); padding: 10px 25px; border-radius: 12px; color: var(--ct-ink-3); font-weight: 600; display: inline-flex; align-items: center; gap: 8px; transition: all 0.3s; font-size: 14px; }
         .btn-back:hover { border-color: var(--ct-primary); color: var(--ct-primary); background: var(--ct-accent-soft); transform: translateY(-2px); }
         .btn-primary-custom { background: var(--ct-brand-grad); color: white; border: none; padding: 8px 18px; border-radius: 10px; font-weight: 600; cursor: pointer; transition: all 0.3s; display: inline-flex; align-items: center; gap: 6px; font-size: 13px; }
-        .btn-primary-custom:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(139,92,246,0.3); color: white; }
-        .btn-danger-custom { background: #ef4444; color: white; border: none; padding: 6px 14px; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.3s; display: inline-flex; align-items: center; gap: 5px; font-size: 12px; }
-        .btn-danger-custom:hover { background: #dc2626; transform: translateY(-2px); }
-        .btn-success-custom { background: #10b981; color: white; border: none; padding: 6px 14px; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.3s; font-size: 12px; display: inline-flex; align-items: center; gap: 5px; }
-        .btn-success-custom:hover { background: #059669; transform: translateY(-2px); }
-        .btn-warning-custom { background: #f59e0b; color: white; border: none; padding: 6px 14px; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.3s; font-size: 12px; display: inline-flex; align-items: center; gap: 5px; }
-        .btn-warning-custom:hover { background: #d97706; transform: translateY(-2px); }
+        .btn-primary-custom:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(23, 22, 20,0.3); color: white; }
+        .btn-danger-custom { background: #2B2926; color: white; border: none; padding: 6px 14px; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.3s; display: inline-flex; align-items: center; gap: 5px; font-size: 12px; }
+        .btn-danger-custom:hover { background: #2B2926; transform: translateY(-2px); }
+        .btn-success-custom { background: #575551; color: white; border: none; padding: 6px 14px; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.3s; font-size: 12px; display: inline-flex; align-items: center; gap: 5px; }
+        .btn-success-custom:hover { background: #2B2926; transform: translateY(-2px); }
+        .btn-warning-custom { background: #D6D4CF; color: white; border: none; padding: 6px 14px; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.3s; font-size: 12px; display: inline-flex; align-items: center; gap: 5px; }
+        .btn-warning-custom:hover { background: #575551; transform: translateY(-2px); }
         .tech{text-decoration: none;}
         
         .nav-tabs { border: none; gap: 10px; flex-wrap: wrap; margin-bottom: 25px; }
@@ -55,16 +55,16 @@
         .card-body-custom { padding: 20px; }
         
         .form-control-custom { width: 100%; padding: 10px 15px; border: 2px solid var(--ct-line-2); border-radius: 10px; font-size: 13px; transition: all 0.3s; background: var(--ct-surface); margin-bottom: 12px; }
-        .form-control-custom:focus { outline: none; border-color: var(--ct-primary); background: var(--ct-surface); box-shadow: 0 0 0 3px rgba(139,92,246,0.1); }
+        .form-control-custom:focus { outline: none; border-color: var(--ct-primary); background: var(--ct-surface); box-shadow: 0 0 0 3px rgba(23, 22, 20,0.1); }
         
         .student-table { width: 100%; border-collapse: collapse; }
         .student-table th { padding: 12px 10px; text-align: left; font-size: 11px; font-weight: 600; color: var(--ct-ink-3); border-bottom: 1px solid var(--ct-line-2); background: var(--ct-surface); }
         .student-table td { padding: 10px; border-bottom: 1px solid #f0f2f5; font-size: 12px; vertical-align: middle; }
         .student-table tr:hover { background: var(--ct-surface); }
         
-        .badge-pending { background: var(--ct-warn-soft); color: #d97706; padding: 3px 8px; border-radius: 20px; font-size: 10px; font-weight: 600; display: inline-block; }
-        .badge-approved { background: var(--ct-ok-soft); color: #065f46; padding: 3px 8px; border-radius: 20px; font-size: 10px; font-weight: 600; display: inline-block; }
-        .badge-rejected { background: var(--ct-bad-soft); color: #991b1b; padding: 3px 8px; border-radius: 20px; font-size: 10px; font-weight: 600; display: inline-block; }
+        .badge-pending { background: var(--ct-warn-soft); color: #575551; padding: 3px 8px; border-radius: 20px; font-size: 10px; font-weight: 600; display: inline-block; }
+        .badge-approved { background: var(--ct-ok-soft); color: #171614; padding: 3px 8px; border-radius: 20px; font-size: 10px; font-weight: 600; display: inline-block; }
+        .badge-rejected { background: var(--ct-bad-soft); color: #171614; padding: 3px 8px; border-radius: 20px; font-size: 10px; font-weight: 600; display: inline-block; }
         .badge-not-started { background: var(--ct-line-2); color: var(--ct-ink-3); padding: 3px 8px; border-radius: 20px; font-size: 10px; font-weight: 600; display: inline-block; }
         
         .exam-card { background: var(--ct-surface); border-radius: 14px; padding: 12px 18px; margin-bottom: 12px; border: 1px solid var(--ct-line-2); transition: all 0.3s; }
@@ -91,12 +91,10 @@
         /* Premium Modal Styles */
         .premium-modal-overlay {
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.6);
-            backdrop-filter: blur(4px);
+            inset: 0;
+            background: rgba(0, 0, 0, 0.58);
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
             z-index: 10000;
             display: none;
             justify-content: center;
@@ -104,21 +102,22 @@
         }
         .premium-modal-overlay.show { display: flex; }
         @keyframes modalSlide {
-            from { transform: translateY(30px) scale(0.96); opacity: 0; }
+            from { transform: translateY(10px) scale(0.96); opacity: 0; }
             to { transform: translateY(0) scale(1); opacity: 1; }
         }
         .premium-modal-container {
             background: var(--ct-surface);
-            border-radius: 24px;
-            width: 400px;
+            border: 1px solid var(--ct-line-2);
+            border-radius: 18px;
+            width: 420px;
             max-width: 92%;
             overflow: hidden;
-            animation: modalSlide 0.25s ease;
-            box-shadow: 0 20px 40px -12px rgba(0,0,0,0.2);
+            animation: modalSlide 240ms cubic-bezier(0.23, 1, 0.32, 1) both;
+            box-shadow: 0 24px 64px -12px rgba(0, 0, 0, 0.5);
         }
         .premium-modal-header {
             padding: 14px 20px;
-            border-bottom: 1px solid #eef2ff;
+            border-bottom: 1px solid #F8F8F8;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -150,11 +149,11 @@
             cursor: pointer;
             transition: all 0.2s;
         }
-        .premium-modal-close:hover { background: var(--ct-bad-soft); color: #ef4444; transform: rotate(90deg); }
+        .premium-modal-close:hover { background: var(--ct-bad-soft); color: #2B2926; transform: rotate(90deg); }
         .premium-modal-body { padding: 20px; max-height: 400px; overflow-y: auto; }
         .premium-modal-footer {
             padding: 12px 20px 16px;
-            border-top: 1px solid #eef2ff;
+            border-top: 1px solid #F8F8F8;
             display: flex;
             justify-content: flex-end;
             gap: 10px;
@@ -172,10 +171,10 @@
             align-items: center;
             gap: 6px;
         }
-        .premium-btn-primary { background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; }
-        .premium-btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 10px rgba(16,185,129,0.3); }
-        .premium-btn-danger { background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: white; }
-        .premium-btn-danger:hover { transform: translateY(-1px); box-shadow: 0 4px 10px rgba(239,68,68,0.3); }
+        .premium-btn-primary { background: linear-gradient(135deg, #575551 0%, #2B2926 100%); color: white; }
+        .premium-btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 10px rgba(23, 22, 20,0.3); }
+        .premium-btn-danger { background: linear-gradient(135deg, #2B2926 0%, #2B2926 100%); color: white; }
+        .premium-btn-danger:hover { transform: translateY(-1px); box-shadow: 0 4px 10px rgba(23, 22, 20,0.3); }
         .premium-btn-secondary { background: var(--ct-surface); color: var(--ct-ink-2); }
         
         .score-ring {
@@ -198,7 +197,7 @@
             flex-direction: column;
             box-shadow: 0 2px 8px rgba(0,0,0,0.05);
         }
-        .badge-in-progress { background: var(--ct-accent-soft); color: #1d4ed8; padding: 3px 8px; border-radius: 20px; font-size: 10px; font-weight: 600; display: inline-block; }
+        .badge-in-progress { background: var(--ct-accent-soft); color: #2B2926; padding: 3px 8px; border-radius: 20px; font-size: 10px; font-weight: 600; display: inline-block; }
         .toast-premium {
             position: fixed;
             bottom: 20px;
@@ -219,8 +218,8 @@
             from { transform: translateX(100%); opacity: 0; }
             to { transform: translateX(0); opacity: 1; }
         }
-        .toast-premium.success { border-left-color: #10b981; background: var(--ct-surface-2); }
-        .toast-premium.error { border-left-color: #ef4444; background: linear-gradient(135deg, #ffffff 0%, #fef2f2 100%); }
+        .toast-premium.success { border-left-color: #575551; background: var(--ct-surface-2); }
+        .toast-premium.error { border-left-color: #2B2926; background: linear-gradient(135deg, #ffffff 0%, #fef2f2 100%); }
         .loading-spinner {
             width: 30px;
             height: 30px;
@@ -495,14 +494,14 @@
                                     <td>
                                         <button class="btn-success-custom" onclick="openApproveModal(this)" style="padding: 3px 8px; font-size: 10px;"><i class="fas fa-check-circle"></i> Approve</button>
                                         <button class="btn-danger-custom" onclick="openRejectModal(this)" style="padding: 3px 8px; font-size: 10px;"><i class="fas fa-times-circle"></i> Reject</button>
-                                        <a href="/admin/ce_student_analytics/{{ approval.student_id }}/{{ approval.exam_id }}" class="btn-primary-custom" style="padding: 3px 8px; font-size: 10px; background: #3b82f6;"><i class="fas fa-eye"></i> View</a>
+                                        <a href="/admin/ce_student_analytics/{{ approval.student_id }}/{{ approval.exam_id }}" class="btn-primary-custom" style="padding: 3px 8px; font-size: 10px; background: #575551;"><i class="fas fa-eye"></i> View</a>
                                     </td>
                                 </tr>
                                 {% endfor %}
                             </tbody>
                         </table>
                     </div>
-                    {% if not pending_approvals_list %}<div class="text-center py-4"><i class="fas fa-check-circle" style="font-size: 50px; color: #10b981;"></i><p class="mt-2">No pending approvals.</p></div>{% endif %}
+                    {% if not pending_approvals_list %}<div class="text-center py-4"><i class="fas fa-check-circle" style="font-size: 50px; color: #575551;"></i><p class="mt-2">No pending approvals.</p></div>{% endif %}
                 </div>
             </div>
         </div>
@@ -511,19 +510,19 @@
             <div class="stats-grid">
                 <div class="flip-card" style="height:150px">
                     <div class="flip-card-inner">
-                        <div class="flip-card-front"><i class="fas fa-exclamation-triangle" style="color: #ef4444;"></i><h3>{{ total_warnings_count|default(0) }}</h3><p>Total Warnings Issued</p></div>
+                        <div class="flip-card-front"><i class="fas fa-exclamation-triangle" style="color: #2B2926;"></i><h3>{{ total_warnings_count|default(0) }}</h3><p>Total Warnings Issued</p></div>
                         <div class="flip-card-back"><i class="fas fa-history"></i><p>Across all exams</p></div>
                     </div>
                 </div>
                 <div class="flip-card" style="height:150px">
                     <div class="flip-card-inner">
-                        <div class="flip-card-front"><i class="fas fa-users-slash" style="color: #f59e0b;"></i><h3>{{ warning_summary|length }}</h3><p>Students Warned</p></div>
+                        <div class="flip-card-front"><i class="fas fa-users-slash" style="color: #D6D4CF;"></i><h3>{{ warning_summary|length }}</h3><p>Students Warned</p></div>
                         <div class="flip-card-back"><i class="fas fa-user-shield"></i><p>Unique offenders</p></div>
                     </div>
                 </div>
                 <div class="flip-card" style="height:150px">
                     <div class="flip-card-inner">
-                        <div class="flip-card-front"><i class="fas fa-radiation" style="color: #dc2626;"></i><h3>{% if most_warned %}{{ most_warned.total_warnings }}{% else %}0{% endif %}</h3><p>Highest Warning Count</p></div>
+                        <div class="flip-card-front"><i class="fas fa-radiation" style="color: #2B2926;"></i><h3>{% if most_warned %}{{ most_warned.total_warnings }}{% else %}0{% endif %}</h3><p>Highest Warning Count</p></div>
                         <div class="flip-card-back"><i class="fas fa-user-tag"></i><p>{% if most_warned %}{{ most_warned.full_name }}{% else %}—{% endif %}</p></div>
                     </div>
                 </div>
@@ -553,7 +552,7 @@
                             </tbody>
                         </table>
                     </div>
-                    {% if not warning_summary %}<div class="text-center py-4"><i class="fas fa-shield-alt" style="font-size: 40px; color: #10b981;"></i><p class="mt-2">No warnings recorded.</p></div>{% endif %}
+                    {% if not warning_summary %}<div class="text-center py-4"><i class="fas fa-shield-alt" style="font-size: 40px; color: #575551;"></i><p class="mt-2">No warnings recorded.</p></div>{% endif %}
                 </div>
             </div>
 
@@ -587,14 +586,14 @@
         <!-- ANALYTICS TAB -->
         <div class="tab-pane fade" id="analytics" role="tabpanel">
             <div class="stats-grid">
-                <div class="flip-card" onclick="showStudentList('all')"><div class="flip-card-inner"><div class="flip-card-front"><i class="fas fa-chart-line" style="color: #3b82f6;"></i><h3>{{ total_all_attempts|default(0) }}</h3><p>Total Attempts</p></div><div class="flip-card-back"><i class="fas fa-chart-line"></i><p>Click to view</p></div></div></div>
-                <div class="flip-card" onclick="showStudentList('passed')"><div class="flip-card-inner"><div class="flip-card-front"><i class="fas fa-check-circle" style="color: #10b981;"></i><h3>{{ total_all_passed|default(0) }}</h3><p>Passed</p></div><div class="flip-card-back"><i class="fas fa-trophy"></i><p>Click to view</p></div></div></div>
-                <div class="flip-card" onclick="showStudentList('failed')"><div class="flip-card-inner"><div class="flip-card-front"><i class="fas fa-times-circle" style="color: #ef4444;"></i><h3>{{ total_all_failed|default(0) }}</h3><p>Failed</p></div><div class="flip-card-back"><i class="fas fa-book"></i><p>Click to view</p></div></div></div>
-                <div class="flip-card" onclick="showStudentList('rejected')"><div class="flip-card-inner"><div class="flip-card-front"><i class="fas fa-ban" style="color: #f59e0b;"></i><h3>{{ total_all_rejected|default(0) }}</h3><p>Rejected</p></div><div class="flip-card-back"><i class="fas fa-gavel"></i><p>Click to view</p></div></div></div>
+                <div class="flip-card" onclick="showStudentList('all')"><div class="flip-card-inner"><div class="flip-card-front"><i class="fas fa-chart-line" style="color: #575551;"></i><h3>{{ total_all_attempts|default(0) }}</h3><p>Total Attempts</p></div><div class="flip-card-back"><i class="fas fa-chart-line"></i><p>Click to view</p></div></div></div>
+                <div class="flip-card" onclick="showStudentList('passed')"><div class="flip-card-inner"><div class="flip-card-front"><i class="fas fa-check-circle" style="color: #575551;"></i><h3>{{ total_all_passed|default(0) }}</h3><p>Passed</p></div><div class="flip-card-back"><i class="fas fa-trophy"></i><p>Click to view</p></div></div></div>
+                <div class="flip-card" onclick="showStudentList('failed')"><div class="flip-card-inner"><div class="flip-card-front"><i class="fas fa-times-circle" style="color: #2B2926;"></i><h3>{{ total_all_failed|default(0) }}</h3><p>Failed</p></div><div class="flip-card-back"><i class="fas fa-book"></i><p>Click to view</p></div></div></div>
+                <div class="flip-card" onclick="showStudentList('rejected')"><div class="flip-card-inner"><div class="flip-card-front"><i class="fas fa-ban" style="color: #D6D4CF;"></i><h3>{{ total_all_rejected|default(0) }}</h3><p>Rejected</p></div><div class="flip-card-back"><i class="fas fa-gavel"></i><p>Click to view</p></div></div></div>
                 <div class="flip-card" onclick="showStudentList('approved')"><div class="flip-card-inner"><div class="flip-card-front"><i class="fas fa-user-check" style="color: var(--ct-accent);"></i><h3>{{ total_all_approved|default(0) }}</h3><p>Approved</p></div><div class="flip-card-back"><i class="fas fa-check-double"></i><p>Click to view</p></div></div></div>
                 <div class="flip-card"><div class="flip-card-inner"><div class="flip-card-front"><i class="fas fa-chart-simple" style="color: var(--ct-accent);"></i><h3>{{ global_avg|default(0) }}%</h3><p>Average Score</p></div><div class="flip-card-back"><i class="fas fa-chart-line"></i><p>Class average</p></div></div></div>
-                <div class="flip-card" id="highestCard"><div class="flip-card-inner"><div class="flip-card-front"><i class="fas fa-trophy" style="color: #f59e0b;"></i><h3>{{ global_highest|default(0) }}%</h3><p>Highest Score</p></div><div class="flip-card-back"><i class="fas fa-crown"></i><p>{{ highest_student_name|default('—') }}</p></div></div></div>
-                <div class="flip-card" id="lowestCard"><div class="flip-card-inner"><div class="flip-card-front"><i class="fas fa-arrow-down" style="color: #ef4444;"></i><h3>{{ global_lowest|default(0) }}%</h3><p>Lowest Score</p></div><div class="flip-card-back"><i class="fas fa-chart-line"></i><p>{{ lowest_student_name|default('—') }}</p></div></div></div>
+                <div class="flip-card" id="highestCard"><div class="flip-card-inner"><div class="flip-card-front"><i class="fas fa-trophy" style="color: #D6D4CF;"></i><h3>{{ global_highest|default(0) }}%</h3><p>Highest Score</p></div><div class="flip-card-back"><i class="fas fa-crown"></i><p>{{ highest_student_name|default('—') }}</p></div></div></div>
+                <div class="flip-card" id="lowestCard"><div class="flip-card-inner"><div class="flip-card-front"><i class="fas fa-arrow-down" style="color: #2B2926;"></i><h3>{{ global_lowest|default(0) }}%</h3><p>Lowest Score</p></div><div class="flip-card-back"><i class="fas fa-chart-line"></i><p>{{ lowest_student_name|default('—') }}</p></div></div></div>
             </div>
 
             <div class="card-custom">
@@ -666,7 +665,7 @@
 <script>
     // Chart
     const donutCtx = document.getElementById('scoreDonutChart').getContext('2d');
-    new Chart(donutCtx, { type: 'doughnut', data: { labels: {{ distribution_labels|safe }}, datasets: [{ data: {{ distribution_counts|safe }}, backgroundColor: ['#ef4444', '#f59e0b', '#fbbf24', '#34d399', '#10b981'], borderWidth: 0 }] }, options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { position: 'bottom', labels: { boxWidth: 8, font: { size: 9 } } } } } });
+    new Chart(donutCtx, { type: 'doughnut', data: { labels: {{ distribution_labels|safe }}, datasets: [{ data: {{ distribution_counts|safe }}, backgroundColor: ['#2B2926', '#D6D4CF', '#D6D4CF', '#575551', '#575551'], borderWidth: 0 }] }, options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { position: 'bottom', labels: { boxWidth: 8, font: { size: 9 } } } } } });
 
     // Search filter
     document.getElementById('searchApproval')?.addEventListener('keyup', function() {
@@ -688,6 +687,7 @@
     function closeModal() { document.getElementById('premiumModal').classList.remove('show'); modalCallback = null; }
     document.getElementById('modalConfirmBtn').onclick = () => { if (modalCallback) modalCallback(); closeModal(); };
     document.getElementById('premiumModal').onclick = (e) => { if (e.target === e.currentTarget) closeModal(); };
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && document.getElementById('premiumModal')?.classList.contains('show')) closeModal(); });
     
     function showToast(msg, type) {
         const toast = document.createElement('div');
@@ -721,47 +721,47 @@
         let bgColor, ringColor, icon, title, message, textColor;
         
         if (pct >= 90) {
-            bgColor = 'linear-gradient(135deg, #fef3c7 0%, #fffbeb 100%)';
-            ringColor = '#f59e0b';
+            bgColor='linear-gradient(135deg, #F8F8F8 0%, #F8F8F8 100%)';
+            ringColor='#D6D4CF';
             icon = '<i class="fas fa-crown"></i>';
             title = 'OUTSTANDING!';
             message = 'Exceptional performance! This student is a top achiever. Strongly recommended for approval.';
-            textColor = '#92400e';
+            textColor='#2B2926';
         } else if (pct >= 80) {
-            bgColor = 'linear-gradient(135deg, #d1fae5 0%, #ecfdf5 100%)';
-            ringColor = '#10b981';
+            bgColor='linear-gradient(135deg, #F8F8F8 0%, #F8F8F8 100%)';
+            ringColor='#575551';
             icon = '<i class="fas fa-star"></i>';
             title = 'EXCELLENT!';
             message = 'Very impressive score! Student has demonstrated mastery. Highly recommended for approval.';
-            textColor = '#065f46';
+            textColor='#171614';
         } else if (pct >= 70) {
-            bgColor = 'linear-gradient(135deg, #dbeafe 0%, #eff6ff 100%)';
-            ringColor = '#3b82f6';
+            bgColor='linear-gradient(135deg, #F8F8F8 0%, #F8F8F8 100%)';
+            ringColor='#575551';
             icon = '<i class="fas fa-book"></i>';
             title = 'VERY GOOD!';
             message = 'Solid performance! Student has good understanding. Recommended for approval.';
-            textColor = '#1e40af';
+            textColor='#171614';
         } else if (pct >= 60) {
-            bgColor = 'linear-gradient(135deg, #e0e7ff 0%, #eef2ff 100%)';
-            ringColor = '#6366f1';
+            bgColor='linear-gradient(135deg, #F8F8F8 0%, #F8F8F8 100%)';
+            ringColor='#2B2926';
             icon = '<i class="fas fa-thumbs-up"></i>';
             title = 'GOOD!';
             message = 'Satisfactory performance. Student meets expectations. Approval recommended.';
-            textColor = '#3730a3';
+            textColor='#171614';
         } else if (pct >= 50) {
-            bgColor = 'linear-gradient(135deg, #fef3c7 0%, #fffbeb 100%)';
-            ringColor = '#f59e0b';
+            bgColor='linear-gradient(135deg, #F8F8F8 0%, #F8F8F8 100%)';
+            ringColor='#D6D4CF';
             icon = '<i class="fas fa-book-open"></i>';
             title = 'PASSED';
             message = 'Student has passed the exam. Consider approval with encouragement for improvement.';
-            textColor = '#92400e';
+            textColor='#2B2926';
         } else {
-            bgColor = 'linear-gradient(135deg, #fee2e2 0%, #fef2f2 100%)';
-            ringColor = '#ef4444';
+            bgColor='linear-gradient(135deg, #F8F8F8 0%, #fef2f2 100%)';
+            ringColor='#2B2926';
             icon = '<i class="fas fa-exclamation-triangle"></i>';
             title = 'BELOW PASSING';
             message = 'Student did not meet the passing mark. Consider rejection or allow retake.';
-            textColor = '#991b1b';
+            textColor='#171614';
         }
         
         const modalContent = `
@@ -769,11 +769,11 @@
                 <div class="score-ring" style="background: conic-gradient(from 0deg, ${ringColor} 0deg, ${ringColor} ${pct * 3.6}deg, #e2e8f0 ${pct * 3.6}deg);">
                     <div class="score-ring-inner">
                         <span style="font-size: 28px; font-weight: 800; color: ${ringColor};">${pct}%</span>
-                        <span style="font-size: 10px; color: #64748b;">Score</span>
+                        <span style="font-size: 10px; color: #2B2926;">Score</span>
                     </div>
                 </div>
                 
-                <div style="font-size: 14px; font-weight: 600; margin-bottom: 15px; color: #475569;">
+                <div style="font-size: 14px; font-weight: 600; margin-bottom: 15px; color: #2B2926;">
                     ${data.score}/${data.total} Correct Answers
                 </div>
                 
@@ -785,14 +785,14 @@
                     <p style="font-size: 12px; margin: 0; color: ${textColor};">${message}</p>
                 </div>
                 
-                <div style="font-size: 11px; color: #64748b; padding: 8px; background: var(--ct-surface-2); border-radius: 10px;">
+                <div style="font-size: 11px; color: #2B2926; padding: 8px; background: var(--ct-surface-2); border-radius: 10px;">
                     Score Range: ${pct}%
                 </div>
             </div>
         `;
         
         showModal(
-            `<span class="modal-icon-small" style="background: var(--ct-ok-soft);"><i class="fas fa-check-circle" style="color:#10b981; font-size: 14px;"></i></span> Approve ${data.studentName}?`,
+            `<span class="modal-icon-small" style="background: var(--ct-ok-soft);"><i class="fas fa-check-circle" style="color:#575551; font-size: 14px;"></i></span> Approve ${data.studentName}?`,
             modalContent,
             '<i class="fas fa-check"></i> Approve',
             'approve',
@@ -820,52 +820,52 @@
         let bgColor, borderColor, icon, title, message, textColor;
         
         if (pct >= 80) {
-            bgColor = 'linear-gradient(135deg, #fee2e2 0%, #fef2f2 100%)';
-            borderColor = '#dc2626';
+            bgColor='linear-gradient(135deg, #F8F8F8 0%, #fef2f2 100%)';
+            borderColor='#2B2926';
             icon = '<i class="fas fa-circle text-danger"></i>';
             title = 'CRITICAL WARNING!';
             message = `This student scored ${pct}% which is EXCELLENT. Rejecting a high performer is strongly discouraged! Consider approval.`;
-            textColor = '#991b1b';
+            textColor='#171614';
         } else if (pct >= 70) {
-            bgColor = 'linear-gradient(135deg, #fed7aa 0%, #ffedd5 100%)';
-            borderColor = '#ea580c';
+            bgColor='linear-gradient(135deg, #F3F2F0 0%, #F8F8F8 100%)';
+            borderColor='#575551';
             icon = '<i class="fas fa-circle text-warning"></i>';
             title = 'HIGH WARNING!';
             message = `Student scored ${pct}% which is very good. Rejection is not recommended. Consider approval instead.`;
-            textColor = '#9a3412';
+            textColor='#2B2926';
         } else if (pct >= 60) {
-            bgColor = 'linear-gradient(135deg, #fef3c7 0%, #fffbeb 100%)';
-            borderColor = '#d97706';
+            bgColor='linear-gradient(135deg, #F8F8F8 0%, #F8F8F8 100%)';
+            borderColor='#575551';
             icon = '<i class="fas fa-circle text-warning"></i>';
             title = 'MODERATE WARNING';
             message = `Student scored ${pct}% which is above average. Consider approval rather than rejection.`;
-            textColor = '#92400e';
+            textColor='#2B2926';
         } else if (pct >= 50) {
-            bgColor = 'linear-gradient(135deg, #fef3c7 0%, #fffbeb 100%)';
-            borderColor = '#f59e0b';
+            bgColor='linear-gradient(135deg, #F8F8F8 0%, #F8F8F8 100%)';
+            borderColor='#D6D4CF';
             icon = '<i class="fas fa-exclamation-triangle"></i>';
             title = 'CAUTION';
             message = `Student scored ${pct}% (passed). Consider approval or allow retake if needed.`;
-            textColor = '#92400e';
+            textColor='#2B2926';
         } else {
-            bgColor = 'linear-gradient(135deg, #e0e7ff 0%, #eef2ff 100%)';
-            borderColor = '#3b82f6';
+            bgColor='linear-gradient(135deg, #F8F8F8 0%, #F8F8F8 100%)';
+            borderColor='#575551';
             icon = 'ℹ';
             title = 'INFORMATION';
             message = `Student scored ${pct}% (below passing). Rejection may be appropriate. Student can retake the exam.`;
-            textColor = '#1e40af';
+            textColor='#171614';
         }
         
         const modalContent = `
             <div style="text-align: center;">
-                <div class="score-ring" style="background: conic-gradient(from 0deg, #ef4444 0deg, #ef4444 ${pct * 3.6}deg, #e2e8f0 ${pct * 3.6}deg);">
+                <div class="score-ring" style="background: conic-gradient(from 0deg, #2B2926 0deg, #2B2926 ${pct * 3.6}deg, #e2e8f0 ${pct * 3.6}deg);">
                     <div class="score-ring-inner">
-                        <span style="font-size: 28px; font-weight: 800; color: #ef4444;">${pct}%</span>
-                        <span style="font-size: 10px; color: #64748b;">Score</span>
+                        <span style="font-size: 28px; font-weight: 800; color: #2B2926;">${pct}%</span>
+                        <span style="font-size: 10px; color: #2B2926;">Score</span>
                     </div>
                 </div>
                 
-                <div style="font-size: 14px; font-weight: 600; margin-bottom: 15px; color: #475569;">
+                <div style="font-size: 14px; font-weight: 600; margin-bottom: 15px; color: #2B2926;">
                     ${data.score}/${data.total} Correct Answers
                 </div>
                 
@@ -887,7 +887,7 @@
         `;
         
         showModal(
-            `<span class="modal-icon-small" style="background:#fee2e2;"><i class="fas fa-times-circle" style="color:#ef4444; font-size: 14px;"></i></span> Reject ${data.studentName}?`,
+            `<span class="modal-icon-small" style="background:#F8F8F8;"><i class="fas fa-times-circle" style="color:#2B2926; font-size: 14px;"></i></span> Reject ${data.studentName}?`,
             modalContent,
             '<i class="fas fa-times"></i> Reject',
             'reject',
@@ -910,18 +910,18 @@
     function showConfirmModal(type, id, status, name, studentId, examId, studentName) {
         if (type === 'toggle') {
             const action = status === 0 ? 'Start' : 'Stop';
-            showModal(`<span class="modal-icon-small" style="background:#fef3c7;"><i class="fas fa-${status===0?'play':'stop'}" style="color:#f59e0b; font-size:12px;"></i></span> ${action} Exam?`,
-                `<div style="text-align:center"><div style="background:#fef3c7; border-radius:12px; padding:12px;"><i class="fas fa-${status===0?'play-circle':'stop-circle'}" style="font-size:36px; color:#f59e0b;"></i><h5 style="margin:8px 0 0;">${action} ${name}?</h5><p class="mt-2" style="font-size:12px;">Students will ${status===0?'be able to take':'no longer be able to take'} this exam.</p></div></div>`,
+            showModal(`<span class="modal-icon-small" style="background:#F8F8F8;"><i class="fas fa-${status===0?'play':'stop'}" style="color:#D6D4CF; font-size:12px;"></i></span> ${action} Exam?`,
+                `<div style="text-align:center"><div style="background:#F8F8F8; border-radius:12px; padding:12px;"><i class="fas fa-${status===0?'play-circle':'stop-circle'}" style="font-size:36px; color:#D6D4CF;"></i><h5 style="margin:8px 0 0;">${action} ${name}?</h5><p class="mt-2" style="font-size:12px;">Students will ${status===0?'be able to take':'no longer be able to take'} this exam.</p></div></div>`,
                 `Yes, ${action}`, 'warning', () => window.location.href = `/admin/ce_exam/${id}/toggle`);
         }
         else if (type === 'delete_exam') {
-            showModal(`<span class="modal-icon-small" style="background:#fee2e2;"><i class="fas fa-trash-alt" style="color:#ef4444; font-size:12px;"></i></span> Delete Exam?`,
-                `<div style="text-align:center"><div style="background:#fee2e2; border-radius:12px; padding:12px;"><i class="fas fa-exclamation-triangle" style="font-size:36px; color:#ef4444;"></i><h5 style="margin:8px 0 0;">Delete ${name}?</h5><p class="mt-2" style="font-size:12px;">This will delete ALL questions, sections, and student data.<br><strong>Cannot be undone!</strong></p></div></div>`,
+            showModal(`<span class="modal-icon-small" style="background:#F8F8F8;"><i class="fas fa-trash-alt" style="color:#2B2926; font-size:12px;"></i></span> Delete Exam?`,
+                `<div style="text-align:center"><div style="background:#F8F8F8; border-radius:12px; padding:12px;"><i class="fas fa-exclamation-triangle" style="font-size:36px; color:#2B2926;"></i><h5 style="margin:8px 0 0;">Delete ${name}?</h5><p class="mt-2" style="font-size:12px;">This will delete ALL questions, sections, and student data.<br><strong>Cannot be undone!</strong></p></div></div>`,
                 'Delete', 'reject', () => window.location.href = `/admin/ce_exam/${id}/delete`);
         }
         else if (type === 'delete_student') {
-            showModal(`<span class="modal-icon-small" style="background:#fee2e2;"><i class="fas fa-user-slash" style="color:#ef4444; font-size:12px;"></i></span> Delete Student?`,
-                `<div style="text-align:center"><div style="background:#fee2e2; border-radius:12px; padding:12px;"><i class="fas fa-user-graduate" style="font-size:36px; color:#ef4444;"></i><h5 style="margin:8px 0 0;">Delete ${name}?</h5><p class="mt-2" style="font-size:12px;">Permanently remove student and all exam data.<br><strong>Cannot be undone!</strong></p></div></div>`,
+            showModal(`<span class="modal-icon-small" style="background:#F8F8F8;"><i class="fas fa-user-slash" style="color:#2B2926; font-size:12px;"></i></span> Delete Student?`,
+                `<div style="text-align:center"><div style="background:#F8F8F8; border-radius:12px; padding:12px;"><i class="fas fa-user-graduate" style="font-size:36px; color:#2B2926;"></i><h5 style="margin:8px 0 0;">Delete ${name}?</h5><p class="mt-2" style="font-size:12px;">Permanently remove student and all exam data.<br><strong>Cannot be undone!</strong></p></div></div>`,
                 'Delete', 'reject', async () => {
                     showLoading(); const res = await fetch(`/admin/ce_delete_student/${id}`, { method: 'POST' }).then(r=>r.json());
                     hideLoading();
@@ -930,58 +930,58 @@
                 });
         }
         else if (type === 'reset') {
-            showModal(`<span class="modal-icon-small" style="background:#fef3c7;"><i class="fas fa-undo-alt" style="color:#f59e0b; font-size:12px;"></i></span> Reset Exam?`,
-                `<div style="text-align:center"><div style="background:#fef3c7; border-radius:12px; padding:12px;"><i class="fas fa-hourglass-half" style="font-size:36px; color:#f59e0b;"></i><h5 style="margin:8px 0 0;">Reset ${studentName}'s Exam?</h5><div style="background: var(--ct-surface-2); border-radius:8px; padding:8px; margin:10px 0; text-align:left; font-size:11px;"><strong><i class="fas fa-trash-alt"></i> Deleted:</strong> Answers, Score, Time, Attempt</div><div style="background: var(--ct-ok-soft); border-radius:8px; padding:8px; text-align:left; font-size:11px;"><strong><i class="fas fa-check-circle"></i> Remains:</strong> Registration, Can retake</div><p style="margin-top:8px; font-size:11px;">After reset, the student can take the exam again.</p></div></div>`,
+            showModal(`<span class="modal-icon-small" style="background:#F8F8F8;"><i class="fas fa-undo-alt" style="color:#D6D4CF; font-size:12px;"></i></span> Reset Exam?`,
+                `<div style="text-align:center"><div style="background:#F8F8F8; border-radius:12px; padding:12px;"><i class="fas fa-hourglass-half" style="font-size:36px; color:#D6D4CF;"></i><h5 style="margin:8px 0 0;">Reset ${studentName}'s Exam?</h5><div style="background: var(--ct-surface-2); border-radius:8px; padding:8px; margin:10px 0; text-align:left; font-size:11px;"><strong><i class="fas fa-trash-alt"></i> Deleted:</strong> Answers, Score, Time, Attempt</div><div style="background: var(--ct-ok-soft); border-radius:8px; padding:8px; text-align:left; font-size:11px;"><strong><i class="fas fa-check-circle"></i> Remains:</strong> Registration, Can retake</div><p style="margin-top:8px; font-size:11px;">After reset, the student can take the exam again.</p></div></div>`,
                 'Reset', 'warning', async () => {
                     showLoading(); const res = await fetch(`/admin/ce_reset_student_exam/${studentId}/${examId}`, { method: 'POST' }).then(r=>r.json());
                     hideLoading();
-                    if(res.success) { showToast(res.message, 'success'); setTimeout(()=>location.reload(),1500); }
+                    if(res.success) { showToast(res.message, 'success'); setTimeout(()=>window.CTPjax ? CTPjax.refresh() : location.reload(),900); }
                     else showToast(res.error, 'error');
                 });
         }
         else if (type === 'reset_all') {
-            showModal(`<span class="modal-icon-small" style="background:#fef3c7;"><i class="fas fa-undo-alt" style="color:#f59e0b; font-size:12px;"></i></span> Reset All Exams?`,
-                `<div style="text-align:center"><div style="background:#fef3c7; border-radius:12px; padding:12px;"><i class="fas fa-clock" style="font-size:36px; color:#f59e0b;"></i><h5 style="margin:8px 0 0;">Reset ALL Student Exams?</h5><p class="mt-2" style="font-size:12px;">All students can retake their exams.<br><strong>Cannot be undone per student!</strong></p></div></div>`,
+            showModal(`<span class="modal-icon-small" style="background:#F8F8F8;"><i class="fas fa-undo-alt" style="color:#D6D4CF; font-size:12px;"></i></span> Reset All Exams?`,
+                `<div style="text-align:center"><div style="background:#F8F8F8; border-radius:12px; padding:12px;"><i class="fas fa-clock" style="font-size:36px; color:#D6D4CF;"></i><h5 style="margin:8px 0 0;">Reset ALL Student Exams?</h5><p class="mt-2" style="font-size:12px;">All students can retake their exams.<br><strong>Cannot be undone per student!</strong></p></div></div>`,
                 'Reset All', 'warning', async () => {
                     showLoading(); const res = await fetch('/admin/ce_reset_all_students_exams', { method: 'POST' }).then(r=>r.json());
                     hideLoading();
-                    if(res.success) { showToast(res.message, 'success'); setTimeout(()=>location.reload(),1500); }
+                    if(res.success) { showToast(res.message, 'success'); setTimeout(()=>window.CTPjax ? CTPjax.refresh() : location.reload(),900); }
                     else showToast(res.error, 'error');
                 });
         }
         else if (type === 'delete_all_students') {
-            showModal(`<span class="modal-icon-small" style="background:#fee2e2;"><i class="fas fa-skull-crossbones" style="color:#ef4444; font-size:12px;"></i></span> Delete All Students?`,
-                `<div style="text-align:center"><div style="background:#fee2e2; border-radius:12px; padding:12px;"><i class="fas fa-users-slash" style="font-size:36px; color:#ef4444;"></i><h5 style="margin:8px 0 0;">Delete ALL Students?</h5><p class="mt-2" style="font-size:12px;">Permanently delete ALL registered students.<br><strong>IRREVERSIBLE!</strong></p></div></div>`,
+            showModal(`<span class="modal-icon-small" style="background:#F8F8F8;"><i class="fas fa-skull-crossbones" style="color:#2B2926; font-size:12px;"></i></span> Delete All Students?`,
+                `<div style="text-align:center"><div style="background:#F8F8F8; border-radius:12px; padding:12px;"><i class="fas fa-users-slash" style="font-size:36px; color:#2B2926;"></i><h5 style="margin:8px 0 0;">Delete ALL Students?</h5><p class="mt-2" style="font-size:12px;">Permanently delete ALL registered students.<br><strong>IRREVERSIBLE!</strong></p></div></div>`,
                 'Delete All', 'reject', async () => {
                     showLoading(); const res = await fetch('/admin/ce_delete_all_students', { method: 'POST' }).then(r=>r.json());
                     hideLoading();
-                    if(res.success) { showToast(res.message, 'success'); setTimeout(()=>location.reload(),1500); }
+                    if(res.success) { showToast(res.message, 'success'); setTimeout(()=>window.CTPjax ? CTPjax.refresh() : location.reload(),900); }
                     else showToast(res.error, 'error');
                 });
         }
         else if (type === 'delete_all_warnings') {
-            showModal(`<span class="modal-icon-small" style="background:#fee2e2;"><i class="fas fa-radiation" style="color:#ef4444; font-size:12px;"></i></span> Delete All Warnings?`,
-                `<div style="text-align:center"><div style="background:#fee2e2; border-radius:12px; padding:12px;"><i class="fas fa-trash-alt" style="font-size:36px; color:#ef4444;"></i><h5 style="margin:8px 0 0;">Clear All Logs?</h5><p class="mt-2" style="font-size:12px;">Wipe all warning history for all students.<br><strong>Cannot be undone!</strong></p></div></div>`,
+            showModal(`<span class="modal-icon-small" style="background:#F8F8F8;"><i class="fas fa-radiation" style="color:#2B2926; font-size:12px;"></i></span> Delete All Warnings?`,
+                `<div style="text-align:center"><div style="background:#F8F8F8; border-radius:12px; padding:12px;"><i class="fas fa-trash-alt" style="font-size:36px; color:#2B2926;"></i><h5 style="margin:8px 0 0;">Clear All Logs?</h5><p class="mt-2" style="font-size:12px;">Wipe all warning history for all students.<br><strong>Cannot be undone!</strong></p></div></div>`,
                 'Delete All', 'reject', async () => {
                     showLoading(); const res = await fetch('/admin/ce_delete_all_warnings', { method: 'POST' }).then(r=>r.json());
                     hideLoading();
-                    if(res.success) { showToast(res.message, 'success'); setTimeout(()=>location.reload(),1500); }
+                    if(res.success) { showToast(res.message, 'success'); setTimeout(()=>window.CTPjax ? CTPjax.refresh() : location.reload(),900); }
                     else showToast(res.error, 'error');
                 });
         }
         else if (type === 'clear_student_warnings') {
-            showModal(`<span class="modal-icon-small" style="background:#fef3c7;"><i class="fas fa-eraser" style="color:#f59e0b; font-size:12px;"></i></span> Clear Student Warnings?`,
-                `<div style="text-align:center"><div style="background:#fef3c7; border-radius:12px; padding:12px;"><i class="fas fa-user-shield" style="font-size:36px; color:#f59e0b;"></i><h5 style="margin:8px 0 0;">Clear warnings for ${name}?</h5><p class="mt-2" style="font-size:12px;">This resets their current warning count to 0 and deletes their logs.</p></div></div>`,
+            showModal(`<span class="modal-icon-small" style="background:#F8F8F8;"><i class="fas fa-eraser" style="color:#D6D4CF; font-size:12px;"></i></span> Clear Student Warnings?`,
+                `<div style="text-align:center"><div style="background:#F8F8F8; border-radius:12px; padding:12px;"><i class="fas fa-user-shield" style="font-size:36px; color:#D6D4CF;"></i><h5 style="margin:8px 0 0;">Clear warnings for ${name}?</h5><p class="mt-2" style="font-size:12px;">This resets their current warning count to 0 and deletes their logs.</p></div></div>`,
                 'Clear Warnings', 'warning', async () => {
                     showLoading(); const res = await fetch(`/admin/ce_delete_student_warnings/${studentId}/${examId}`, { method: 'POST' }).then(r=>r.json());
                     hideLoading();
-                    if(res.success) { showToast(res.message, 'success'); setTimeout(()=>location.reload(),1500); }
+                    if(res.success) { showToast(res.message, 'success'); setTimeout(()=>window.CTPjax ? CTPjax.refresh() : location.reload(),900); }
                     else showToast(res.error, 'error');
                 });
         }
         else if (type === 'delete_warning_log') {
-            showModal(`<span class="modal-icon-small" style="background:#fee2e2;"><i class="fas fa-trash" style="color:#ef4444; font-size:12px;"></i></span> Delete Log?`,
-                `<div style="text-align:center"><div style="background:#fee2e2; border-radius:12px; padding:12px;"><i class="fas fa-minus-circle" style="font-size:36px; color:#ef4444;"></i><h5 style="margin:8px 0 0;">Delete this specific log?</h5></div></div>`,
+            showModal(`<span class="modal-icon-small" style="background:#F8F8F8;"><i class="fas fa-trash" style="color:#2B2926; font-size:12px;"></i></span> Delete Log?`,
+                `<div style="text-align:center"><div style="background:#F8F8F8; border-radius:12px; padding:12px;"><i class="fas fa-minus-circle" style="font-size:36px; color:#2B2926;"></i><h5 style="margin:8px 0 0;">Delete this specific log?</h5></div></div>`,
                 'Delete Log', 'reject', async () => {
                     showLoading(); const res = await fetch(`/admin/ce_delete_warning_log/${id}`, { method: 'POST' }).then(r=>r.json());
                     hideLoading();
@@ -990,19 +990,20 @@
                 });
         }
         else if (type === 'approve_all') {
-            showModal(`<span class="modal-icon-small" style="background: var(--ct-ok-soft);"><i class="fas fa-check-double" style="color:#10b981; font-size:12px;"></i></span> Approve All Pending?`,
-                `<div style="text-align:center"><div style="background:#fef3c7; border-radius:12px; padding:12px;"><i class="fas fa-users" style="font-size:36px; color:#f59e0b;"></i><h5 style="margin:8px 0 0;">Approve ALL Pending?</h5><p class="mt-2" style="font-size:12px;">All pending students will be added to target classes.<br><strong>Cannot be undone per student!</strong></p></div></div>`,
+            showModal(`<span class="modal-icon-small" style="background: var(--ct-ok-soft);"><i class="fas fa-check-double" style="color:#575551; font-size:12px;"></i></span> Approve All Pending?`,
+                `<div style="text-align:center"><div style="background:#F8F8F8; border-radius:12px; padding:12px;"><i class="fas fa-users" style="font-size:36px; color:#D6D4CF;"></i><h5 style="margin:8px 0 0;">Approve ALL Pending?</h5><p class="mt-2" style="font-size:12px;">All pending students will be added to target classes.<br><strong>Cannot be undone per student!</strong></p></div></div>`,
                 'Approve All', 'approve', async () => {
                     showLoading(); const res = await fetch('/admin/ce_approve_all_pending', { method: 'POST' }).then(r=>r.json());
                     hideLoading();
-                    if(res.success) { showToast(res.message, 'success'); setTimeout(()=>location.reload(),1500); }
+                    if(res.success) { showToast(res.message, 'success'); setTimeout(()=>window.CTPjax ? CTPjax.refresh() : location.reload(),900); }
                     else showToast(res.error, 'error');
                 });
         }
     }
     
     // ============ REGISTER ============
-    document.getElementById('registerStudentForm').addEventListener('submit', function(e) {
+    var regFormEl = document.getElementById('registerStudentForm');
+    if (regFormEl) regFormEl.addEventListener('submit', function(e) {
         e.preventDefault();
         fetch('/admin/ce_register_student', { method: 'POST', body: new FormData(this) })
         .then(r=>r.json()).then(data => {
@@ -1011,10 +1012,14 @@
                 const row = tbody.insertRow(0);
                 row.id = `student-row-${data.student.id}`;
                 row.setAttribute('data-student-name', data.student.full_name);
-                const photoUrl = data.student.photo ? `/static/images/${data.student.photo}` : '/static/images/default.png';
-                row.innerHTML = `<td><div style="display:flex; align-items:center; gap:10px;"><img src="${photoUrl}" style="width:36px; height:36px; border-radius:50%; object-fit:cover; border:1.5px solid #1a56db; flex-shrink:0;"><div><strong style="display:block; font-size:13px; color:#0f172a;">${data.student.full_name}</strong><span style="font-size:11px; color:#64748b;">ID: #${data.student.id}</span></div></div></td><td>${data.student.username}</td><td>${data.student.exam_name}</td><td><span class="badge-not-started">Not Started</span></td><td><button class="btn-warning-custom" onclick="showConfirmModal('reset', null, null, null, ${data.student.id}, null, '${data.student.full_name}')" style="padding:3px 8px;font-size:10px;"><i class="fas fa-undo-alt"></i> Reset</button> <button class="btn-danger-custom" onclick="showConfirmModal('delete_student', ${data.student.id}, null, '${data.student.full_name}')" style="padding:3px 8px;font-size:10px;"><i class="fas fa-trash"></i> Delete</button></td>`;
-                document.getElementById('registerStudentForm').reset();
-                document.getElementById('usernameCheck').innerHTML = '';
+                const glyph = `<svg class="ct-avatar__glyph" viewBox="0 0 24 24" aria-hidden="true"><use href="${CT.sprite}#i-person-avatar"/></svg>`;
+                const avatar = data.student.photo && data.student.photo !== 'default.png'
+                  ? `<span class="ct-avatar ct-avatar--sm ct-avatar--person"><img src="/uploads/images/${encodeURIComponent(data.student.photo)}" alt="" onerror="this.remove();">${glyph}</span>`
+                  : `<span class="ct-avatar ct-avatar--sm ct-avatar--person">${glyph}</span>`;
+                row.innerHTML = `<td><div style="display:flex; align-items:center; gap:10px;">${avatar}<div><strong style="display:block; font-size:13px;">${CT.esc(data.student.full_name)}</strong><span style="font-size:11px; color:var(--tc-ink-3);">ID: #${data.student.id}</span></div></div></td><td>${CT.esc(data.student.username)}</td><td>${CT.esc(data.student.exam_name)}</td><td><span class="badge-not-started">Not Started</span></td><td><button class="btn-warning-custom" onclick="showConfirmModal('reset', null, null, null, ${data.student.id}, null, '${CT.esc(data.student.full_name)}')" style="padding:3px 8px;font-size:10px;"><i class="fas fa-undo-alt"></i> Reset</button> <button class="btn-danger-custom" onclick="showConfirmModal('delete_student', ${data.student.id}, null, '${CT.esc(data.student.full_name)}')" style="padding:3px 8px;font-size:10px;"><i class="fas fa-trash"></i> Delete</button></td>`;
+                regFormEl.reset();
+                var uc = document.getElementById('usernameCheck');
+                if (uc) uc.innerHTML = '';
                 showToast(data.message, 'success');
             } else showToast(data.error, 'error');
         });
@@ -1029,54 +1034,58 @@
             if(data.students?.length) {
                 let html = '<table class="student-table"><thead><tr><th>Student</th><th>Exam</th><th>Score</th><th>Percentage</th><th>Status</th></tr></thead><tbody>';
                 data.students.forEach(s => { html += `<tr>
-                    <td><strong>${s.full_name}</strong><br><small>${s.username}</small></td>
-                    <td>${s.exam_name}</td>
+                    <td><strong>${CT.esc(s.full_name)}</strong><br><small>${CT.esc(s.username)}</small></td>
+                    <td>${CT.esc(s.exam_name)}</td>
                     <td>${s.score}/${s.total}</td>
-                    <td>${s.percentage}%</span></td>
-                    <td>${s.status}</td>
+                    <td>${s.percentage}%</td>
+                    <td>${CT.esc(s.status)}</td>
                     </tr>`;
                 });
                 html += '</tbody></table>';
                 document.getElementById('modalBody').innerHTML = html;
-            } else document.getElementById('modalBody').innerHTML = '<div class="text-center py-4"><i class="fas fa-info-circle" style="font-size:40px;color:#cbd5e1"></i><p class="mt-2">No students found.</p></div>';
+            } else document.getElementById('modalBody').innerHTML = '<div class="text-center py-4"><i class="fas fa-info-circle" style="font-size:40px;color:#F3F2F0"></i><p class="mt-2">No students found.</p></div>';
             modal.show();
         });
     }
     
     // Username check
-    let timeout;
-    document.getElementById('regUsername').addEventListener('input', function() {
-        clearTimeout(timeout);
+    var ceUserTimeout;
+    var regU = document.getElementById('regUsername');
+    if (regU) regU.addEventListener('input', function() {
+        clearTimeout(ceUserTimeout);
         const username = this.value.trim();
         const div = document.getElementById('usernameCheck');
-        if(username.length < 3) { div.innerHTML = ''; return; }
-        timeout = setTimeout(() => {
-            div.innerHTML = '<span class="text-muted"><i class="fas fa-spinner fa-spin"></i> Checking...</span>';
+        if(username.length < 3) { if (div) div.innerHTML = ''; return; }
+        ceUserTimeout = setTimeout(() => {
+            if (div) div.innerHTML = '<span class="text-muted"><i class="fas fa-spinner fa-spin"></i> Checking...</span>';
             fetch(`/check_ce_username?username=${encodeURIComponent(username)}`).then(r=>r.json()).then(data => {
-                div.innerHTML = data.exists ? '<span class="text-danger"><i class="fas fa-times-circle"></i> Username exists!</span>' : '<span class="text-success"><i class="fas fa-check-circle"></i> Username available</span>';
+                if (div) div.innerHTML = data.exists ? '<span class="text-danger"><i class="fas fa-times-circle"></i> Username exists!</span>' : '<span class="text-success"><i class="fas fa-check-circle"></i> Username available</span>';
             });
-        }, 500);
+        }, 400);
     });
 </script>
 <script>
-async function checkTechSupportBadge() {
+(function () {
+  async function checkTechSupportBadge() {
+    var badge = document.getElementById('techSupportBadge');
+    if (!badge) return;
     try {
-        const res = await fetch('/admin/ce_technical_support_count');
-        const data = await res.json();
-        const badge = document.getElementById('techSupportBadge');
-        if (badge) {
-            if (data.count > 0) {
-                badge.style.display = 'inline-flex';
-                badge.textContent = data.count;
-            } else {
-                badge.style.display = 'none';
-            }
-        }
+      var res = await fetch('/admin/ce_technical_support_count');
+      var data = await res.json();
+      if (data.count > 0) {
+        badge.style.display = 'inline-flex';
+        badge.textContent = data.count;
+      } else {
+        badge.style.display = 'none';
+      }
     } catch(e) {}
-}
-// Check every 15 seconds
-checkTechSupportBadge();
-setInterval(checkTechSupportBadge, 15000);
+  }
+  checkTechSupportBadge();
+  var ceSupportTimer = setInterval(checkTechSupportBadge, 15000);
+  if (window.CT && CT.onCleanup) {
+    CT.onCleanup(function () { clearInterval(ceSupportTimer); });
+  }
+})();
 </script>
 
 {{ shell_end(role='admin') }}

@@ -349,6 +349,14 @@ def admin_ce_register_student():
     phone = request.form.get("phone", "")
     
     conn = get_db_connection()
+
+    try:
+        ce_cfg = conn.execute("SELECT registration_open FROM ce_settings WHERE id=1").fetchone()
+        if ce_cfg is not None and int(ce_cfg["registration_open"] if ce_cfg["registration_open"] is not None else 1) == 0:
+            conn.close()
+            return {"success": False, "error": "Candidate registration is currently closed in CE Settings."}, 403
+    except Exception:
+        pass
     
     existing = conn.execute("SELECT id FROM ce_students WHERE username=?", (username,)).fetchone()
     if existing:
@@ -584,13 +592,19 @@ def create_ce_exam_ajax():
         return {"error": "Unauthorized"}, 401
     
     conn = get_db_connection()
-    
+    ce_cfg = conn.execute("SELECT default_passing_score, anti_cheating_profile FROM ce_settings WHERE id=1").fetchone()
+    cfg_pass = int(ce_cfg["default_passing_score"]) if (ce_cfg and ce_cfg["default_passing_score"]) else 50
+    cfg_prof = str(ce_cfg["anti_cheating_profile"] or "medium").lower() if ce_cfg else "medium"
+    cfg_max_w = {"low": 5, "medium": 3, "high": 2}.get(cfg_prof, 3)
+
     name = request.form.get("name")
     target_class = request.form.get("target_class")
     duration = max(1, int(request.form.get("duration", 60)))
-    passing_score = int(request.form.get("passing_score", 50))
+    raw_pass = request.form.get("passing_score")
+    passing_score = int(raw_pass) if (raw_pass is not None and str(raw_pass).strip() != "") else cfg_pass
     total_questions_to_show = int(request.form.get("total_questions_to_show", 100))
-    max_warnings = int(request.form.get("max_warnings", 5))
+    raw_mw = request.form.get("max_warnings")
+    max_warnings = int(raw_mw) if (raw_mw is not None and str(raw_mw).strip() != "") else cfg_max_w
     calculator_type = request.form.get("calculator_type", "none")
     active = 1 if request.form.get("active") else 0
     

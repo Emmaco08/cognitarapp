@@ -1,6 +1,11 @@
 {%- from '_ct_shell.html' import ico, ct_boot_script with context -%}
 {%- set ICONS = url_for('static', filename='icons/cognitara-icons.svg') -%}
 {%- set _school = school_branding if school_branding is defined and school_branding else {'school_name': 'CogniTara School'} -%}
+{%- set _ce = ce_settings if (ce_settings is defined and ce_settings) else (ce_branding if ce_branding is defined else {}) -%}
+{%- set _ce_title = _ce.portal_title or 'Entrance Examination Portal' -%}
+{%- set _ce_inst = _ce.institution_name or _school.school_name -%}
+{%- set _ce_prof_w = 5 if _ce.anti_cheating_profile == 'low' else (2 if _ce.anti_cheating_profile == 'high' else 3) -%}
+{%- set _eff_w = [exam.max_warnings if (exam and exam.max_warnings) else _ce_prof_w, _ce_prof_w]|min -%}
 <!DOCTYPE html>
 <html lang="en" data-theme="dark">
 <head>
@@ -8,7 +13,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="csrf-token" content="{{ csrf_token() }}">
   <meta name="color-scheme" content="dark light">
-  <title>{{ exam.name }} | Entrance Exam Portal</title>
+  <title>{{ exam.name if exam else _ce_title }} | {{ _ce_title }}</title>
   <link rel="icon" href="{{ url_for('static', filename='images/cognitara-favicon.ico') }}">
   <link rel="preload" href="{{ url_for('static', filename='fonts/ui/PlusJakartaSans-Variable.woff2') }}" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/cognitara-web.css') }}">
@@ -24,10 +29,10 @@
         <span class="st-brand__mark"><svg viewBox="0 0 200 200"><use href="{{ ICONS }}#ct-mark"/></svg></span>
         <span class="st-brand__name">CogniTara</span>
         <span class="st-brand__sep" aria-hidden="true"></span>
-        <span class="st-brand__meta">{{ _school.school_name }}</span>
+        <span class="st-brand__meta">{{ _ce_inst }}</span>
       </a>
       <div class="st-nav__right">
-        <span class="st-term-pill" style="text-transform:none;letter-spacing:0">Common Entrance</span>
+        <span class="st-term-pill" style="text-transform:none;letter-spacing:0">{{ _ce_title }} · {{ _ce.admission_session or '2026/2027' }}{% if _ce.admission_batch %} · {{ _ce.admission_batch }}{% endif %}</span>
         <button type="button" class="st-icon-btn" data-ct-theme-toggle aria-label="Switch theme" title="Switch light or dark theme">
           <span class="ct-theme-ico">{{ ico('i-moon', 'ct-theme-ico__moon') }}{{ ico('i-sun', 'ct-theme-ico__sun') }}</span>
         </button>
@@ -39,7 +44,7 @@
       <section class="st-brief st-brief--motion" style="width:min(640px,100%)" aria-label="Common Entrance candidate briefing">
         <div class="st-folio__top">
           <span class="st-folio__doc-id" style="text-transform:none;letter-spacing:0.01em">Candidate · {{ student_name }}</span>
-          <span class="st-pill st-pill--accent st-mono">{{ exam.duration }} min · {{ exam.total_questions_to_show }} questions</span>
+          {% if exam %}<span class="st-pill st-pill--accent st-mono">{{ exam.duration }} min · {{ exam.total_questions_to_show }} questions</span>{% endif %}
         </div>
 
         <div class="st-brief__body">
@@ -53,12 +58,13 @@
               </svg>
             </div>
             <div class="st-folio__headline">
-              <span class="st-brief__candidate"><i class="st-brief__dot"></i>Entrance Portal · {{ exam.target_class }}</span>
-              <h1>{{ exam.name }}</h1>
+              <span class="st-brief__candidate"><i class="st-brief__dot"></i>{{ _ce_title }}{% if exam %} · {{ exam.target_class }}{% endif %}</span>
+              <h1>{{ exam.name if exam else _ce_title }}</h1>
               <p>Welcome, {{ student_name }}. Review your paper settings below before entering the examination room. Every answer saves immediately to the school server.</p>
             </div>
           </div>
 
+          {% if exam %}
           <div class="st-ledger">
             <div class="st-ledger__cell">
               <span>Duration</span>
@@ -70,31 +76,32 @@
             </div>
             <div class="st-ledger__cell">
               <span>Passing cut-off</span>
-              <strong class="st-mono">{{ exam.passing_score }}%</strong>
+              <strong class="st-mono">{{ exam.passing_score or _ce.default_passing_score or 50 }}%</strong>
             </div>
             <div class="st-ledger__cell">
               <span>Target class</span>
               <strong>{{ exam.target_class }}</strong>
             </div>
           </div>
+          {% endif %}
 
           {% if existing_attempt %}
             {% if existing_attempt.status == 'pending' %}
               <div class="st-ce-banner st-ce-banner--warn" role="status">
                 {{ ico('i-clock', 'ct-ico--sm') }}
-                <span>Your submitted examination is currently under administrative review.</span>
+                <span>{{ _ce.pending_message or 'Your submitted examination is currently under administrative review.' }}</span>
               </div>
             {% elif existing_attempt.status == 'approved' %}
               <div class="st-ce-banner st-ce-banner--ok" role="status">
                 {{ ico('i-check-circle', 'ct-ico--sm') }}
-                <span>Approved for {{ exam.target_class }}. Your admission status is confirmed.</span>
+                <span>{{ _ce.approved_message or ('Approved for ' ~ (exam.target_class if exam else 'admission') ~ '. Your admission status is confirmed.') }}</span>
               </div>
             {% elif existing_attempt.status == 'rejected' %}
               <div class="st-ce-banner st-ce-banner--bad" role="status">
                 {{ ico('i-alert', 'ct-ico--sm') }}
-                <span>Your previous attempt did not meet the cut-off.{% if exam.active %} You may sit the paper again below.{% endif %}</span>
+                <span>{{ _ce.rejected_message or 'Your previous attempt did not meet the cut-off.' }}{% if exam and exam.active %} You may sit the paper again below.{% endif %}</span>
               </div>
-              {% if exam.active %}
+              {% if exam and exam.active %}
               <button type="button" class="st-btn st-btn--primary st-btn--lg st-btn--block st-brief__cta" onclick="openStartModal()">
                 <span>Retake Examination</span>
                 {{ ico('i-arrow-right', 'ct-ico--sm st-arrow') }}
@@ -123,7 +130,7 @@
               {% endif %}
             {% endif %}
           {% else %}
-            {% if exam.active %}
+            {% if exam and exam.active %}
             <button type="button" class="st-btn st-btn--primary st-btn--lg st-btn--block st-brief__cta" onclick="openStartModal()">
               <span>Begin Examination</span>
               {{ ico('i-arrow-right', 'ct-ico--sm st-arrow') }}
@@ -139,28 +146,36 @@
           <div class="st-brief__integrity">
             <span class="st-brief__integrity-pulse" aria-hidden="true"></span>
             {{ ico('i-shield', 'ct-ico--xs') }}
-            <span>Integrity shield active · {{ exam.max_warnings if exam.max_warnings else 5 }} focus warnings auto-submit</span>
+            <span>Integrity shield active · {{ _eff_w }} focus warnings auto-submit</span>
           </div>
         </div>
       </section>
     </main>
 
     <footer class="st-foot">
-      <span>{{ _school.school_name }} · Common Entrance Portal</span>
+      <span>{{ _ce_inst }} · {{ _ce_title }}</span>
       <span class="st-mono" style="font-size:11.5px">Local network session</span>
     </footer>
   </div>
 
-  <!-- Examination Guidelines & Start Confirmation Modal -->
+  <!-- Examination Guidelines & Start Confirmation Modal (Kinetic Modal System) -->
   <div class="ct-modal-backdrop" id="startModal" role="dialog" aria-modal="true" aria-hidden="true" data-ct-dismissable>
-    <div class="ct-modal" style="background:var(--st-surface);border:1px solid var(--st-line-2);box-shadow:var(--st-shadow);border-radius:20px;max-width:540px">
-      <div class="ct-modal__head" style="border-bottom-color:var(--st-line)">
-        <div style="display:grid;gap:4px">
-          <h3 style="margin:0;font-size:19px;font-weight:720;color:var(--st-ink)">Examination guidelines</h3>
-          <p style="margin:0;font-size:13px;color:var(--st-ink-2)">{{ exam.name }} · {{ exam.duration }} minutes · {{ exam.total_questions_to_show }} questions</p>
+    <div class="ct-modal" data-tone="primary" style="max-width:540px">
+      <div class="ct-m-head">
+        <div class="ct-m-medallion">
+          <span class="ct-m-medallion__halo" aria-hidden="true"></span>
+          <svg class="ct-m-medallion__svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle class="ct-svg-draw" style="--d:40ms" pathLength="100" cx="12" cy="12" r="9"/>
+            <path class="ct-svg-draw" style="--d:165ms" pathLength="100" d="M12 7.5V12l3 2"/>
+          </svg>
         </div>
+        <div class="ct-m-copy">
+          <h3>Examination guidelines</h3>
+          <div class="ct-m-desc">{{ exam.name }} · {{ exam.duration }} minutes · {{ exam.total_questions_to_show }} questions</div>
+        </div>
+        <button type="button" class="ct-iconbtn ct-iconbtn--ghost ct-modal__close" onclick="closeStartModal()" aria-label="Close">{{ ico('i-x', 'ct-ico--sm') }}</button>
       </div>
-      <div class="ct-modal__body" style="max-height:60vh;overflow-y:auto">
+      <div class="ct-m-body" style="max-height:58vh">
         <div class="st-ce-rules">
           <div class="st-ce-rule-box st-ce-rule-box--ok">
             <strong>Before you begin</strong>
@@ -181,31 +196,45 @@
           </div>
         </div>
       </div>
-      <div class="ct-modal__actions" style="border-top-color:var(--st-line)">
-        <button type="button" class="st-btn st-btn--ghost" onclick="closeStartModal()">Cancel</button>
-        <button type="button" class="st-btn st-btn--primary" onclick="confirmStartExam()"><span>Start Examination</span>{{ ico('i-arrow-right', 'ct-ico--sm st-arrow') }}</button>
+      <div class="ct-m-foot">
+        <span class="ct-m-kbd"><kbd>Esc</kbd><span>Cancel</span></span>
+        <div class="ct-m-foot__btns">
+          <button type="button" class="st-btn st-btn--ghost" onclick="closeStartModal()">Cancel</button>
+          <button type="button" class="st-btn st-btn--primary" onclick="confirmStartExam()"><span>Start examination</span>{{ ico('i-arrow-right', 'ct-ico--sm st-arrow') }}</button>
+        </div>
       </div>
     </div>
   </div>
 
-  <!-- Resume Confirmation Modal -->
+  <!-- Resume Confirmation Modal (Kinetic Modal System) -->
   <div class="ct-modal-backdrop" id="resumeModal" role="dialog" aria-modal="true" aria-hidden="true" data-ct-dismissable>
-    <div class="ct-modal" style="background:var(--st-surface);border:1px solid var(--st-line-2);box-shadow:var(--st-shadow);border-radius:20px;max-width:420px">
-      <div class="ct-modal__head" style="border-bottom-color:var(--st-line)">
-        <div style="display:grid;gap:4px">
-          <h3 style="margin:0;font-size:19px;font-weight:720;color:var(--st-ink)">Resume examination</h3>
-          <p style="margin:0;font-size:13px;color:var(--st-ink-2)">Your previous answers and remaining time are safely preserved.</p>
+    <div class="ct-modal ct-confirm-modal" data-tone="ok" style="max-width:440px">
+      <div class="ct-m-head">
+        <div class="ct-m-medallion">
+          <span class="ct-m-medallion__halo" aria-hidden="true"></span>
+          <svg class="ct-m-medallion__svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle class="ct-svg-draw" style="--d:40ms" pathLength="100" cx="12" cy="12" r="8.5"/>
+            <path class="ct-svg-draw" style="--d:155ms" pathLength="100" d="m8.5 12.2 2.35 2.45 4.75-5.1"/>
+          </svg>
         </div>
+        <div class="ct-m-copy">
+          <h3>Resume examination</h3>
+          <div class="ct-m-desc">Your previous answers and remaining time are safely preserved.</div>
+        </div>
+        <button type="button" class="ct-iconbtn ct-iconbtn--ghost ct-modal__close" onclick="closeResumeModal()" aria-label="Close">{{ ico('i-x', 'ct-ico--sm') }}</button>
       </div>
-      <div class="ct-modal__body">
+      <div class="ct-m-body">
         <div class="st-ce-banner st-ce-banner--ok">
           {{ ico('i-check-circle', 'ct-ico--sm') }}
           <span>Ready to restore {{ exam.name }} for {{ exam.target_class }}.</span>
         </div>
       </div>
-      <div class="ct-modal__actions" style="border-top-color:var(--st-line)">
-        <button type="button" class="st-btn st-btn--ghost" onclick="closeResumeModal()">Cancel</button>
-        <button type="button" class="st-btn st-btn--primary" id="resumeConfirmBtn"><span>Resume Now</span>{{ ico('i-arrow-right', 'ct-ico--sm st-arrow') }}</button>
+      <div class="ct-m-foot">
+        <span class="ct-m-kbd"><kbd>Esc</kbd><span>Cancel</span></span>
+        <div class="ct-m-foot__btns">
+          <button type="button" class="st-btn st-btn--ghost" onclick="closeResumeModal()">Cancel</button>
+          <button type="button" class="st-btn st-btn--primary" id="resumeConfirmBtn"><span>Resume now</span>{{ ico('i-arrow-right', 'ct-ico--sm st-arrow') }}</button>
+        </div>
       </div>
     </div>
   </div>

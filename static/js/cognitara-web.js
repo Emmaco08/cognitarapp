@@ -206,15 +206,32 @@
   /* ---------------- Modal ---------------- */
   var lastFocus = null;
   var FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+  function replayModalVector(el) {
+    var med = el && el.querySelector(".ct-m-medallion, .ct-confirm-badge");
+    if (!med) return;
+    var clone = med.cloneNode(true);
+    med.parentNode.replaceChild(clone, med);
+  }
+  function nudgeModal(el) {
+    var sheet = el && (el.classList.contains("ct-modal") ? el : el.querySelector(".ct-modal"));
+    if (!sheet) return;
+    sheet.classList.remove("is-nudged");
+    void sheet.offsetWidth;
+    sheet.classList.add("is-nudged");
+    setTimeout(function () { sheet.classList.remove("is-nudged"); }, 340);
+  }
   var modal = {
     open: function (target) {
       var el = $(target);
       if (!el) return;
       lastFocus = doc.activeElement;
+      replayModalVector(el);
+      el.classList.remove("is-open");
+      void el.offsetWidth;
       el.classList.add("is-open");
       el.setAttribute("aria-hidden", "false");
-      var f = el.querySelector("[data-ct-autofocus]") || el.querySelector(".ct-modal__actions .ct-btn--primary, .ct-modal__actions .ct-btn--danger, .ct-modal__actions .ct-btn--danger-solid") || el.querySelector(FOCUSABLE);
-      if (f) setTimeout(function () { try { f.focus({ preventScroll: true }); } catch (e) { f.focus(); } }, 40);
+      var f = el.querySelector("[data-ct-autofocus]") || el.querySelector("input:not([type='hidden']):not([disabled]), textarea:not([disabled])") || el.querySelector(".ct-modal__actions .ct-btn--primary, .ct-confirm-actions .ct-btn--primary, .ct-m-foot .ct-btn--primary") || el.querySelector(FOCUSABLE);
+      if (f) setTimeout(function () { try { f.focus({ preventScroll: true }); } catch (e) { f.focus(); } }, 60);
     },
     close: function (target) {
       var els = target ? [$(target)] : $$(".ct-modal-backdrop.is-open");
@@ -225,7 +242,8 @@
       });
       if (lastFocus && lastFocus.focus) { try { lastFocus.focus({ preventScroll: true }); } catch (e) {} }
       lastFocus = null;
-    }
+    },
+    nudge: nudgeModal
   };
   function bindModals() {
     doc.addEventListener("click", function (e) {
@@ -233,12 +251,19 @@
       if (opener) { e.preventDefault(); modal.open(opener.getAttribute("data-ct-modal-open")); return; }
       var closer = e.target.closest("[data-ct-modal-close]");
       if (closer) { e.preventDefault(); modal.close(closer.closest(".ct-modal-backdrop")); return; }
-      if (e.target.classList && e.target.classList.contains("ct-modal-backdrop") && e.target.hasAttribute("data-ct-dismissable")) modal.close(e.target);
+      if (e.target.classList && e.target.classList.contains("ct-modal-backdrop")) {
+        if (e.target.id === "ctConfirmBackdrop") return;
+        if (e.target.hasAttribute("data-ct-dismissable")) modal.close(e.target);
+        else nudgeModal(e.target);
+      }
     });
     doc.addEventListener("keydown", function (e) {
       var open = $(".ct-modal-backdrop.is-open");
       if (!open) return;
-      if (e.key === "Escape" && open.hasAttribute("data-ct-dismissable")) modal.close(open);
+      if (e.key === "Escape" && open.id !== "ctConfirmBackdrop") {
+        if (open.hasAttribute("data-ct-dismissable")) modal.close(open);
+        else nudgeModal(open);
+      }
       if (e.key === "Tab") {
         var f = $$(FOCUSABLE, open).filter(function (n) { return n.offsetParent !== null; });
         if (!f.length) return;
@@ -378,8 +403,63 @@
     }
   }
 
-  /* ---------------- Animated Confirm Modal (CT.confirm) ---------------- */
+  /* ---------------- CogniTara Kinetic Modal System (CT.confirm & CT.alert) ---------------- */
+  var MODAL_SVGS = {
+    danger:
+      '<svg class="ct-m-medallion__svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+        '<g class="ct-svg-lid">' +
+          '<path d="M3.5 6h17"/>' +
+          '<path d="M8.5 6V4.3A1.3 1.3 0 0 1 9.8 3h4.4a1.3 1.3 0 0 1 1.3 1.3V6"/>' +
+        '</g>' +
+        '<path class="ct-svg-draw" style="--d:40ms" pathLength="100" d="M6.5 6l.85 13.1A2 2 0 0 0 9.35 21h5.3a2 2 0 0 0 2-1.9L17.5 6"/>' +
+        '<path class="ct-svg-draw" style="--d:170ms" pathLength="100" d="M10.2 11v5.5"/>' +
+        '<path class="ct-svg-draw" style="--d:220ms" pathLength="100" d="M13.8 11v5.5"/>' +
+      '</svg>',
+    warn:
+      '<svg class="ct-m-medallion__svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+        '<path class="ct-svg-draw" style="--d:40ms" pathLength="100" d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/>' +
+        '<path class="ct-svg-draw" style="--d:170ms" pathLength="100" d="M12 9v4.5"/>' +
+        '<circle class="ct-svg-pop" style="--d:260ms" cx="12" cy="17.1" r="0.95" fill="currentColor" stroke="none"/>' +
+      '</svg>',
+    ok:
+      '<svg class="ct-m-medallion__svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+        '<g class="ct-svg-spark" stroke-width="1.5">' +
+          '<line x1="12" y1="0.8" x2="12" y2="2.5"/>' +
+          '<line x1="20.2" y1="5.2" x2="18.9" y2="6.3"/>' +
+          '<line x1="22.4" y1="14.5" x2="20.7" y2="14.1"/>' +
+          '<line x1="3.8" y1="5.2" x2="5.1" y2="6.3"/>' +
+          '<line x1="1.6" y1="14.5" x2="3.3" y2="14.1"/>' +
+          '<line x1="12" y1="21.5" x2="12" y2="23.2"/>' +
+        '</g>' +
+        '<circle class="ct-svg-draw" style="--d:40ms" pathLength="100" cx="12" cy="12" r="8.5"/>' +
+        '<path class="ct-svg-draw" style="--d:155ms" pathLength="100" d="m8.5 12.2 2.35 2.45 4.75-5.1"/>' +
+      '</svg>',
+    primary:
+      '<svg class="ct-m-medallion__svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+        '<circle class="ct-svg-draw" style="--d:40ms" pathLength="100" cx="12" cy="12" r="9"/>' +
+        '<path class="ct-svg-draw" style="--d:165ms" pathLength="100" d="M12 11.2v5.3"/>' +
+        '<circle class="ct-svg-pop" style="--d:245ms" cx="12" cy="7.8" r="0.95" fill="currentColor" stroke="none"/>' +
+      '</svg>',
+    layers:
+      '<svg class="ct-m-medallion__svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+        '<path class="ct-svg-draw" style="--d:40ms" pathLength="100" d="m12 3 9 4.5-9 4.5-9-4.5L12 3Z"/>' +
+        '<path class="ct-svg-draw" style="--d:150ms" pathLength="100" d="m3 12 9 4.5 9-4.5"/>' +
+        '<path class="ct-svg-draw" style="--d:230ms" pathLength="100" d="m3 16.5 9 4.5 9-4.5"/>' +
+      '</svg>',
+    ban:
+      '<svg class="ct-m-medallion__svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+        '<circle class="ct-svg-draw" style="--d:40ms" pathLength="100" cx="12" cy="12" r="9"/>' +
+        '<path class="ct-svg-draw" style="--d:175ms" pathLength="100" d="M5.7 5.7 18.3 18.3"/>' +
+      '</svg>'
+  };
+
+  function modalSvg(key) {
+    return MODAL_SVGS[key] || MODAL_SVGS.primary;
+  }
+
   var _confirmState = null;
+  var _holdTimer = null;
+
   function ensureConfirmDialog() {
     var bd = $("#ctConfirmBackdrop");
     if (bd) return bd;
@@ -388,27 +468,49 @@
     bd.className = "ct-modal-backdrop ct-confirm-backdrop";
     bd.setAttribute("aria-hidden", "true");
     bd.innerHTML =
-      '<div class="ct-modal ct-confirm-modal" role="alertdialog" aria-modal="true" aria-labelledby="ctConfirmTitle" aria-describedby="ctConfirmDesc">' +
-        '<div class="ct-confirm-accent" id="ctConfirmAccent"></div>' +
-        '<div class="ct-confirm-head">' +
-          '<div class="ct-confirm-badge" id="ctConfirmBadge">' +
-            '<span class="ct-confirm-badge__ring" aria-hidden="true"></span>' +
+      '<div class="ct-modal ct-confirm-modal" tabindex="-1" role="alertdialog" aria-modal="true" aria-labelledby="ctConfirmTitle" aria-describedby="ctConfirmDesc">' +
+        '<div class="ct-m-head">' +
+          '<div class="ct-m-medallion" id="ctConfirmBadge">' +
+            '<span class="ct-m-medallion__halo" aria-hidden="true"></span>' +
             '<span class="ct-confirm-badge__ico" id="ctConfirmIcon"></span>' +
           '</div>' +
-          '<div class="ct-confirm-copy">' +
+          '<div class="ct-m-copy">' +
             '<h3 id="ctConfirmTitle">Confirm action</h3>' +
-            '<div class="ct-confirm-desc" id="ctConfirmDesc"></div>' +
+            '<div class="ct-m-desc" id="ctConfirmDesc"></div>' +
           '</div>' +
           '<button type="button" class="ct-iconbtn ct-iconbtn--ghost ct-modal__close" id="ctConfirmX" aria-label="Close">' + icon("i-x", "ct-ico--sm") + '</button>' +
         '</div>' +
-        '<div class="ct-confirm-actions">' +
-          '<button type="button" class="ct-btn ct-btn--ghost" id="ctConfirmCancel">Cancel</button>' +
-          '<button type="button" class="ct-btn ct-btn--danger-solid" id="ctConfirmOk">Confirm</button>' +
+        '<div class="ct-m-subject" id="ctConfirmSubject" hidden>' +
+          '<div class="ct-m-subject__left">' +
+            '<span class="ct-m-subject__label" id="ctConfirmSubjLabel"></span>' +
+            '<span class="ct-m-subject__val" id="ctConfirmSubjVal"></span>' +
+          '</div>' +
+          '<span class="ct-m-subject__meta" id="ctConfirmSubjMeta"></span>' +
+        '</div>' +
+        '<div class="ct-m-foot">' +
+          '<span class="ct-m-kbd" id="ctConfirmKbd"><kbd>Esc</kbd><span id="ctConfirmKbdText">Cancel</span></span>' +
+          '<div class="ct-m-foot__btns">' +
+            '<button type="button" class="ct-btn ct-btn--ghost" id="ctConfirmCancel">Cancel</button>' +
+            '<button type="button" class="ct-btn ct-btn--danger-solid" id="ctConfirmOk">' +
+              '<span class="ct-btn--hold__fill" aria-hidden="true"></span>' +
+              '<span class="ct-btn--hold__label" id="ctConfirmOkLabel">Confirm</span>' +
+            '</button>' +
+          '</div>' +
         '</div>' +
       '</div>';
     doc.body.appendChild(bd);
 
+    var modalEl = $(".ct-confirm-modal", bd);
+    var okBtn = $("#ctConfirmOk", bd);
+
+    function clearHold() {
+      if (_holdTimer) { clearTimeout(_holdTimer); _holdTimer = null; }
+      okBtn.classList.remove("is-holding");
+    }
+
     function finish(val) {
+      clearHold();
+      modalEl.classList.remove("is-danger-armed");
       bd.classList.remove("is-open");
       bd.setAttribute("aria-hidden", "true");
       var st = _confirmState;
@@ -418,13 +520,61 @@
       }
       if (st && st.resolve) st.resolve(val);
     }
+
     $("#ctConfirmCancel", bd).addEventListener("click", function () { finish(false); });
     $("#ctConfirmX", bd).addEventListener("click", function () { finish(false); });
-    $("#ctConfirmOk", bd).addEventListener("click", function () { finish(true); });
-    bd.addEventListener("mousedown", function (e) { if (e.target === bd) finish(false); });
+
+    // Cause -> effect: hovering the Delete CTA lifts the kinetic trash lid
+    okBtn.addEventListener("mouseenter", function () {
+      if (modalEl.getAttribute("data-tone") === "danger") modalEl.classList.add("is-danger-armed");
+    });
+    okBtn.addEventListener("mouseleave", function () {
+      modalEl.classList.remove("is-danger-armed");
+      clearHold();
+    });
+
+    // Click OR Emil Kowalski clip-path Hold-to-Confirm support
+    okBtn.addEventListener("pointerdown", function (e) {
+      if (!_confirmState || !_confirmState.holdMs) return;
+      if (e.button !== 0) return;
+      clearHold();
+      okBtn.style.setProperty("--ct-hold-ms", _confirmState.holdMs + "ms");
+      void okBtn.offsetWidth;
+      okBtn.classList.add("is-holding");
+      _holdTimer = setTimeout(function () {
+        _holdTimer = null;
+        finish(true);
+      }, _confirmState.holdMs);
+    });
+    okBtn.addEventListener("pointerup", clearHold);
+    okBtn.addEventListener("pointercancel", clearHold);
+    okBtn.addEventListener("click", function (e) {
+      if (_confirmState && _confirmState.holdMs) {
+        // Allow keyboard Space/Enter activation for a11y while pointer requires hold
+        if (e.detail === 0) finish(true);
+        return;
+      }
+      finish(true);
+    });
+
+    bd.addEventListener("mousedown", function (e) {
+      if (e.target !== bd) return;
+      if (_confirmState && _confirmState.dismissable === false) {
+        nudgeModal(modalEl);
+        return;
+      }
+      finish(false);
+    });
     doc.addEventListener("keydown", function (e) {
       if (!_confirmState) return;
-      if (e.key === "Escape") { e.preventDefault(); finish(false); }
+      if (e.key === "Escape") {
+        e.preventDefault();
+        if (_confirmState.dismissable === false) {
+          nudgeModal(modalEl);
+          return;
+        }
+        finish(false);
+      }
     });
     return bd;
   }
@@ -435,32 +585,84 @@
     var tone = opts.tone || "danger";
     var modalEl = $(".ct-confirm-modal", bd);
     modalEl.setAttribute("data-tone", tone);
-    var iconMap = { danger: "i-trash", warn: "i-alert", ok: "i-check-circle", primary: "i-info" };
-    var iconName = opts.icon || iconMap[tone] || "i-alert";
-    $("#ctConfirmIcon", bd).innerHTML = icon(iconName);
+    modalEl.classList.remove("is-danger-armed");
+
+    // Pick choreographed inline SVG
+    var svgKey = opts.svg || (
+      opts.icon === "i-ban" ? "ban" :
+      opts.icon === "i-layers" ? "layers" :
+      tone
+    );
+    $("#ctConfirmIcon", bd).innerHTML = modalSvg(svgKey);
+
     $("#ctConfirmTitle", bd).textContent = opts.title || "Are you sure?";
     var descEl = $("#ctConfirmDesc", bd);
     if (opts.html != null) descEl.innerHTML = opts.html;
     else descEl.textContent = opts.message || "This action cannot be undone.";
+
+    // Optional highlighted subject card
+    var subjEl = $("#ctConfirmSubject", bd);
+    if (opts.subject && (opts.subject.value || opts.subject.label)) {
+      $("#ctConfirmSubjLabel", bd).textContent = opts.subject.label || "";
+      $("#ctConfirmSubjVal", bd).textContent = opts.subject.value || "";
+      $("#ctConfirmSubjMeta", bd).textContent = opts.subject.meta || "";
+      subjEl.hidden = false;
+    } else {
+      subjEl.hidden = true;
+    }
+
     var cancelBtn = $("#ctConfirmCancel", bd);
     var okBtn = $("#ctConfirmOk", bd);
+    var okLabel = $("#ctConfirmOkLabel", bd);
+    var kbdHint = $("#ctConfirmKbd", bd);
+
+    cancelBtn.hidden = !!opts.hideCancel;
     cancelBtn.textContent = opts.cancelText || "Cancel";
-    okBtn.textContent = opts.confirmText || (tone === "danger" ? "Delete" : "Confirm");
+    if (kbdHint) kbdHint.style.visibility = opts.dismissable === false ? "hidden" : "visible";
+    var kbdText = $("#ctConfirmKbdText", bd);
+    if (kbdText) kbdText.textContent = opts.hideCancel ? "Close" : "Cancel";
+
+    var holdMs = opts.holdToConfirm ? (opts.holdDuration || 1200) : 0;
+    okLabel.textContent = opts.confirmText || (holdMs ? "Hold to delete" : (tone === "danger" ? "Delete" : "Confirm"));
     okBtn.className = "ct-btn " + (
       tone === "danger" ? "ct-btn--danger-solid" :
       tone === "warn" ? "ct-btn--warn-solid" :
       tone === "ok" ? "ct-btn--ok-solid" : "ct-btn--primary"
-    );
+    ) + (holdMs ? " ct-btn--hold" : "");
 
     if (_confirmState && _confirmState.resolve) _confirmState.resolve(false);
 
     return new Promise(function (resolve) {
-      _confirmState = { resolve: resolve, prevFocus: doc.activeElement };
+      _confirmState = {
+        resolve: resolve,
+        prevFocus: doc.activeElement,
+        dismissable: opts.dismissable !== false,
+        holdMs: holdMs
+      };
+      // Replay vector medallion choreography cleanly on every open
+      replayModalVector(modalEl);
+      bd.classList.remove("is-open");
+      void bd.offsetWidth;
       bd.classList.add("is-open");
       bd.setAttribute("aria-hidden", "false");
       setTimeout(function () {
-        try { (tone === "danger" ? cancelBtn : okBtn).focus({ preventScroll: true }); } catch (e) {}
-      }, 45);
+        try { modalEl.focus({ preventScroll: true }); } catch (e) {}
+      }, 65);
+    });
+  }
+
+  function alertDialog(opts) {
+    opts = opts || {};
+    return confirmDialog({
+      tone: opts.tone || "ok",
+      svg: opts.svg,
+      title: opts.title || "Done",
+      message: opts.message,
+      html: opts.html,
+      subject: opts.subject,
+      confirmText: opts.confirmText || "Got it",
+      hideCancel: true,
+      dismissable: opts.dismissable !== false
     });
   }
 
@@ -726,7 +928,14 @@
     function run(i) {
       var c = items[i]; close();
       if (!c) return;
-      if (c.run) c.run(); else if (c.go) location.href = c.go;
+      if (c.run) c.run();
+      else if (c.go) {
+        if (window.CTPjax && typeof window.CTPjax.canHandle === "function" && window.CTPjax.canHandle(c.go)) {
+          window.CTPjax.navigate(c.go);
+        } else {
+          location.href = c.go;
+        }
+      }
     }
     $$(opts.triggers || "[data-ct-palette-open]").forEach(function (t) { t.addEventListener("click", open); });
     input.addEventListener("input", filter);
@@ -744,17 +953,130 @@
     return { open: open, close: close };
   }
 
-  /* ---------------- Bootstrap Modal Stacking Fix ---------------- */
-  function fixBootstrapModals() {
-    var moveModal = function (m) {
-      if (m && m.parentNode && m.parentNode !== doc.body) {
-        doc.body.appendChild(m);
-      }
+  /* ---------------- Cleanup Registry (used by PJAX navigation) ---------------- */
+  var _cleanupFns = [];
+  function onCleanup(fn) {
+    if (typeof fn === "function") _cleanupFns.push(fn);
+  }
+  function runCleanups() {
+    while (_cleanupFns.length) {
+      var fn = _cleanupFns.pop();
+      try { fn(); } catch (e) {}
+    }
+    if (typeof window.__ctPageCleanup === "function") {
+      try { window.__ctPageCleanup(); } catch (e) {}
+      window.__ctPageCleanup = null;
+    }
+  }
+
+  /* ---------------- Viewport Overlay Portaling (Modals + Slide-Over Drawers) ---------------- */
+  function portalOverlays(ctx) {
+    ctx = ctx || doc;
+    var moveOverlay = function (el) {
+      if (!el || !el.parentNode || el.parentNode === doc.body) return;
+      el.setAttribute("data-ct-pjax-portal", "1");
+      doc.body.appendChild(el);
     };
-    $$(".ct-main .modal, .ct-content .modal").forEach(moveModal);
-    doc.addEventListener("show.bs.modal", function (e) {
-      if (e && e.target) moveModal(e.target);
+    $$(".modal, .ct-modal-backdrop, .ecc-drw-scrim, .ecc-drw, .premium-modal-overlay", ctx).forEach(function (el) {
+      if (el.id === "ctConfirmBackdrop") return;
+      if (el.closest(".ct-main, .ct-content")) moveOverlay(el);
     });
+  }
+  function fixBootstrapModals() {
+    portalOverlays(doc);
+    doc.addEventListener("show.bs.modal", function (e) {
+      if (e && e.target && e.target.parentNode !== doc.body) {
+        e.target.setAttribute("data-ct-pjax-portal", "1");
+        doc.body.appendChild(e.target);
+      }
+    });
+  }
+
+  function injectCsrfForms(ctx) {
+    ctx = ctx || doc;
+    var tok = window.CSRF_TOKEN || (doc.querySelector('meta[name="csrf-token"]') && doc.querySelector('meta[name="csrf-token"]').getAttribute("content")) || "";
+    if (!tok) return;
+    $$('form[method="POST"], form[method="post"]', ctx).forEach(function (form) {
+      var inp = form.querySelector('input[name="csrf_token"]');
+      if (!inp) {
+        inp = doc.createElement("input");
+        inp.type = "hidden";
+        inp.name = "csrf_token";
+        form.appendChild(inp);
+      }
+      inp.value = tok;
+    });
+  }
+
+  /* ---------------- Scoped Re-initialization (PJAX-safe) ---------------- */
+  function initScope(ctx) {
+    ctx = ctx || doc;
+    portalOverlays(ctx);
+    injectCsrfForms(ctx);
+    $$("table[data-ct-paginate]", ctx).forEach(function (tbl) {
+      if (tbl._ctPaginated) return;
+      var sizesAttr = tbl.getAttribute("data-ct-paginate-sizes");
+      var sizes = sizesAttr ? sizesAttr.split(",").map(function (n) { return parseInt(n.trim(), 10); }).filter(Boolean) : undefined;
+      paginateTable(tbl, {
+        pageSize: parseInt(tbl.getAttribute("data-ct-paginate"), 10) || 10,
+        pageSizes: sizes
+      });
+    });
+    $$("[data-ct-filter]", ctx).forEach(function (inp) {
+      if (inp.__ctFilterBound) return;
+      inp.__ctFilterBound = true;
+      tableFilter(inp, inp.getAttribute("data-ct-filter"), {
+        rows: inp.getAttribute("data-ct-filter-rows") || undefined,
+        empty: inp.getAttribute("data-ct-filter-empty") || undefined
+      });
+    });
+    $$("[data-ct-tabs]", ctx).forEach(function (group) {
+      if (group.__ctTabsBound) return;
+      group.__ctTabsBound = true;
+      var tabs = $$("[data-ct-tab]", group);
+      function select(tab, focus) {
+        tabs.forEach(function (t) {
+          var on = t === tab;
+          t.classList.toggle("is-active", on);
+          t.setAttribute("aria-selected", on ? "true" : "false");
+          t.setAttribute("tabindex", on ? "0" : "-1");
+          var p = doc.getElementById(t.getAttribute("data-ct-tab"));
+          if (p) p.hidden = !on;
+        });
+        if (focus) tab.focus();
+      }
+      tabs.forEach(function (t, i) {
+        t.setAttribute("role", "tab");
+        t.addEventListener("click", function (e) { e.preventDefault(); select(t); });
+        t.addEventListener("keydown", function (e) {
+          if (e.key === "ArrowRight") select(tabs[(i + 1) % tabs.length], true);
+          if (e.key === "ArrowLeft") select(tabs[(i - 1 + tabs.length) % tabs.length], true);
+        });
+      });
+      if (tabs.length) select(tabs.filter(function (t) { return t.classList.contains("is-active"); })[0] || tabs[0]);
+    });
+    $$("[data-ct-seg]", ctx).forEach(function (seg) {
+      if (seg.__ctSegBound) return;
+      seg.__ctSegBound = true;
+      syncSeg(seg);
+      seg.addEventListener("click", function () { requestAnimationFrame(function () { syncSeg(seg); }); });
+    });
+    $$(".ct-drop", ctx).forEach(function (z) {
+      if (z.__ctDropBound) return;
+      z.__ctDropBound = true;
+      var input = z.querySelector('input[type="file"]');
+      var name = z.querySelector(".ct-drop__name");
+      if (!input) return;
+      ["dragenter", "dragover"].forEach(function (ev) { z.addEventListener(ev, function () { z.classList.add("is-drag"); }); });
+      ["dragleave", "drop"].forEach(function (ev) { z.addEventListener(ev, function () { z.classList.remove("is-drag"); }); });
+      input.addEventListener("change", function () {
+        if (name) name.textContent = input.files && input.files.length ? Array.prototype.map.call(input.files, function (f) { return f.name; }).join(", ") : "";
+      });
+    });
+    reveal(ctx);
+    if (window.CogniTaraActions && typeof window.CogniTaraActions.bindDeclarativeActions === "function") {
+      window.CogniTaraActions.bindDeclarativeActions();
+    }
   }
 
   /* ---------------- Boot ---------------- */
@@ -770,16 +1092,11 @@
     bindSidebar();
     bindTopbar();
     bindSectionNav();
-    bindPaginators();
-    bindFilters();
-    bindTabs();
-    bindSeg();
-    bindDrops();
-    reveal(doc);
+    initScope(doc);
   }
 
   window.CT = {
-    version: "3.1.0",
+    version: "3.2.0",
     sprite: SPRITE,
     icon: icon,
     esc: esc,
@@ -787,12 +1104,18 @@
     toast: toast,
     modal: modal,
     confirm: confirmDialog,
+    alert: alertDialog,
+    modalSvg: modalSvg,
     sidebar: sidebar,
     tableFilter: tableFilter,
     paginateTable: paginateTable,
     countUp: countUp,
     reveal: reveal,
     palette: palette,
+    initScope: initScope,
+    portalOverlays: portalOverlays,
+    onCleanup: onCleanup,
+    runCleanups: runCleanups,
     seg: { sync: syncSeg },
     reducedMotion: reduced
   };

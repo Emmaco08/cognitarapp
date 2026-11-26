@@ -925,7 +925,7 @@
             const isDisplay = displayCheck ? displayCheck.checked : false;
 
             if (!latex) {
-                previewEl.innerHTML = '<span style="color:#94a3b8;font-style:italic;font-size:13px;"><i class="fas fa-pencil-alt" style="margin-right:5px;"></i> Type values in the boxes above to preview student view...</span>';
+                previewEl.innerHTML = '<span style="color:#83807B;font-style:italic;font-size:13px;"><i class="fas fa-pencil-alt" style="margin-right:5px;"></i> Type values in the boxes above to preview student view...</span>';
                 return;
             }
 
@@ -939,7 +939,7 @@
                     previewEl.textContent = latex;
                 }
             } catch (err) {
-                previewEl.innerHTML = `<span style="color:#ef4444;font-size:12px;"><i class="fas fa-exclamation-triangle"></i> Syntax Error: ${err.message}</span>`;
+                previewEl.innerHTML = `<span style="color:#171614;font-size:12px;"><i class="fas fa-exclamation-triangle"></i> Syntax Error: ${err.message}</span>`;
             }
         },
 
@@ -1122,7 +1122,7 @@
                                 <input type="text" id="fbFracDen" class="fb-math-input" placeholder="e.g. 2, 4y, x + 1" autocomplete="off">
 
                                 <div class="mt-2 pt-2 d-flex align-items-center gap-2" style="border-top:1px solid var(--ct-line, rgba(255,255,255,0.08));">
-                                    <label style="font-size:11.5px; margin:0; font-weight:600; color:var(--ct-ink-3, #9ca3af);">Whole number (optional):</label>
+                                    <label style="font-size:11.5px; margin:0; font-weight:600; color:var(--ct-ink-3, #83807B);">Whole number (optional):</label>
                                     <input type="text" id="fbFracWhole" class="fb-math-input-sm" style="width:72px; text-align:center;" placeholder="e.g. 3">
                                 </div>
                             </div>
@@ -1226,10 +1226,10 @@
                         <div class="fb-tab-panel" data-tab-content="chemistry">
                             <div class="fb-visual-chem-container">
                                 <div class="mb-1">
-                                    <label class="fb-input-label"><i class="fas fa-flask" style="color:var(--ct-accent,#3b82f6);"></i> Chemical formula or reaction</label>
+                                    <label class="fb-input-label"><i class="fas fa-flask" style="color:var(--ct-accent,#171614);"></i> Chemical formula or reaction</label>
                                 </div>
                                 <input type="text" id="fbChemFormula" class="fb-math-input" placeholder="e.g. CaCO3 -> CaO + CO2 or H2O" autocomplete="off">
-                                <small class="d-block mt-2" style="font-size:11.5px; color:var(--ct-ink-3, #9ca3af);">
+                                <small class="d-block mt-2" style="font-size:11.5px; color:var(--ct-ink-3, #83807B);">
                                     Numbers format automatically as subscripts (for example <code>H2O</code> renders as H₂O).
                                 </small>
                             </div>
@@ -1307,7 +1307,7 @@
                         <!-- DISPLAY MODE CHECKBOX -->
                         <div class="mt-2 d-flex align-items-center">
                             <label style="font-size:12.5px; color:var(--ct-ink-2, #9e9e9e); cursor:pointer; user-select:none; margin:0; display:flex; align-items:center; gap:7px;">
-                                <input type="checkbox" id="katexPopoverDisplayCheck" style="accent-color:var(--ct-accent, #3b82f6); width:15px; height:15px;">
+                                <input type="checkbox" id="katexPopoverDisplayCheck" style="accent-color:var(--ct-accent, #171614); width:15px; height:15px;">
                                 Center formula on its own line (block display)
                             </label>
                         </div>
@@ -1457,7 +1457,7 @@
                     margin: 2px 4px !important;
                     padding: 3px 10px !important;
                     background: var(--ct-surface-2, #222328) !important;
-                    border: 1px solid var(--ct-accent, #3b82f6) !important;
+                    border: 1px solid var(--ct-accent, #171614) !important;
                     border-radius: 8px !important;
                     cursor: pointer !important;
                     user-select: all !important;
@@ -1477,7 +1477,7 @@
                 }
                 .katex-editor-pill:hover {
                     transform: translateY(-1px) !important;
-                    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.22) !important;
+                    box-shadow: 0 4px 12px rgba(23, 22, 20, 0.22) !important;
                 }
                 .katex-editor-pill .pill-preview { display: inline-flex !important; align-items: center !important; pointer-events: none !important; }
                 .katex-editor-pill .pill-action-btn {
@@ -1485,14 +1485,14 @@
                     font-size: 10px !important; padding: 0 4px !important; cursor: pointer !important;
                     border-radius: 4px !important; line-height: 1 !important; transition: color 0.12s ease, background-color 0.12s ease !important;
                 }
-                .katex-editor-pill .pill-edit-btn { margin-left: 6px !important; color: var(--ct-accent, #3b82f6) !important; opacity: 0.78 !important; }
+                .katex-editor-pill .pill-edit-btn { margin-left: 6px !important; color: var(--ct-accent, #171614) !important; opacity: 0.78 !important; }
                 .katex-editor-pill:hover .pill-edit-btn { opacity: 1 !important; }
                 .katex-editor-pill .pill-delete-btn {
-                    margin-left: 3px !important; color: var(--ct-ink-3, #9ca3af) !important; font-size: 14px !important;
+                    margin-left: 3px !important; color: var(--ct-ink-3, #83807B) !important; font-size: 14px !important;
                     font-weight: 700 !important; opacity: 0 !important; width: 16px !important; height: 16px !important;
                 }
                 .katex-editor-pill:hover .pill-delete-btn { opacity: 0.85 !important; }
-                .katex-editor-pill .pill-delete-btn:hover { opacity: 1 !important; color: #ef4444 !important; background: rgba(239,68,68,0.14) !important; }
+                .katex-editor-pill .pill-delete-btn:hover { opacity: 1 !important; color: #171614 !important; background: rgba(23,22,20,0.14) !important; }
 
                 .katex-formula-popover-backdrop {
                     position: fixed !important; inset: 0 !important;
@@ -1526,19 +1526,19 @@
                 }
                 .katex-popover-header-icon {
                     width: 34px !important; height: 34px !important; border-radius: 9px !important;
-                    background: var(--ct-accent-soft, rgba(59, 130, 246, 0.14)) !important; color: var(--ct-accent, #3b82f6) !important;
+                    background: var(--ct-accent-soft, rgba(23, 22, 20, 0.14)) !important; color: var(--ct-accent, #171614) !important;
                     display: flex !important; align-items: center !important; justify-content: center !important;
                     font-size: 14px !important; flex-shrink: 0 !important;
                 }
                 .katex-popover-header h6 { margin: 0 !important; font-size: 15.5px !important; font-weight: 700 !important; color: var(--ct-ink, #f4f4f5) !important; line-height: 1.25 !important; }
-                .katex-popover-sub { margin: 2px 0 0 !important; font-size: 12px !important; color: var(--ct-ink-3, #9ca3af) !important; line-height: 1.25 !important; }
+                .katex-popover-sub { margin: 2px 0 0 !important; font-size: 12px !important; color: var(--ct-ink-3, #83807B) !important; line-height: 1.25 !important; }
                 .katex-popover-close {
                     background: transparent !important; border: 1px solid var(--ct-line-2, rgba(255,255,255,0.14)) !important;
                     color: var(--ct-ink-2, #d4d4d8) !important; font-size: 18px !important; cursor: pointer !important;
                     line-height: 1 !important; width: 32px !important; height: 32px !important; border-radius: 8px !important;
                     display: flex !important; align-items: center !important; justify-content: center !important; transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease !important;
                 }
-                .katex-popover-close:hover { background: rgba(239, 68, 68, 0.14) !important; color: #ef4444 !important; border-color: rgba(239,68,68,0.4) !important; }
+                .katex-popover-close:hover { background: rgba(23, 22, 20, 0.14) !important; color: #171614 !important; border-color: rgba(23,22,20,0.4) !important; }
 
                 /* 1-Click Connected Formula Type Segmented Tabs */
                 .fb-seg-tabs {
@@ -1569,7 +1569,7 @@
                 .fb-tab-btn span { font-size: 10.5px !important; font-weight: 560 !important; opacity: 0.82 !important; }
                 .fb-tab-btn:hover { color: var(--ct-ink, #ececec) !important; background: var(--ct-surface-2, #202020) !important; }
                 .fb-tab-btn.active {
-                    background: var(--ct-primary, #3b82f6) !important;
+                    background: var(--ct-primary, #171614) !important;
                     color: var(--ct-primary-ink, #ffffff) !important;
                     border-color: transparent !important;
                 }
@@ -1597,8 +1597,8 @@
                 }
                 .fb-math-input-sm { padding: 5px 8px !important; font-size: 12.5px !important; }
                 .fb-type-select:focus, .fb-math-input:focus, .fb-math-input-sm:focus {
-                    border-color: var(--ct-accent, #3b82f6) !important;
-                    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.18) !important;
+                    border-color: var(--ct-accent, #171614) !important;
+                    box-shadow: 0 0 0 3px rgba(23, 22, 20, 0.18) !important;
                 }
                 .katex-popover-body {
                     padding: 16px 20px 14px !important; max-height: calc(90vh - 126px) !important;
@@ -1615,11 +1615,11 @@
                     border-radius: 12px !important; padding: 13px 15px !important;
                 }
                 .fb-fraction-bar { display: flex !important; align-items: center !important; gap: 8px !important; margin: 9px 0 !important; }
-                .fb-fraction-line { flex: 1 !important; height: 2px !important; background: var(--ct-accent, #3b82f6) !important; border-radius: 1px !important; }
-                .fb-fraction-badge { font-size: 11px !important; font-weight: 600 !important; color: #ffffff !important; background: var(--ct-accent, #3b82f6) !important; padding: 2px 9px !important; border-radius: 999px !important; }
+                .fb-fraction-line { flex: 1 !important; height: 2px !important; background: var(--ct-accent, #171614) !important; border-radius: 1px !important; }
+                .fb-fraction-badge { font-size: 11px !important; font-weight: 600 !important; color: var(--ct-accent-ink, #ffffff) !important; background: var(--ct-accent, #171614) !important; padding: 2px 9px !important; border-radius: 999px !important; }
 
                 .fb-preset-strip { display: flex !important; flex-wrap: wrap !important; align-items: center !important; gap: 6px !important; margin-top: 9px !important; }
-                .fb-preset-label, .fb-palette-label { font-size: 11.5px !important; font-weight: 620 !important; color: var(--ct-ink-3, #9ca3af) !important; }
+                .fb-preset-label, .fb-palette-label { font-size: 11.5px !important; font-weight: 620 !important; color: var(--ct-ink-3, #83807B) !important; }
                 .fb-preset-chip, .fb-quick-chip, .fb-symbol-btn {
                     background: var(--ct-surface, #191919) !important; color: var(--ct-ink, #f4f4f5) !important;
                     border: 1px solid var(--ct-line-2, rgba(255,255,255,0.12)) !important;
@@ -1627,7 +1627,7 @@
                     font-weight: 600 !important; cursor: pointer !important; transition: background-color 0.14s ease, color 0.14s ease, border-color 0.14s ease !important;
                 }
                 .fb-preset-chip:hover, .fb-quick-chip:hover, .fb-symbol-btn:hover {
-                    background: var(--ct-accent, #3b82f6) !important; color: #ffffff !important; border-color: var(--ct-accent, #3b82f6) !important;
+                    background: var(--ct-accent, #171614) !important; color: var(--ct-accent-ink, #ffffff) !important; border-color: var(--ct-accent, #171614) !important;
                 }
                 .fb-symbol-grid { display: flex !important; flex-wrap: wrap !important; gap: 5px !important; margin-top: 7px !important; }
                 .fb-sym {
@@ -1638,14 +1638,14 @@
                     cursor: pointer !important; display: flex !important; align-items: center !important; justify-content: center !important;
                     transition: background-color 0.12s ease, color 0.12s ease, border-color 0.12s ease !important;
                 }
-                .fb-sym:hover { background: var(--ct-accent, #3b82f6) !important; color: #ffffff !important; border-color: var(--ct-accent, #3b82f6) !important; }
+                .fb-sym:hover { background: var(--ct-accent, #171614) !important; color: var(--ct-accent-ink, #ffffff) !important; border-color: var(--ct-accent, #171614) !important; }
 
                 .katex-popover-preview-container {
                     background: var(--ct-well, #141414) !important;
                     border: 1px solid var(--ct-line-2, rgba(255,255,255,0.12)) !important;
                     border-radius: 12px !important; padding: 11px 14px !important; min-height: 60px !important;
                 }
-                .katex-popover-preview-label { font-size: 11.5px !important; font-weight: 620 !important; color: var(--ct-ink-3, #9ca3af) !important; display: flex !important; align-items: center !important; gap: 6px !important; }
+                .katex-popover-preview-label { font-size: 11.5px !important; font-weight: 620 !important; color: var(--ct-ink-3, #83807B) !important; display: flex !important; align-items: center !important; gap: 6px !important; }
                 .katex-popover-preview-math { font-size: 21px !important; color: var(--ct-ink, #f4f4f5) !important; overflow-x: auto !important; min-height: 38px !important; display: flex !important; align-items: center !important; justify-content: center !important; padding: 6px 0 !important; }
 
                 .katex-popover-footer {
@@ -1653,12 +1653,12 @@
                     border-top: 1px solid var(--ct-line, rgba(255,255,255,0.08)) !important;
                     display: flex !important; align-items: center !important; gap: 8px !important; flex-shrink: 0 !important;
                 }
-                .btn-delete-formula { color: #ef4444 !important; background: rgba(239,68,68,0.12) !important; border: 1px solid rgba(239,68,68,0.3) !important; font-weight: 600 !important; border-radius: 8px !important; padding: 7px 12px !important; font-size: 12.5px !important; }
-                .btn-delete-formula:hover { background: #ef4444 !important; color: #ffffff !important; }
+                .btn-delete-formula { color: #171614 !important; background: rgba(23,22,20,0.12) !important; border: 1px solid rgba(23,22,20,0.3) !important; font-weight: 600 !important; border-radius: 8px !important; padding: 7px 12px !important; font-size: 12.5px !important; }
+                .btn-delete-formula:hover { background: #171614 !important; color: var(--ct-accent-ink, #ffffff) !important; }
                 .btn-cancel-builder { font-weight: 600 !important; border-radius: 8px !important; padding: 8px 14px !important; font-size: 12.5px !important; border: 1px solid var(--ct-line-2, rgba(255,255,255,0.14)) !important; background: var(--ct-surface-2, #202020) !important; color: var(--ct-ink, #ececec) !important; }
                 .btn-cancel-builder:hover { background: var(--ct-surface-3, #282828) !important; }
                 .btn-apply-formula {
-                    background: var(--ct-primary, #3b82f6) !important; color: var(--ct-primary-ink, #ffffff) !important; border: none !important;
+                    background: var(--ct-primary, #171614) !important; color: var(--ct-primary-ink, #ffffff) !important; border: none !important;
                     font-weight: 650 !important; font-size: 13px !important; border-radius: 9px !important; padding: 8px 18px !important;
                     display: inline-flex !important; align-items: center !important; gap: 6px !important; transition: opacity 0.15s ease !important;
                 }
@@ -1675,7 +1675,7 @@
                     border-radius: 6px !important; cursor: pointer !important;
                     display: inline-flex !important; align-items: center !important; gap: 5px !important; transition: background-color 0.12s ease, color 0.12s ease !important;
                 }
-                .f-btn:hover { background: var(--ct-primary, #3b82f6) !important; color: var(--ct-primary-ink, #ffffff) !important; }
+                .f-btn:hover { background: var(--ct-primary, #171614) !important; color: var(--ct-primary-ink, #ffffff) !important; }
             `;
             document.head.appendChild(style);
         }

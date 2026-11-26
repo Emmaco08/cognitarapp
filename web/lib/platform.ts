@@ -55,6 +55,11 @@ export interface PlatformSettingsRow {
   allow_self_signup: boolean;
   allow_paystack_checkout: boolean;
   allow_trial_activation: boolean;
+  free_trial_days: number;
+  promo_banner_enabled: boolean;
+  promo_banner_event: string;
+  promo_banner_text: string;
+  promo_banner_code: string;
   updated_at: string | null;
 }
 
@@ -137,6 +142,11 @@ export async function getPlatformSettings(): Promise<PlatformSettingsRow> {
     allow_self_signup: r.allow_self_signup !== false,
     allow_paystack_checkout: r.allow_paystack_checkout !== false,
     allow_trial_activation: r.allow_trial_activation !== false,
+    free_trial_days: Math.max(1, Math.min(90, Number(r.free_trial_days ?? 7) || 7)),
+    promo_banner_enabled: Boolean(r.promo_banner_enabled),
+    promo_banner_event: String(r.promo_banner_event || "").trim(),
+    promo_banner_text: String(r.promo_banner_text || "").trim(),
+    promo_banner_code: String(r.promo_banner_code || "").trim().toUpperCase(),
     updated_at: r.updated_at ? new Date(r.updated_at).toISOString() : null,
   };
 }
@@ -224,6 +234,12 @@ export function toPublicPlatformDirectives(s: PlatformSettingsRow) {
     allow_self_signup: s.allow_self_signup,
     allow_paystack_checkout: s.allow_paystack_checkout && Boolean(s.paystack_public_key && s.paystack_secret_configured),
     allow_trial_activation: s.allow_trial_activation,
+    free_trial_enabled: s.allow_trial_activation,
+    free_trial_days: s.free_trial_days,
+    promo_banner_enabled: s.promo_banner_enabled,
+    promo_banner_event: s.promo_banner_event,
+    promo_banner_text: s.promo_banner_text,
+    promo_banner_code: s.promo_banner_code,
     require_email_otp: s.require_email_otp && s.brevo_configured,
     paystack_public_key: s.paystack_public_key,
     paystack_mode: s.paystack_mode,

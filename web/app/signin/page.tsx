@@ -382,7 +382,18 @@ export default function SignInPage() {
                     <button
                       type="button"
                       onClick={() => { setMode("forgot_req"); setError(""); setNotice(""); }}
-                      style={{ background: "none", border: 0, padding: 0, color: "var(--accent)", fontSize: 12, fontWeight: 600, cursor: "pointer" }}
+                      style={{
+                        background: "none",
+                        border: 0,
+                        padding: 0,
+                        color: "var(--ink)",
+                        fontSize: 12.5,
+                        fontWeight: 500,
+                        textDecoration: "underline",
+                        textUnderlineOffset: 3,
+                        textDecorationColor: "var(--border-3)",
+                        cursor: "pointer",
+                      }}
                     >
                       Forgot password?
                     </button>
@@ -408,8 +419,20 @@ export default function SignInPage() {
                 </button>
               </form>
 
-              <p style={{ marginTop: 18, marginBottom: 0, fontSize: 13.5, color: "var(--ink-2)", textAlign: "center" }}>
-                New to CogniTara? <Link href="/signup">Create a school account</Link>
+              <p style={{ marginTop: 20, marginBottom: 0, fontSize: 13.5, color: "var(--ink-2)", textAlign: "center" }}>
+                New to CogniTara?{" "}
+                <Link
+                  href="/signup"
+                  style={{
+                    color: "var(--ink)",
+                    fontWeight: 560,
+                    textDecoration: "underline",
+                    textUnderlineOffset: 3,
+                    textDecorationColor: "var(--border-3)",
+                  }}
+                >
+                  Create a school account
+                </Link>
               </p>
             </>
           )}

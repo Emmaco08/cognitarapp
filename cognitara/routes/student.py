@@ -155,11 +155,20 @@ def ce_dashboard_page():
     
     existing_attempt = conn.execute("""
         SELECT * FROM ce_attempts WHERE student_id=? AND exam_id=?
+        ORDER BY id DESC LIMIT 1
     """, (session["ce_student_id"], session["ce_exam_id"])).fetchone()
+    ce_settings_row = conn.execute("SELECT * FROM ce_settings WHERE id=1").fetchone()
+    ce_settings = dict(ce_settings_row) if ce_settings_row else {}
     
     conn.close()
     
-    return render_template("ce_dashboard.html", exam=exam, existing_attempt=existing_attempt, student_name=session["ce_student_name"])
+    return render_template(
+        "ce_dashboard.html",
+        exam=exam,
+        existing_attempt=existing_attempt,
+        ce_settings=ce_settings,
+        student_name=session["ce_student_name"],
+    )
 
 
 @student_bp.route("/ce_start")
@@ -518,11 +527,14 @@ def ce_start_exam():
     all_questions_by_section.sort(key=lambda x: x['section_order'])
     
     # ========== CREATE ATTEMPT WITH REMAINING_TIME ==========
+    ce_cfg = conn.execute("SELECT anti_cheating_profile FROM ce_settings WHERE id=1").fetchone()
+    prof_max_w = {"low": 5, "medium": 3, "high": 2}.get(str((ce_cfg["anti_cheating_profile"] if ce_cfg else "medium") or "medium").lower(), 3)
+    ce_max_warnings = min(int(exam["max_warnings"] or prof_max_w), prof_max_w) if ce_cfg else (exam["max_warnings"] or 5)
     authoritative_deadline = (get_utc_now() + timedelta(minutes=exam["duration"])).strftime('%Y-%m-%d %H:%M:%S')
     cursor = conn.execute("""
         INSERT INTO ce_attempts (student_id, exam_id, status, started_at, remaining_time, max_warnings, authoritative_deadline)
         VALUES (?, ?, 'in_progress', CURRENT_TIMESTAMP, ?, ?, ?)
-    """, (student_id, exam_id, exam["duration"] * 60, exam["max_warnings"] if exam["max_warnings"] else 5, authoritative_deadline))
+    """, (student_id, exam_id, exam["duration"] * 60, ce_max_warnings, authoritative_deadline))
     
     attempt_id = cursor.lastrowid
     

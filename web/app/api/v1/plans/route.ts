@@ -36,6 +36,7 @@ export async function GET() {
         price_usd_cents: Number(p.price_usd_cents || 0),
         max_devices: Number(p.max_devices || 1),
         features: p.features_json || {},
+        features_json: p.features_json || {},
       })),
       platform: toPublicPlatformDirectives(settings),
     });

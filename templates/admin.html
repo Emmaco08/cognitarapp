@@ -1,5 +1,4 @@
-{%- from '_ct_shell.html' import ico, person_avatar with context -%}
-{%- set ICONS = url_for('static', filename='icons/cognitara-icons.svg') -%}
+{%- from '_ct_shell.html' import ico, person_avatar, ct_boot_script, admin_shell_start, shell_end with context -%}
 {%- set ns = namespace(active=0) -%}
 {%- for e in exams %}{% if e.active and not (e.deactivated is defined and e.deactivated) %}{% set ns.active = ns.active + 1 %}{% endif %}{% endfor -%}
 <!DOCTYPE html>
@@ -16,6 +15,7 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='css/cognitara-web.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/cognitara-teacher-studio.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/cognitara-admin-studio.css') }}">
+  {{ ct_boot_script() }}
   <style>
     /* Admin Dashboard Table Alignment & Students Management Polish */
     .ad-dash-table th {
@@ -115,200 +115,9 @@
     }
     .ad-reset-select:focus { outline: none; border-color: var(--ct-accent-line); }
   </style>
-  <script>
-    (function () {
-      var d = document.documentElement, saved = null, side = null;
-      try { saved = localStorage.getItem("ct-theme"); side = localStorage.getItem("ct-sidebar"); } catch (e) {}
-      var q = new URLSearchParams(location.search).get("theme");
-      var theme = (q === "light" || q === "dark") ? q : (saved === "light" ? "light" : "dark");
-      d.setAttribute("data-theme", theme);
-      if (side === "collapsed") d.setAttribute("data-ct-sidebar", "collapsed");
-      if (!(window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches)) d.classList.add("ct-motion");
-      setTimeout(function () { if (!window.CT) d.classList.remove("ct-motion"); }, 2500);
-    })();
-    window.CSRF_TOKEN = "{{ csrf_token() }}";
-    (function () {
-      if (window.fetch) {
-        var _origFetch = window.fetch;
-        window.fetch = function (url, options) {
-          options = options || {};
-          var method = (options.method || "GET").toUpperCase();
-          if (["GET", "HEAD", "OPTIONS", "TRACE"].indexOf(method) === -1) {
-            options.headers = options.headers || {};
-            var token = window.CSRF_TOKEN || (document.querySelector('meta[name="csrf-token"]') && document.querySelector('meta[name="csrf-token"]').getAttribute("content"));
-            if (token) {
-              if (typeof Headers !== "undefined" && options.headers instanceof Headers) {
-                if (!options.headers.has("X-CSRFToken")) options.headers.set("X-CSRFToken", token);
-              } else if (Array.isArray(options.headers)) {
-                options.headers.push(["X-CSRFToken", token]);
-              } else if (!options.headers["X-CSRFToken"]) {
-                options.headers["X-CSRFToken"] = token;
-              }
-            }
-          }
-          return _origFetch(url, options);
-        };
-      }
-      if (navigator.sendBeacon) {
-        var _origBeacon = navigator.sendBeacon.bind(navigator);
-        navigator.sendBeacon = function (url, data) {
-          if (data instanceof FormData) {
-            if (!data.has("csrf_token")) data.append("csrf_token", window.CSRF_TOKEN);
-          } else if (typeof data === "string") {
-            try {
-              var obj = JSON.parse(data);
-              if (typeof obj === "object" && obj !== null && !obj.csrf_token) {
-                obj.csrf_token = window.CSRF_TOKEN;
-                data = JSON.stringify(obj);
-              }
-            } catch (e) {}
-          }
-          return _origBeacon(url, data);
-        };
-      }
-      document.addEventListener("DOMContentLoaded", function () {
-        document.querySelectorAll('form[method="POST"], form[method="post"]').forEach(function (form) {
-          if (!form.querySelector('input[name="csrf_token"]')) {
-            var input = document.createElement("input");
-            input.type = "hidden";
-            input.name = "csrf_token";
-            input.value = window.CSRF_TOKEN;
-            form.appendChild(input);
-          }
-        });
-      });
-    })();
-  </script>
 </head>
 <body class="ct-app ad-studio">
-
-<!-- Loading veil -->
-<div class="ct-veil" id="loadingOverlay" aria-hidden="true"><div class="ct-spinner"></div></div>
-
-<!-- Command palette (Ctrl+K) -->
-<div class="ct-palette" id="palette" hidden>
-  <div class="ct-palette__box" role="dialog" aria-label="Quick command palette">
-    <div class="ct-palette__input">
-      {{ ico('i-search') }}
-      <input id="palInput" placeholder="Jump to exams, students, settings, or actions…" autocomplete="off" spellcheck="false" aria-label="Search commands">
-      <kbd class="ct-kbd">Esc</kbd>
-    </div>
-    <ul class="ct-palette__list" id="palList" role="listbox"></ul>
-    <div class="ct-palette__foot">
-      <span><kbd class="ct-kbd">↑</kbd><kbd class="ct-kbd">↓</kbd> Navigate</span>
-      <span><kbd class="ct-kbd">Enter</kbd> Open</span>
-      <span><kbd class="ct-kbd">Ctrl</kbd><kbd class="ct-kbd">K</kbd> Toggle</span>
-    </div>
-  </div>
-</div>
-
-<!-- Toast stack -->
-<div class="ct-toasts" id="ctToasts" role="status" aria-live="polite"></div>
-<div class="ct-scrim" data-ct-drawer-close></div>
-
-<div class="ct-shell">
-  <!-- ================= SIDEBAR ================= -->
-  <aside class="ct-sidebar" aria-label="Admin navigation">
-    <div class="ct-sidebar__brand">
-      <a href="/admin" aria-label="CogniTara admin home">
-        <span class="ct-appicon"><svg viewBox="0 0 200 200"><use href="{{ ICONS }}#ct-mark"/></svg></span>
-        <svg class="ct-wordmark" aria-label="CogniTara"><use href="{{ ICONS }}#ct-word" width="100%" height="100%"/></svg>
-      </a>
-      <span class="ct-brand-tag">Admin</span>
-    </div>
-
-    <div class="ct-sidebar__scroll">
-      <a class="ct-school" href="/admin/school-settings" title="Edit school profile &amp; term">
-        <span class="ct-school__crest"{% if school_branding.school_logo %} style="background-image:url('{{ url_for('static', filename='images/' + school_branding.school_logo) }}')"{% endif %}>{% if not school_branding.school_logo %}{{ school_branding.initials }}{% endif %}</span>
-        <span class="ct-school__txt">
-          <strong>{{ school_branding.school_name }}</strong>
-          <em>{{ school_branding.current_term }}, {{ school_branding.academic_session }}</em>
-        </span>
-      </a>
-
-      <nav class="ct-nav" aria-label="Workspace">
-        <span class="ct-nav__label">Workspace</span>
-        <a class="ct-nav__link is-active" href="#sec-overview" data-rail="overview">{{ ico('i-home') }}<span class="ct-nav__text">Overview</span></a>
-        <a class="ct-nav__link" href="#sec-exams" data-rail="exams">{{ ico('i-doc') }}<span class="ct-nav__text">Exams</span><span class="ct-nav__badge" id="railExamsCount">{{ exams|length }}</span></a>
-        <a class="ct-nav__link" href="/admin/exams-management">{{ ico('i-live') }}<span class="ct-nav__text">Exam Control Center</span></a>
-        <a class="ct-nav__link" href="/admin/exam_technical_support">{{ ico('i-activity') }}<span class="ct-nav__text">Live Support &amp; Pause</span></a>
-        <a class="ct-nav__link" href="#sec-ce" data-rail="ce">{{ ico('i-door') }}<span class="ct-nav__text">Common Entrance</span><span class="ct-nav__badge">{{ ce_exams|length }}</span></a>
-      </nav>
-
-      <nav class="ct-nav" aria-label="People">
-        <span class="ct-nav__label">People</span>
-        <a class="ct-nav__link" href="#sec-teachers" data-rail="teachers">{{ ico('i-teacher') }}<span class="ct-nav__text">Teachers</span></a>
-        <a class="ct-nav__link" href="#sec-students" data-rail="students">{{ ico('i-users') }}<span class="ct-nav__text">Students</span></a>
-        <a class="ct-nav__link" href="{{ url_for('pending_students') }}">{{ ico('i-clock') }}<span class="ct-nav__text">Approvals</span>{% if pending_count > 0 %}<span class="ct-nav__badge ct-nav__badge--warn">{{ pending_count }}</span>{% endif %}</a>
-        <a class="ct-nav__link" href="/admin/add_admin">{{ ico('i-shield') }}<span class="ct-nav__text">Administrators</span></a>
-      </nav>
-
-      <nav class="ct-nav" aria-label="Reports and settings">
-        <span class="ct-nav__label">Reports &amp; Settings</span>
-        <a class="ct-nav__link" href="{{ url_for('view_results') }}">{{ ico('i-chart') }}<span class="ct-nav__text">Results</span></a>
-        <a class="ct-nav__link" href="/admin/school-analytics">{{ ico('i-trend') }}<span class="ct-nav__text">School Analytics</span></a>
-        <a class="ct-nav__link" href="{{ url_for('exam_attempts') }}">{{ ico('i-layers') }}<span class="ct-nav__text">Exam Attempts</span></a>
-        <a class="ct-nav__link" href="/admin/school-settings">{{ ico('i-settings') }}<span class="ct-nav__text">School Settings</span></a>
-        <a class="ct-nav__link" href="/admin/ce-settings">{{ ico('i-sliders') }}<span class="ct-nav__text">CE Settings</span></a>
-        <a class="ct-nav__link" href="{{ url_for('admin_logs') }}">{{ ico('i-book') }}<span class="ct-nav__text">Audit Logs</span></a>
-        <a class="ct-nav__link" href="{{ url_for('warning_logs') }}">{{ ico('i-alert') }}<span class="ct-nav__text">Warning Logs</span></a>
-      </nav>
-    </div>
-
-    <div class="ct-sidebar__foot">
-      <a class="ct-btn ct-btn--soft ct-btn--sm ct-btn--block" href="/admin/exams-management" data-ct-tip="Exam Control Center" data-ct-tip-pos="right">
-        {{ ico('i-live') }}<span class="ct-hide-collapsed">Exam Control</span>
-      </a>
-    </div>
-  </aside>
-
-  <!-- ================= MAIN ================= -->
-  <div class="ct-main">
-    <header class="ct-topbar">
-      <button type="button" class="ct-iconbtn ct-iconbtn--ghost ct-topbar__menu" data-ct-sidebar-toggle aria-label="Open navigation">{{ ico('i-menu') }}</button>
-      <button type="button" class="ct-iconbtn ct-iconbtn--ghost ct-topbar__collapse" data-ct-sidebar-toggle aria-label="Collapse sidebar" title="Collapse sidebar">{{ ico('i-sidebar') }}</button>
-      <nav class="ct-crumbs" aria-label="Breadcrumb">
-        <a href="/admin">Admin</a>{{ ico('i-chevron-right') }}<strong>Dashboard</strong>
-      </nav>
-
-      <div class="ct-topbar__actions">
-        <button type="button" class="ct-search-trigger" id="searchBtn" aria-label="Open command palette (Ctrl+K)">
-          {{ ico('i-search', 'ct-ico--sm') }}
-          <span>Jump to page or action…</span>
-          <kbd class="ct-kbd">Ctrl K</kbd>
-        </button>
-
-        <button type="button" class="ct-iconbtn" id="themeBtn" data-ct-theme-toggle aria-label="Switch theme" title="Switch light or dark theme">
-          <span class="ct-theme-ico">
-            {{ ico('i-moon', 'ct-theme-ico__moon') }}
-            {{ ico('i-sun', 'ct-theme-ico__sun') }}
-          </span>
-        </button>
-
-        <a class="ct-iconbtn" href="{{ url_for('pending_students') }}" title="Pending student approvals" aria-label="Pending student approvals">
-          {{ ico('i-bell') }}
-          {% if pending_count > 0 %}<b class="ct-iconbtn__badge" id="pendingBadge">{{ pending_count }}</b>{% endif %}
-        </a>
-
-        <div class="ct-dropdown" data-ct-dropdown>
-          <button type="button" class="ct-userpill" data-ct-dropdown-trigger aria-haspopup="menu" aria-expanded="false" title="Signed in administrator">
-            {{ person_avatar('', username or 'Administrator', 'xs') }}
-            <span class="ct-userpill__name">{{ username }}</span>
-            {{ ico('i-chevron-down') }}
-          </button>
-          <div class="ct-menu" role="menu">
-            <div class="ct-menu__head"><strong>{{ username }}</strong><span>Administrator · {{ school_branding.school_name }}</span></div>
-            <a class="ct-menu__item" role="menuitem" href="/admin/school-settings">{{ ico('i-settings') }}School settings</a>
-            <a class="ct-menu__item" role="menuitem" href="/admin/add_admin">{{ ico('i-shield') }}Manage administrators</a>
-            <a class="ct-menu__item" role="menuitem" href="{{ url_for('admin_logs') }}">{{ ico('i-book') }}Audit logs</a>
-            <div class="ct-menu__sep"></div>
-            <a class="ct-menu__item ct-menu__item--danger" role="menuitem" href="{{ url_for('logout') }}">{{ ico('i-logout') }}Log out</a>
-          </div>
-        </div>
-      </div>
-    </header>
-
-    <main class="ct-content ct-enter" id="main">
+{{ admin_shell_start(active='overview', crumb='Dashboard') }}
       <!-- ================= OVERVIEW HEADER ================= -->
       <header class="tc-head ct-animate-rise" id="sec-overview">
         <div class="tc-head__txt">
@@ -529,15 +338,14 @@
               </thead>
               <tbody>
                 {% for teacher in teachers %}
-                <tr class="teacher-row" id="teacher-row-{{ teacher.id }}" data-search="{{ (teacher.username or '')|lower }} {{ (teacher.class or '')|lower }} {{ (teacher.class_teacher_of or '')|lower }}">
+                {% set t_name = teacher.full_name if (teacher.full_name is defined and teacher.full_name) else teacher.username %}
+                <tr class="teacher-row" id="teacher-row-{{ teacher.id }}" data-search="{{ t_name|lower }} {{ (teacher.username or '')|lower }} {{ (teacher.class or '')|lower }} {{ (teacher.class_teacher_of or '')|lower }}">
                   <td class="teacher-username">
                     <div class="tc-user-cell">
-                      {{ person_avatar(teacher.photo, teacher.username or 'Teacher', 'sm', '', 'static') }}
+                      {{ person_avatar(teacher.photo, t_name or 'Teacher', 'sm', '', 'uploads') }}
                       <div>
-                        <strong class="row-title" style="display:block">{{ teacher.username }}</strong>
-                        {% if teacher.class_teacher_of is defined and teacher.class_teacher_of %}
-                        <span class="tc-mono" style="font-size:11px;color:var(--ct-accent)">Form Teacher · {{ teacher.class_teacher_of }}</span>
-                        {% endif %}
+                        <strong class="row-title" style="display:block">{{ t_name }}</strong>
+                        <span class="tc-mono row-sub" style="font-size:11.5px;color:var(--tc-ink-3)">@{{ teacher.username }}{% if teacher.class_teacher_of is defined and teacher.class_teacher_of %} · <span style="color:var(--ct-accent)">Form Teacher ({{ teacher.class_teacher_of }})</span>{% endif %}</span>
                       </div>
                     </div>
                   </td>
@@ -545,7 +353,7 @@
                   <td>
                     <div class="tc-actions row-actions">
                       <a class="tc-btn tc-btn--secondary tc-btn--sm" href="{{ url_for('edit_teacher', teacher_id=teacher.id) }}">Edit</a>
-                      <button type="button" class="tc-btn tc-btn--ghost tc-btn--icon" style="color:var(--tc-bad)" onclick="deleteTeacher({{ teacher.id }})" title="Delete teacher" aria-label="Delete {{ teacher.username }}">{{ ico('i-trash', 'ct-ico--sm') }}</button>
+                      <button type="button" class="tc-btn tc-btn--ghost tc-btn--icon" style="color:var(--tc-bad)" onclick="deleteTeacher({{ teacher.id }})" title="Delete teacher" aria-label="Delete {{ t_name }}">{{ ico('i-trash', 'ct-ico--sm') }}</button>
                     </div>
                   </td>
                 </tr>
@@ -606,7 +414,7 @@
               <tr class="student-row" id="student-row-{{ student.id }}" data-class="{{ student.class or '' }}" data-search="{{ st_name|lower }} {{ (student.username or '')|lower }} {{ (student.class or '')|lower }} {{ (student.specialisation or '')|lower }}">
                 <td class="student-username">
                   <a class="tc-user-cell" href="/admin/student/{{ student.id }}">
-                    {{ person_avatar(student.photo, st_name, 'sm', '', 'static') }}
+                    {{ person_avatar(student.photo, st_name, 'sm', '', 'uploads') }}
                     <span>
                       <strong class="row-title">{{ st_name }}</strong>
                       <span class="tc-mono row-sub">@{{ student.username }}</span>
@@ -677,36 +485,13 @@
         </div>
       </section>
 
-      <footer class="ct-foot">CogniTara Offline Examination Server · {{ school_branding.school_name }}</footer>
-    </main>
-  </div>
-</div>
-
-<script src="{{ url_for('static', filename='js/cognitara-web.js') }}"></script>
+{{ shell_end(role='admin') }}
 <script>
   (function () {
     var h = new Date().getHours();
     var prefix = h < 12 ? "Good morning" : h < 17 ? "Good afternoon" : "Good evening";
     var g = document.getElementById("greetHello");
     if (g) g.textContent = prefix + ", " + {{ (username or '')|tojson }};
-
-    var COMMANDS = [
-      { label: "Add a student", icon: "i-users", hint: "People", go: "{{ url_for('add_student') }}" },
-      { label: "Add a teacher", icon: "i-teacher", hint: "People", go: "{{ url_for('add_teacher') }}" },
-      { label: "Manage administrators", icon: "i-shield", hint: "People", go: "/admin/add_admin" },
-      { label: "Open Exam Control Center", icon: "i-live", hint: "Exams", go: "/admin/exams-management" },
-      { label: "Open Live Exam Support & Pause", icon: "i-activity", hint: "Live", go: "/admin/exam_technical_support" },
-      { label: "Manage Common Entrance", icon: "i-door", hint: "Admissions", go: "/admin/common-entrance" },
-      { label: "View Exam Results", icon: "i-chart", hint: "Reports", go: "{{ url_for('view_results') }}" },
-      { label: "View School Analytics", icon: "i-trend", hint: "Reports", go: "/admin/school-analytics" },
-      { label: "Pending Student Approvals", icon: "i-clock", hint: "People", go: "{{ url_for('pending_students') }}" },
-      { label: "School Settings & Database", icon: "i-settings", hint: "Settings", go: "/admin/school-settings" },
-      { label: "Common Entrance Settings", icon: "i-sliders", hint: "Settings", go: "/admin/ce-settings" },
-      { label: "Audit Logs", icon: "i-book", hint: "Logs", go: "{{ url_for('admin_logs') }}" },
-      { label: "Warning Logs", icon: "i-alert", hint: "Logs", go: "{{ url_for('warning_logs') }}" },
-      { label: "Switch light or dark theme", icon: "i-sun", hint: "Theme", run: function () { CT.theme.toggle(); } }
-    ];
-    CT.palette({ root: "#palette", input: "#palInput", list: "#palList", commands: COMMANDS, triggers: "#searchBtn" });
   })();
 
   var esc = (window.CT && CT.esc) || function (s) { return String(s); };
@@ -739,10 +524,10 @@
 
   async function deleteExam(examId, examName) {
     var ok = await CT.confirm({
-      title: "Delete examination?",
-      html: "Delete <strong>" + esc(examName) + "</strong>? All questions and recorded student scores for this exam will be permanently removed.",
+      title: "Delete examination",
+      message: "All questions and recorded student scores for this exam will be permanently removed from the server.",
+      subject: { label: "Examination", value: examName, meta: "#" + examId },
       tone: "danger",
-      icon: "i-trash",
       confirmText: "Delete exam"
     });
     if (!ok) return;
@@ -771,11 +556,11 @@
   async function deleteTeacher(teacherId, teacherName) {
     if (!teacherName) teacherName = rowName("teacher-row-" + teacherId, ".row-title", "this teacher");
     var ok = await CT.confirm({
-      title: "Remove teacher account?",
-      html: "Remove <strong>" + esc(teacherName) + "</strong> from teacher accounts? Their authored examinations will remain intact.",
+      title: "Remove teacher account",
+      message: "This teacher will lose portal access immediately. Their previously authored examinations remain intact.",
+      subject: { label: "Teacher", value: teacherName, meta: "#" + teacherId },
       tone: "danger",
-      icon: "i-trash",
-      confirmText: "Delete teacher"
+      confirmText: "Remove teacher"
     });
     if (!ok) return;
     showLoading();
@@ -802,10 +587,10 @@
   async function deleteStudent(studentId, studentName) {
     if (!studentName) studentName = rowName("student-row-" + studentId, ".row-title", "this student");
     var ok = await CT.confirm({
-      title: "Delete student?",
-      html: "Remove <strong>" + esc(studentName) + "</strong> and all of their recorded exam scores?",
+      title: "Delete student record",
+      message: "This permanently deletes the student account and all of their recorded exam scores.",
+      subject: { label: "Student", value: studentName, meta: "#" + studentId },
       tone: "danger",
-      icon: "i-trash",
       confirmText: "Delete student"
     });
     if (!ok) return;
@@ -841,10 +626,10 @@
   async function resetExam(studentId, examId, examName, studentName) {
     if (!studentName) studentName = rowName("student-row-" + studentId, ".row-title", "this student");
     var ok = await CT.confirm({
-      title: "Reset exam attempt?",
-      html: "Reset <strong>" + esc(examName) + "</strong> for <strong>" + esc(studentName) + "</strong> so they can retake the examination?",
+      title: "Reset exam attempt",
+      message: "Clears the existing submission so this student can sit the examination again from the beginning.",
+      subject: { label: studentName, value: examName },
       tone: "warn",
-      icon: "i-undo",
       confirmText: "Reset attempt"
     });
     if (!ok) return;
@@ -880,10 +665,12 @@
   async function toggleExam(examId, currentStatus, examName) {
     var verb = currentStatus ? "Stop" : "Start";
     var ok = await CT.confirm({
-      title: verb + " examination?",
-      html: (currentStatus ? "Stop " : "Activate ") + "<strong>" + esc(examName) + "</strong> for students?",
+      title: verb + " examination",
+      message: currentStatus
+        ? "Students will no longer be able to begin or resume this paper until reactivated."
+        : "Makes this examination live immediately for all eligible students in the assigned class.",
+      subject: { label: "Examination", value: examName, meta: "#" + examId },
       tone: currentStatus ? "warn" : "ok",
-      icon: currentStatus ? "i-stop" : "i-play",
       confirmText: verb + " exam"
     });
     if (!ok) return;

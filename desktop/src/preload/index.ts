@@ -35,6 +35,7 @@ export interface CogniTaraDesktopBridge {
     academic_session: string;
     current_term: string;
     logo_data_url?: string | null;
+    remove_logo?: boolean;
   }) => Promise<any>;
   saveSuperAdmin: (payload: {
     full_name: string;
@@ -74,7 +75,14 @@ export interface CogniTaraDesktopBridge {
   getBillingPlans: () => Promise<any>;
   validatePromoCode: (payload: { code: string; plan_id?: string | null; currency?: string }) => Promise<any>;
   redeemVoucherCode: (payload: { code: string; plan_id?: string | null; currency?: string }) => Promise<any>;
-  startPaystackCheckout: (payload: { plan_id: string; currency?: string; promo_code?: string; amount_label?: string }) => Promise<any>;
+  startPaystackCheckout: (payload: {
+    plan_id: string;
+    currency?: string;
+    promo_code?: string;
+    amount_label?: string;
+    method?: "card" | "bank_transfer" | "ussd" | "opay" | "bank_app";
+    channels?: string[];
+  }) => Promise<any>;
   verifyPaystackReference: (reference: string) => Promise<any>;
   // In-App School Reviews & Ratings (reports to CogniTara HQ)
   getMySchoolReview: () => Promise<any>;

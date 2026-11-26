@@ -2,17 +2,17 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { BrandMark } from "@/components/BrandHeader";
+import { CogniTaraLockup, ResurfMenuIcon } from "@/components/CogniTaraLogo";
 import {
   IconBan,
   IconCloud,
   IconCreditCard,
+  IconDownload,
   IconGift,
   IconLayout,
   IconList,
   IconMail,
   IconMegaphone,
-  IconMenu,
   IconMoon,
   IconSearch,
   IconSettings,
@@ -26,11 +26,20 @@ import { HqLoginGate } from "@/components/hq/HqLoginGate";
 import { HqPaymentRow, HqPaymentsKpis, HqPaymentsTab } from "@/components/hq/HqPaymentsTab";
 import { HqPaymentSettingsTab, HqSettingsData } from "@/components/hq/HqPaymentSettingsTab";
 import { HqCodeRow, HqCodesTab, HqPlanRow, HqPlansTab, HqSchoolRow, HqSchoolsTab } from "@/components/hq/HqSchoolsAndPlansTabs";
-import { HqBackupsTab, HqBroadcastsTab, HqEmailsTab, HqReferralsTab, HqReviewsTab, HqStaffSecurityTab } from "@/components/hq/HqSystemTabs";
+import {
+  HqBackupsTab,
+  HqBroadcastsTab,
+  HqDownloadLeadsTab,
+  HqEmailsTab,
+  HqReferralsTab,
+  HqReviewsTab,
+  HqStaffSecurityTab,
+} from "@/components/hq/HqSystemTabs";
 
 type TabId =
   | "dashboard"
   | "schools"
+  | "download_leads"
   | "reviews"
   | "referrals"
   | "bans"
@@ -54,6 +63,7 @@ interface NavItem {
 const NAV_ITEMS: NavItem[] = [
   { id: "dashboard", group: "Overview", label: "Dashboard", icon: <IconLayout size={15} /> },
   { id: "schools", group: "Schools", label: "Schools & accounts", icon: <IconUsers size={15} /> },
+  { id: "download_leads", group: "Schools", label: "Download leads", icon: <IconDownload size={15} /> },
   { id: "reviews", group: "Schools", label: "Reviews & ratings", icon: <IconStar size={15} /> },
   { id: "referrals", group: "Schools", label: "Referrals & payouts", icon: <IconGift size={15} /> },
   { id: "bans", group: "Schools", label: "Fraud & bans", icon: <IconBan size={15} /> },
@@ -62,7 +72,7 @@ const NAV_ITEMS: NavItem[] = [
   { id: "payment_settings", group: "Money", label: "Payment settings", icon: <IconSettings size={15} /> },
   { id: "codes", group: "Money", label: "Redeem & promo codes", icon: <IconGift size={15} /> },
   { id: "backups", group: "App control", label: "Cloud exam backups", icon: <IconCloud size={15} /> },
-  { id: "broadcasts", group: "App control", label: "Broadcasts & flags", icon: <IconMegaphone size={15} /> },
+  { id: "broadcasts", group: "App control", label: "Banners, trials & flags", icon: <IconMegaphone size={15} /> },
   { id: "emails", group: "System", label: "Emails & OTP", icon: <IconMail size={15} /> },
   { id: "security", group: "System", label: "Staff & 2FA security", icon: <IconShield size={15} /> },
   { id: "audit", group: "System", label: "Audit log", icon: <IconList size={15} /> },
@@ -77,7 +87,7 @@ function fmtNgn(kobo: number) {
 export default function DeveloperHqPage() {
   const [authState, setAuthState] = useState<"checking" | "login" | "ready">("checking");
   const [tab, setTab] = useState<TabId>("dashboard");
-  const [theme, setTheme] = useState<"dark" | "light">("dark");
+  const [theme, setTheme] = useState<"dark" | "light">("light");
   const [sideOpen, setSideOpen] = useState(false);
 
   // Ctrl+K Command Palette
@@ -108,7 +118,7 @@ export default function DeveloperHqPage() {
 
   useEffect(() => {
     const cur = document.documentElement.getAttribute("data-theme");
-    setTheme(cur === "light" ? "light" : "dark");
+    setTheme(cur === "dark" ? "dark" : "light");
   }, []);
 
   // Ctrl+K / Cmd+K global jump palette
@@ -227,6 +237,7 @@ export default function DeveloperHqPage() {
   const m = overview?.metrics || {};
   const badgeCounts: Partial<Record<TabId, number>> = {
     schools: m.schools_total || 0,
+    download_leads: m.download_leads_total || 0,
     reviews: m.reviews_pending || 0,
     bans: (m.schools_banned || 0) + (m.schools_suspended || 0),
     payments: (m.paid_orders || 0) + (m.pending_orders || 0),
@@ -238,15 +249,10 @@ export default function DeveloperHqPage() {
       {/* Grouped Left Sidebar (SolutionTee-grade CMS architecture) */}
       <aside className={`hq-side ${sideOpen ? "is-open" : ""}`}>
         <div className="hq-side__brand">
-          <div className="ct-brand">
-            <BrandMark />
-            <div>
-              <div className="ct-brand__name" style={{ lineHeight: 1.15 }}>
-                Cogni<em>Tara</em>
-              </div>
-              <div style={{ fontSize: 11, color: "var(--ink-3)", fontWeight: 600 }}>Admin CMS</div>
-            </div>
-          </div>
+          <Link href="/" className="ct-brand" style={{ display: "grid", gap: 3 }}>
+            <CogniTaraLockup markSize={20} wordmarkHeight={13} />
+            <span style={{ fontSize: 11, color: "var(--ink-3)", fontWeight: 600, paddingLeft: 29 }}>Admin CMS</span>
+          </Link>
           <button
             type="button"
             className="btn btn--ghost btn--icon"
@@ -318,10 +324,10 @@ export default function DeveloperHqPage() {
       <div className="hq-content-wrap">
         <div className="hq-topbar-mobile">
           <button type="button" className="btn btn--ghost btn--sm" onClick={() => setSideOpen((v) => !v)}>
-            <IconMenu size={16} />
+            <ResurfMenuIcon size={16} />
             <span>Menu</span>
           </button>
-          <strong style={{ fontSize: 14 }}>CogniTara Admin</strong>
+          <CogniTaraLockup markSize={18} wordmarkHeight={12} suffix="HQ" />
           <button type="button" className="btn btn--ghost btn--xs" onClick={() => setCmdOpen(true)}>
             Jump
           </button>
@@ -436,6 +442,10 @@ export default function DeveloperHqPage() {
 
           {tab === "schools" ? (
             <HqSchoolsTab schools={schools} plans={plans} mode="all" onRefresh={loadAllData} onToast={showToast} />
+          ) : null}
+
+          {tab === "download_leads" ? (
+            <HqDownloadLeadsTab onToast={showToast} onRefreshOverview={loadAllData} />
           ) : null}
 
           {tab === "reviews" ? (

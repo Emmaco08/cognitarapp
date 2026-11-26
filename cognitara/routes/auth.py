@@ -246,8 +246,10 @@ def ce_login_page():
             conn.close()
             return redirect("/ce_dashboard")
         else:
+            ce_row = conn.execute("SELECT * FROM ce_settings WHERE id=1").fetchone()
+            ce_settings = dict(ce_row) if ce_row else {}
             conn.close()
-            return render_template("ce_login.html", error="Invalid credentials!")
+            return render_template("ce_login.html", error="Invalid credentials!", ce_settings=ce_settings)
     
     conn = get_db_connection()
     try:

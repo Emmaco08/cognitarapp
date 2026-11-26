@@ -357,7 +357,7 @@
         });
         if (res.ok) {
           CT.toast("Cleared warnings for " + studentName, "ok");
-          setTimeout(function () { location.reload(); }, 450);
+          setTimeout(function () { if (window.CTPjax) CTPjax.refresh(); else location.reload(); }, 350);
         } else {
           CT.toast("Failed to clear warnings", "bad");
         }
@@ -380,7 +380,7 @@
         });
         if (res.ok) {
           CT.toast("All warning logs cleared", "ok");
-          setTimeout(function () { location.reload(); }, 450);
+          setTimeout(function () { if (window.CTPjax) CTPjax.refresh(); else location.reload(); }, 350);
         } else {
           CT.toast("Failed to clear logs", "bad");
         }

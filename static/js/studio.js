@@ -16,7 +16,7 @@
 
   var state = {
     mode: "boot",
-    theme: localStorage.getItem("ct-theme") || "dark",
+    theme: localStorage.getItem("ct-theme") || "light",
     plan: "annual",
     server: "stopped",
     startedAt: 0,
@@ -110,7 +110,7 @@
     if (c.width !== w * dpr) { c.width = w * dpr; c.height = h * dpr; }
     var ctx = c.getContext("2d"); ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, w, h);
     var data = state.samples.slice(-28), max = Math.max(10, Math.max.apply(null, data) * 1.15);
-    var col = getComputedStyle(document.documentElement).getPropertyValue("--ok").trim() || "#34D399";
+    var col = getComputedStyle(document.documentElement).getPropertyValue("--ok").trim() || "#171614";
     ctx.beginPath();
     data.forEach(function (v, i) { var x = i * (w / (data.length - 1)), y = h - 2 - (v / max) * (h - 4); if (i) ctx.lineTo(x, y); else ctx.moveTo(x, y); });
     ctx.strokeStyle = col; ctx.lineWidth = 1.5; ctx.lineJoin = "round"; ctx.stroke();
@@ -780,7 +780,7 @@
     if (c.width !== w * dpr) { c.width = w * dpr; c.height = h * dpr; }
     var ctx = c.getContext("2d"); ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, w, h);
     var css = getComputedStyle(document.documentElement);
-    var line = css.getPropertyValue("--accent").trim() || "#00D2FF";
+    var line = css.getPropertyValue("--accent").trim() || "#171614";
     var grid = css.getPropertyValue("--line").trim();
     ctx.strokeStyle = grid; ctx.lineWidth = 1;
     for (var g = 1; g < 3; g++) { ctx.beginPath(); ctx.moveTo(0, Math.round(h * g / 3) + 0.5); ctx.lineTo(w, Math.round(h * g / 3) + 0.5); ctx.stroke(); }

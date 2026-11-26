@@ -1,495 +1,242 @@
-{%- from '_ct_shell.html' import ico, ct_boot_script, admin_shell_start, teacher_shell_start, student_topbar, shell_end with context -%}
+{%- from '_ct_shell.html' import ico, person_avatar, ct_boot_script, admin_shell_start, shell_end with context -%}
+{%- set t_name = teacher.full_name if (teacher.full_name is defined and teacher.full_name) else '' -%}
 <!DOCTYPE html>
 <html lang="en" data-theme="dark">
 <head>
-    <title>Edit Teacher | COGNITARA EXAM SYSTEM</title>
-    <link href="{{ url_for('static', filename='vendor/bootstrap/css/bootstrap.min.css') }}" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='vendor/fontawesome/css/all.min.css') }}">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { background: linear-gradient(135deg, #f5f7fa 0%, #e8edf5 100%); font-family: 'Segoe UI', sans-serif; min-height: 100vh; position: relative; }
-        
-        .edu-icon { position: absolute; color: rgba(26, 86, 219, 0.06); pointer-events: none; z-index: 0; animation: floatIcon 20s infinite ease-in-out; }
-        @keyframes floatIcon { 0% { transform: translate(0,0) rotate(0deg); opacity:0; } 10% { opacity:0.08; } 90% { opacity:0.08; } 100% { transform: translate(100px,-100px) rotate(360deg); opacity:0; } }
-        .edu-icon:nth-child(1) { top:10%; left:5%; animation-duration:18s; font-size:50px; }
-        .edu-icon:nth-child(2) { top:70%; left:15%; animation-duration:22s; font-size:40px; animation-delay:2s; }
-        .edu-icon:nth-child(3) { top:30%; left:85%; animation-duration:20s; font-size:55px; animation-delay:4s; }
-
-        .edit-container { max-width: 800px; margin: 0 auto; padding: 40px 20px; position: relative; z-index: 10; }
-        
-        .page-header { text-align: center; margin-bottom: 35px; }
-        .logo-icon { width: 80px; height: 80px; background: var(--ct-brand-grad); border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 20px; animation: pulse 2s infinite; }
-        @keyframes pulse { 0%,100% { transform:scale(1); } 50% { transform:scale(1.05); } }
-        .logo-icon i { font-size: 40px; color: white; }
-        .page-header h1 { font-size: 32px; font-weight: 800; background: var(--ct-brand-grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 10px; }
-        .page-header p { font-size: 16px; color: var(--ct-ink-3); }
-
-        .form-container { background: var(--ct-surface); border-radius: 28px; box-shadow: 0 20px 40px rgba(0,0,0,0.05); padding: 35px; border: 1px solid var(--ct-line-2); }
-        
-        .current-photo { display: flex; align-items: center; gap: 20px; margin-bottom: 20px; padding: 15px; background: var(--ct-surface); border-radius: 16px; }
-        .current-photo img { width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 3px solid var(--ct-primary); }
-        .current-photo p { margin: 0; color: var(--ct-ink-3); font-size: 14px; }
-
-        .form-group { margin-bottom: 22px; }
-        .input-group-custom { position: relative; }
-        .input-group-custom i.input-icon { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 16px; z-index: 1; }
-        .form-control-custom { width: 100%; padding: 13px 15px 13px 45px; border: 2px solid var(--ct-line-2); border-radius: 14px; font-size: 14px; background: var(--ct-surface); }
-        .form-control-custom:focus { outline: none; border-color: var(--ct-primary); background: var(--ct-surface); box-shadow: 0 0 0 3px rgba(139,92,246,0.1); }
-        .form-control-custom[readonly] { background: var(--ct-surface); cursor: not-allowed; }
-        label { font-weight: 600; color: var(--ct-ink); margin-bottom: 8px; display: block; font-size: 14px; }
-        label i { margin-right: 8px; color: var(--ct-primary); }
-
-        .password-box { position: relative; }
-        .password-box input { padding-left: 45px; padding-right: 45px; }
-        .toggle-password { position: absolute; right: 15px; top: 50%; transform: translateY(-50%); cursor: pointer; color: #94a3b8; }
-        .not { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 16px; z-index: 1; }
-
-        /* Class Assignments Section */
-        .class-assignments-section { background: var(--ct-surface); border-radius: 16px; padding: 20px; margin: 20px 0; border: 1px solid var(--ct-line-2); }
-        .section-subtitle { font-size: 15px; font-weight: 600; color: var(--ct-ink); margin-bottom: 15px; }
-        .section-subtitle i { margin-right: 8px; color: var(--ct-primary); }
-        .class-assignment-row { display: grid; grid-template-columns: 1fr 1fr 40px; gap: 12px; margin-bottom: 12px; align-items: center; }
-        .class-select, .specialisation-select { width: 100%; padding: 10px 12px; border: 2px solid var(--ct-line-2); border-radius: 10px; font-size: 13px; background: var(--ct-surface); }
-        .btn-remove-class { width: 36px; height: 36px; border-radius: 10px; border: none; background: var(--ct-bad-soft); color: #ef4444; cursor: pointer; display: flex; align-items: center; justify-content: center; }
-        .btn-remove-class:hover { background: #ef4444; color: white; }
-        .btn-add-class { background: var(--ct-primary); color: white; border: none; padding: 10px 18px; border-radius: 10px; font-size: 13px; font-weight: 500; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; margin-top: 10px; }
-        .btn-add-class:hover { background: var(--ct-primary); transform: translateY(-2px); }
-
-        /* Form Tutor Section */
-        .form-tutor-section { background: var(--ct-surface-2); border-radius: 16px; padding: 20px; margin: 20px 0; border: 1px solid #fbbf24; }
-        .form-tutor-section .section-subtitle i { color: #d97706; }
-        .info-badge { background: var(--ct-accent-soft); color: var(--ct-primary); padding: 2px 10px; border-radius: 20px; font-size: 11px; font-weight: 500; margin-left: 8px; }
-
-        .image-preview { max-width: 100px; max-height: 100px; margin-top: 12px; border: 2px solid var(--ct-primary); border-radius: 12px; padding: 4px; display: none; object-fit: cover; }
-        .image-status { font-size: 12px; margin-top: 8px; padding: 8px 12px; border-radius: 10px; display: none; }
-        .image-status.error { color: #991b1b; background-color: var(--ct-bad-soft); border-left: 3px solid #ef4444; }
-        .image-status.success { color: #065f46; background-color: var(--ct-ok-soft); border-left: 3px solid #10b981; }
-        .image-status.warning { color: #92400e; background-color: var(--ct-warn-soft); border-left: 3px solid #f59e0b; }
-
-        .button-group { display: flex; gap: 15px; margin-top: 25px; }
-        .btn-update { flex: 1; padding: 14px; background: linear-gradient(135deg, #10b981 0%, #059669 100%); border: none; border-radius: 14px; color: white; font-size: 16px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; }
-        .btn-update:hover { transform: translateY(-2px); box-shadow: 0 10px 20px -5px rgba(16,185,129,0.4); }
-        .btn-cancel { flex: 1; padding: 14px; background: var(--ct-surface); border: 2px solid var(--ct-line-2); border-radius: 14px; color: var(--ct-ink-3); font-size: 16px; font-weight: 600; text-decoration: none; text-align: center; display: flex; align-items: center; justify-content: center; gap: 10px; }
-        .btn-cancel:hover { border-color: var(--ct-primary); color: var(--ct-primary); background: var(--ct-accent-soft); }
-
-        input[type="file"] { padding: 10px; background: var(--ct-surface); border: 2px solid var(--ct-line-2); border-radius: 14px; cursor: pointer; width: 100%; }
-        input[type="file"]:hover { border-color: var(--ct-primary); }
-
-        @media (max-width: 576px) {
-            .edit-container { padding: 20px 15px; }
-            .form-container { padding: 25px 20px; }
-            .class-assignment-row { grid-template-columns: 1fr; }
-            .btn-remove-class { width: 100%; }
-            .button-group { flex-direction: column; }
-        }
-    </style>
-    <!-- CSRF Protection Shield -->
-    <meta name="csrf-token" content="{{ csrf_token() }}">
-    <script>
-    window.CSRF_TOKEN = "{{ csrf_token() }}";
-    (function() {
-        if (window.fetch) {
-            const _origFetch = window.fetch;
-            window.fetch = function(url, options) {
-                options = options || {};
-                const method = (options.method || 'GET').toUpperCase();
-                if (!['GET', 'HEAD', 'OPTIONS', 'TRACE'].includes(method)) {
-                    options.headers = options.headers || {};
-                    const token = window.CSRF_TOKEN || (document.querySelector('meta[name="csrf-token"]') && document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
-                    if (token) {
-                        if (typeof Headers !== 'undefined' && options.headers instanceof Headers) {
-                            if (!options.headers.has('X-CSRFToken')) options.headers.set('X-CSRFToken', token);
-                        } else if (Array.isArray(options.headers)) {
-                            options.headers.push(['X-CSRFToken', token]);
-                        } else {
-                            if (!options.headers['X-CSRFToken']) options.headers['X-CSRFToken'] = token;
-                        }
-                    }
-                }
-                return _origFetch(url, options);
-            };
-        }
-        if (window.$ && $.ajaxSetup) {
-            $.ajaxSetup({
-                beforeSend: function(xhr, settings) {
-                    if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type)) {
-                        xhr.setRequestHeader("X-CSRFToken", window.CSRF_TOKEN);
-                    }
-                }
-            });
-        }
-        if (navigator.sendBeacon) {
-            const _origBeacon = navigator.sendBeacon.bind(navigator);
-            navigator.sendBeacon = function(url, data) {
-                if (data instanceof FormData) {
-                    if (!data.has('csrf_token')) data.append('csrf_token', window.CSRF_TOKEN);
-                } else if (typeof data === 'string') {
-                    try {
-                        const obj = JSON.parse(data);
-                        if (typeof obj === 'object' && obj !== null && !obj.csrf_token) {
-                            obj.csrf_token = window.CSRF_TOKEN;
-                            data = JSON.stringify(obj);
-                        }
-                    } catch(e) {}
-                }
-                return _origBeacon(url, data);
-            };
-        }
-        document.addEventListener('DOMContentLoaded', function() {
-            document.querySelectorAll('form[method="POST"], form[method="post"]').forEach(function(form) {
-                if (!form.querySelector('input[name="csrf_token"]')) {
-                    var input = document.createElement('input');
-                    input.type = 'hidden';
-                    input.name = 'csrf_token';
-                    input.value = window.CSRF_TOKEN;
-                    form.appendChild(input);
-                }
-            });
-        });
-    })();
-    </script>
-
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+  <meta name="color-scheme" content="dark light">
+  <title>Edit Teacher — {{ school_branding.school_name }} | CogniTara</title>
+  <link rel="icon" href="{{ url_for('static', filename='images/cognitara-favicon.ico') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/cognitara-web.css') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/cognitara-portal-unified.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/cognitara-teacher-studio.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/cognitara-admin-studio.css') }}">
   {{ ct_boot_script() }}
+  <style>
+    .af-shell { max-width: 820px; }
+    .af-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+    @media (max-width: 720px) { .af-grid { grid-template-columns: 1fr; } }
+    .af-field { display: grid; gap: 6px; }
+    .af-field--full { grid-column: 1 / -1; }
+    .af-label { font-size: 13px; font-weight: 620; color: var(--tc-ink); display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+    .af-req { color: var(--ct-bad); font-weight: 700; margin-left: 2px; }
+    .af-help { font-size: 12px; color: var(--tc-ink-3); }
+    .af-help--ok { color: var(--ct-ok); }
+    .af-help--bad { color: var(--ct-bad); }
+    .af-input-wrap { position: relative; display: flex; align-items: center; }
+    .af-input-ico { position: absolute; left: 13px; color: var(--tc-ink-3); pointer-events: none; display: inline-flex; }
+    .af-input, .af-select {
+      width: 100%; height: 42px; padding: 0 14px; border-radius: 10px;
+      border: 1px solid var(--tc-line-2); background: var(--tc-surface-2); color: var(--tc-ink);
+      font-size: 14px; font-family: inherit;
+      transition: border-color 150ms ease, box-shadow 150ms ease, background-color 150ms ease;
+    }
+    .af-input--ico { padding-left: 40px; }
+    .af-input--trail { padding-right: 42px; }
+    .af-input[readonly] { opacity: 0.72; cursor: not-allowed; }
+    .af-input:focus, .af-select:focus {
+      outline: none; border-color: var(--ct-accent); background: var(--tc-surface);
+      box-shadow: 0 0 0 3px var(--ct-accent-soft);
+    }
+    .af-eye {
+      position: absolute; right: 7px; width: 30px; height: 30px; border-radius: 7px; border: 0;
+      background: transparent; color: var(--tc-ink-3); display: grid; place-items: center; cursor: pointer;
+    }
+    .af-eye:hover { color: var(--tc-ink); background: var(--ct-hover); }
+    .af-assign-box {
+      padding: 16px 18px; border-radius: 12px; border: 1px solid var(--tc-line-2);
+      background: var(--tc-surface-2); display: grid; gap: 12px;
+    }
+    .af-assign-row { display: grid; grid-template-columns: 1fr 1fr 38px; gap: 10px; align-items: center; }
+    @media (max-width: 600px) { .af-assign-row { grid-template-columns: 1fr; } }
+    .af-photo-row {
+      display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+      padding: 14px 16px; border-radius: 12px; border: 1px solid var(--tc-line-2); background: var(--tc-surface-2);
+    }
+    .af-photo-preview {
+      width: 56px; height: 56px; border-radius: 50%; overflow: hidden; flex: none;
+      display: inline-grid; place-items: center; border: 1px solid var(--tc-line-2);
+    }
+    .af-photo-preview img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .af-foot {
+      display: flex; align-items: center; justify-content: flex-end; gap: 10px; flex-wrap: wrap;
+      padding: 16px 22px; border-top: 1px solid var(--tc-line); background: var(--tc-surface-2);
+    }
+  </style>
 </head>
-<body class="ct-app ct-bs ad-studio">
+<body class="ct-app ad-studio">
 {{ admin_shell_start(active='teachers', crumb='Edit Teacher') }}
 
-    <div class="edu-icon"><i class="fas fa-chalkboard-teacher"></i></div>
-    <div class="edu-icon"><i class="fas fa-book"></i></div>
-    <div class="edu-icon"><i class="fas fa-pencil-alt"></i></div>
+  <div class="af-shell">
+    <header class="tc-head ct-animate-rise">
+      <div class="tc-head__txt">
+        <h1>Edit Teacher</h1>
+        <p>Update {{ t_name or teacher.username }}'s profile, class assignments, and Form Teacher scope.</p>
+      </div>
+      <div class="tc-head__actions">
+        <a class="tc-btn tc-btn--secondary" href="/admin#sec-teachers">{{ ico('i-arrow-left', 'ct-ico--sm') }}Back to Teachers</a>
+      </div>
+    </header>
 
-    <div class="edit-container">
-        <div class="page-header">
-            <div class="logo-icon"><i class="fas fa-user-edit"></i></div>
-            <h1>Edit Teacher</h1>
-            <p>Update teacher information, class assignments, and specialisations</p>
+    {% if error %}
+    <div class="ct-alert ct-alert--bad ct-alert--shake" style="margin-bottom:18px" role="alert">
+      {{ ico('i-alert') }}
+      <div class="ct-alert__body"><strong>Update error</strong><span>{{ error }}</span></div>
+    </div>
+    {% endif %}
+
+    <section class="tc-card" data-ct-reveal>
+      <div class="tc-card__head">
+        <div class="tc-card__title">
+          <h2>{{ t_name or teacher.username }}</h2>
+          <p class="tc-mono">@{{ teacher.username }}</p>
         </div>
+      </div>
 
-        <div class="form-container">
-            <div class="current-photo">
-                <img src="{{ url_for('static', filename='images/' + (teacher.photo or 'default.png')) }}" alt="Current Photo">
-                <p><i class="fas fa-info-circle"></i> Current profile photo. Upload a new one to change.</p>
+      <form method="POST" action="{{ url_for('edit_teacher', teacher_id=teacher.id) }}" enctype="multipart/form-data">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+        <div style="padding:22px;display:grid;gap:20px">
+          <div class="af-grid">
+            <div class="af-field af-field--full">
+              <label class="af-label" for="editTeacherFullName"><span>Full Name<span class="af-req">*</span></span></label>
+              <div class="af-input-wrap">
+                <span class="af-input-ico">{{ ico('i-user', 'ct-ico--sm') }}</span>
+                <input type="text" id="editTeacherFullName" name="full_name" class="af-input af-input--ico" value="{{ t_name }}" placeholder="Enter teacher's full name" required>
+              </div>
             </div>
 
-            <form method="POST" enctype="multipart/form-data" id="editTeacherForm">
-    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                <!-- Username (Read Only) -->
-                <div class="form-group">
-                    <label><i class="fas fa-id-card"></i> Username</label>
-                    <div class="input-group-custom">
-                        <i class="fas fa-user input-icon"></i>
-                        <input type="text" name="username" class="form-control-custom" value="{{ teacher.username }}" readonly>
-                    </div>
-                    <small class="text-muted"><i class="fas fa-info-circle"></i> Username cannot be changed</small>
-                </div>
+            <div class="af-field">
+              <label class="af-label" for="editTeacherUsername"><span>Login Username</span></label>
+              <div class="af-input-wrap">
+                <span class="af-input-ico">{{ ico('i-teacher', 'ct-ico--sm') }}</span>
+                <input type="text" id="editTeacherUsername" name="username" class="af-input af-input--ico" value="{{ teacher.username }}" readonly>
+              </div>
+              <span class="af-help">Usernames remain fixed for audit consistency.</span>
+            </div>
 
-                <!-- Password -->
-                <div class="form-group">
-                    <label><i class="fas fa-lock"></i> New Password (leave blank to keep current)</label>
-                    <div class="password-box">
-                        <i class="fas fa-lock input-icon not"></i>
-                        <input type="password" name="password" class="form-control-custom" id="password" placeholder="Enter new password">
-                        <i class="fa-solid fa-eye toggle-password"></i>
-                    </div>
-                </div>
+            <div class="af-field">
+              <label class="af-label" for="editTeacherPassword"><span>New Password</span><span class="tc-pill">Optional</span></label>
+              <div class="af-input-wrap">
+                <span class="af-input-ico">{{ ico('i-lock', 'ct-ico--sm') }}</span>
+                <input type="password" id="editTeacherPassword" name="password" class="af-input af-input--ico af-input--trail" placeholder="Leave blank to keep current" autocomplete="new-password">
+                <button type="button" class="af-eye" onclick="toggleEditTeacherPass()" aria-label="Toggle password visibility">{{ ico('i-eye', 'ct-ico--sm') }}</button>
+              </div>
+            </div>
+          </div>
 
-                <!-- ============================================ -->
-                <!-- CLASS ASSIGNMENTS SECTION (MULTI-CLASS) -->
-                <!-- ============================================ -->
-                <div class="class-assignments-section">
-                    <div class="section-subtitle">
-                        <i class="fas fa-users-between-lines"></i> 
-                        Teaching Assignments 
-                        <span class="info-badge">Can teach multiple classes</span>
-                    </div>
-                    <p style="font-size:12px; color:#64748b; margin-bottom:15px;">
-                        <i class="fas fa-info-circle"></i> 
-                        Assign which classes and specialisations this teacher will teach.
-                        "General" means they teach all students in that class.
-                    </p>
-                    
-                    <div id="classAssignmentsContainer">
-                        <!-- Existing assignments will be loaded here -->
-                    </div>
-                    
-                    <button type="button" class="btn-add-class" onclick="addClassAssignment()">
-                        <i class="fas fa-plus-circle"></i> Add Class Assignment
-                    </button>
-                </div>
+          <!-- Teaching Assignments -->
+          <div class="af-assign-box">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
+              <div>
+                <strong style="display:block;font-size:13.5px;color:var(--tc-ink)">Teaching Class Assignments</strong>
+                <span class="af-help">Manage every class &amp; track this teacher instructs.</span>
+              </div>
+              <button type="button" class="tc-btn tc-btn--secondary tc-btn--sm" onclick="addEditTeacherRow()">{{ ico('i-plus', 'ct-ico--xs') }}Add Class</button>
+            </div>
+            <div id="editTeacherAssignContainer" style="display:grid;gap:10px"></div>
+          </div>
 
-                <!-- ============================================ -->
-                <!-- FORM TUTOR ASSIGNMENT (OPTIONAL) -->
-                <!-- ============================================ -->
-                <div class="form-tutor-section">
-                    <div class="section-subtitle">
-                        <i class="fas fa-star"></i> 
-                        Form Tutor Assignment 
-                        <span class="info-badge" style="background:#fef3c7; color:#d97706;">Optional</span>
-                    </div>
-                    <p style="font-size:12px; color:#64748b; margin-bottom:15px;">
-                        <i class="fas fa-info-circle"></i> 
-                        If assigned as Form Tutor, this teacher can view ALL results for ALL subjects 
-                        in this class (read-only access).
-                    </p>
-                    
-                    <div class="input-group-custom">
-                        <i class="fas fa-users input-icon"></i>
-                        <select name="class_teacher_of" id="classTeacherSelect" class="form-control-custom" style="padding-left:45px;">
-                            <option value="">-- Not a Form Tutor --</option>
-                            <option value="Grade 1" {% if teacher.class_teacher_of == 'Grade 1' %}selected{% endif %}>Grade 1</option>
-                            <option value="Grade 2" {% if teacher.class_teacher_of == 'Grade 2' %}selected{% endif %}>Grade 2</option>
-                            <option value="Grade 3" {% if teacher.class_teacher_of == 'Grade 3' %}selected{% endif %}>Grade 3</option>
-                            <option value="Grade 4" {% if teacher.class_teacher_of == 'Grade 4' %}selected{% endif %}>Grade 4</option>
-                            <option value="Grade 5" {% if teacher.class_teacher_of == 'Grade 5' %}selected{% endif %}>Grade 5</option>
-                            <option value="Grade 6" {% if teacher.class_teacher_of == 'Grade 6' %}selected{% endif %}>Grade 6</option>
-                            <option value="Grade 7" {% if teacher.class_teacher_of == 'Grade 7' %}selected{% endif %}>Grade 7</option>
-                            <option value="Grade 8" {% if teacher.class_teacher_of == 'Grade 8' %}selected{% endif %}>Grade 8</option>
-                            <option value="Grade 9" {% if teacher.class_teacher_of == 'Grade 9' %}selected{% endif %}>Grade 9</option>
-                            <option value="Grade 10" {% if teacher.class_teacher_of == 'Grade 10' %}selected{% endif %}>Grade 10</option>
-                            <option value="Grade 11" {% if teacher.class_teacher_of == 'Grade 11' %}selected{% endif %}>Grade 11</option>
-                            <option value="Grade 12" {% if teacher.class_teacher_of == 'Grade 12' %}selected{% endif %}>Grade 12</option>
-                        </select>
-                    </div>
-                </div>
+          <!-- Form Teacher -->
+          <div class="af-field">
+            <label class="af-label" for="editClassTeacherSelect"><span>Form Teacher / Class Teacher Assignment</span><span class="tc-pill">Optional</span></label>
+            {% set cur_ft = teacher.class_teacher_of or '' %}
+            <select name="class_teacher_of" id="editClassTeacherSelect" class="af-select">
+              <option value="">Not a Form Teacher</option>
+              {% if cur_ft and cur_ft not in school_classes %}
+              <option value="{{ cur_ft }}" selected>{{ cur_ft }}</option>
+              {% endif %}
+              {% for cls in school_classes %}
+              <option value="{{ cls }}" {% if cur_ft == cls %}selected{% endif %}>{{ cls }}</option>
+              {% endfor %}
+            </select>
+          </div>
 
-                <!-- Photo Upload -->
-                <div class="form-group">
-                    <label><i class="fas fa-camera"></i> New Profile Photo (optional)</label>
-                    <input type="file" name="photo" id="photo" accept="image/*" onchange="previewAndValidateImage(this)">
-                    <img id="preview" class="image-preview" alt="Preview">
-                    <div id="imageStatus" class="image-status"></div>
-                    <small class="text-muted">Leave empty to keep current photo. Original resolution, full quality (no size limit)</small>
-                </div>
-
-                <!-- Hidden fields for class assignments -->
-                <div id="hiddenClassFields"></div>
-
-                <div class="button-group">
-                    <button type="submit" class="btn-update" id="submitBtn">
-                        <i class="fas fa-save"></i> Update Teacher
-                    </button>
-                    <a href="/admin" class="btn-cancel">
-                        <i class="fas fa-times"></i> Cancel
-                    </a>
-                </div>
-            </form>
+          <!-- Profile Photo -->
+          <div class="af-field">
+            <label class="af-label" for="editTeacherPhoto"><span>Profile Photo</span><span class="tc-pill">Optional · Any size</span></label>
+            <div class="af-photo-row">
+              <span class="af-photo-preview" id="editTeacherPhotoPreview">{{ person_avatar(teacher.photo, t_name or teacher.username, 'lg', '', 'uploads') }}</span>
+              <div style="flex:1;min-width:200px;display:grid;gap:6px">
+                <input type="file" name="photo" id="editTeacherPhoto" accept="image/*" style="font-size:13px;color:var(--tc-ink-2)" onchange="previewEditTeacherPhoto(this)">
+                <span class="af-help" id="editTeacherPhotoStatus">Leave empty to keep the current profile photo.</span>
+              </div>
+            </div>
+          </div>
         </div>
-    </div>
 
-    <script>
-    // Available classes and specialisations
-    const availableClasses = [
-        'Grade 1', 'Grade 2', 'Grade 3', 'Grade 4', 'Grade 5', 'Grade 6',
-        'Grade 7', 'Grade 8', 'Grade 9', 'Grade 10', 'Grade 11', 'Grade 12'
-    ];
-    const availableSpecialisations = ['General', 'Science', 'Art', 'Commercial'];
-    
-    let imageValid = true;
-    let classAssignmentCount = 0;
-    
-    // Build existing assignments array safely
-    let existingAssignments = [];
-    {% if teacher_assignments %}
-        {% for assignment in teacher_assignments %}
-        existingAssignments.push({
-            class_name: "{{ assignment.class_name }}",
-            specialisation: "{{ assignment.specialisation }}"
-        });
-        {% endfor %}
-    {% endif %}
-    
-    function addClassAssignment(classValue = '', specValue = 'General') {
-        classAssignmentCount++;
-        const container = document.getElementById('classAssignmentsContainer');
-        
-        const row = document.createElement('div');
-        row.className = 'class-assignment-row';
-        row.id = `classRow${classAssignmentCount}`;
-        
-        // Class select
-        const classSelect = document.createElement('select');
-        classSelect.className = 'class-select';
-        classSelect.name = 'class_name';
-        classSelect.required = true;
-        classSelect.innerHTML = '<option value="">-- Select Class --</option>';
-        availableClasses.forEach(cls => {
-            classSelect.innerHTML += `<option value="${cls}" ${cls === classValue ? 'selected' : ''}>${cls}</option>`;
-        });
-        
-        // Specialisation select
-        const specSelect = document.createElement('select');
-        specSelect.className = 'specialisation-select';
-        specSelect.name = 'specialisation';
-        specSelect.required = true;
-        specSelect.innerHTML = '<option value="">-- Select Specialisation --</option>';
-        availableSpecialisations.forEach(spec => {
-            specSelect.innerHTML += `<option value="${spec}" ${spec === specValue ? 'selected' : ''}>${spec}</option>`;
-        });
-        
-        // Remove button
-        const removeBtn = document.createElement('button');
-        removeBtn.type = 'button';
-        removeBtn.className = 'btn-remove-class';
-        removeBtn.innerHTML = '<i class="fas fa-trash"></i>';
-        removeBtn.onclick = function() {
-            row.remove();
-            updateHiddenClassFields();
-        };
-        
-        row.appendChild(classSelect);
-        row.appendChild(specSelect);
-        row.appendChild(removeBtn);
-        
-        container.appendChild(row);
-        updateHiddenClassFields();
-    }
-    
-    function removeClassAssignment(id) {
-        const row = document.getElementById(`classRow${id}`);
-        if (row) {
-            row.remove();
-            updateHiddenClassFields();
-        }
-    }
-    
-    function updateHiddenClassFields() {
-        const container = document.getElementById('hiddenClassFields');
-        container.innerHTML = '';
-        
-        const rows = document.querySelectorAll('.class-assignment-row');
-        rows.forEach((row) => {
-            const classSelect = row.querySelector('.class-select');
-            const specSelect = row.querySelector('.specialisation-select');
-            
-            if (classSelect && specSelect && classSelect.value && specSelect.value) {
-                const classInput = document.createElement('input');
-                classInput.type = 'hidden';
-                classInput.name = 'class_name';
-                classInput.value = classSelect.value;
-                
-                const specInput = document.createElement('input');
-                specInput.type = 'hidden';
-                specInput.name = 'specialisation';
-                specInput.value = specSelect.value;
-                
-                container.appendChild(classInput);
-                container.appendChild(specInput);
-            }
-        });
-    }
-    
-    function previewAndValidateImage(input) {
-        const file = input.files[0];
-        const preview = document.getElementById('preview');
-        const statusDiv = document.getElementById('imageStatus');
-        
-        if (!file) {
-            preview.style.display = 'none';
-            statusDiv.style.display = 'none';
-            imageValid = true;
-            return;
-        }
-        
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            preview.src = e.target.result;
-            preview.style.display = 'block';
-        };
-        reader.readAsDataURL(file);
-        
-        if (!file.type.startsWith('image/')) {
-            statusDiv.className = 'image-status error';
-            statusDiv.innerHTML = '<i class="fas fa-times-circle"></i> Only image files are allowed!';
-            statusDiv.style.display = 'block';
-            imageValid = false;
-            input.value = '';
-            preview.style.display = 'none';
-            return;
-        }
-        
-        const sizeKB = file.size / 1024;
-        
-        imageValid = true;
-        statusDiv.className = 'image-status success';
-        statusDiv.innerHTML = `<i class="fas fa-check-circle"></i> Image selected (${sizeKB.toFixed(1)}KB) - Full quality preserved`;
-        statusDiv.style.display = 'block';
-        statusDiv.style.display = 'block';
-        imageValid = true;
-    }
-    
-    // Load existing assignments
-    function loadExistingAssignments() {
-        if (existingAssignments && existingAssignments.length > 0) {
-            existingAssignments.forEach(assignment => {
-                addClassAssignment(assignment.class_name, assignment.specialisation);
-            });
-        } else {
-            // Add at least one empty row
-            addClassAssignment();
-        }
-    }
-    
-    // Update hidden fields when selects change
-    document.addEventListener('change', function(e) {
-        if (e.target.classList.contains('class-select') || 
-            e.target.classList.contains('specialisation-select')) {
-            updateHiddenClassFields();
-        }
-    });
-    
-    // Password toggle
-    document.querySelectorAll(".toggle-password").forEach(toggle => {
-        toggle.addEventListener("click", function() {
-            const input = this.previousElementSibling;
-            if (input.type === "password") {
-                input.type = "text";
-                this.classList.remove("fa-eye");
-                this.classList.add("fa-eye-slash");
-            } else {
-                input.type = "password";
-                this.classList.remove("fa-eye-slash");
-                this.classList.add("fa-eye");
-            }
-        });
-    });
-    
-    // Form validation
-    document.getElementById('editTeacherForm').onsubmit = function() {
-        const rows = document.querySelectorAll('.class-assignment-row');
-        let validAssignments = 0;
-        rows.forEach(row => {
-            const classSelect = row.querySelector('.class-select');
-            const specSelect = row.querySelector('.specialisation-select');
-            if (classSelect && specSelect && classSelect.value && specSelect.value) {
-                validAssignments++;
-            }
-        });
-        
-        if (validAssignments === 0) {
-            alert('Please add at least one valid class assignment.');
-            return false;
-        }
-        
-        if (!imageValid) {
-            alert('Please select a valid image file or leave the photo field empty.');
-            return false;
-        }
-        
-        updateHiddenClassFields();
-        return true;
-    };
-    
-    // Initialize
-    document.addEventListener('DOMContentLoaded', function() {
-        loadExistingAssignments();
-    });
-</script>
+        <div class="af-foot">
+          <a href="/admin#sec-teachers" class="tc-btn tc-btn--ghost">Cancel</a>
+          <button type="submit" class="tc-btn tc-btn--primary">{{ ico('i-save', 'ct-ico--sm') }}Save Changes</button>
+        </div>
+      </form>
+    </section>
+  </div>
 
 {{ shell_end(role='admin') }}
+<script>
+(function () {
+  var CLASSES = {{ school_classes|tojson }};
+  var SPECS = ["General", "Science", "Art", "Commercial"];
+  var EXISTING = {{ (teacher_assignments or [])|tojson }};
+
+  window.addEditTeacherRow = function (clsVal, specVal) {
+    var host = document.getElementById("editTeacherAssignContainer");
+    if (!host) return;
+    var list = CLASSES.slice();
+    if (clsVal && list.indexOf(clsVal) === -1) list.unshift(clsVal);
+    var row = document.createElement("div");
+    row.className = "af-assign-row";
+    var clsOpts = '<option value="">Select class…</option>' + list.map(function (c) {
+      return '<option value="' + CT.esc(c) + '"' + (c === clsVal ? " selected" : "") + '>' + CT.esc(c) + '</option>';
+    }).join("");
+    var specOpts = SPECS.map(function (s) {
+      return '<option value="' + CT.esc(s) + '"' + (s === (specVal || "General") ? " selected" : "") + '>' + CT.esc(s) + '</option>';
+    }).join("");
+    row.innerHTML =
+      '<select name="class_name" class="af-select" required>' + clsOpts + '</select>' +
+      '<select name="specialisation" class="af-select" required>' + specOpts + '</select>' +
+      '<button type="button" class="tc-btn tc-btn--ghost tc-btn--icon" style="color:var(--tc-bad)" aria-label="Remove assignment">' + CT.icon("i-trash", "ct-ico--sm") + '</button>';
+    row.querySelector("button").addEventListener("click", function () {
+      if (host.querySelectorAll(".af-assign-row").length <= 1) {
+        CT.toast("Keep at least one teaching class assignment.", "warn");
+        return;
+      }
+      row.remove();
+    });
+    host.appendChild(row);
+  };
+
+  window.toggleEditTeacherPass = function () {
+    var inp = document.getElementById("editTeacherPassword");
+    if (inp) inp.type = inp.type === "password" ? "text" : "password";
+  };
+
+  window.previewEditTeacherPhoto = function (input) {
+    var file = input.files && input.files[0];
+    var box = document.getElementById("editTeacherPhotoPreview");
+    var status = document.getElementById("editTeacherPhotoStatus");
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      input.value = "";
+      if (status) { status.textContent = "Please choose a valid image file."; status.className = "af-help af-help--bad"; }
+      return;
+    }
+    var r = new FileReader();
+    r.onload = function (ev) {
+      if (box) box.innerHTML = '<img src="' + ev.target.result + '" alt="Preview">';
+      if (status) { status.textContent = file.name + " selected (" + Math.max(1, Math.round(file.size / 1024)) + " KB)."; status.className = "af-help af-help--ok"; }
+    };
+    r.readAsDataURL(file);
+  };
+
+  if (EXISTING.length) {
+    EXISTING.forEach(function (a) { window.addEditTeacherRow(a.class_name, a.specialisation); });
+  } else {
+    window.addEditTeacherRow({{ (teacher.class or '')|tojson }}, "General");
+  }
+})();
+</script>
 </body>
 </html>

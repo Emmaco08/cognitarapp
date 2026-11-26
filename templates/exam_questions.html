@@ -16,8 +16,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
         :root {
-            --primary: var(--ct-primary, #3b82f6); --success: var(--ct-ok, #3ecf8e);
-            --warning: var(--ct-warn, #d4a14c); --danger: var(--ct-bad, #e57373);
+            --primary: var(--ct-primary, #575551); --success: var(--ct-ok, #575551);
+            --warning: var(--ct-warn, #D6D4CF); --danger: var(--ct-bad, #575551);
             --bg: var(--ct-bg); --card: var(--ct-surface); --border: var(--ct-line-2);
             --text: var(--ct-ink); --text-light: var(--ct-ink-3);
             --radius: 12px; --radius-lg: 16px; --radius-xl: 18px;
@@ -55,7 +55,7 @@
         .q-options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; margin-top: 8px; }
         @media (max-width: 640px) { .q-options { grid-template-columns: 1fr; } }
         .q-opt { padding: 10px 13px; background: var(--ct-well); border-radius: 10px; border: 1px solid var(--ct-line); font-size: 13.5px; word-wrap: break-word !important; overflow-wrap: break-word !important; word-break: break-word !important; white-space: normal !important; line-height: 1.5; max-width: 100%; overflow: hidden; color: var(--ct-ink); }
-        .q-opt.correct { background: var(--ct-ok-soft); border-color: var(--ct-ok-line, rgba(62,207,142,0.3)); color: var(--ct-ok); font-weight: 560; }
+        .q-opt.correct { background: var(--ct-ok-soft); border-color: var(--ct-ok-line, rgba(23, 22, 20,0.3)); color: var(--ct-ok); font-weight: 560; }
 
         .q-actions { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--ct-line); display: flex; gap: 8px; justify-content: flex-end; }
         .btn-act { padding: 6px 13px; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer; border: 1px solid var(--ct-line-2); display: inline-flex; align-items: center; gap: 6px; transition: background-color 150ms ease, color 150ms ease, border-color 150ms ease; }
@@ -653,7 +653,7 @@
             const container = document.createElement('span');
             container.style.cssText = 'display:inline-flex;flex-direction:column;align-items:center;vertical-align:middle;line-height:1;margin:0 2px;'; container.className = 'math-fraction';
             const num = document.createElement('span');
-            num.style.cssText = 'border-bottom:2px solid #1e293b;padding:0 5px;font-size:0.8em;text-align:center;min-width:14px;display:inline-block;';
+            num.style.cssText = 'border-bottom:2px solid #171614;padding:0 5px;font-size:0.8em;text-align:center;min-width:14px;display:inline-block;';
             num.contentEditable = 'true'; num.className = 'frac-num'; num.textContent = 'a';
             const den = document.createElement('span');
             den.style.cssText = 'padding:0 5px;font-size:0.8em;text-align:center;min-width:14px;display:inline-block;';
@@ -742,7 +742,7 @@
                 text: 'Cannot be undone!', 
                 icon: 'warning', 
                 showCancelButton: true, 
-                confirmButtonColor: '#ef4444', 
+                confirmButtonColor: '#2B2926', 
                 confirmButtonText: 'Yes, Delete' 
             }).then(r => { 
                 if (r.isConfirmed) {

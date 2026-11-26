@@ -23,6 +23,7 @@ export async function GET(req: NextRequest) {
       backupRows,
       referralRows,
       reviewRows,
+      leadRows,
       recentPurchases,
       recentAudit,
       settings,
@@ -46,6 +47,7 @@ export async function GET(req: NextRequest) {
       sql`SELECT COUNT(*)::int AS total_backups, COALESCE(SUM(compressed_bytes), 0)::bigint AS total_bytes FROM cloud_exam_backups`,
       sql`SELECT COUNT(*) FILTER (WHERE status='credited')::int AS conversions, COALESCE(SUM(commission_amount_kobo) FILTER (WHERE status='credited'), 0)::bigint AS commission_kobo FROM referral_conversions`,
       sql`SELECT COUNT(*) FILTER (WHERE status='pending')::int AS pending_count, COUNT(*) FILTER (WHERE status='approved')::int AS approved_count FROM school_reviews`,
+      sql`SELECT COUNT(*)::int AS total, COALESCE(SUM(download_count), 0)::int AS total_downloads FROM download_leads`.catch(() => [{ total: 0, total_downloads: 0 }]),
       sql`
         SELECT sp.id, sp.paystack_reference, sp.currency, sp.amount_minor, sp.original_amount_minor,
                sp.discount_amount_minor, sp.fee_minor, sp.customer_paid_minor, sp.is_test,
@@ -99,6 +101,8 @@ export async function GET(req: NextRequest) {
         referral_commission_kobo: Number(referralRows[0]?.commission_kobo || 0),
         reviews_pending: reviewRows[0]?.pending_count || 0,
         reviews_approved: reviewRows[0]?.approved_count || 0,
+        download_leads_total: Number((leadRows as any)?.[0]?.total || 0),
+        download_leads_clicks: Number((leadRows as any)?.[0]?.total_downloads || 0),
       },
       recent_purchases: recentPurchases,
       recent_audit: recentAudit,
@@ -113,6 +117,10 @@ export async function GET(req: NextRequest) {
         min_desktop_version: settings.min_desktop_version,
         allow_self_signup: settings.allow_self_signup,
         allow_paystack_checkout: settings.allow_paystack_checkout,
+        allow_trial_activation: settings.allow_trial_activation,
+        free_trial_days: settings.free_trial_days,
+        promo_banner_enabled: settings.promo_banner_enabled,
+        promo_banner_event: settings.promo_banner_event,
       },
     });
   } catch (err) {

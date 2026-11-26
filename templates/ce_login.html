@@ -1,5 +1,10 @@
 {%- from '_ct_shell.html' import ico, ct_boot_script with context -%}
 {%- set ICONS = url_for('static', filename='icons/cognitara-icons.svg') -%}
+{%- set _ce = ce_settings if (ce_settings is defined and ce_settings) else (ce_branding if ce_branding is defined else {}) -%}
+{%- set _ce_title = _ce.portal_title or 'Entrance Examination Portal' -%}
+{%- set _ce_inst = _ce.institution_name or (school_branding.school_name if school_branding is defined else 'CogniTara Academy') -%}
+{%- set _ce_sess = _ce.admission_session or '2026/2027' -%}
+{%- set _ce_batch = _ce.admission_batch or '' -%}
 <!DOCTYPE html>
 <html lang="en" data-theme="dark">
 <head>
@@ -7,8 +12,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="csrf-token" content="{{ csrf_token() }}">
   <meta name="color-scheme" content="dark light">
-  <meta name="description" content="Common Entrance Candidate Sign In — {{ school_branding.school_name if school_branding is defined else 'CogniTara' }}.">
-  <title>Common Entrance Sign In — {{ school_branding.school_name if school_branding is defined else 'CogniTara' }}</title>
+  <meta name="description" content="{{ _ce_title }} — {{ _ce_inst }}.">
+  <title>{{ _ce_title }} — {{ _ce_inst }}</title>
   <link rel="icon" href="{{ url_for('static', filename='images/cognitara-favicon.ico') }}">
   <link rel="preload" href="{{ url_for('static', filename='fonts/ui/PlusJakartaSans-Variable.woff2') }}" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/cognitara-web.css') }}">
@@ -29,12 +34,12 @@
           <span class="ed-brand__mark" style="width:26px;height:26px;border-radius:7px"><svg viewBox="0 0 200 200"><use href="{{ ICONS }}#ct-mark"/></svg></span>
           <strong>CogniTara</strong>
         </a>
-        <span class="ed-gallery__tag">Admissions</span>
+        <span class="ed-gallery__tag">{{ _ce_sess }}{% if _ce_batch %} · {{ _ce_batch }}{% endif %}</span>
       </div>
 
       <div class="ed-gallery__caption">
-        <span class="ed-gallery__caption-eyebrow">Common Entrance Examination</span>
-        <h2>Your first step into {{ school_branding.school_name if school_branding is defined else 'our academy' }}.</h2>
+        <span class="ed-gallery__caption-eyebrow">{{ _ce_title }}</span>
+        <h2>Your first step into {{ _ce_inst }}.</h2>
         <p>Sign in using the candidate credentials provided by the admissions desk. Your progress and timer stay synchronized throughout the sitting.</p>
       </div>
     </aside>
@@ -56,10 +61,17 @@
           <div class="ed-school-row">
             <div class="ed-crest">{{ ico('i-door') }}</div>
             <div style="min-width:0">
-              <h1>Common Entrance</h1>
-              <p>{{ school_branding.school_name if school_branding is defined else 'Admissions Portal' }} · Candidate sign in</p>
+              <h1>{{ _ce_title }}</h1>
+              <p>{{ _ce_inst }} · {{ _ce_sess }}{% if _ce_batch %} ({{ _ce_batch }}){% endif %}</p>
             </div>
           </div>
+
+          {% if _ce.registration_open is defined and not _ce.registration_open %}
+          <div class="ed-alert" role="status" style="background:var(--ct-warn-soft);border-color:var(--ct-warn-line);color:var(--ct-warn)">
+            {{ ico('i-lock', 'ct-ico--sm') }}
+            <span>New candidate registration is currently closed. Registered candidates may still sign in below.</span>
+          </div>
+          {% endif %}
 
           {% if error %}
           <div class="ed-alert" role="alert">

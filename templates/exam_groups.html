@@ -14,10 +14,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
         :root {
-            --primary: var(--ct-primary); --primary-dark: #3730a3; --success: #10b981;
-            --warning: #f59e0b; --danger: #ef4444; --purple: var(--ct-primary);
+            --primary: var(--ct-primary); --primary-dark: #171614; --success: #575551;
+            --warning: #D6D4CF; --danger: #2B2926; --purple: var(--ct-primary);
             --bg: var(--ct-surface-2); --card: var(--ct-surface); --border: var(--ct-line-2);
-            --text: var(--ct-ink); --text-light: #64748b;
+            --text: var(--ct-ink); --text-light: #2B2926;
             --shadow-sm: 0 1px 2px rgba(0,0,0,0.04);
             --shadow: 0 4px 6px -1px rgba(0,0,0,0.06);
             --shadow-lg: 0 10px 25px -5px rgba(0,0,0,0.08);
@@ -35,7 +35,7 @@
         
         .page-header { text-align: center; margin-bottom: 28px; animation: fadeInDown 0.5s ease; }
         @keyframes fadeInDown { from { opacity:0; transform:translateY(-20px); } to { opacity:1; transform:translateY(0); } }
-        .logo-icon { width: 64px; height: 64px; background: var(--ct-brand-grad); border-radius: 18px; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 14px; box-shadow: 0 8px 25px rgba(139,92,246,0.25); }
+        .logo-icon { width: 64px; height: 64px; background: var(--ct-brand-grad); border-radius: 18px; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 14px; box-shadow: 0 8px 25px rgba(23, 22, 20,0.25); }
         .logo-icon i { font-size: 30px; color: white; }
         .page-header h1 { font-size: 26px; font-weight: 800; color: var(--text); margin-bottom: 4px; }
         .page-header p { font-size: 14px; color: var(--text-light); }
@@ -44,8 +44,8 @@
         @keyframes fadeInUp { from { opacity:0; transform:translateY(15px); } to { opacity:1; transform:translateY(0); } }
         .btn-back { background: var(--card); border: 1.5px solid var(--border); padding: 9px 18px; border-radius: 10px; color: var(--text-light); text-decoration: none; font-weight: 600; font-size: 13px; display: inline-flex; align-items: center; gap: 7px; transition: var(--transition); }
         .btn-back:hover { border-color: var(--purple); color: var(--purple); background: var(--ct-accent-soft); }
-        .btn-add { background: linear-gradient(135deg, #10b981, #059669); color: white; border: none; padding: 10px 22px; border-radius: 12px; font-weight: 600; font-size: 13px; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; transition: var(--transition); box-shadow: 0 4px 15px rgba(16,185,129,0.2); }
-        .btn-add:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(16,185,129,0.3); }
+        .btn-add { background: linear-gradient(135deg, #575551, #2B2926); color: white; border: none; padding: 10px 22px; border-radius: 12px; font-weight: 600; font-size: 13px; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; transition: var(--transition); box-shadow: 0 4px 15px rgba(23, 22, 20,0.2); }
+        .btn-add:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(23, 22, 20,0.3); }
 
         .group-card { background: var(--card); border-radius: var(--radius-xl); padding: 20px 22px; margin-bottom: 16px; border: 1px solid var(--border); transition: var(--transition); box-shadow: var(--shadow-sm); animation: fadeInUp 0.4s ease both; }
         .group-card:hover { border-color: var(--purple); box-shadow: var(--shadow); }
@@ -63,19 +63,19 @@
         .g-q-info { flex: 1; font-size: 12px; line-height: 1.5; word-wrap: break-word; overflow-wrap: break-word; max-width: 100%; }
         .g-q-meta { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
         .meta-chip { background: var(--ct-surface); padding: 2px 8px; border-radius: 12px; font-size: 10px; color: var(--text-light); display: inline-flex; align-items: center; gap: 4px; }
-        .meta-chip.star { background: var(--ct-warn-soft); color: #d97706; }
+        .meta-chip.star { background: var(--ct-warn-soft); color: #575551; }
         .g-q-actions { display: flex; gap: 6px; flex-shrink: 0; }
         .btn-sm { padding: 4px 10px; border-radius: 6px; font-size: 10px; font-weight: 600; cursor: pointer; border: none; display: inline-flex; align-items: center; gap: 4px; transition: var(--transition); }
         .btn-view { background: var(--primary); color: white; } .btn-view:hover { background: var(--primary-dark); }
-        .btn-edit-sm { background: #f59e0b; color: white; } .btn-edit-sm:hover { background: #d97706; }
-        .btn-remove { background: none; border: none; color: #ef4444; cursor: pointer; font-size: 14px; padding: 2px 6px; }
+        .btn-edit-sm { background: #D6D4CF; color: white; } .btn-edit-sm:hover { background: #575551; }
+        .btn-remove { background: none; border: none; color: #2B2926; cursor: pointer; font-size: 14px; padding: 2px 6px; }
         .btn-remove:hover { background: var(--ct-bad-soft); border-radius: 4px; }
         .g-actions-bar { display: flex; gap: 8px; margin-top: 12px; justify-content: flex-end; flex-wrap: wrap; }
         .btn-g-act { padding: 6px 14px; border-radius: 8px; font-size: 11px; font-weight: 600; cursor: pointer; border: none; display: inline-flex; align-items: center; gap: 5px; transition: var(--transition); }
-        .btn-g-addq { background: #3b82f6; color: white; } .btn-g-addq:hover { background: var(--ct-primary); }
-        .btn-g-edit { background: #f59e0b; color: white; } .btn-g-edit:hover { background: #d97706; }
-        .btn-g-delete { background: var(--ct-bad-soft); color: #ef4444; } .btn-g-delete:hover { background: #ef4444; color: white; }
-        .empty-state { text-align: center; padding: 50px; color: #94a3b8; }
+        .btn-g-addq { background: #575551; color: white; } .btn-g-addq:hover { background: var(--ct-primary); }
+        .btn-g-edit { background: #D6D4CF; color: white; } .btn-g-edit:hover { background: #575551; }
+        .btn-g-delete { background: var(--ct-bad-soft); color: #2B2926; } .btn-g-delete:hover { background: #2B2926; color: white; }
+        .empty-state { text-align: center; padding: 50px; color: #D6D4CF; }
         .empty-state i { font-size: 50px; display: block; margin-bottom: 12px; opacity: 0.5; }
 
         /* ============ MODAL ============ */
@@ -91,17 +91,17 @@
             align-items: center; justify-content: center; transition: 0.12s; color: var(--ct-ink-2);
         }
         .t-btn:hover { background: var(--ct-line-2); }
-        .t-btn.on { background: var(--primary) !important; color: white !important; border-color: var(--primary) !important; box-shadow: 0 0 0 2px rgba(79,70,229,0.2); }
+        .t-btn.on { background: var(--primary) !important; color: white !important; border-color: var(--primary) !important; box-shadow: 0 0 0 2px rgba(23, 22, 20,0.2); }
         .t-btn sup { font-size: 7px; vertical-align: super; position: relative; top: -2px; line-height: 0; }
         .t-btn sub { font-size: 7px; vertical-align: sub; position: relative; bottom: -1px; line-height: 0; }
 
         .math-drop {
             display: none; flex-wrap: wrap; gap: 3px; padding: 8px 10px;
-            background: var(--ct-warn-soft); border: 1px solid #fde68a; border-radius: 10px;
+            background: var(--ct-warn-soft); border: 1px solid #F8F8F8; border-radius: 10px;
             margin-bottom: 12px; max-height: 160px; overflow-y: auto;
         }
         .math-drop.show { display: flex; }
-        .math-label { width: 100%; font-size: 9px; color: #92400e; font-weight: 700; margin: 3px 0 1px; text-transform: uppercase; letter-spacing: 0.5px; border-top: 1px solid #fde68a; padding-top: 5px; }
+        .math-label { width: 100%; font-size: 9px; color: #2B2926; font-weight: 700; margin: 3px 0 1px; text-transform: uppercase; letter-spacing: 0.5px; border-top: 1px solid #F8F8F8; padding-top: 5px; }
         .math-label:first-child { border-top: none; padding-top: 0; }
         .m-btn {
             width: 30px; height: 26px; border: 1px solid var(--ct-line-2); border-radius: 4px;
@@ -118,14 +118,14 @@
             background: var(--ct-surface); font-size: 14px; line-height: 1.7; color: var(--text);
             outline: none; word-wrap: break-word; overflow-wrap: break-word; white-space: pre-wrap;
         }
-        .editor-area:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(79,70,229,0.08); }
-        .editor-area:empty::before { content: attr(placeholder); color: #94a3b8; }
+        .editor-area:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(23, 22, 20,0.08); }
+        .editor-area:empty::before { content: attr(placeholder); color: #D6D4CF; }
         .editor-area sup { font-size: 0.7em; vertical-align: super; position: relative; top: -0.3em; line-height: 0; }
         .editor-area sub { font-size: 0.7em; vertical-align: sub; position: relative; bottom: -0.1em; line-height: 0; }
         .math-fraction { display: inline-flex !important; flex-direction: column !important; align-items: center !important; vertical-align: middle !important; line-height: 1 !important; margin: 0 2px !important; }
         .frac-num, .frac-den { outline: none; min-width: 14px; cursor: text; }
         .frac-num:focus, .frac-den:focus { background: var(--ct-surface); border-radius: 2px; }
-        .frac-num { border-bottom: 2px solid #1e293b !important; padding: 0 5px !important; font-size: 0.8em !important; text-align: center !important; display: inline-block !important; }
+        .frac-num { border-bottom: 2px solid #171614 !important; padding: 0 5px !important; font-size: 0.8em !important; text-align: center !important; display: inline-block !important; }
         .frac-den { padding: 0 5px !important; font-size: 0.8em !important; text-align: center !important; display: inline-block !important; }
         .editor-label { font-weight: 700; font-size: 13px; margin-bottom: 5px; display: flex; align-items: center; gap: 6px; color: var(--text); }
         .editor-label i { color: var(--primary); font-size: 14px; }
@@ -278,7 +278,7 @@
     <div class="modal fade" id="addGroupModal" tabindex="-1">
         <div class="modal-dialog modal-lg">
             <div class="modal-content" style="border-radius:18px;overflow:hidden;border:none;box-shadow:0 25px 50px -12px rgba(0,0,0,0.2);">
-                <div class="modal-header" style="background:linear-gradient(135deg,#8b5cf6,#6d28d9);color:white;border:none;padding:16px 22px;">
+                <div class="modal-header" style="background:linear-gradient(135deg,#575551,#2B2926);color:white;border:none;padding:16px 22px;">
                     <h5 class="modal-title"><i class="fas fa-plus-circle"></i> Add Question Group</h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
@@ -301,7 +301,7 @@
     <div class="modal fade" id="addQuestionToGroupModal" tabindex="-1">
         <div class="modal-dialog modal-lg">
             <div class="modal-content" style="border-radius:18px;overflow:hidden;border:none;box-shadow:0 25px 50px -12px rgba(0,0,0,0.2);">
-                <div class="modal-header" style="background:linear-gradient(135deg,#4f46e5,#3730a3);color:white;border:none;padding:16px 22px;">
+                <div class="modal-header" style="background:linear-gradient(135deg,#2B2926,#171614);color:white;border:none;padding:16px 22px;">
                     <h5><i class="fas fa-plus-circle"></i> Add Question to Group</h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
@@ -417,7 +417,7 @@
             const id=getAct();const e=E(id);if(!e)return;e.focus();
             const w=document.createElement('span');w.style.cssText='display:inline-block;';w.className='fraction-wrapper';
             const c=document.createElement('span');c.style.cssText='display:inline-flex;flex-direction:column;align-items:center;vertical-align:middle;line-height:1;margin:0 2px;';c.className='math-fraction';
-            const n=document.createElement('span');n.style.cssText='border-bottom:2px solid #1e293b;padding:0 5px;font-size:0.8em;text-align:center;min-width:14px;display:inline-block;';n.contentEditable='true';n.className='frac-num';n.textContent='a';
+            const n=document.createElement('span');n.style.cssText='border-bottom:2px solid #171614;padding:0 5px;font-size:0.8em;text-align:center;min-width:14px;display:inline-block;';n.contentEditable='true';n.className='frac-num';n.textContent='a';
             const d=document.createElement('span');d.style.cssText='padding:0 5px;font-size:0.8em;text-align:center;min-width:14px;display:inline-block;';d.contentEditable='true';d.className='frac-den';d.textContent='b';
             c.appendChild(n);c.appendChild(d);const sp=document.createTextNode('\u200B');w.appendChild(c);w.appendChild(sp);
             const sel=window.getSelection();
@@ -497,10 +497,10 @@
         }
 
         // ============ EXISTING FUNCTIONS ============
-        function deleteGroup(gid){Swal.fire({title:'Delete Group?',text:'All questions in this group will be deleted!',icon:'warning',showCancelButton:true,confirmButtonColor:'#ef4444',confirmButtonText:'Delete'}).then(r=>{if(r.isConfirmed)window.location.href=`/teacher/exam_group/${gid}/delete`;});}
+        function deleteGroup(gid){Swal.fire({title:'Delete Group?',text:'All questions in this group will be deleted!',icon:'warning',showCancelButton:true,confirmButtonColor:'#2B2926',confirmButtonText:'Delete'}).then(r=>{if(r.isConfirmed)window.location.href=`/teacher/exam_group/${gid}/delete`;});}
         function editGroup(gid){window.location.href=`/teacher/exam_group/${gid}/edit`;}
         function editQuestion(qid){window.location.href=`/teacher/exam_group_question/${qid}/edit`;}
-        function removeFromGroup(qid,gid){Swal.fire({title:'Remove from Group?',icon:'question',showCancelButton:true,confirmButtonColor:'#ef4444',confirmButtonText:'Remove'}).then(r=>{if(r.isConfirmed)window.location.href=`/teacher/exam_question/${qid}/remove_from_group`;});}
+        function removeFromGroup(qid,gid){Swal.fire({title:'Remove from Group?',icon:'question',showCancelButton:true,confirmButtonColor:'#2B2926',confirmButtonText:'Remove'}).then(r=>{if(r.isConfirmed)window.location.href=`/teacher/exam_question/${qid}/remove_from_group`;});}
         
         function viewQuestion(qid){
             E('previewBody').innerHTML='<div class="text-center py-3"><div class="spinner-border text-primary"></div></div>';
@@ -509,7 +509,7 @@
                 if(d.success){
                     const q=d.question;const opts=[q.option1,q.option2,q.option3,q.option4];
                     let oh='';const l=['A','B','C','D'];
-                    for(let i=0;i<opts.length;i++){const c=opts[i]===q.answer;oh+=`<div style="padding:10px;background: var(--ct-surface-2);border-radius:8px;margin-bottom:6px;border-left:3px solid ${c?'#10b981':'#e2e8f0'};word-wrap:break-word;overflow-wrap:break-word;"><strong>${l[i]}.</strong> ${opts[i]} ${c?'<span class="badge bg-success"><i class="fas fa-check"></i></span>':''}</div>`;}
+                    for(let i=0;i<opts.length;i++){const c=opts[i]===q.answer;oh+=`<div style="padding:10px;background: var(--ct-surface-2);border-radius:8px;margin-bottom:6px;border-left:3px solid ${c?'#575551':'#e2e8f0'};word-wrap:break-word;overflow-wrap:break-word;"><strong>${l[i]}.</strong> ${opts[i]} ${c?'<span class="badge bg-success"><i class="fas fa-check"></i></span>':''}</div>`;}
                     E('previewBody').innerHTML=`<div style="background: var(--ct-surface-2);border-radius:10px;padding:12px;margin-bottom:12px;word-wrap:break-word;overflow-wrap:break-word;"><strong>Question:</strong><div style="margin-top:6px;">${q.question}</div></div>${q.image?`<img src="/static/images/${q.image}" style="max-width:200px;border-radius:8px;margin-bottom:10px;">`:''}${oh}`;
                     if (typeof renderMathInElement === 'function') {
                         renderMathInElement(E('previewBody'), {

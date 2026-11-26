@@ -241,6 +241,105 @@ export async function sendPaymentReceiptEmail(params: {
   });
 }
 
+export function buildDownloadLinkEmailHtml(params: {
+  downloadUrl: string;
+  siteUrl: string;
+  supportEmail: string;
+  versionLabel?: string;
+  trialDays?: number | null;
+}): string {
+  const dl = escapeHtml(params.downloadUrl);
+  const site = escapeHtml(params.siteUrl);
+  const support = escapeHtml(params.supportEmail);
+  const trialNote =
+    params.trialDays && params.trialDays > 0
+      ? `Includes a ${params.trialDays}-day free trial with no card required.`
+      : "Ready to activate immediately with a CogniTara school licence key.";
+
+  return `<!doctype html>
+<html>
+<body style="margin:0;padding:28px 16px;background:#F8F8F8;color:#171614;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Inter,Roboto,Helvetica,Arial,sans-serif;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:520px;margin:0 auto;background:#FFFFFF;border:1px solid rgba(23,22,20,0.09);border-radius:14px;overflow:hidden;">
+    <tr>
+      <td style="padding:26px 28px 18px;border-bottom:1px solid rgba(23,22,20,0.07);">
+        <div style="font-size:16px;font-weight:600;letter-spacing:-0.02em;color:#171614;">Your CogniTara Studio for Windows download link</div>
+      </td>
+    </tr>
+    <tr>
+      <td style="padding:24px 28px 26px;font-size:14.5px;line-height:1.65;color:#2C2B28;">
+        <p style="margin:0 0 14px;">Hi there,</p>
+        <p style="margin:0 0 16px;">Open this link on your Windows PC and the installer downloads straight away:</p>
+        <p style="margin:0 0 18px;word-break:break-all;">
+          <a href="${dl}" style="color:#171614;font-weight:600;text-decoration:underline;text-underline-offset:3px;">${dl}</a>
+        </p>
+        <p style="margin:0 0 18px;">
+          <a href="${dl}" style="display:inline-block;padding:11px 20px;background:#171614;color:#FFFFFF;font-size:14px;font-weight:500;text-decoration:none;border-radius:10px;">Download CogniTara Studio${params.versionLabel ? ` (${escapeHtml(params.versionLabel)})` : ""}</a>
+        </p>
+        <p style="margin:0 0 14px;font-size:13.5px;color:#575551;">
+          It is a single 64-bit Windows installer for Windows 10 and Windows 11. Open it, follow the setup wizard, and CogniTara Studio is ready to run offline exams across your school Wi-Fi. ${escapeHtml(trialNote)}
+        </p>
+        <p style="margin:0 0 18px;font-size:13.5px;color:#575551;">
+          Questions? Contact <a href="mailto:${support}" style="color:#171614;">${support}</a>
+        </p>
+        <div style="border-top:1px solid rgba(23,22,20,0.08);padding-top:14px;font-size:12px;color:#83807B;">
+          CogniTara — <a href="${site}" style="color:#575551;">${site}</a>
+        </div>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+}
+
+export async function sendDownloadLinkEmail(params: {
+  settings: PlatformSettingsRow;
+  toEmail: string;
+  downloadUrl: string;
+  siteUrl: string;
+  versionLabel?: string;
+  trialDays?: number | null;
+}): Promise<{ ok: boolean; error?: string; messageId?: string }> {
+  if (!params.settings.brevo_configured || !params.settings.brevo_api_key) {
+    return { ok: false, error: "Brevo email delivery is not configured." };
+  }
+  const supportEmail = params.settings.brevo_sender_email || "hello@cognitara.net";
+  const htmlContent = buildDownloadLinkEmailHtml({
+    downloadUrl: params.downloadUrl,
+    siteUrl: params.siteUrl,
+    supportEmail,
+    versionLabel: params.versionLabel,
+    trialDays: params.trialDays,
+  });
+  const textContent = [
+    "Your CogniTara Studio for Windows download link",
+    "",
+    "Hi there,",
+    "",
+    "Open this link on your Windows PC and the installer downloads straight away:",
+    "",
+    params.downloadUrl,
+    "",
+    "It is a single 64-bit Windows installer for Windows 10 and Windows 11.",
+    "Open it, follow the setup wizard, and CogniTara Studio is ready to serve offline exams on your school network.",
+    "",
+    `Questions? Contact ${supportEmail}`,
+    "",
+    "---",
+    `CogniTara - ${params.siteUrl}`,
+  ].join("\n");
+
+  return brevoSendTransactionalEmail({
+    apiKey: params.settings.brevo_api_key,
+    senderEmail: params.settings.brevo_sender_email,
+    senderName: params.settings.brevo_sender_name || "CogniTara",
+    toEmail: params.toEmail,
+    subject: "Your CogniTara Studio for Windows download link",
+    htmlContent,
+    textContent,
+    tags: ["cognitara-download-link"],
+  });
+}
+
 export async function createAndSendEmailOtp(params: {
   settings: PlatformSettingsRow;
   userId: string;

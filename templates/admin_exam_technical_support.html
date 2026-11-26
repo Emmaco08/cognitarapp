@@ -1,842 +1,641 @@
-{%- from '_ct_shell.html' import ico, ct_boot_script, admin_shell_start, teacher_shell_start, student_topbar, shell_end with context -%}
+{%- from '_ct_shell.html' import ico, person_avatar, ct_boot_script, admin_shell_start, shell_end with context -%}
+{%- set total_active   = active_attempts | length -%}
+{%- set total_paused   = active_attempts | selectattr('is_paused', 'equalto', 1) | list | length -%}
+{%- set total_requests = active_attempts | selectattr('resume_requested', 'equalto', 1) | list | length -%}
+{%- set total_running  = total_active - total_paused -%}
 <!DOCTYPE html>
 <html lang="en" data-theme="dark">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Technical Support | Admin Dashboard</title>
-    <link href="{{ url_for('static', filename='vendor/bootstrap/css/bootstrap.min.css') }}" rel="stylesheet">
-    <link href="{{ url_for('static', filename='vendor/fontawesome/css/all.min.css') }}" rel="stylesheet">
-    <script src="{{ url_for('static', filename='vendor/sweetalert2/sweetalert2.all.min.js') }}"></script>
-    <style>
-        * { margin:0; padding:0; box-sizing:border-box; }
-        body { background:var(--ct-surface); font-family:'Inter','Segoe UI',system-ui,sans-serif; color:var(--ct-ink); }
-
-        .top-nav { background:var(--ct-surface); border-bottom:1px solid var(--ct-line-2); padding:16px 28px; display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; z-index:100; box-shadow:0 1px 3px rgba(0,0,0,0.05); }
-        .nav-brand { display:flex; align-items:center; gap:12px; font-size:18px; font-weight:700; color:var(--ct-ink); }
-        .nav-brand-icon { width:40px; height:40px; background:linear-gradient(135deg,#dc2626,#991b1b); border-radius:12px; display:flex; align-items:center; justify-content:center; }
-        .nav-brand-icon i { color:white; font-size:18px; }
-        .nav-back { color:var(--ct-ink-3); text-decoration:none; font-size:14px; display:flex; align-items:center; gap:6px; transition:color .2s; padding:8px 16px; border-radius:10px; background:var(--ct-surface); }
-        .nav-back:hover { color:#dc2626; background:var(--ct-bad-soft); }
-
-        .page-hero { padding:32px 32px 24px; max-width:1500px; margin:0 auto; }
-        .hero-badge { display:inline-flex; align-items:center; gap:8px; background:var(--ct-bad-soft); border:1px solid #fee2e2; border-radius:30px; padding:6px 16px; font-size:12px; font-weight:600; color:#dc2626; margin-bottom:16px; }
-        .hero-title { font-size:32px; font-weight:800; color:var(--ct-ink); margin-bottom:8px; }
-        .hero-sub { color:var(--ct-ink-3); font-size:15px; }
-
-        .stats-row { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:16px; max-width:1500px; margin:0 auto 28px; padding:0 32px; }
-        .stat-card { background:var(--ct-surface); border:1px solid var(--ct-line-2); border-radius:20px; padding:20px 24px; display:flex; align-items:center; justify-content:space-between; transition:all 0.2s; box-shadow:0 1px 2px rgba(0,0,0,0.03); }
-        .stat-card:hover { transform:translateY(-2px); box-shadow:0 8px 20px rgba(0,0,0,0.05); }
-        .stat-left .stat-number { font-size:32px; font-weight:800; line-height:1; margin-bottom:4px; }
-        .stat-left .stat-label { font-size:13px; color:var(--ct-ink-3); }
-        .stat-icon { width:48px; height:48px; border-radius:14px; display:flex; align-items:center; justify-content:center; }
-        .stat-icon i { font-size:22px; }
-
-        .main-content { max-width:1500px; margin:0 auto; padding:0 32px 48px; }
-
-        .section-heading { display:flex; align-items:center; gap:12px; margin-bottom:20px; }
-        .section-icon { width:36px; height:36px; border-radius:10px; display:flex; align-items:center; justify-content:center; }
-        .section-title { font-size:18px; font-weight:700; color:var(--ct-ink); }
-
-        .attempt-card { background:var(--ct-surface); border:1px solid var(--ct-line-2); border-radius:20px; padding:20px 24px; margin-bottom:14px; transition:all 0.3s ease; position:relative; overflow:hidden; }
-        .attempt-card::before { content:''; position:absolute; left:0; top:0; bottom:0; width:4px; }
-        .attempt-card.card-resume { border-color: #f59e0b; box-shadow: 0 4px 15px rgba(245, 158, 11, 0.1); }
-        .attempt-card.card-resume::before { background:#f59e0b; }
-        .attempt-card.card-paused::before { background:#3b82f6; }
-        .attempt-card.card-active::before { background:#10b981; }
-        .attempt-card:hover { border-color:var(--ct-line-2); box-shadow:0 4px 12px rgba(0,0,0,0.05); }
-
-        .card-top { display:flex; align-items:flex-start; justify-content:space-between; gap:16px; flex-wrap:wrap; margin-bottom:16px; }
-        .student-info { display:flex; align-items:center; gap:14px; }
-        .student-avatar { width:48px; height:48px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:18px; font-weight:700; flex-shrink:0; color:white; }
-        .student-name { font-size:16px; font-weight:700; color:var(--ct-ink); margin-bottom:4px; }
-        .student-meta { font-size:13px; color:var(--ct-ink-3); }
-
-        .status-badge { display:inline-flex; align-items:center; gap:6px; border-radius:30px; padding:5px 14px; font-size:12px; font-weight:600; }
-        .badge-resume { background:var(--ct-warn-soft); color:#d97706; }
-        .badge-paused { background:var(--ct-accent-soft); color:#1d4ed8; }
-        .badge-active { background:var(--ct-ok-soft); color:#065f46; }
-
-        .info-row { display:flex; flex-wrap:wrap; gap:16px; margin-bottom:16px; }
-        .info-chip { display:flex; align-items:center; gap:6px; font-size:13px; color:var(--ct-ink-3); background:var(--ct-surface); padding:5px 12px; border-radius:20px; }
-        .info-chip i { width:14px; color:#94a3b8; }
-
-        .teacher-chip { background:var(--ct-accent-soft); color:var(--ct-primary); padding:3px 10px; border-radius:20px; font-size:11px; font-weight:600; display:inline-flex; align-items:center; gap:4px; }
-
-        .time-control-group { display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-top:12px; padding-top:12px; border-top:1px solid var(--ct-line-2); }
-        .time-display { background:var(--ct-surface); padding:6px 14px; border-radius:30px; font-family:monospace; font-size:15px; font-weight:600; color:var(--ct-ink); }
-        .time-btn { background:var(--ct-surface); border:1px solid var(--ct-line-2); border-radius:30px; padding:5px 14px; font-size:12px; font-weight:600; cursor:pointer; transition:all 0.2s; display:inline-flex; align-items:center; gap:5px; }
-        .time-btn.add { background:var(--ct-ok-soft); border-color:#10b981; color:#065f46; }
-        .time-btn.add:hover { background:#a7f3d0; }
-        .time-btn.subtract { background:var(--ct-bad-soft); border-color:#ef4444; color:#991b1b; }
-        .time-btn.subtract:hover { background:var(--ct-bad-soft); }
-
-        .action-row { display:flex; flex-wrap:wrap; gap:10px; margin-top:12px; padding-top:12px; border-top:1px solid #f1f5f9; }
-        .action-btn { display:inline-flex; align-items:center; gap:7px; border:none; border-radius:12px; padding:9px 18px; font-size:13px; font-weight:600; cursor:pointer; transition:all 0.2s; }
-        .action-btn:hover { transform:scale(1.02); }
-        .btn-approve      { background:#10b981; color:white; }
-        .btn-pause        { background:#3b82f6; color:white; }
-        .btn-resume       { background:var(--ct-primary); color:white; }
-        .btn-force-submit { background:#dc2626; color:white; }
-
-        .empty-state { text-align:center; padding:60px 20px; background:var(--ct-surface); border-radius:24px; border:1px solid var(--ct-line-2); }
-        .empty-icon  { font-size:52px; margin-bottom:16px; opacity:0.5; }
-        .empty-title { font-size:18px; font-weight:700; color:var(--ct-ink-2); margin-bottom:8px; }
-        .empty-sub   { font-size:14px; color:#94a3b8; }
-
-        .live-dot { display:inline-block; width:8px; height:8px; border-radius:50%; background:#10b981; box-shadow:0 0 0 0 rgba(16,185,129,0.6); animation:livePing 1.5s infinite; }
-        .live-dot.dot-warning { background:#f59e0b; box-shadow:0 0 0 0 rgba(245,158,11,0.6); }
-        .live-dot.dot-danger { background:#ef4444; box-shadow:0 0 0 0 rgba(239,68,68,0.6); }
-        @keyframes livePing { 0% { box-shadow:0 0 0 0 rgba(16,185,129,0.6); } 70% { box-shadow:0 0 0 10px rgba(16,185,129,0); } 100% { box-shadow:0 0 0 0 rgba(16,185,129,0); } }
-
-        .conn-chip-active { background:var(--ct-ok-soft) !important; color:#065f46 !important; border:1px solid #a7f3d0; }
-        .conn-chip-lagging { background:var(--ct-warn-soft) !important; color:#92400e !important; border:1px solid #fde68a; }
-        .conn-chip-disconnected { background:var(--ct-bad-soft) !important; color:#991b1b !important; border:1px solid #fecaca; }
-
-        #active-sessions-container { display: flex; flex-direction: column; gap: 14px; }
-
-        @media (max-width:640px) {
-            .page-hero,.stats-row,.main-content { padding-left:16px; padding-right:16px; }
-            .hero-title { font-size:24px; }
-            .stat-card { padding:15px 18px; }
-            .stat-left .stat-number { font-size:24px; }
-            .action-btn { padding:8px 13px; font-size:12px; }
-        }
-    </style>
-    <!-- CSRF Protection Shield -->
-    <meta name="csrf-token" content="{{ csrf_token() }}">
-    <script>
-    window.CSRF_TOKEN = "{{ csrf_token() }}";
-    (function() {
-        if (window.fetch) {
-            const _origFetch = window.fetch;
-            window.fetch = function(url, options) {
-                options = options || {};
-                const method = (options.method || 'GET').toUpperCase();
-                if (!['GET', 'HEAD', 'OPTIONS', 'TRACE'].includes(method)) {
-                    options.headers = options.headers || {};
-                    const token = window.CSRF_TOKEN || (document.querySelector('meta[name="csrf-token"]') && document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
-                    if (token) {
-                        if (typeof Headers !== 'undefined' && options.headers instanceof Headers) {
-                            if (!options.headers.has('X-CSRFToken')) options.headers.set('X-CSRFToken', token);
-                        } else if (Array.isArray(options.headers)) {
-                            options.headers.push(['X-CSRFToken', token]);
-                        } else {
-                            if (!options.headers['X-CSRFToken']) options.headers['X-CSRFToken'] = token;
-                        }
-                    }
-                }
-                return _origFetch(url, options);
-            };
-        }
-        if (window.$ && $.ajaxSetup) {
-            $.ajaxSetup({
-                beforeSend: function(xhr, settings) {
-                    if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type)) {
-                        xhr.setRequestHeader("X-CSRFToken", window.CSRF_TOKEN);
-                    }
-                }
-            });
-        }
-        if (navigator.sendBeacon) {
-            const _origBeacon = navigator.sendBeacon.bind(navigator);
-            navigator.sendBeacon = function(url, data) {
-                if (data instanceof FormData) {
-                    if (!data.has('csrf_token')) data.append('csrf_token', window.CSRF_TOKEN);
-                } else if (typeof data === 'string') {
-                    try {
-                        const obj = JSON.parse(data);
-                        if (typeof obj === 'object' && obj !== null && !obj.csrf_token) {
-                            obj.csrf_token = window.CSRF_TOKEN;
-                            data = JSON.stringify(obj);
-                        }
-                    } catch(e) {}
-                }
-                return _origBeacon(url, data);
-            };
-        }
-        document.addEventListener('DOMContentLoaded', function() {
-            document.querySelectorAll('form[method="POST"], form[method="post"]').forEach(function(form) {
-                if (!form.querySelector('input[name="csrf_token"]')) {
-                    var input = document.createElement('input');
-                    input.type = 'hidden';
-                    input.name = 'csrf_token';
-                    input.value = window.CSRF_TOKEN;
-                    form.appendChild(input);
-                }
-            });
-        });
-    })();
-    </script>
-
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+  <meta name="color-scheme" content="dark light">
+  <title>Live Support &amp; Pause — {{ school_branding.school_name }} | CogniTara</title>
+  <link rel="icon" href="{{ url_for('static', filename='images/cognitara-favicon.ico') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/cognitara-web.css') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/cognitara-portal-unified.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/cognitara-teacher-studio.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/cognitara-admin-studio.css') }}">
   {{ ct_boot_script() }}
+  <style>
+    .ls-kpis {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+    @media (max-width: 1080px) { .ls-kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+    @media (max-width: 640px) { .ls-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+    .ls-kpi {
+      background: var(--tc-surface);
+      border: 1px solid var(--tc-line-2);
+      border-radius: 14px;
+      padding: 16px 18px;
+      text-align: left;
+      cursor: pointer;
+      transition: transform 150ms cubic-bezier(0.23, 1, 0.32, 1), border-color 150ms ease, background-color 150ms ease;
+    }
+    .ls-kpi:hover { transform: translateY(-2px); border-color: var(--ct-accent-line); }
+    .ls-kpi.is-active { border-color: var(--ct-accent); background: var(--ct-accent-soft); }
+    .ls-kpi__lbl { display: block; font-size: 11px; font-weight: 650; text-transform: uppercase; letter-spacing: 0.04em; color: var(--tc-ink-3); margin-bottom: 6px; }
+    .ls-kpi__val { font-size: 26px; font-weight: 760; letter-spacing: -0.025em; font-variant-numeric: tabular-nums; color: var(--tc-ink); line-height: 1.1; }
+
+    .ls-bar {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      padding: 14px 16px;
+      background: var(--tc-surface);
+      border: 1px solid var(--tc-line-2);
+      border-radius: 14px;
+      margin-bottom: 18px;
+    }
+    .ls-select {
+      height: 36px;
+      padding: 0 28px 0 12px;
+      border-radius: 9px;
+      border: 1px solid var(--tc-line-2);
+      background: var(--tc-surface-2);
+      color: var(--tc-ink);
+      font-size: 12.5px;
+      font-weight: 560;
+      cursor: pointer;
+    }
+    .ls-select:focus { outline: none; border-color: var(--ct-accent-line); }
+    .ls-bulk-group {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-left: auto;
+      flex-wrap: wrap;
+    }
+    @media (max-width: 860px) { .ls-bulk-group { margin-left: 0; width: 100%; } }
+
+    .ls-list { display: flex; flex-direction: column; gap: 12px; }
+    .ls-card {
+      background: var(--tc-surface);
+      border: 1px solid var(--tc-line-2);
+      border-left: 3px solid var(--ct-ok);
+      border-radius: 14px;
+      padding: 18px 20px;
+      transition: border-color 180ms ease, transform 200ms cubic-bezier(0.23, 1, 0.32, 1), opacity 220ms ease;
+    }
+    .ls-card.is-paused { border-left-color: var(--ct-accent); }
+    .ls-card.is-resume { border-left-color: var(--ct-warn); box-shadow: 0 0 0 1px var(--ct-warn-line); }
+    .ls-card:hover { border-color: var(--tc-line-2); }
+    .ls-card__top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 14px;
+      flex-wrap: wrap;
+      margin-bottom: 14px;
+    }
+    .ls-card__who { display: flex; align-items: center; gap: 12px; min-width: 0; }
+    .ls-card__name { font-size: 15px; font-weight: 680; color: var(--tc-ink); line-height: 1.25; }
+    .ls-card__sub { font-size: 12.5px; color: var(--tc-ink-3); margin-top: 2px; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+
+    .ls-card__telemetry {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+      padding-bottom: 14px;
+      border-bottom: 1px solid var(--tc-line);
+    }
+    .ls-clock {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 11px;
+      border-radius: 8px;
+      background: var(--tc-surface-2);
+      border: 1px solid var(--tc-line-2);
+      font-family: var(--ct-mono);
+      font-size: 13.5px;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      color: var(--tc-ink);
+    }
+
+    .ls-card__controls {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+      padding-top: 14px;
+    }
+    .ls-time-tools {
+      display: inline-flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .ls-time-input {
+      width: 72px;
+      height: 31px;
+      padding: 0 9px;
+      border-radius: 8px;
+      border: 1px solid var(--tc-line-2);
+      background: var(--tc-surface-2);
+      color: var(--tc-ink);
+      font-family: var(--ct-mono);
+      font-size: 12.5px;
+      text-align: center;
+    }
+    .ls-time-input:focus { outline: none; border-color: var(--ct-accent); }
+    .ls-actions { display: inline-flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+    .ls-pulse-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--ct-ok);
+      display: inline-block;
+      box-shadow: 0 0 0 3px var(--ct-ok-soft);
+    }
+    .ls-pulse-dot--warn { background: var(--ct-warn); box-shadow: 0 0 0 3px var(--ct-warn-soft); }
+    .ls-pulse-dot--bad { background: var(--ct-bad); box-shadow: 0 0 0 3px var(--ct-bad-soft); }
+  </style>
 </head>
-<body class="ct-app ct-bs ad-studio">
+<body class="ct-app ad-studio">
 {{ admin_shell_start(active='support', crumb='Live Support & Pause') }}
 
-
-<nav class="top-nav">
-    <div class="nav-brand">
-        <div class="nav-brand-icon"><i class="fas fa-shield-alt"></i></div>
-        Admin Technical Support
+  <header class="tc-head ct-animate-rise">
+    <div class="tc-head__txt">
+      <h1>Live Exam Support &amp; Proctoring</h1>
+      <div class="tc-head__tags">
+        <span class="tc-pill tc-pill--ok"><i class="tc-dot"></i>Live Sync · 5s Telemetry</span>
+        <span class="tc-pill" id="lsLastUpdated">Synced just now</span>
+      </div>
     </div>
-    <div style="display:flex;align-items:center;gap:14px;">
-        <span style="font-size:13px;color:#64748b;">
-            <span class="live-dot"></span>&nbsp;Live monitoring all teachers
-        </span>
-        <a href="/admin" class="nav-back">
-            <i class="fas fa-arrow-left"></i> Back to Dashboard
-        </a>
+    <div class="tc-head__actions">
+      <button type="button" class="tc-btn tc-btn--secondary" onclick="pollStatus(true)">{{ ico('i-refresh', 'ct-ico--sm') }}Refresh Now</button>
+      <a class="tc-btn tc-btn--secondary" href="/admin/exams-management">{{ ico('i-live', 'ct-ico--sm') }}Exam Control</a>
     </div>
-</nav>
+  </header>
 
-<div class="page-hero">
-    <div class="hero-badge"><i class="fas fa-shield-alt"></i> Admin Control Centre</div>
-    <h1 class="hero-title">All Active Exam Sessions</h1>
-    <p class="hero-sub">Monitor and manage all live exams across all teachers — real-time tracking, time adjustments, and force submissions.</p>
-</div>
+  <!-- 5-KPI Filter Strip -->
+  <section class="ls-kpis" data-ct-stagger aria-label="Live exam session telemetry">
+    <button type="button" class="ls-kpi is-active" data-ls-filter="all" onclick="setStatusFilter('all')">
+      <span class="ls-kpi__lbl">Active Sessions</span>
+      <strong class="ls-kpi__val" id="stat-active" data-ct-count>{{ total_active }}</strong>
+    </button>
+    <button type="button" class="ls-kpi" data-ls-filter="writing" onclick="setStatusFilter('writing')">
+      <span class="ls-kpi__lbl">Currently Writing</span>
+      <strong class="ls-kpi__val" id="stat-running" style="color:var(--ct-ok)" data-ct-count>{{ total_running }}</strong>
+    </button>
+    <button type="button" class="ls-kpi" data-ls-filter="paused" onclick="setStatusFilter('paused')">
+      <span class="ls-kpi__lbl">Paused</span>
+      <strong class="ls-kpi__val" id="stat-paused" style="color:var(--ct-accent)" data-ct-count>{{ total_paused }}</strong>
+    </button>
+    <button type="button" class="ls-kpi" data-ls-filter="resume" onclick="setStatusFilter('resume')">
+      <span class="ls-kpi__lbl">Resume Requests</span>
+      <strong class="ls-kpi__val" id="stat-requests" style="color:var(--ct-warn)" data-ct-count>{{ total_requests }}</strong>
+    </button>
+    <button type="button" class="ls-kpi" data-ls-filter="offline" onclick="setStatusFilter('offline')">
+      <span class="ls-kpi__lbl">Offline / Lagging</span>
+      <strong class="ls-kpi__val" id="stat-disconnected" style="color:var(--ct-bad)">0</strong>
+    </button>
+  </section>
 
-{% set total_active   = active_attempts | length %}
-{% set total_paused   = active_attempts | selectattr('is_paused', 'equalto', 1) | list | length %}
-{% set total_requests = active_attempts | selectattr('resume_requested', 'equalto', 1) | list | length %}
-{% set total_running  = total_active - total_paused %}
-
-<div class="stats-row">
-    <div class="stat-card">
-        <div class="stat-left">
-            <div class="stat-number" id="stat-active" style="color:#10b981;">{{ total_active }}</div>
-            <div class="stat-label">Total Active Sessions</div>
-        </div>
-        <div class="stat-icon" style="background: var(--ct-ok-soft);"><i class="fas fa-users" style="color:#10b981;"></i></div>
+  <!-- Search, Status Filter & Bulk Controls -->
+  <div class="ls-bar">
+    <label class="tc-search" style="flex:1;min-width:210px">
+      {{ ico('i-search', 'ct-ico--sm') }}
+      <input type="search" id="lsSearchInput" placeholder="Search student, @username, exam, class, or teacher…" oninput="applyLsFilters()" aria-label="Search live sessions">
+    </label>
+    <select class="ls-select" id="lsStatusFilter" onchange="setStatusFilter(this.value)" aria-label="Filter sessions by status">
+      <option value="all">All Sessions</option>
+      <option value="writing">Currently Writing</option>
+      <option value="paused">Paused</option>
+      <option value="resume">Resume Requested</option>
+      <option value="offline">Offline / Lagging</option>
+    </select>
+    <div class="ls-bulk-group">
+      <button type="button" class="tc-btn tc-btn--ok tc-btn--sm" onclick="resumeAllExams()">{{ ico('i-play', 'ct-ico--xs') }}Resume All</button>
+      <button type="button" class="tc-btn tc-btn--secondary tc-btn--sm" onclick="pauseAllExams()">{{ ico('i-pause', 'ct-ico--xs') }}Pause All</button>
+      <button type="button" class="ct-btn ct-btn--danger-solid tc-btn--sm" onclick="forceSubmitAllExams()">{{ ico('i-send', 'ct-ico--xs') }}Force Submit All</button>
     </div>
-    <div class="stat-card">
-        <div class="stat-left">
-            <div class="stat-number" id="stat-running" style="color:#3b82f6;">{{ total_running }}</div>
-            <div class="stat-label">Currently Writing</div>
-        </div>
-        <div class="stat-icon" style="background:#dbeafe;"><i class="fas fa-pen-fancy" style="color:#3b82f6;"></i></div>
-    </div>
-    <div class="stat-card">
-        <div class="stat-left">
-            <div class="stat-number" id="stat-paused" style="color:#f59e0b;">{{ total_paused }}</div>
-            <div class="stat-label">Paused</div>
-        </div>
-        <div class="stat-icon" style="background:#fef3c7;"><i class="fas fa-pause-circle" style="color:#f59e0b;"></i></div>
-    </div>
-    <div class="stat-card">
-        <div class="stat-left">
-            <div class="stat-number" id="stat-requests" style="color:#ef4444;">{{ total_requests }}</div>
-            <div class="stat-label">Pending Requests</div>
-        </div>
-        <div class="stat-icon" style="background:#fee2e2;"><i class="fas fa-exclamation-triangle" style="color:#ef4444;"></i></div>
-    </div>
-</div>
+  </div>
 
-<div class="main-content">
-
-    <div class="section-heading" style="justify-content: space-between; flex-wrap: wrap;">
-        <div style="display: flex; align-items: center; gap: 12px;">
-            <div class="section-icon" style="background: var(--ct-ok-soft);">
-                <i class="fas fa-play-circle" style="color:#10b981;"></i>
+  <!-- Live Session Cards -->
+  <div id="active-sessions-container" class="ls-list">
+    {% if active_attempts %}
+      {% for a in active_attempts %}
+      {% set st_name = a.full_name or a.username %}
+      {% set rem = a.remaining_time if a.remaining_time is not none else ((a.duration or 30) * 60) %}
+      {% set mins = rem // 60 %}
+      {% set secs = rem % 60 %}
+      <article class="ls-card {% if a.resume_requested %}is-resume{% elif a.is_paused %}is-paused{% endif %}"
+               id="card-all-{{ a.id }}"
+               data-live-state="{{ 1 if a.is_paused else 0 }}-{{ 1 if a.resume_requested else 0 }}"
+               data-conn-state="active"
+               data-search="{{ st_name|lower }} {{ (a.username or '')|lower }} {{ (a.exam_name or '')|lower }} {{ (a.student_class or '')|lower }} {{ (a.teacher_name or '')|lower }}"
+               style="order: {% if a.resume_requested %}-2{% elif a.is_paused %}-1{% else %}0{% endif %};">
+        <div class="ls-card__top">
+          <div class="ls-card__who">
+            {{ person_avatar(a.photo if a.photo is defined else '', st_name, 'md', '', 'uploads') }}
+            <div>
+              <div class="ls-card__name">{{ st_name }}</div>
+              <div class="ls-card__sub">
+                <span class="tc-mono">@{{ a.username }}</span>
+                <span>·</span>
+                <strong style="color:var(--tc-ink-2);font-weight:600">{{ a.exam_name }}</strong>
+                <span class="tc-pill">{{ a.student_class or a.target_class }}</span>
+                <span class="tc-pill tc-pill--accent">{{ a.teacher_name or 'Staff' }}</span>
+              </div>
             </div>
-            <span class="section-title">Live Sessions (All Teachers)</span>
+          </div>
+          <span id="status-tag-{{ a.id }}" class="tc-pill {% if a.resume_requested %}tc-pill--warn{% elif a.is_paused %}tc-pill--accent{% else %}tc-pill--ok{% endif %}">
+            <i class="tc-dot"></i>{% if a.resume_requested %}Resume Requested{% elif a.is_paused %}Paused{% else %}Writing{% endif %}
+          </span>
         </div>
-        
-        <div style="display: flex; gap: 10px;">
-            <button class="action-btn" style="background:#10b981; color:white;" onclick="resumeAllExams()">
-                <i class="fas fa-play-circle"></i> Resume All
-            </button>
-            <button class="action-btn" style="background:#f59e0b; color:white;" onclick="pauseAllExams()">
-                <i class="fas fa-pause-circle"></i> Pause All
-            </button>
-            <button class="action-btn" style="background:#dc2626; color:white;" onclick="forceSubmitAllExams()">
-                <i class="fas fa-paper-plane"></i> Force Submit All
-            </button>
+
+        <div class="ls-card__telemetry">
+          <span class="ls-clock" title="Authoritative remaining time">
+            {{ ico('i-clock', 'ct-ico--xs') }}
+            <span id="time-value-{{ a.id }}">{{ '%02d'|format(mins) }}:{{ '%02d'|format(secs) }}</span>
+          </span>
+          <span class="tc-pill {% if (a.warnings_count or 0) > 0 %}tc-pill--warn{% endif %}" id="warning-badge-{{ a.id }}">
+            {{ ico('i-alert', 'ct-ico--xs') }}Warnings: {{ a.warnings_count or 0 }}
+          </span>
+          <span class="tc-pill tc-pill--ok" id="conn-badge-{{ a.id }}">
+            <i class="ls-pulse-dot" id="conn-dot-{{ a.id }}"></i>
+            <span id="conn-text-{{ a.id }}">Connected</span>
+          </span>
+          <span class="tc-pill tc-mono" style="margin-left:auto">Attempt #{{ a.id }}</span>
         </div>
-    </div>
 
-    <div id="active-sessions-container">
-        {% if active_attempts %}
-            {% for a in active_attempts %}
-            <div class="attempt-card {% if a.resume_requested %}card-resume{% elif a.is_paused %}card-paused{% else %}card-active{% endif %}"
-                 id="card-all-{{ a.id }}"
-                 data-live-state="{{ a.is_paused }}-{{ a.resume_requested }}"
-                 style="order: {% if a.resume_requested %}-2{% elif a.is_paused %}-1{% else %}0{% endif %};">
-                
-                <div class="card-top">
-                    <div class="student-info">
-                        <div class="student-avatar" style="background:linear-gradient(135deg,
-                            {% if a.resume_requested %}#f59e0b,#d97706
-                            {% elif a.is_paused %}#3b82f6,#2563eb
-                            {% else %}#10b981,#059669{% endif %});">
-                            {{ (a.full_name or a.username)[0].upper() }}
-                        </div>
-                        <div>
-                            <div class="student-name">{{ a.full_name or a.username }}</div>
-                            <div class="student-meta">
-                                @{{ a.username }} &middot; {{ a.exam_name }}
-                                <br><span class="teacher-chip"><i class="fas fa-chalkboard-teacher"></i> {{ a.teacher_name }}</span>
-                                &middot; {{ a.student_class }} &middot; {{ a.target_class }}
-                            </div>
-                        </div>
-                    </div>
-                    <span id="status-tag-{{ a.id }}" class="status-badge {% if a.resume_requested %}badge-resume{% elif a.is_paused %}badge-paused{% else %}badge-active{% endif %}">
-                        <i class="fas {% if a.resume_requested %}fa-clock{% elif a.is_paused %}fa-pause-circle{% else %}fa-circle-notch fa-spin{% endif %}"></i>
-                        {% if a.resume_requested %}Waiting for Approval{% elif a.is_paused %}Paused{% else %}Active{% endif %}
-                    </span>
-                </div>
-
-                <div class="info-row">
-                    <div class="info-chip">
-                        <i class="fas fa-hourglass-half"></i>
-                        Time left: <strong id="time-display-{{ a.id }}">{{ (a.remaining_time // 60) if a.remaining_time else (a.duration) }}m {{ (a.remaining_time % 60) if a.remaining_time else '0' }}s</strong>
-                    </div>
-                    <div class="info-chip" id="warning-badge-{{ a.id }}">
-                        <i class="fas fa-exclamation-triangle"></i>
-                        Warnings: {{ a.warnings_count or 0 }}
-                    </div>
-                    <div class="info-chip conn-chip-active" id="conn-badge-{{ a.id }}">
-                        <span class="live-dot" id="conn-dot-{{ a.id }}" style="margin-right:4px;"></span>
-                        <span id="conn-text-{{ a.id }}">Active</span>
-                    </div>
-                    <div class="info-chip">
-                        <i class="fas fa-hashtag"></i>
-                        Attempt #{{ a.id }}
-                    </div>
-                </div>
-
-                <div class="time-control-group">
-                    <span class="time-display" id="time-value-{{ a.id }}">{{ (a.remaining_time // 60) if a.remaining_time else a.duration }}:{{ '%02d' % (a.remaining_time % 60) if a.remaining_time else '00' }}</span>
-                    
-                    <input type="number" id="custom-time-{{ a.id }}" placeholder="Mins" min="1" style="width: 75px; padding: 5px 10px; border: 1px solid #cbd5e1; border-radius: 30px; font-size: 13px; outline: none;">
-                    
-                    <button class="time-btn add" onclick="adjustCustomTime({{ a.id }}, 'add')">
-                        <i class="fas fa-plus-circle"></i> Add
-                    </button>
-                    <button class="time-btn subtract" onclick="adjustCustomTime({{ a.id }}, 'subtract')">
-                        <i class="fas fa-minus-circle"></i> Sub
-                    </button>
-                </div>
-
-                <div class="action-row">
-                    <span id="dynamic-actions-{{ a.id }}" style="display:inline-flex; gap:10px;">
-                        {% if a.resume_requested %}
-                        <button class="action-btn btn-approve" onclick="approveResume({{ a.id }})">
-                            <i class="fas fa-unlock-alt"></i> Approve Resume
-                        </button>
-                        {% elif a.is_paused %}
-                        <button class="action-btn btn-resume" onclick="resumeExam({{ a.id }})">
-                            <i class="fas fa-play"></i> Resume Exam
-                        </button>
-                        {% else %}
-                        <button class="action-btn btn-pause" onclick="pauseExam({{ a.id }})">
-                            <i class="fas fa-pause"></i> Pause Exam
-                        </button>
-                        {% endif %}
-                    </span>
-
-                    <button class="action-btn btn-force-submit" onclick="forceSubmit({{ a.id }}, '{{ (a.full_name or a.username) | replace("\'", "\\'") }}')">
-                        <i class="fas fa-paper-plane"></i> Force Submit
-                    </button>
-                    <button class="action-btn" style="background:#f59e0b; color:white;" onclick="resetWarnings({{ a.id }})">
-                        <i class="fas fa-undo"></i> Reset Warnings
-                    </button>
-                </div>
-            </div>
-            {% endfor %}
-        {% else %}
-            <div class="empty-state">
-                <div class="empty-icon"><i class="fas fa-graduation-cap"></i></div>
-                <div class="empty-title">No active exam sessions</div>
-                <div class="empty-sub">Live exam sessions from all teachers will appear here.</div>
-            </div>
-        {% endif %}
-    </div>
-
-</div>
-
-<script>
-// Toast System
-function showToast(msg, type = 'success') {
-    Swal.fire({
-        title: type === 'success' ? 'Success!' : type === 'error' ? 'Error!' : 'Info',
-        text: msg, icon: type, toast: true, position: 'top-end',
-        showConfirmButton: false, timer: 3000, timerProgressBar: true
-    });
-}
-
-// Helper: Escape HTML
-function escapeHtml(str) {
-    if (!str) return '';
-    return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-}
-
-// Helper: Create HTML for a new attempt card dynamically
-function createAttemptCardHtml(a) {
-    const mins = Math.floor((a.remaining_time || 0) / 60);
-    const secs = ((a.remaining_time || 0) % 60).toString().padStart(2, '0');
-    const avatarLetter = (a.student_name || 'S')[0].toUpperCase();
-    
-    let cardClass = 'card-active';
-    let avatarGrad = 'linear-gradient(135deg,#10b981,#059669)';
-    let statusClass = 'badge-active';
-    let statusHtml = '<i class="fas fa-circle-notch fa-spin"></i> Active';
-    let actionBtnHtml = `<button class="action-btn btn-pause" onclick="pauseExam(${a.id})"><i class="fas fa-pause"></i> Pause Exam</button>`;
-    let order = '0';
-
-    if (a.resume_requested) {
-        cardClass = 'card-resume';
-        avatarGrad = 'linear-gradient(135deg,#f59e0b,#d97706)';
-        statusClass = 'badge-resume';
-        statusHtml = '<i class="fas fa-clock"></i> Waiting for Approval';
-        actionBtnHtml = `<button class="action-btn btn-approve" onclick="approveResume(${a.id})"><i class="fas fa-unlock-alt"></i> Approve Resume</button>`;
-        order = '-2';
-    } else if (a.is_paused) {
-        cardClass = 'card-paused';
-        avatarGrad = 'linear-gradient(135deg,#3b82f6,#2563eb)';
-        statusClass = 'badge-paused';
-        statusHtml = '<i class="fas fa-pause-circle"></i> Paused';
-        actionBtnHtml = `<button class="action-btn btn-resume" onclick="resumeExam(${a.id})"><i class="fas fa-play"></i> Resume Exam</button>`;
-        order = '-1';
-    }
-
-    let connClass = 'conn-chip-active';
-    let dotClass = '';
-    let connText = 'Active';
-    if (a.connection_state === 'lagging') {
-        connClass = 'conn-chip-lagging';
-        dotClass = 'dot-warning';
-        connText = `Lagging (${a.seconds_since_heartbeat}s)`;
-    } else if (a.connection_state === 'disconnected') {
-        connClass = 'conn-chip-disconnected';
-        dotClass = 'dot-danger';
-        connText = `Offline (${a.seconds_since_heartbeat}s)`;
-    }
-
-    return `
-    <div class="attempt-card ${cardClass}" id="card-all-${a.id}" data-live-state="${a.is_paused ? 1 : 0}-${a.resume_requested ? 1 : 0}" style="order:${order}; transition: all 0.3s ease;">
-        <div class="card-top">
-            <div class="student-info">
-                <div class="student-avatar" style="background:${avatarGrad};">${avatarLetter}</div>
-                <div>
-                    <div class="student-name">${escapeHtml(a.student_name)}</div>
-                    <div class="student-meta">
-                        @${escapeHtml(a.username)} &middot; ${escapeHtml(a.exam_name)}
-                        <br><span class="teacher-chip"><i class="fas fa-chalkboard-teacher"></i> ${escapeHtml(a.teacher_name || 'Staff')}</span>
-                        &middot; ${escapeHtml(a.student_class || '')}
-                    </div>
-                </div>
-            </div>
-            <span id="status-tag-${a.id}" class="status-badge ${statusClass}">${statusHtml}</span>
+        <div class="ls-card__controls">
+          <div class="ls-time-tools">
+            <button type="button" class="tc-btn tc-btn--secondary tc-btn--sm" onclick="quickAdjustTime({{ a.id }}, 'add', 5)">+5m</button>
+            <button type="button" class="tc-btn tc-btn--secondary tc-btn--sm" onclick="quickAdjustTime({{ a.id }}, 'add', 10)">+10m</button>
+            <button type="button" class="tc-btn tc-btn--secondary tc-btn--sm" onclick="quickAdjustTime({{ a.id }}, 'subtract', 5)">−5m</button>
+            <input type="number" class="ls-time-input" id="custom-time-{{ a.id }}" placeholder="Mins" min="1" max="180" aria-label="Custom minutes for {{ st_name }}">
+            <button type="button" class="tc-btn tc-btn--ok tc-btn--sm" onclick="adjustCustomTime({{ a.id }}, 'add')">Add</button>
+            <button type="button" class="tc-btn tc-btn--danger-soft tc-btn--sm" onclick="adjustCustomTime({{ a.id }}, 'subtract')">Sub</button>
+          </div>
+          <div class="ls-actions">
+            <span id="dynamic-actions-{{ a.id }}" style="display:inline-flex;gap:8px">
+              {% if a.resume_requested %}
+              <button type="button" class="tc-btn tc-btn--ok tc-btn--sm" onclick="approveResume({{ a.id }})">{{ ico('i-unlock', 'ct-ico--xs') }}Approve Resume</button>
+              {% elif a.is_paused %}
+              <button type="button" class="tc-btn tc-btn--primary tc-btn--sm" onclick="resumeExam({{ a.id }})">{{ ico('i-play', 'ct-ico--xs') }}Resume</button>
+              {% else %}
+              <button type="button" class="tc-btn tc-btn--secondary tc-btn--sm" onclick="pauseExam({{ a.id }})">{{ ico('i-pause', 'ct-ico--xs') }}Pause</button>
+              {% endif %}
+            </span>
+            <button type="button" class="tc-btn tc-btn--ghost tc-btn--sm" onclick="resetWarnings({{ a.id }})">{{ ico('i-undo', 'ct-ico--xs') }}Reset Warnings</button>
+            <button type="button" class="ct-btn ct-btn--danger-solid tc-btn--sm" onclick="forceSubmit({{ a.id }}, {{ st_name|tojson|forceescape }})">{{ ico('i-send', 'ct-ico--xs') }}Force Submit</button>
+          </div>
         </div>
-        <div class="info-row">
-            <div class="info-chip">
-                <i class="fas fa-hourglass-half"></i>
-                Time left: <strong id="time-display-${a.id}">${mins}m ${secs}s</strong>
-            </div>
-            <div class="info-chip" id="warning-badge-${a.id}">
-                <i class="fas fa-exclamation-triangle"></i>
-                Warnings: ${a.warnings_count || 0}
-            </div>
-            <div class="info-chip ${connClass}" id="conn-badge-${a.id}">
-                <span class="live-dot ${dotClass}" id="conn-dot-${a.id}" style="margin-right:4px;"></span>
-                <span id="conn-text-${a.id}">${connText}</span>
-            </div>
-            <div class="info-chip">
-                <i class="fas fa-hashtag"></i>
-                Attempt #${a.id}
-            </div>
+      </article>
+      {% endfor %}
+    {% else %}
+      <section class="tc-card" id="lsEmptyState">
+        <div class="tc-empty">
+          <span class="tc-empty__ico">{{ ico('i-activity') }}</span>
+          <strong>No active exam sessions right now</strong>
+          <p>When students start any active examination across the school, live timers, heartbeat status, and pause controls appear here automatically.</p>
+          <a class="tc-btn tc-btn--secondary tc-btn--sm" href="/admin/exams-management" style="margin-top:6px">{{ ico('i-live', 'ct-ico--xs') }}Open Exam Control Center</a>
         </div>
-        <div class="time-control-group">
-            <span class="time-display" id="time-value-${a.id}">${mins}:${secs}</span>
-            <input type="number" id="custom-time-${a.id}" placeholder="Mins" min="1" style="width: 75px; padding: 5px 10px; border: 1px solid #cbd5e1; border-radius: 30px; font-size: 13px; outline: none;">
-            <button class="time-btn add" onclick="adjustCustomTime(${a.id}, 'add')"><i class="fas fa-plus-circle"></i> Add</button>
-            <button class="time-btn subtract" onclick="adjustCustomTime(${a.id}, 'subtract')"><i class="fas fa-minus-circle"></i> Sub</button>
-        </div>
-        <div class="action-row">
-            <span id="dynamic-actions-${a.id}" style="display:inline-flex; gap:10px;">${actionBtnHtml}</span>
-            <button class="action-btn btn-force-submit" onclick="forceSubmit(${a.id}, '${escapeHtml(a.student_name).replace(/'/g, "\\'")}')">
-                <i class="fas fa-paper-plane"></i> Force Submit
-            </button>
-            <button class="action-btn" style="background:#f59e0b; color:white;" onclick="resetWarnings(${a.id})">
-                <i class="fas fa-undo"></i> Reset Warnings
-            </button>
-        </div>
-    </div>`;
-}
-
-// Approve Resume Request
-async function approveResume(attemptId) {
-    const r = await Swal.fire({
-        title: 'Approve Resume Request?',
-        text: 'This will unlock the exam and allow the student to continue.',
-        icon: 'question', showCancelButton: true,
-        confirmButtonColor: '#10b981', confirmButtonText: 'Yes, Approve', cancelButtonText: 'Cancel'
-    });
-    if (!r.isConfirmed) return;
-    try {
-        const res = await fetch(`/admin/exam_resume/${attemptId}`, { method: 'POST', headers: { 'Content-Type': 'application/json' } });
-        const data = await res.json();
-        if (data.success || data.ok) {
-            showToast('Student unlocked.', 'success');
-            pollStatus();
-        } else { showToast(data.error || 'Failed.', 'error'); }
-    } catch (e) { showToast('Network error.', 'error'); }
-}
-
-// Pause Exam
-async function pauseExam(attemptId) {
-    const r = await Swal.fire({
-        title: 'Pause Exam?',
-        text: "The student's timer will freeze.",
-        icon: 'question', showCancelButton: true,
-        confirmButtonColor: '#3b82f6', confirmButtonText: 'Yes, Pause', cancelButtonText: 'Cancel'
-    });
-    if (!r.isConfirmed) return;
-    try {
-        const res = await fetch(`/admin/exam_pause/${attemptId}`, { method: 'POST', headers: { 'Content-Type': 'application/json' } });
-        const data = await res.json();
-        if (data.success || data.ok) {
-            showToast('Exam paused.', 'success');
-            pollStatus();
-        } else { showToast(data.error || 'Failed.', 'error'); }
-    } catch (e) { showToast('Network error.', 'error'); }
-}
-
-// Resume Exam
-async function resumeExam(attemptId) {
-    const r = await Swal.fire({
-        title: 'Resume Exam?',
-        text: 'The student will be able to continue.',
-        icon: 'question', showCancelButton: true,
-        confirmButtonColor: '#8b5cf6', confirmButtonText: 'Yes, Resume', cancelButtonText: 'Cancel'
-    });
-    if (!r.isConfirmed) return;
-    try {
-        const res = await fetch(`/admin/exam_resume/${attemptId}`, { method: 'POST', headers: { 'Content-Type': 'application/json' } });
-        const data = await res.json();
-        if (data.success || data.ok) {
-            showToast('Exam resumed.', 'success');
-            pollStatus();
-        } else { showToast(data.error || 'Failed.', 'error'); }
-    } catch (e) { showToast('Network error.', 'error'); }
-}
-
-// Adjust Custom Time
-async function adjustCustomTime(attemptId, action) {
-    const input = document.getElementById(`custom-time-${attemptId}`);
-    const minutes = parseInt(input.value);
-    if (!minutes || minutes <= 0) { showToast("Please enter a valid number of minutes.", "error"); return; }
-    
-    const isAdd = action === 'add';
-    const r = await Swal.fire({
-        title: `${isAdd ? 'Add' : 'Subtract'} Time?`,
-        text: `${isAdd ? 'Add' : 'Remove'} ${minutes} minute${minutes > 1 ? 's' : ''} ${isAdd ? 'to' : 'from'} this student's exam.`,
-        icon: 'question', showCancelButton: true,
-        confirmButtonColor: isAdd ? '#10b981' : '#ef4444', confirmButtonText: `Yes, ${isAdd ? 'Add' : 'Subtract'}`, cancelButtonText: 'Cancel'
-    });
-    if (!r.isConfirmed) return;
-    
-    const endpoint = isAdd ? `/admin/exam_add_time/${attemptId}/${minutes}` : `/admin/exam_subtract_time/${attemptId}/${minutes}`;
-    try {
-        const res = await fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' } });
-        const data = await res.json();
-        if (data.success || data.ok) {
-            showToast(`${minutes} min ${isAdd ? 'added' : 'removed'}.`, 'success');
-            input.value = '';
-            pollStatus();
-        } else { showToast(data.error || 'Failed.', 'error'); }
-    } catch (e) { showToast('Network error.', 'error'); }
-}
-
-// Reset Warnings
-async function resetWarnings(attemptId) {
-    const r = await Swal.fire({
-        title: 'Reset Warnings?',
-        text: 'Clear all warnings back to 0.',
-        icon: 'question', showCancelButton: true, confirmButtonColor: '#f59e0b', confirmButtonText: 'Yes, Reset', cancelButtonText: 'Cancel'
-    });
-    if (!r.isConfirmed) return;
-    try {
-        const res = await fetch(`/admin/exam_reset_warnings/${attemptId}`, { method: 'POST', headers: { 'Content-Type': 'application/json' } });
-        const data = await res.json();
-        if (data.success || data.ok) {
-            showToast('Warnings reset to 0.', 'success');
-            const warnEl = document.getElementById(`warning-badge-${attemptId}`);
-            if (warnEl) warnEl.innerHTML = `<i class="fas fa-exclamation-triangle"></i> Warnings: 0`;
-        } else { showToast(data.error || 'Failed.', 'error'); }
-    } catch (e) { showToast('Network error.', 'error'); }
-}
-
-// Force Submit
-async function forceSubmit(attemptId, studentName) {
-    const r = await Swal.fire({
-        title: 'Force Submit Exam?',
-        html: `<div style="text-align:left;line-height:1.9;">
-                 <b>${escapeHtml(studentName)}</b>'s exam will be submitted immediately with their current answers.<br>
-                 <span style="color:#dc2626;font-weight:600;"><i class="fas fa-exclamation-triangle"></i> This cannot be undone.</span>
-               </div>`,
-        icon: 'warning', showCancelButton: true, confirmButtonColor: '#dc2626', confirmButtonText: 'Yes, Force Submit', cancelButtonText: 'Cancel', focusCancel: true
-    });
-    if (!r.isConfirmed) return;
-    Swal.fire({ title: 'Submitting...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-    try {
-        const res = await fetch(`/admin/exam_force_submit/${attemptId}`, { method: 'POST', headers: { 'Content-Type': 'application/json' } });
-        const data = await res.json();
-        if (data.success || data.ok) {
-            Swal.close();
-            showToast(`${studentName}'s exam has been force-submitted.`, 'success');
-            const cardEl = document.getElementById(`card-all-${attemptId}`);
-            if (cardEl) {
-                cardEl.style.opacity = '0';
-                cardEl.style.transform = 'translateY(-10px)';
-                cardEl.style.transition = 'all 0.3s ease';
-                setTimeout(() => { cardEl.remove(); pollStatus(); }, 350);
-            } else {
-                pollStatus();
-            }
-        } else { 
-            Swal.close();
-            showToast(data.error || 'Could not force submit.', 'error'); 
-        }
-    } catch (e) { 
-        Swal.close();
-        showToast('Network error.', 'error'); 
-    }
-}
-
-// Bulk Actions - No page reload
-async function pauseAllExams() {
-    const r = await Swal.fire({ title: 'Pause ALL Active Exams?', text: "Instantly freeze all timers.", icon: 'warning', showCancelButton: true, confirmButtonColor: '#f59e0b', confirmButtonText: 'Yes, Pause All', cancelButtonText: 'Cancel' });
-    if (!r.isConfirmed) return;
-    Swal.fire({ title: 'Pausing everyone...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-    try { 
-        const res = await fetch(`/admin/exam_pause_all`, { method: 'POST' }); 
-        const data = await res.json(); 
-        Swal.close();
-        if (data.success || data.ok) { 
-            showToast('All active exams paused.', 'success');
-            pollStatus();
-        } else {
-            showToast(data.error || 'Failed to pause all.', 'error');
-        }
-    } catch (e) { Swal.close(); showToast('Network error', 'error'); }
-}
-
-async function forceSubmitAllExams() {
-    const r = await Swal.fire({ title: 'Force Submit ALL Exams?', html: `<span style="color:#dc2626;font-weight:600;"><i class="fas fa-exclamation-triangle"></i> THIS ACTION CANNOT BE UNDONE.</span>`, icon: 'error', showCancelButton: true, confirmButtonColor: '#dc2626', confirmButtonText: 'Yes, Submit ALL', cancelButtonText: 'Cancel', focusCancel: true });
-    if (!r.isConfirmed) return;
-    Swal.fire({ title: 'Submitting all exams...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-    try { 
-        const res = await fetch(`/admin/exam_force_submit_all`, { method: 'POST' }); 
-        const data = await res.json(); 
-        Swal.close();
-        if (data.success || data.ok) { 
-            showToast('All exams submitted.', 'success');
-            pollStatus();
-        } else {
-            showToast(data.error || 'Failed to submit all.', 'error');
-        }
-    } catch (e) { Swal.close(); showToast('Network error', 'error'); }
-}
-
-async function resumeAllExams() {
-    const r = await Swal.fire({ title: 'Resume ALL Paused Exams?', text: "Unfreeze all paused exams.", icon: 'question', showCancelButton: true, confirmButtonColor: '#10b981', confirmButtonText: 'Yes, Resume All', cancelButtonText: 'Cancel' });
-    if (!r.isConfirmed) return;
-    Swal.fire({ title: 'Resuming everyone...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-    try { 
-        const res = await fetch(`/admin/exam_resume_all`, { method: 'POST' }); 
-        const data = await res.json(); 
-        Swal.close();
-        if (data.success || data.ok) { 
-            showToast('All paused exams resumed.', 'success');
-            pollStatus();
-        } else {
-            showToast(data.error || 'Failed to resume all.', 'error');
-        }
-    } catch (e) { Swal.close(); showToast('Network error', 'error'); }
-}
-
-// Live Polling & In-Place DOM Reconciliation
-let isPolling = false;
-
-async function pollStatus() {
-    if (isPolling) return;
-    if (document.querySelector('.swal2-container')) return;
-
-    isPolling = true;
-    try {
-        const res = await fetch('/admin/api/technical_support_status');
-        const data = await res.json();
-        if (!data.success && !data.ok) {
-            isPolling = false;
-            return;
-        }
-
-        const container = document.getElementById('active-sessions-container');
-        if (!container) { isPolling = false; return; }
-
-        const attempts = data.attempts || [];
-        const summary = data.summary || {
-            total_active: attempts.length,
-            total_running: attempts.filter(a => !a.is_paused).length,
-            total_paused: attempts.filter(a => a.is_paused).length,
-            total_resume_requested: attempts.filter(a => a.resume_requested).length
-        };
-
-        // 1. Update summary stat counters
-        const statActive = document.getElementById('stat-active');
-        const statRunning = document.getElementById('stat-running');
-        const statPaused = document.getElementById('stat-paused');
-        const statRequests = document.getElementById('stat-requests');
-        if (statActive) statActive.innerText = summary.total_active;
-        if (statRunning) statRunning.innerText = summary.total_running;
-        if (statPaused) statPaused.innerText = summary.total_paused;
-        if (statRequests) statRequests.innerText = summary.total_resume_requested;
-
-        // 2. Handle empty state
-        const emptyState = container.querySelector('.empty-state');
-        if (attempts.length === 0) {
-            container.querySelectorAll('.attempt-card').forEach(c => c.remove());
-            if (!emptyState) {
-                container.innerHTML = `
-                <div class="empty-state">
-                    <div class="empty-icon"><i class="fas fa-graduation-cap"></i></div>
-                    <div class="empty-title">No active exam sessions</div>
-                    <div class="empty-sub">Live exam sessions from all teachers will appear here.</div>
-                </div>`;
-            }
-            isPolling = false;
-            return;
-        } else if (emptyState) {
-            emptyState.remove();
-        }
-
-        // 3. Reconcile existing cards and add new ones
-        const incomingIds = new Set(attempts.map(a => a.id));
-
-        // Remove cards that are no longer active
-        container.querySelectorAll('.attempt-card').forEach(card => {
-            const id = parseInt(card.id.replace('card-all-', ''));
-            if (!incomingIds.has(id)) {
-                card.style.opacity = '0';
-                card.style.transform = 'scale(0.96)';
-                card.style.transition = 'all 0.3s ease';
-                setTimeout(() => card.remove(), 320);
-            }
-        });
-
-        // Update or add each attempt
-        attempts.forEach(session => {
-            let cardEl = document.getElementById(`card-all-${session.id}`);
-
-            if (!cardEl) {
-                // Dynamically insert new card
-                const wrapper = document.createElement('div');
-                wrapper.innerHTML = createAttemptCardHtml(session);
-                const newCard = wrapper.firstElementChild;
-                container.appendChild(newCard);
-                return;
-            }
-
-            // Update remaining time
-            if (session.remaining_time !== null && session.remaining_time !== undefined) {
-                const mins = Math.floor(session.remaining_time / 60);
-                const secs = (session.remaining_time % 60).toString().padStart(2, '0');
-                
-                const timeValEl = document.getElementById(`time-value-${session.id}`);
-                if (timeValEl) timeValEl.innerText = `${mins}:${secs}`;
-                
-                const timeDispEl = document.getElementById(`time-display-${session.id}`);
-                if (timeDispEl) timeDispEl.innerText = `${mins}m ${secs}s`;
-            }
-
-            // Update warnings count
-            const warnEl = document.getElementById(`warning-badge-${session.id}`);
-            if (warnEl) warnEl.innerHTML = `<i class="fas fa-exclamation-triangle"></i> Warnings: ${session.warnings_count || 0}`;
-
-            // Update connection indicator
-            const connBadge = document.getElementById(`conn-badge-${session.id}`);
-            const connDot = document.getElementById(`conn-dot-${session.id}`);
-            const connText = document.getElementById(`conn-text-${session.id}`);
-            if (connBadge && connDot && connText) {
-                connBadge.className = 'info-chip';
-                connDot.className = 'live-dot';
-                if (session.connection_state === 'active') {
-                    connBadge.classList.add('conn-chip-active');
-                    connText.innerText = 'Active';
-                } else if (session.connection_state === 'lagging') {
-                    connBadge.classList.add('conn-chip-lagging');
-                    connDot.classList.add('dot-warning');
-                    connText.innerText = `Lagging (${session.seconds_since_heartbeat}s)`;
-                } else {
-                    connBadge.classList.add('conn-chip-disconnected');
-                    connDot.classList.add('dot-danger');
-                    connText.innerText = `Offline (${session.seconds_since_heartbeat}s)`;
-                }
-            }
-
-            // Update state transitions (Pause / Resume / Request)
-            const currentState = `${session.is_paused ? 1 : 0}-${session.resume_requested ? 1 : 0}`;
-            if (cardEl.dataset.liveState !== currentState) {
-                cardEl.dataset.liveState = currentState;
-
-                const statusEl = document.getElementById(`status-tag-${session.id}`);
-                const actionsEl = document.getElementById(`dynamic-actions-${session.id}`);
-                const avatarEl = cardEl.querySelector('.student-avatar');
-
-                if (session.resume_requested) {
-                    cardEl.className = "attempt-card card-resume";
-                    cardEl.style.order = "-2";
-                    if (avatarEl) avatarEl.style.background = "linear-gradient(135deg,#f59e0b,#d97706)";
-                    if (statusEl) {
-                        statusEl.className = "status-badge badge-resume";
-                        statusEl.innerHTML = `<i class="fas fa-clock"></i> Waiting for Approval`;
-                    }
-                    if (actionsEl) {
-                        actionsEl.innerHTML = `<button class="action-btn btn-approve" onclick="approveResume(${session.id})"><i class="fas fa-unlock-alt"></i> Approve Resume</button>`;
-                    }
-                } else if (session.is_paused) {
-                    cardEl.className = "attempt-card card-paused";
-                    cardEl.style.order = "-1";
-                    if (avatarEl) avatarEl.style.background = "linear-gradient(135deg,#3b82f6,#2563eb)";
-                    if (statusEl) {
-                        statusEl.className = "status-badge badge-paused";
-                        statusEl.innerHTML = `<i class="fas fa-pause-circle"></i> Paused`;
-                    }
-                    if (actionsEl) {
-                        actionsEl.innerHTML = `<button class="action-btn btn-resume" onclick="resumeExam(${session.id})"><i class="fas fa-play"></i> Resume Exam</button>`;
-                    }
-                } else {
-                    cardEl.className = "attempt-card card-active";
-                    cardEl.style.order = "0";
-                    if (avatarEl) avatarEl.style.background = "linear-gradient(135deg,#10b981,#059669)";
-                    if (statusEl) {
-                        statusEl.className = "status-badge badge-active";
-                        statusEl.innerHTML = `<i class="fas fa-circle-notch fa-spin"></i> Active`;
-                    }
-                    if (actionsEl) {
-                        actionsEl.innerHTML = `<button class="action-btn btn-pause" onclick="pauseExam(${session.id})"><i class="fas fa-pause"></i> Pause Exam</button>`;
-                    }
-                }
-            }
-        });
-
-    } catch (e) {
-        console.warn("Live reconciliation deferred:", e);
-    } finally {
-        isPolling = false;
-    }
-}
-
-// Start polling every 3.5s
-setInterval(pollStatus, 3500);
-</script>
+      </section>
+    {% endif %}
+  </div>
 
 {{ shell_end(role='admin') }}
+<script>
+(function () {
+  var isPolling = false;
+  var activeFilter = "all";
+
+  function fmtClock(totalSeconds) {
+    var sec = Math.max(0, parseInt(totalSeconds || 0, 10));
+    var m = Math.floor(sec / 60);
+    var s = sec % 60;
+    return String(m).padStart(2, "0") + ":" + String(s).padStart(2, "0");
+  }
+
+  function avatarMarkup(photo, name) {
+    var glyph = '<svg class="ct-avatar__glyph" viewBox="0 0 24 24" aria-hidden="true"><use href="' + CT.sprite + '#i-person-avatar"/></svg>';
+    if (photo && photo !== "default.png" && photo !== "None") {
+      return '<span class="ct-avatar ct-avatar--md ct-avatar--person"><img src="/uploads/images/' + encodeURIComponent(photo) + '" alt="' + CT.esc(name) + '" onerror="this.remove();">' + glyph + '</span>';
+    }
+    return '<span class="ct-avatar ct-avatar--md ct-avatar--person" aria-label="' + CT.esc(name) + '">' + glyph + '</span>';
+  }
+
+  function buildCardHtml(a) {
+    var name = a.student_name || a.username || "Student";
+    var cardCls = a.resume_requested ? "is-resume" : (a.is_paused ? "is-paused" : "");
+    var order = a.resume_requested ? "-2" : (a.is_paused ? "-1" : "0");
+    var statusCls = a.resume_requested ? "tc-pill--warn" : (a.is_paused ? "tc-pill--accent" : "tc-pill--ok");
+    var statusLabel = a.resume_requested ? "Resume Requested" : (a.is_paused ? "Paused" : "Writing");
+    var primaryAction = a.resume_requested
+      ? '<button type="button" class="tc-btn tc-btn--ok tc-btn--sm" onclick="approveResume(' + a.id + ')">' + CT.icon("i-unlock", "ct-ico--xs") + 'Approve Resume</button>'
+      : (a.is_paused
+        ? '<button type="button" class="tc-btn tc-btn--primary tc-btn--sm" onclick="resumeExam(' + a.id + ')">' + CT.icon("i-play", "ct-ico--xs") + 'Resume</button>'
+        : '<button type="button" class="tc-btn tc-btn--secondary tc-btn--sm" onclick="pauseExam(' + a.id + ')">' + CT.icon("i-pause", "ct-ico--xs") + 'Pause</button>');
+
+    var connPill = "tc-pill--ok", dotCls = "ls-pulse-dot", connText = "Connected";
+    if (a.connection_state === "lagging") {
+      connPill = "tc-pill--warn"; dotCls = "ls-pulse-dot ls-pulse-dot--warn"; connText = "Lagging (" + a.seconds_since_heartbeat + "s)";
+    } else if (a.connection_state === "disconnected") {
+      connPill = "tc-pill--bad"; dotCls = "ls-pulse-dot ls-pulse-dot--bad"; connText = "Offline (" + a.seconds_since_heartbeat + "s)";
+    }
+
+    var searchHay = [name, a.username, a.exam_name, a.student_class, a.teacher_name].join(" ").toLowerCase();
+    var safeNameJson = JSON.stringify(name).replace(/"/g, "&quot;");
+
+    return '<article class="ls-card ' + cardCls + '" id="card-all-' + a.id + '" ' +
+      'data-live-state="' + (a.is_paused ? 1 : 0) + '-' + (a.resume_requested ? 1 : 0) + '" ' +
+      'data-conn-state="' + CT.esc(a.connection_state || "active") + '" ' +
+      'data-search="' + CT.esc(searchHay) + '" style="order:' + order + '">' +
+      '<div class="ls-card__top">' +
+        '<div class="ls-card__who">' + avatarMarkup(a.photo, name) +
+          '<div><div class="ls-card__name">' + CT.esc(name) + '</div>' +
+          '<div class="ls-card__sub"><span class="tc-mono">@' + CT.esc(a.username || "") + '</span><span>·</span>' +
+          '<strong style="color:var(--tc-ink-2);font-weight:600">' + CT.esc(a.exam_name || "") + '</strong>' +
+          '<span class="tc-pill">' + CT.esc(a.student_class || "") + '</span>' +
+          '<span class="tc-pill tc-pill--accent">' + CT.esc(a.teacher_name || "Staff") + '</span></div></div>' +
+        '</div>' +
+        '<span id="status-tag-' + a.id + '" class="tc-pill ' + statusCls + '"><i class="tc-dot"></i>' + statusLabel + '</span>' +
+      '</div>' +
+      '<div class="ls-card__telemetry">' +
+        '<span class="ls-clock">' + CT.icon("i-clock", "ct-ico--xs") + '<span id="time-value-' + a.id + '">' + fmtClock(a.remaining_time) + '</span></span>' +
+        '<span class="tc-pill ' + ((a.warnings_count || 0) > 0 ? "tc-pill--warn" : "") + '" id="warning-badge-' + a.id + '">' + CT.icon("i-alert", "ct-ico--xs") + 'Warnings: ' + (a.warnings_count || 0) + '</span>' +
+        '<span class="tc-pill ' + connPill + '" id="conn-badge-' + a.id + '"><i class="' + dotCls + '" id="conn-dot-' + a.id + '"></i><span id="conn-text-' + a.id + '">' + connText + '</span></span>' +
+        '<span class="tc-pill tc-mono" style="margin-left:auto">Attempt #' + a.id + '</span>' +
+      '</div>' +
+      '<div class="ls-card__controls">' +
+        '<div class="ls-time-tools">' +
+          '<button type="button" class="tc-btn tc-btn--secondary tc-btn--sm" onclick="quickAdjustTime(' + a.id + ',\'add\',5)">+5m</button>' +
+          '<button type="button" class="tc-btn tc-btn--secondary tc-btn--sm" onclick="quickAdjustTime(' + a.id + ',\'add\',10)">+10m</button>' +
+          '<button type="button" class="tc-btn tc-btn--secondary tc-btn--sm" onclick="quickAdjustTime(' + a.id + ',\'subtract\',5)">−5m</button>' +
+          '<input type="number" class="ls-time-input" id="custom-time-' + a.id + '" placeholder="Mins" min="1" max="180" aria-label="Custom minutes">' +
+          '<button type="button" class="tc-btn tc-btn--ok tc-btn--sm" onclick="adjustCustomTime(' + a.id + ',\'add\')">Add</button>' +
+          '<button type="button" class="tc-btn tc-btn--danger-soft tc-btn--sm" onclick="adjustCustomTime(' + a.id + ',\'subtract\')">Sub</button>' +
+        '</div>' +
+        '<div class="ls-actions">' +
+          '<span id="dynamic-actions-' + a.id + '" style="display:inline-flex;gap:8px">' + primaryAction + '</span>' +
+          '<button type="button" class="tc-btn tc-btn--ghost tc-btn--sm" onclick="resetWarnings(' + a.id + ')">' + CT.icon("i-undo", "ct-ico--xs") + 'Reset Warnings</button>' +
+          '<button type="button" class="ct-btn ct-btn--danger-solid tc-btn--sm" onclick="forceSubmit(' + a.id + ',' + safeNameJson + ')">' + CT.icon("i-send", "ct-ico--xs") + 'Force Submit</button>' +
+        '</div>' +
+      '</div>' +
+    '</article>';
+  }
+
+  window.setStatusFilter = function (mode) {
+    activeFilter = mode || "all";
+    var sel = document.getElementById("lsStatusFilter");
+    if (sel && sel.value !== activeFilter) sel.value = activeFilter;
+    document.querySelectorAll("[data-ls-filter]").forEach(function (btn) {
+      btn.classList.toggle("is-active", btn.getAttribute("data-ls-filter") === activeFilter);
+    });
+    window.applyLsFilters();
+  };
+
+  window.applyLsFilters = function () {
+    var q = ((document.getElementById("lsSearchInput") || {}).value || "").trim().toLowerCase();
+    document.querySelectorAll("#active-sessions-container .ls-card").forEach(function (card) {
+      var hay = card.getAttribute("data-search") || "";
+      var state = card.getAttribute("data-live-state") || "0-0";
+      var conn = card.getAttribute("data-conn-state") || "active";
+      var matchQ = !q || hay.indexOf(q) > -1;
+      var matchStatus = true;
+      if (activeFilter === "writing") matchStatus = state === "0-0";
+      else if (activeFilter === "paused") matchStatus = state.indexOf("1-") === 0;
+      else if (activeFilter === "resume") matchStatus = state.slice(-1) === "1";
+      else if (activeFilter === "offline") matchStatus = conn === "disconnected" || conn === "lagging";
+      card.style.display = (matchQ && matchStatus) ? "" : "none";
+    });
+  };
+
+  async function postSupport(url, okMsg) {
+    try {
+      var res = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" } });
+      var d = await res.json().catch(function () { return {}; });
+      if (res.ok && (d.success || d.ok)) {
+        CT.toast(okMsg || d.message || "Updated", "ok");
+        await window.pollStatus(false);
+        return true;
+      }
+      CT.toast(d.error || d.message || "Action failed", "bad");
+      return false;
+    } catch (e) {
+      CT.toast("Network error while contacting server", "bad");
+      return false;
+    }
+  }
+
+  window.approveResume = async function (id) {
+    var ok = await CT.confirm({
+      title: "Approve resume request?",
+      html: "Unlock this examination immediately so the student can continue writing.",
+      tone: "ok", icon: "i-unlock", confirmText: "Approve & Resume"
+    });
+    if (ok) await postSupport("/admin/exam_resume/" + id, "Student session unlocked");
+  };
+
+  window.pauseExam = async function (id) {
+    var ok = await CT.confirm({
+      title: "Pause this exam session?",
+      html: "The student's authoritative countdown timer will freeze until resumed.",
+      tone: "warn", icon: "i-pause", confirmText: "Pause session"
+    });
+    if (ok) await postSupport("/admin/exam_pause/" + id, "Exam session paused");
+  };
+
+  window.resumeExam = async function (id) {
+    await postSupport("/admin/exam_resume/" + id, "Exam session resumed");
+  };
+
+  window.quickAdjustTime = async function (id, dir, mins) {
+    var ep = dir === "add" ? ("/admin/exam_add_time/" + id + "/" + mins) : ("/admin/exam_subtract_time/" + id + "/" + mins);
+    await postSupport(ep, (dir === "add" ? "Added " : "Removed ") + mins + " min");
+  };
+
+  window.adjustCustomTime = async function (id, dir) {
+    var inp = document.getElementById("custom-time-" + id);
+    var mins = parseInt(inp && inp.value, 10);
+    if (!mins || mins <= 0) { CT.toast("Enter a valid number of minutes.", "warn"); return; }
+    var ok = await CT.confirm({
+      title: (dir === "add" ? "Add " : "Subtract ") + mins + " minute" + (mins === 1 ? "" : "s") + "?",
+      html: (dir === "add" ? "Grant" : "Deduct") + " <strong>" + mins + " min</strong> on attempt #" + id + ".",
+      tone: dir === "add" ? "ok" : "warn",
+      icon: "i-clock",
+      confirmText: dir === "add" ? "Add time" : "Subtract time"
+    });
+    if (!ok) return;
+    if (await window.quickAdjustTime(id, dir, mins) !== false && inp) inp.value = "";
+  };
+
+  window.resetWarnings = async function (id) {
+    var ok = await CT.confirm({
+      title: "Reset session warnings?",
+      html: "Reset warning counter to <strong>0</strong> for attempt #" + id + " and record an audit note.",
+      tone: "warn", icon: "i-undo", confirmText: "Reset to 0"
+    });
+    if (ok) await postSupport("/admin/exam_reset_warnings/" + id, "Warnings cleared to 0");
+  };
+
+  window.forceSubmit = async function (id, name) {
+    var ok = await CT.confirm({
+      title: "Force submit examination?",
+      html: "Submit <strong>" + CT.esc(name) + "</strong> immediately with their currently saved answers? This cannot be undone.",
+      tone: "danger", icon: "i-send", confirmText: "Force submit"
+    });
+    if (!ok) return;
+    var okDone = await postSupport("/admin/exam_force_submit/" + id, name + "'s exam submitted");
+    if (okDone) {
+      var card = document.getElementById("card-all-" + id);
+      if (card) card.remove();
+    }
+  };
+
+  window.pauseAllExams = async function () {
+    var ok = await CT.confirm({
+      title: "Pause all active exams?",
+      html: "Freeze every currently running exam timer across the school.",
+      tone: "warn", icon: "i-pause", confirmText: "Pause all"
+    });
+    if (ok) await postSupport("/admin/exam_pause_all", "All active sessions paused");
+  };
+
+  window.resumeAllExams = async function () {
+    var ok = await CT.confirm({
+      title: "Resume all paused exams?",
+      html: "Unfreeze timers for all currently paused students.",
+      tone: "ok", icon: "i-play", confirmText: "Resume all"
+    });
+    if (ok) await postSupport("/admin/exam_resume_all", "All paused sessions resumed");
+  };
+
+  window.forceSubmitAllExams = async function () {
+    var ok = await CT.confirm({
+      title: "Force submit ALL live exams?",
+      html: "Every active student session will be graded and closed immediately. <strong>This cannot be undone.</strong>",
+      tone: "danger", icon: "i-send", confirmText: "Force submit all"
+    });
+    if (ok) await postSupport("/admin/exam_force_submit_all", "All live sessions force-submitted");
+  };
+
+  window.pollStatus = async function (manual) {
+    if (isPolling) return;
+    if (!document.getElementById("active-sessions-container")) return;
+    isPolling = true;
+    try {
+      var res = await fetch("/admin/api/technical_support_status", { headers: { "Accept": "application/json" } });
+      var data = await res.json();
+      if (!data.success && !data.ok) return;
+
+      var attempts = data.attempts || [];
+      var sum = data.summary || {
+        total_active: attempts.length,
+        total_running: attempts.filter(function (a) { return !a.is_paused; }).length,
+        total_paused: attempts.filter(function (a) { return a.is_paused; }).length,
+        total_resume_requested: attempts.filter(function (a) { return a.resume_requested; }).length,
+        total_disconnected: attempts.filter(function (a) { return a.connection_state !== "active"; }).length
+      };
+
+      var setTxt = function (id, val) { var el = document.getElementById(id); if (el) el.textContent = String(val); };
+      setTxt("stat-active", sum.total_active || 0);
+      setTxt("stat-running", sum.total_running || 0);
+      setTxt("stat-paused", sum.total_paused || 0);
+      setTxt("stat-requests", sum.total_resume_requested || 0);
+      setTxt("stat-disconnected", sum.total_disconnected || 0);
+
+      var syncEl = document.getElementById("lsLastUpdated");
+      if (syncEl) syncEl.textContent = "Updated " + new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+
+      var container = document.getElementById("active-sessions-container");
+      if (!attempts.length) {
+        container.innerHTML =
+          '<section class="tc-card" id="lsEmptyState"><div class="tc-empty">' +
+          '<span class="tc-empty__ico">' + CT.icon("i-activity") + '</span>' +
+          '<strong>No active exam sessions right now</strong>' +
+          '<p>When students start any active examination across the school, live timers, heartbeat status, and pause controls appear here automatically.</p>' +
+          '<a class="tc-btn tc-btn--secondary tc-btn--sm" href="/admin/exams-management" style="margin-top:6px">' + CT.icon("i-live", "ct-ico--xs") + 'Open Exam Control Center</a>' +
+          '</div></section>';
+        if (manual) CT.toast("Live telemetry refreshed", "ok");
+        return;
+      }
+
+      var empty = document.getElementById("lsEmptyState");
+      if (empty) empty.remove();
+
+      var incoming = new Set(attempts.map(function (a) { return a.id; }));
+      container.querySelectorAll(".ls-card").forEach(function (card) {
+        var cid = parseInt(card.id.replace("card-all-", ""), 10);
+        if (!incoming.has(cid)) card.remove();
+      });
+
+      attempts.forEach(function (s) {
+        var card = document.getElementById("card-all-" + s.id);
+        if (!card) {
+          var tmp = document.createElement("div");
+          tmp.innerHTML = buildCardHtml(s);
+          if (tmp.firstElementChild) container.appendChild(tmp.firstElementChild);
+          return;
+        }
+        var tEl = document.getElementById("time-value-" + s.id);
+        if (tEl && s.remaining_time != null) tEl.textContent = fmtClock(s.remaining_time);
+
+        var wEl = document.getElementById("warning-badge-" + s.id);
+        if (wEl) {
+          wEl.className = "tc-pill" + ((s.warnings_count || 0) > 0 ? " tc-pill--warn" : "");
+          wEl.innerHTML = CT.icon("i-alert", "ct-ico--xs") + "Warnings: " + (s.warnings_count || 0);
+        }
+
+        card.setAttribute("data-conn-state", s.connection_state || "active");
+        var cb = document.getElementById("conn-badge-" + s.id);
+        var cd = document.getElementById("conn-dot-" + s.id);
+        var ct = document.getElementById("conn-text-" + s.id);
+        if (cb && cd && ct) {
+          if (s.connection_state === "lagging") {
+            cb.className = "tc-pill tc-pill--warn"; cd.className = "ls-pulse-dot ls-pulse-dot--warn"; ct.textContent = "Lagging (" + s.seconds_since_heartbeat + "s)";
+          } else if (s.connection_state === "disconnected") {
+            cb.className = "tc-pill tc-pill--bad"; cd.className = "ls-pulse-dot ls-pulse-dot--bad"; ct.textContent = "Offline (" + s.seconds_since_heartbeat + "s)";
+          } else {
+            cb.className = "tc-pill tc-pill--ok"; cd.className = "ls-pulse-dot"; ct.textContent = "Connected";
+          }
+        }
+
+        var nextState = (s.is_paused ? 1 : 0) + "-" + (s.resume_requested ? 1 : 0);
+        if (card.getAttribute("data-live-state") !== nextState) {
+          card.setAttribute("data-live-state", nextState);
+          card.className = "ls-card" + (s.resume_requested ? " is-resume" : (s.is_paused ? " is-paused" : ""));
+          card.style.order = s.resume_requested ? "-2" : (s.is_paused ? "-1" : "0");
+          var tag = document.getElementById("status-tag-" + s.id);
+          var act = document.getElementById("dynamic-actions-" + s.id);
+          if (s.resume_requested) {
+            if (tag) { tag.className = "tc-pill tc-pill--warn"; tag.innerHTML = '<i class="tc-dot"></i>Resume Requested'; }
+            if (act) act.innerHTML = '<button type="button" class="tc-btn tc-btn--ok tc-btn--sm" onclick="approveResume(' + s.id + ')">' + CT.icon("i-unlock", "ct-ico--xs") + 'Approve Resume</button>';
+          } else if (s.is_paused) {
+            if (tag) { tag.className = "tc-pill tc-pill--accent"; tag.innerHTML = '<i class="tc-dot"></i>Paused'; }
+            if (act) act.innerHTML = '<button type="button" class="tc-btn tc-btn--primary tc-btn--sm" onclick="resumeExam(' + s.id + ')">' + CT.icon("i-play", "ct-ico--xs") + 'Resume</button>';
+          } else {
+            if (tag) { tag.className = "tc-pill tc-pill--ok"; tag.innerHTML = '<i class="tc-dot"></i>Writing'; }
+            if (act) act.innerHTML = '<button type="button" class="tc-btn tc-btn--secondary tc-btn--sm" onclick="pauseExam(' + s.id + ')">' + CT.icon("i-pause", "ct-ico--xs") + 'Pause</button>';
+          }
+        }
+      });
+
+      window.applyLsFilters();
+      if (manual) CT.toast("Live telemetry refreshed", "ok");
+    } catch (e) {
+      if (manual) CT.toast("Could not refresh telemetry", "bad");
+    } finally {
+      isPolling = false;
+    }
+  };
+
+  window.pollStatus(false);
+  var pollTimer = setInterval(function () { window.pollStatus(false); }, 5000);
+  if (window.CT && CT.onCleanup) {
+    CT.onCleanup(function () { clearInterval(pollTimer); });
+  }
+})();
+</script>
 </body>
 </html>

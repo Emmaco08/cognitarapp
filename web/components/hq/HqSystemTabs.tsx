@@ -297,6 +297,12 @@ export function HqBroadcastsTab({
   settings: HqSettingsData;
   onSaveSettings: (patch: Record<string, unknown>) => Promise<void>;
 }) {
+  const [promoEnabled, setPromoEnabled] = useState(Boolean(settings.promo_banner_enabled));
+  const [promoEvent, setPromoEvent] = useState(settings.promo_banner_event || "");
+  const [promoText, setPromoText] = useState(settings.promo_banner_text || "");
+  const [promoCode, setPromoCode] = useState(settings.promo_banner_code || "");
+  const [freeTrialDays, setFreeTrialDays] = useState(String(settings.free_trial_days ?? 7));
+
   const [announcement, setAnnouncement] = useState(settings.global_announcement || "");
   const [level, setLevel] = useState(settings.global_announcement_level || "info");
   const [minVer, setMinVer] = useState(settings.min_desktop_version || "2.2.0");
@@ -307,11 +313,32 @@ export function HqBroadcastsTab({
   const [allowTrial, setAllowTrial] = useState(Boolean(settings.allow_trial_activation));
   const [saving, setSaving] = useState(false);
 
+  useEffect(() => {
+    setPromoEnabled(Boolean(settings.promo_banner_enabled));
+    setPromoEvent(settings.promo_banner_event || "");
+    setPromoText(settings.promo_banner_text || "");
+    setPromoCode(settings.promo_banner_code || "");
+    setFreeTrialDays(String(settings.free_trial_days ?? 7));
+    setAnnouncement(settings.global_announcement || "");
+    setLevel(settings.global_announcement_level || "info");
+    setMinVer(settings.min_desktop_version || "2.2.0");
+    setMaintMode(Boolean(settings.maintenance_mode));
+    setMaintMsg(settings.maintenance_message || "");
+    setAllowSignup(Boolean(settings.allow_self_signup));
+    setAllowCheckout(Boolean(settings.allow_paystack_checkout));
+    setAllowTrial(Boolean(settings.allow_trial_activation));
+  }, [settings]);
+
   async function save(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true);
     try {
       await onSaveSettings({
+        promo_banner_enabled: promoEnabled,
+        promo_banner_event: promoEvent.trim(),
+        promo_banner_text: promoText.trim(),
+        promo_banner_code: promoCode.trim().toUpperCase(),
+        free_trial_days: Math.max(1, Math.min(90, Math.floor(Number(freeTrialDays) || 7))),
         global_announcement: announcement,
         global_announcement_level: level,
         min_desktop_version: minVer,
@@ -330,17 +357,154 @@ export function HqBroadcastsTab({
     <form onSubmit={save} style={{ display: "grid", gap: 18 }}>
       <div className="hq-head" style={{ marginBottom: 0 }}>
         <div>
-          <h1>Broadcasts &amp; flags</h1>
-          <p>Push live announcements to every school desktop app and toggle platform-wide access switches without releasing an app update.</p>
+          <h1>Website banners, trials &amp; flags</h1>
+          <p>Control the landing page discount event pill, free trial availability and duration, desktop broadcasts, and platform access switches.</p>
         </div>
-        <button type="submit" className="btn btn--primary" disabled={saving}>{saving ? "Saving…" : "Save flags"}</button>
+        <button type="submit" className="btn btn--primary" disabled={saving}>{saving ? "Saving…" : "Save changes"}</button>
       </div>
 
+      {/* 1. Landing Page Hero Discount Event Pill */}
+      <section className="card" style={{ display: "grid", gap: 16 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 16, flexWrap: "wrap" }}>
+          <div style={{ flex: 1, minWidth: 260 }}>
+            <h2 style={{ margin: 0, fontSize: 16 }}>Landing page discount event pill</h2>
+            <p style={{ margin: "4px 0 0", fontSize: 13, color: "var(--ink-2)" }}>
+              Shows a promotional discount pill above the main hero headline (for example, Black Friday or Back to School). When turned off, nothing is displayed above the headline.
+            </p>
+          </div>
+          <span className={`status-txt ${promoEnabled ? "status-txt--ok" : ""}`} style={{ flexShrink: 0, whiteSpace: "nowrap" }}>
+            {promoEnabled ? "Visible on website" : "Hidden"}
+          </span>
+        </div>
+
+        <div className="hq-switch-row" style={{ paddingTop: 4 }}>
+          <div>
+            <strong>Show discount event pill on landing &amp; licensing pages</strong>
+            <span>Click links buyers straight to /license with your promo code pre-applied.</span>
+          </div>
+          <input
+            type="checkbox"
+            checked={promoEnabled}
+            onChange={(e) => setPromoEnabled(e.target.checked)}
+            style={{ width: 18, height: 18 }}
+          />
+        </div>
+
+        <div className="form-row3">
+          <div className="field">
+            <label htmlFor="promoEvent">Event badge name</label>
+            <input
+              id="promoEvent"
+              value={promoEvent}
+              onChange={(e) => setPromoEvent(e.target.value)}
+              placeholder="Black Friday"
+            />
+          </div>
+          <div className="field">
+            <label htmlFor="promoText">Discount message</label>
+            <input
+              id="promoText"
+              value={promoText}
+              onChange={(e) => setPromoText(e.target.value)}
+              placeholder="40% off with"
+            />
+          </div>
+          <div className="field">
+            <label htmlFor="promoCode">Promo code (create matching code in Promo Codes)</label>
+            <input
+              id="promoCode"
+              className="mono"
+              value={promoCode}
+              onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
+              placeholder="BLACKFRIDAY"
+            />
+          </div>
+        </div>
+
+        <div style={{ padding: "14px 16px", borderRadius: 12, background: "var(--bg-2)", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 10 }}>
+          <span style={{ fontSize: 12, color: "var(--ink-3)", fontWeight: 560 }}>Live hero preview:</span>
+          {promoEnabled && (promoEvent || promoText || promoCode) ? (
+            <span
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 8,
+                padding: "4px 12px 4px 6px",
+                borderRadius: 999,
+                background: "var(--surface)",
+                border: "1px solid var(--border-2)",
+                fontSize: 12.5,
+                color: "var(--ink)",
+              }}
+            >
+              {promoEvent ? (
+                <span style={{ padding: "2px 8px", borderRadius: 999, background: "var(--ink)", color: "var(--surface)", fontSize: 11, fontWeight: 600 }}>
+                  {promoEvent}
+                </span>
+              ) : null}
+              {promoText ? <span>{promoText}</span> : null}
+              {promoCode ? (
+                <code className="mono" style={{ padding: "2px 7px", borderRadius: 999, background: "var(--bg-2)", fontSize: 11, fontWeight: 600 }}>
+                  {promoCode}
+                </code>
+              ) : null}
+              <span aria-hidden="true">→</span>
+            </span>
+          ) : (
+            <span style={{ fontSize: 12.5, color: "var(--ink-3)" }}>Hidden — hero starts directly with the headline.</span>
+          )}
+        </div>
+      </section>
+
+      {/* 2. Free Trial Controls */}
       <section className="card" style={{ display: "grid", gap: 14 }}>
-        <h2 style={{ margin: 0, fontSize: 16 }}>Global broadcast banner</h2>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, flexWrap: "wrap" }}>
+          <div>
+            <h2 style={{ margin: 0, fontSize: 16 }}>Free trial policy</h2>
+            <p style={{ margin: "4px 0 0", fontSize: 13, color: "var(--ink-2)" }}>
+              Decide whether new schools get a free trial and how many days it lasts. Updates /license, /download, and CogniTara Studio Desktop immediately.
+            </p>
+          </div>
+          <span className={`status-txt ${allowTrial ? "status-txt--ok" : ""}`}>
+            {allowTrial ? `${freeTrialDays || 7}-day trial ON` : "Trial OFF"}
+          </span>
+        </div>
+
+        <div className="hq-switch-row" style={{ paddingTop: 4 }}>
+          <div>
+            <strong>Enable free trial</strong>
+            <span>Show the Free Trial card on /license and allow desktop trial activation before paying.</span>
+          </div>
+          <input
+            type="checkbox"
+            checked={allowTrial}
+            onChange={(e) => setAllowTrial(e.target.checked)}
+            style={{ width: 18, height: 18 }}
+          />
+        </div>
+
+        {allowTrial ? (
+          <div className="field" style={{ maxWidth: 260 }}>
+            <label htmlFor="freeTrialDays">Free trial duration (days)</label>
+            <input
+              id="freeTrialDays"
+              type="number"
+              min={1}
+              max={90}
+              value={freeTrialDays}
+              onChange={(e) => setFreeTrialDays(e.target.value)}
+            />
+            <span className="field-hint">Choose between 1 and 90 days (default 7 days).</span>
+          </div>
+        ) : null}
+      </section>
+
+      {/* 3. Desktop Broadcasts & Platform Switches */}
+      <section className="card" style={{ display: "grid", gap: 14 }}>
+        <h2 style={{ margin: 0, fontSize: 16 }}>Desktop broadcast &amp; access switches</h2>
         <div className="form-row">
           <div className="field">
-            <label>Banner message (leave blank to hide)</label>
+            <label>Desktop banner message (leave blank to hide)</label>
             <input value={announcement} onChange={(e) => setAnnouncement(e.target.value)} placeholder="Scheduled maintenance on Sunday 10 PM…" />
           </div>
           <div className="field">
@@ -351,7 +515,7 @@ export function HqBroadcastsTab({
                 <option value="warning">Warning</option>
                 <option value="critical">Critical</option>
               </select>
-              <input className="mono" value={minVer} onChange={(e) => setMinVer(e.target.value)} placeholder="2.2.3" />
+              <input className="mono" value={minVer} onChange={(e) => setMinVer(e.target.value)} placeholder="2.2.7" />
             </div>
           </div>
         </div>
@@ -365,10 +529,6 @@ export function HqBroadcastsTab({
         <div className="hq-switch-row">
           <div><strong>Allow Paystack checkout</strong><span>Turn off to pause new payments temporarily across web and desktop.</span></div>
           <input type="checkbox" checked={allowCheckout} onChange={(e) => setAllowCheckout(e.target.checked)} style={{ width: 18, height: 18 }} />
-        </div>
-        <div className="hq-switch-row">
-          <div><strong>Allow 7-day free trial activation</strong><span>Let newly installed desktop servers activate a local trial before paying.</span></div>
-          <input type="checkbox" checked={allowTrial} onChange={(e) => setAllowTrial(e.target.checked)} style={{ width: 18, height: 18 }} />
         </div>
         <div className="hq-switch-row">
           <div><strong>Maintenance mode</strong><span>Display a maintenance banner across cloud and desktop check-ins.</span></div>
@@ -870,4 +1030,247 @@ export function HqReviewsTab({
     </div>
   );
 }
+
+/* ==========================================================================
+   7. DOWNLOAD LEADS TAB (Emails collected from /download for update blasts)
+   ========================================================================== */
+interface DownloadLeadRow {
+  id: string;
+  email: string;
+  source: string;
+  app_version: string | null;
+  ip_address: string | null;
+  email_sent: boolean;
+  clicked_at: string | null;
+  download_count: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export function HqDownloadLeadsTab({
+  onToast,
+  onRefreshOverview,
+}: {
+  onToast: (msg: string) => void;
+  onRefreshOverview?: () => Promise<void>;
+}) {
+  const [leads, setLeads] = useState<DownloadLeadRow[]>([]);
+  const [summary, setSummary] = useState({
+    total_leads: 0,
+    emails_sent: 0,
+    clicked_leads: 0,
+    total_downloads: 0,
+  });
+  const [loading, setLoading] = useState(true);
+  const [q, setQ] = useState("");
+  const [busyId, setBusyId] = useState<string | null>(null);
+
+  async function load() {
+    setLoading(true);
+    try {
+      const res = await fetch("/api/v1/hq/leads", { credentials: "include" }).then((r) => r.json());
+      if (res?.ok) {
+        setLeads(res.leads || []);
+        if (res.summary) setSummary(res.summary);
+      }
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    void load();
+  }, []);
+
+  const filtered = leads.filter((row) => {
+    const term = q.trim().toLowerCase();
+    if (!term) return true;
+    return (
+      row.email.toLowerCase().includes(term) ||
+      (row.source || "").toLowerCase().includes(term) ||
+      (row.app_version || "").toLowerCase().includes(term)
+    );
+  });
+
+  async function copyAllEmails() {
+    const emails = filtered.map((r) => r.email).join(", ");
+    if (!emails) {
+      onToast("No email addresses to copy.");
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(emails);
+      onToast(`Copied ${filtered.length} email address${filtered.length === 1 ? "" : "es"}.`);
+    } catch {
+      onToast("Could not copy to clipboard.");
+    }
+  }
+
+  function exportCsv() {
+    if (filtered.length === 0) {
+      onToast("No leads to export.");
+      return;
+    }
+    const header = ["email", "source", "app_version", "email_sent", "download_count", "clicked_at", "created_at"];
+    const escapeCell = (val: unknown) => {
+      const s = String(val ?? "");
+      return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+    };
+    const rows = filtered.map((r) =>
+      [r.email, r.source, r.app_version || "", r.email_sent ? "yes" : "no", r.download_count, r.clicked_at || "", r.created_at]
+        .map(escapeCell)
+        .join(",")
+    );
+    const csv = [header.join(","), ...rows].join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `cognitara-download-leads-${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+    onToast(`Exported ${filtered.length} download leads to CSV.`);
+  }
+
+  async function removeLead(id: string, email: string) {
+    setBusyId(id);
+    try {
+      const res = await fetch("/api/v1/hq/leads", {
+        method: "DELETE",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id }),
+      }).then((r) => r.json());
+      onToast(res?.message || (res?.ok ? `Removed ${email}.` : "Could not delete lead."));
+      if (res?.ok) {
+        await load();
+        if (onRefreshOverview) await onRefreshOverview();
+      }
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  return (
+    <div style={{ display: "grid", gap: 18 }}>
+      <div className="hq-head" style={{ marginBottom: 0 }}>
+        <div>
+          <h1>Download leads</h1>
+          <p>People who requested the CogniTara Studio installer link via /download. Export this list to announce new versions and offers.</p>
+        </div>
+        <div className="hq-btn-row">
+          <button type="button" className="btn btn--ghost btn--sm" onClick={() => void copyAllEmails()}>
+            Copy emails
+          </button>
+          <button type="button" className="btn btn--ghost btn--sm" onClick={exportCsv}>
+            Export CSV
+          </button>
+          <button type="button" className="btn btn--primary btn--sm" onClick={() => void load()}>
+            Refresh
+          </button>
+        </div>
+      </div>
+
+      <div className="hq-kpi-strip">
+        <div className="hq-kpi">
+          <span className="hq-kpi__lbl">Collected emails</span>
+          <span className="hq-kpi__val">{summary.total_leads}</span>
+        </div>
+        <div className="hq-kpi">
+          <span className="hq-kpi__lbl">Emails delivered</span>
+          <span className="hq-kpi__val" style={{ color: "var(--ok)" }}>{summary.emails_sent}</span>
+        </div>
+        <div className="hq-kpi">
+          <span className="hq-kpi__lbl">Clicked installer</span>
+          <span className="hq-kpi__val">{summary.clicked_leads}</span>
+        </div>
+        <div className="hq-kpi">
+          <span className="hq-kpi__lbl">Total downloads</span>
+          <span className="hq-kpi__val">{summary.total_downloads}</span>
+        </div>
+      </div>
+
+      <div className="hq-toolbar">
+        <input
+          type="search"
+          className="hq-search"
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          placeholder="Search email, source, or version…"
+          style={{ maxWidth: 340 }}
+        />
+        <span style={{ fontSize: 12.5, color: "var(--ink-3)" }}>
+          Showing {filtered.length} of {leads.length}
+        </span>
+      </div>
+
+      {loading ? (
+        <div className="card" style={{ textAlign: "center", padding: 36, color: "var(--ink-3)" }}>
+          Loading download leads…
+        </div>
+      ) : filtered.length === 0 ? (
+        <div className="card" style={{ textAlign: "center", padding: 40, color: "var(--ink-3)" }}>
+          No download leads yet. Anyone who enters their email on /download will appear here immediately.
+        </div>
+      ) : (
+        <div className="hq-table-wrap">
+          <table className="hq-table">
+            <thead>
+              <tr>
+                <th>Email</th>
+                <th>Email status</th>
+                <th>Downloads</th>
+                <th>Version</th>
+                <th>Last activity</th>
+                <th style={{ textAlign: "right" }}>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map((row) => (
+                <tr key={row.id}>
+                  <td>
+                    <div className="mono" style={{ fontSize: 12.5, fontWeight: 600 }}>{row.email}</div>
+                    <div style={{ fontSize: 11.5, color: "var(--ink-3)" }}>{row.source || "web_download"}</div>
+                  </td>
+                  <td>
+                    <span className={`status-txt ${row.email_sent ? "status-txt--ok" : "status-txt--warn"}`}>
+                      {row.email_sent ? "Sent via Brevo" : "Link copied only"}
+                    </span>
+                  </td>
+                  <td className="tnum" style={{ fontWeight: 600 }}>
+                    {row.download_count || 0}
+                  </td>
+                  <td className="mono" style={{ fontSize: 12, color: "var(--ink-2)" }}>
+                    {row.app_version || "latest"}
+                  </td>
+                  <td className="tnum" style={{ fontSize: 12, color: "var(--ink-3)", whiteSpace: "nowrap" }}>
+                    {new Date(row.clicked_at || row.updated_at || row.created_at).toLocaleString(undefined, {
+                      month: "short",
+                      day: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </td>
+                  <td style={{ textAlign: "right" }}>
+                    <button
+                      type="button"
+                      className="btn btn--danger btn--xs"
+                      disabled={busyId === row.id}
+                      onClick={() => void removeLead(row.id, row.email)}
+                    >
+                      Remove
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
 

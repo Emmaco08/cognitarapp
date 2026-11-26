@@ -1,761 +1,167 @@
-{%- from '_ct_shell.html' import ico, ct_boot_script, admin_shell_start, teacher_shell_start, student_topbar, shell_end with context -%}
+{%- from '_ct_shell.html' import ico, ct_boot_script, admin_shell_start, shell_end with context -%}
+{%- set admin_logs_cnt = logs | selectattr('user_role', 'equalto', 'Admin') | list | length -%}
+{%- set teacher_logs_cnt = logs | selectattr('user_role', 'equalto', 'Teacher') | list | length -%}
+{%- set student_logs_cnt = (logs | length) - admin_logs_cnt - teacher_logs_cnt -%}
 <!DOCTYPE html>
 <html lang="en" data-theme="dark">
 <head>
-    <title>Audit Logs | COGNITARA EXAM SYSTEM</title>
-    <link href="{{ url_for('static', filename='vendor/bootstrap/css/bootstrap.min.css') }}" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='vendor/fontawesome/css/all.min.css') }}">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            background: linear-gradient(135deg, #f5f7fa 0%, #e8edf5 100%);
-            font-family: 'Segoe UI', 'Poppins', Tahoma, Geneva, Verdana, sans-serif;
-            min-height: 100vh;
-            position: relative;
-            overflow-x: hidden;
-        }
-
-        /* Animated Educational Icons Background */
-        .edu-icon {
-            position: absolute;
-            color: rgba(26, 86, 219, 0.06);
-            pointer-events: none;
-            z-index: 0;
-            animation: floatIcon 20s infinite ease-in-out;
-        }
-
-        @keyframes floatIcon {
-            0% {
-                transform: translate(0, 0) rotate(0deg);
-                opacity: 0;
-            }
-            10% {
-                opacity: 0.08;
-            }
-            90% {
-                opacity: 0.08;
-            }
-            100% {
-                transform: translate(100px, -100px) rotate(360deg);
-                opacity: 0;
-            }
-        }
-
-        .edu-icon:nth-child(1) { top: 10%; left: 5%; animation-duration: 18s; font-size: 50px; }
-        .edu-icon:nth-child(2) { top: 70%; left: 15%; animation-duration: 22s; font-size: 40px; animation-delay: 2s; }
-        .edu-icon:nth-child(3) { top: 30%; left: 85%; animation-duration: 20s; font-size: 55px; animation-delay: 4s; }
-        .edu-icon:nth-child(4) { top: 80%; left: 80%; animation-duration: 25s; font-size: 35px; animation-delay: 1s; }
-        .edu-icon:nth-child(5) { top: 50%; left: 10%; animation-duration: 19s; font-size: 45px; animation-delay: 3s; }
-        .edu-icon:nth-child(6) { top: 20%; left: 70%; animation-duration: 23s; font-size: 60px; animation-delay: 5s; }
-        .edu-icon:nth-child(7) { top: 60%; left: 90%; animation-duration: 21s; font-size: 42px; animation-delay: 2.5s; }
-        .edu-icon:nth-child(8) { top: 85%; left: 25%; animation-duration: 24s; font-size: 38px; animation-delay: 6s; }
-        .edu-icon:nth-child(9) { top: 15%; left: 45%; animation-duration: 17s; font-size: 48px; animation-delay: 1.5s; }
-        .edu-icon:nth-child(10) { top: 45%; left: 75%; animation-duration: 26s; font-size: 52px; animation-delay: 3.5s; }
-
-        /* Main Container */
-        .audit-container {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 40px 30px;
-            position: relative;
-            z-index: 10;
-        }
-
-        /* Header Section */
-        .page-header {
-            text-align: center;
-            margin-bottom: 40px;
-        }
-
-        .logo-icon {
-            width: 80px;
-            height: 80px;
-            background: var(--ct-brand-grad);
-            border-radius: 50%;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            margin-bottom: 20px;
-            animation: pulse 2s infinite;
-            box-shadow: 0 10px 25px rgba(59, 130, 246, 0.2);
-        }
-
-        @keyframes pulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.05); }
-        }
-
-        .logo-icon i {
-            font-size: 40px;
-            color: white;
-        }
-
-        .page-header h1 {
-            font-size: 36px;
-            font-weight: 800;
-            background: var(--ct-brand-grad);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            margin-bottom: 10px;
-        }
-
-        .page-header p {
-            font-size: 16px;
-            color: var(--ct-ink-3);
-        }
-
-        /* Stats Bar */
-        .stats-bar {
-            background: var(--ct-surface);
-            border-radius: 20px;
-            padding: 20px 30px;
-            margin-bottom: 30px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 20px;
-            border: 1px solid var(--ct-line-2);
-            box-shadow: 0 2px 8px rgba(0,0,0,0.03);
-        }
-
-        .stats-info {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-
-        .stats-icon {
-            width: 50px;
-            height: 50px;
-            background: var(--ct-accent-soft);
-            border-radius: 15px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .stats-icon i {
-            font-size: 24px;
-            color: #3b82f6;
-        }
-
-        .stats-text h3 {
-            font-size: 28px;
-            font-weight: 800;
-            color: var(--ct-ink);
-            margin: 0;
-        }
-
-        .stats-text p {
-            margin: 0;
-            color: var(--ct-ink-3);
-            font-size: 13px;
-        }
-
-        .btn-back {
-            background: var(--ct-surface);
-            border: 2px solid var(--ct-line-2);
-            padding: 10px 25px;
-            border-radius: 12px;
-            color: var(--ct-ink-3);
-            font-weight: 600;
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            transition: all 0.3s ease;
-        }
-
-        .btn-back:hover {
-            border-color: #3b82f6;
-            color: #3b82f6;
-            background: var(--ct-surface);
-            transform: translateY(-2px);
-        }
-
-        /* Search Bar */
-        .search-section {
-            background: var(--ct-surface);
-            border-radius: 20px;
-            padding: 20px 25px;
-            margin-bottom: 30px;
-            border: 1px solid var(--ct-line-2);
-        }
-
-        .search-input-group {
-            position: relative;
-            display: flex;
-            gap: 12px;
-            flex-wrap: wrap;
-        }
-
-        .search-input-group input {
-            flex: 1;
-            padding: 12px 15px 12px 45px;
-            border: 2px solid var(--ct-line-2);
-            border-radius: 14px;
-            font-size: 14px;
-            transition: all 0.3s ease;
-            background: var(--ct-surface);
-        }
-
-        .search-input-group input:focus {
-            outline: none;
-            border-color: #3b82f6;
-            background: var(--ct-surface);
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-        }
-
-        .search-icon {
-            position: absolute;
-            left: 15px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: #94a3b8;
-        }
-
-        .search-input-group select {
-            padding: 12px 15px;
-            border: 2px solid var(--ct-line-2);
-            border-radius: 14px;
-            font-size: 14px;
-            background: var(--ct-surface);
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .search-input-group select:focus {
-            outline: none;
-            border-color: #3b82f6;
-        }
-
-        .search-btn {
-            background: var(--ct-brand-grad);
-            border: none;
-            padding: 12px 25px;
-            border-radius: 14px;
-            color: white;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .search-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(59, 130, 246, 0.3);
-        }
-
-        .clear-btn {
-            background: var(--ct-surface);
-            border: 2px solid var(--ct-line-2);
-            padding: 10px 20px;
-            border-radius: 14px;
-            color: var(--ct-ink-3);
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .clear-btn:hover {
-            border-color: #ef4444;
-            color: #ef4444;
-        }
-
-        /* Table Container */
-        .table-container {
-            background: var(--ct-surface);
-            border-radius: 24px;
-            border: 1px solid var(--ct-line-2);
-            overflow: hidden;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.03);
-        }
-
-        .table-header {
-            padding: 18px 25px;
-            background: var(--ct-surface-2);
-            border-bottom: 1px solid var(--ct-line-2);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 15px;
-        }
-
-        .table-header h5 {
-            margin: 0;
-            font-size: 16px;
-            font-weight: 600;
-            color: var(--ct-ink);
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .table-header h5 i {
-            color: #3b82f6;
-        }
-
-        .result-count {
-            background: var(--ct-accent-soft);
-            color: #1d4ed8;
-            padding: 5px 12px;
-            border-radius: 30px;
-            font-size: 13px;
-            font-weight: 600;
-        }
-
-        /* Scrollable Table */
-        .scrollable-table {
-            max-height: 500px;
-            overflow-y: auto;
-        }
-
-        .audit-table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        .audit-table th {
-            padding: 14px 16px;
-            text-align: left;
-            font-size: 12px;
-            font-weight: 600;
-            color: var(--ct-ink-3);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            background: var(--ct-surface);
-            border-bottom: 1px solid var(--ct-line-2);
-            position: sticky;
-            top: 0;
-            background: var(--ct-surface);
-        }
-
-        .audit-table td {
-            padding: 14px 16px;
-            border-bottom: 1px solid #f0f2f5;
-            font-size: 13px;
-            color: var(--ct-ink-2);
-        }
-
-        .audit-table tbody tr:hover {
-            background: var(--ct-surface);
-        }
-
-        /* Role Badges */
-        .role-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 600;
-        }
-
-        .role-admin {
-            background: var(--ct-bad-soft);
-            color: #dc2626;
-        }
-
-        .role-teacher {
-            background: var(--ct-accent-soft);
-            color: var(--ct-primary);
-        }
-
-        .role-student {
-            background: var(--ct-ok-soft);
-            color: #059669;
-        }
-
-        /* Action Text Styling */
-        .action-text {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            flex-wrap: wrap;
-        }
-
-        .action-create {
-            color: #10b981;
-        }
-
-        .action-update {
-            color: #3b82f6;
-        }
-
-        .action-delete {
-            color: #ef4444;
-        }
-
-        .action-approve {
-            color: #10b981;
-        }
-
-        .action-reject {
-            color: #ef4444;
-        }
-
-        /* Timestamp */
-        .timestamp {
-            font-family: monospace;
-            font-size: 12px;
-            color: var(--ct-ink-3);
-        }
-
-        /* Empty State */
-        .empty-state {
-            text-align: center;
-            padding: 60px 20px;
-        }
-
-        .empty-icon {
-            width: 80px;
-            height: 80px;
-            background: var(--ct-surface);
-            border-radius: 50%;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            margin-bottom: 20px;
-        }
-
-        .empty-icon i {
-            font-size: 40px;
-            color: #94a3b8;
-        }
-
-        .empty-state h4 {
-            color: var(--ct-ink);
-            margin-bottom: 8px;
-        }
-
-        .empty-state p {
-            color: var(--ct-ink-3);
-        }
-
-        /* Responsive */
-        @media (max-width: 768px) {
-            .audit-container {
-                padding: 20px 15px;
-            }
-            
-            .page-header h1 {
-                font-size: 28px;
-            }
-            
-            .stats-bar {
-                flex-direction: column;
-                text-align: center;
-            }
-            
-            .search-input-group {
-                flex-direction: column;
-            }
-            
-            .search-input-group input,
-            .search-input-group select,
-            .search-btn,
-            .clear-btn {
-                width: 100%;
-            }
-            
-            .table-header {
-                flex-direction: column;
-                text-align: center;
-            }
-            
-            .audit-table th, .audit-table td {
-                padding: 10px 12px;
-                font-size: 11px;
-            }
-        }
-    </style>
-    <!-- CSRF Protection Shield -->
-    <meta name="csrf-token" content="{{ csrf_token() }}">
-    <script>
-    window.CSRF_TOKEN = "{{ csrf_token() }}";
-    (function() {
-        if (window.fetch) {
-            const _origFetch = window.fetch;
-            window.fetch = function(url, options) {
-                options = options || {};
-                const method = (options.method || 'GET').toUpperCase();
-                if (!['GET', 'HEAD', 'OPTIONS', 'TRACE'].includes(method)) {
-                    options.headers = options.headers || {};
-                    const token = window.CSRF_TOKEN || (document.querySelector('meta[name="csrf-token"]') && document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
-                    if (token) {
-                        if (typeof Headers !== 'undefined' && options.headers instanceof Headers) {
-                            if (!options.headers.has('X-CSRFToken')) options.headers.set('X-CSRFToken', token);
-                        } else if (Array.isArray(options.headers)) {
-                            options.headers.push(['X-CSRFToken', token]);
-                        } else {
-                            if (!options.headers['X-CSRFToken']) options.headers['X-CSRFToken'] = token;
-                        }
-                    }
-                }
-                return _origFetch(url, options);
-            };
-        }
-        if (window.$ && $.ajaxSetup) {
-            $.ajaxSetup({
-                beforeSend: function(xhr, settings) {
-                    if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type)) {
-                        xhr.setRequestHeader("X-CSRFToken", window.CSRF_TOKEN);
-                    }
-                }
-            });
-        }
-        if (navigator.sendBeacon) {
-            const _origBeacon = navigator.sendBeacon.bind(navigator);
-            navigator.sendBeacon = function(url, data) {
-                if (data instanceof FormData) {
-                    if (!data.has('csrf_token')) data.append('csrf_token', window.CSRF_TOKEN);
-                } else if (typeof data === 'string') {
-                    try {
-                        const obj = JSON.parse(data);
-                        if (typeof obj === 'object' && obj !== null && !obj.csrf_token) {
-                            obj.csrf_token = window.CSRF_TOKEN;
-                            data = JSON.stringify(obj);
-                        }
-                    } catch(e) {}
-                }
-                return _origBeacon(url, data);
-            };
-        }
-        document.addEventListener('DOMContentLoaded', function() {
-            document.querySelectorAll('form[method="POST"], form[method="post"]').forEach(function(form) {
-                if (!form.querySelector('input[name="csrf_token"]')) {
-                    var input = document.createElement('input');
-                    input.type = 'hidden';
-                    input.name = 'csrf_token';
-                    input.value = window.CSRF_TOKEN;
-                    form.appendChild(input);
-                }
-            });
-        });
-    })();
-    </script>
-
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+  <meta name="color-scheme" content="dark light">
+  <title>Audit Logs — {{ school_branding.school_name }} | CogniTara</title>
+  <link rel="icon" href="{{ url_for('static', filename='images/cognitara-favicon.ico') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/cognitara-web.css') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/cognitara-portal-unified.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/cognitara-teacher-studio.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/cognitara-admin-studio.css') }}">
   {{ ct_boot_script() }}
+  <style>
+    .al-bar {
+      display: flex; align-items: center; flex-wrap: wrap; gap: 10px;
+      padding: 14px 16px; border-radius: 14px; background: var(--tc-surface);
+      border: 1px solid var(--tc-line-2); margin-bottom: 16px;
+    }
+    .al-select {
+      height: 36px; padding: 0 28px 0 12px; border-radius: 9px;
+      border: 1px solid var(--tc-line-2); background: var(--tc-surface-2);
+      color: var(--tc-ink); font-size: 12.5px; font-weight: 560; cursor: pointer;
+    }
+    .al-select:focus { outline: none; border-color: var(--ct-accent-line); }
+    .al-table th {
+      text-align: left; height: 42px; padding: 0 16px; font-size: 11px; font-weight: 650;
+      text-transform: uppercase; letter-spacing: 0.04em; color: var(--tc-ink-3); white-space: nowrap;
+    }
+    .al-table td { padding: 13px 16px; vertical-align: middle; }
+    .al-table th:first-child, .al-table td:first-child { padding-left: 20px; width: 78px; }
+    .al-table th:last-child, .al-table td:last-child { padding-right: 20px; text-align: right; white-space: nowrap; }
+  </style>
 </head>
-<body class="ct-app ct-bs ad-studio">
+<body class="ct-app ad-studio">
 {{ admin_shell_start(active='logs', crumb='Audit Logs') }}
 
-
-    <!-- Animated Educational Icons Background -->
-    <div class="edu-icon"><i class="fas fa-history"></i></div>
-    <div class="edu-icon"><i class="fas fa-clipboard-list"></i></div>
-    <div class="edu-icon"><i class="fas fa-file-alt"></i></div>
-    <div class="edu-icon"><i class="fas fa-user-shield"></i></div>
-    <div class="edu-icon"><i class="fas fa-shield-alt"></i></div>
-    <div class="edu-icon"><i class="fas fa-chart-line"></i></div>
-    <div class="edu-icon"><i class="fas fa-database"></i></div>
-    <div class="edu-icon"><i class="fas fa-server"></i></div>
-    <div class="edu-icon"><i class="fas fa-lock"></i></div>
-    <div class="edu-icon"><i class="fas fa-eye"></i></div>
-
-    <div class="audit-container">
-        <!-- Header -->
-        <div class="page-header">
-            <div class="logo-icon">
-                <i class="fas fa-history"></i>
-            </div>
-            <h1>Audit Logs</h1>
-            <p>Track all user activities and system changes</p>
-        </div>
-
-        <!-- Stats Bar -->
-        <div class="stats-bar">
-            <div class="stats-info">
-                <div class="stats-icon">
-                    <i class="fas fa-list"></i>
-                </div>
-                <div class="stats-text">
-                    <h3>{{ logs|length }}</h3>
-                    <p>Total Activities</p>
-                </div>
-            </div>
-            <a href="/admin" class="btn-back">
-                <i class="fas fa-arrow-left"></i> Back to Dashboard
-            </a>
-        </div>
-
-        <!-- Search Section -->
-        <div class="search-section">
-            <div class="search-input-group">
-                <div style="position: relative; flex: 1;">
-                    <i class="fas fa-search search-icon"></i>
-                    <input type="text" id="searchInput" placeholder="Search by username, action, or role..." onkeyup="filterTable()">
-                </div>
-                <select id="roleFilter" onchange="filterTable()">
-                    <option value="">All Roles</option>
-                    <option value="Admin">Admin</option>
-                    <option value="Teacher">Teacher</option>
-                    <option value="Student">Student</option>
-                </select>
-                <button class="clear-btn" onclick="clearFilters()">
-                    <i class="fas fa-eraser"></i> Clear
-                </button>
-            </div>
-        </div>
-
-        <!-- Table Container -->
-        <div class="table-container">
-            <div class="table-header">
-                <h5>
-                    <i class="fas fa-list-ul"></i> Activity Log
-                </h5>
-                <div class="result-count" id="resultCount">
-                    Showing {{ logs|length }} entries
-                </div>
-            </div>
-            <div class="scrollable-table ct-table-wrap">
-                <table class="audit-table" id="auditTable" data-ct-paginate="15" data-ct-paginate-sizes="15,30,50,100">
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Role</th>
-                            <th>Username</th>
-                            <th>Action</th>
-                            <th>Timestamp</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tableBody">
-                        {% for log in logs %}
-                        <tr>
-                            <td><strong>{{ log.id }}</strong></td>
-                            <td>
-                                {% if log.user_role == 'Admin' %}
-                                    <span class="role-badge role-admin">
-                                        <i class="fas fa-crown"></i> Admin
-                                    </span>
-                                {% elif log.user_role == 'Teacher' %}
-                                    <span class="role-badge role-teacher">
-                                        <i class="fas fa-chalkboard-user"></i> Teacher
-                                    </span>
-                                {% else %}
-                                    <span class="role-badge role-student">
-                                        <i class="fas fa-user-graduate"></i> Student
-                                    </span>
-                                {% endif %}
-                            </td>
-                            <td>
-                                <i class="fas fa-user-circle" style="color: #64748b; margin-right: 8px;"></i>
-                                {{ log.username }}
-                            </td>
-                            <td>
-                                <div class="action-text">
-                                    {% if 'Created' in log.action %}
-                                        <i class="fas fa-plus-circle action-create"></i>
-                                    {% elif 'Updated' in log.action or 'Edit' in log.action %}
-                                        <i class="fas fa-edit action-update"></i>
-                                    {% elif 'Deleted' in log.action or 'Delete' in log.action %}
-                                        <i class="fas fa-trash-alt action-delete"></i>
-                                    {% elif 'Approved' in log.action %}
-                                        <i class="fas fa-check-circle action-create"></i>
-                                    {% elif 'Rejected' in log.action %}
-                                        <i class="fas fa-times-circle action-delete"></i>
-                                    {% elif 'Started' in log.action %}
-                                        <i class="fas fa-play action-update"></i>
-                                    {% elif 'Stopped' in log.action %}
-                                        <i class="fas fa-stop action-delete"></i>
-                                    {% else %}
-                                        <i class="fas fa-info-circle" style="color: #3b82f6;"></i>
-                                    {% endif %}
-                                    {{ log.action }}
-                                </div>
-                            </td>
-                            <td class="timestamp">
-                                <i class="far fa-clock" style="margin-right: 5px;"></i>
-                                {{ log.timestamp | wat_time }}
-                            </td>
-                        </tr>
-                        {% else %}
-                        <tr>
-                            <td colspan="5">
-                                <div class="empty-state">
-                                    <div class="empty-icon">
-                                        <i class="fas fa-history"></i>
-                                    </div>
-                                    <h4>No Activities Recorded</h4>
-                                    <p>Actions will appear here as users interact with the system.</p>
-                                </div>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
+  <header class="tc-head ct-animate-rise">
+    <div class="tc-head__txt">
+      <h1>System Audit Logs</h1>
+      <p>Immutable activity trail covering administrative edits, teacher updates, and student actions.</p>
     </div>
+    <div class="tc-head__actions">
+      <a href="/admin/warning_logs" class="tc-btn tc-btn--secondary">{{ ico('i-alert', 'ct-ico--sm') }}Warning Logs</a>
+      <a href="/admin" class="tc-btn tc-btn--secondary">{{ ico('i-arrow-left', 'ct-ico--sm') }}Overview</a>
+    </div>
+  </header>
 
-    <script>
-        function filterTable() {
-            const searchInput = document.getElementById('searchInput').value.toLowerCase();
-            const roleFilter = document.getElementById('roleFilter').value.toLowerCase();
-            const tableBody = document.getElementById('tableBody');
-            const rows = tableBody.getElementsByTagName('tr');
-            let visibleCount = 0;
-            
-            for (let row of rows) {
-                const username = row.cells[2]?.textContent.toLowerCase() || '';
-                const action = row.cells[3]?.textContent.toLowerCase() || '';
-                const role = row.cells[1]?.textContent.toLowerCase() || '';
-                
-                let matchesSearch = true;
-                let matchesRole = true;
-                
-                if (searchInput) {
-                    matchesSearch = username.includes(searchInput) || action.includes(searchInput);
-                }
-                
-                if (roleFilter) {
-                    matchesRole = role.includes(roleFilter);
-                }
-                
-                if (matchesSearch && matchesRole) {
-                    row.style.display = '';
-                    visibleCount++;
-                } else {
-                    row.style.display = 'none';
-                }
-            }
-            
-            // Update result count
-            const resultCount = document.getElementById('resultCount');
-            const totalRows = rows.length;
-            if (visibleCount === totalRows) {
-                resultCount.textContent = `Showing ${visibleCount} entries`;
-            } else {
-                resultCount.textContent = `Showing ${visibleCount} of ${totalRows} entries`;
-            }
-        }
-        
-        function clearFilters() {
-            document.getElementById('searchInput').value = '';
-            document.getElementById('roleFilter').value = '';
-            filterTable();
-        }
-    </script>
+  <section class="tc-kpi-strip" data-ct-stagger>
+    <div class="tc-kpi">
+      <span class="tc-kpi__label">Total Entries</span>
+      <strong class="tc-kpi__val" data-ct-count>{{ logs|length }}</strong>
+      <span class="tc-kpi__meta">Recorded events</span>
+    </div>
+    <div class="tc-kpi">
+      <span class="tc-kpi__label">Admin Actions</span>
+      <strong class="tc-kpi__val" data-ct-count>{{ admin_logs_cnt }}</strong>
+      <span class="tc-kpi__meta">Console operations</span>
+    </div>
+    <div class="tc-kpi">
+      <span class="tc-kpi__label">Teacher Actions</span>
+      <strong class="tc-kpi__val" data-ct-count>{{ teacher_logs_cnt }}</strong>
+      <span class="tc-kpi__meta">Exam authoring &amp; control</span>
+    </div>
+    <div class="tc-kpi">
+      <span class="tc-kpi__label">Student Actions</span>
+      <strong class="tc-kpi__val" data-ct-count>{{ student_logs_cnt }}</strong>
+      <span class="tc-kpi__meta">Registrations &amp; sessions</span>
+    </div>
+  </section>
+
+  <div class="al-bar">
+    <label class="tc-search" style="flex:1;min-width:220px">
+      {{ ico('i-search', 'ct-ico--sm') }}
+      <input type="search" id="alSearchInput" placeholder="Search by username, action, or role…" oninput="filterAuditLogs()" aria-label="Search audit logs">
+    </label>
+    <select id="alRoleFilter" class="al-select" onchange="filterAuditLogs()" aria-label="Filter by role">
+      <option value="">All Roles</option>
+      <option value="admin">Admin</option>
+      <option value="teacher">Teacher</option>
+      <option value="student">Student</option>
+    </select>
+    <button type="button" class="tc-btn tc-btn--ghost tc-btn--sm" onclick="clearAuditFilters()">Clear</button>
+    <span class="tc-pill" id="alCountPill">{{ logs|length }} entries</span>
+  </div>
+
+  <section class="tc-card">
+    <div class="tc-table-wrap ct-table-wrap">
+      {% if logs %}
+      <table class="tc-table al-table" id="auditTable" data-ct-paginate="15" data-ct-paginate-sizes="15,30,50,100">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th style="width:120px">Role</th>
+            <th style="width:180px">Actor</th>
+            <th>Action</th>
+            <th style="width:190px;text-align:right">Timestamp</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for log in logs %}
+          {% set role_l = (log.user_role or 'Student')|lower %}
+          <tr data-role="{{ role_l }}" data-search="{{ (log.username or '')|lower }} {{ (log.action or '')|lower }} {{ role_l }}">
+            <td class="tc-mono" style="color:var(--tc-ink-3)">#{{ log.id }}</td>
+            <td>
+              {% if log.user_role == 'Admin' %}
+              <span class="tc-pill tc-pill--accent">Admin</span>
+              {% elif log.user_role == 'Teacher' %}
+              <span class="tc-pill tc-pill--ok">Teacher</span>
+              {% else %}
+              <span class="tc-pill">{{ log.user_role or 'Student' }}</span>
+              {% endif %}
+            </td>
+            <td class="tc-mono" style="font-weight:620;color:var(--tc-ink)">{{ log.username }}</td>
+            <td style="color:var(--tc-ink-2);font-size:13.5px">{{ log.action }}</td>
+            <td class="tc-mono" style="font-size:12px;color:var(--tc-ink-3)">{{ log.timestamp | wat_time }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <div class="tc-empty">
+        <span class="tc-empty__ico">{{ ico('i-book') }}</span>
+        <strong>No audit events recorded yet</strong>
+        <p>Administrative and faculty operations will be logged automatically here.</p>
+      </div>
+      {% endif %}
+    </div>
+  </section>
 
 {{ shell_end(role='admin') }}
+<script>
+(function () {
+  window.filterAuditLogs = function () {
+    var q = ((document.getElementById("alSearchInput") || {}).value || "").trim().toLowerCase();
+    var role = ((document.getElementById("alRoleFilter") || {}).value || "").toLowerCase();
+    var tbl = document.getElementById("auditTable");
+    if (!tbl) return;
+    var vis = 0, total = 0;
+    tbl.querySelectorAll("tbody tr").forEach(function (tr) {
+      total++;
+      var matchQ = !q || (tr.getAttribute("data-search") || "").indexOf(q) > -1;
+      var matchR = !role || (tr.getAttribute("data-role") || "") === role;
+      var show = matchQ && matchR;
+      tr.dataset.ctFilteredOut = show ? "0" : "1";
+      if (show) vis++;
+    });
+    var pill = document.getElementById("alCountPill");
+    if (pill) pill.textContent = vis === total ? (total + " entries") : (vis + " of " + total + " entries");
+    if (tbl._ctRepaginate) tbl._ctRepaginate(true);
+  };
+
+  window.clearAuditFilters = function () {
+    var si = document.getElementById("alSearchInput");
+    var rf = document.getElementById("alRoleFilter");
+    if (si) si.value = "";
+    if (rf) rf.value = "";
+    window.filterAuditLogs();
+  };
+})();
+</script>
 </body>
 </html>

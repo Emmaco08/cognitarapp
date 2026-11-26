@@ -80,11 +80,11 @@ def admin_class_analytics(class_name):
     
     # Get all exams for this class
     exams = conn.execute("""
-        SELECT e.*, t.username as teacher_name,
+        SELECT e.*, COALESCE(NULLIF(TRIM(t.full_name), ''), t.username, 'Staff') as teacher_name,
                (SELECT COUNT(*) FROM scores WHERE exam_id = e.id AND status = 'completed') as attempt_count,
                (SELECT AVG(percentage) FROM scores WHERE exam_id = e.id AND status = 'completed') as avg_score
         FROM exams e
-        JOIN teachers t ON e.teacher_id = t.id
+        LEFT JOIN teachers t ON e.teacher_id = t.id
         WHERE e.class = ?
         ORDER BY e.id DESC
     """, (class_name,)).fetchall()
@@ -95,27 +95,24 @@ def admin_class_analytics(class_name):
         ORDER BY username
     """, (class_name,)).fetchall()
     
-    # Grade distribution for this class
-    grade_dist = conn.execute("""
-        SELECT 
-            CASE 
-                WHEN sc.percentage >= 90 THEN 'A'
-                WHEN sc.percentage >= 80 THEN 'B'
-                WHEN sc.percentage >= 70 THEN 'C'
-                WHEN sc.percentage >= 65 THEN 'D'
-                ELSE 'F'
-            END as grade,
-            COUNT(*) as count
+    # Grade distribution resolved dynamically using school's active grading scheme
+    from cognitara.services.grading_service import get_active_grading_rules, GradingSchemeValidator
+    active_rules = get_active_grading_rules(conn, scheme_type="school")
+    pct_rows = conn.execute("""
+        SELECT sc.percentage
         FROM scores sc
         JOIN exams e ON sc.exam_id = e.id
         WHERE e.class = ? AND sc.status = 'completed' AND sc.percentage IS NOT NULL
-        GROUP BY grade
-        ORDER BY 
-            CASE grade WHEN 'A' THEN 1 WHEN 'B' THEN 2 WHEN 'C' THEN 3 WHEN 'D' THEN 4 ELSE 5 END
     """, (class_name,)).fetchall()
-    
-    grade_labels = [g["grade"] for g in grade_dist] if grade_dist else []
-    grade_counts = [g["count"] for g in grade_dist] if grade_dist else []
+    ordered_rules = sorted(active_rules, key=lambda r: float(r.get("min_percentage", 0)), reverse=True) if active_rules else [
+        {"grade_label": "A"}, {"grade_label": "B"}, {"grade_label": "C"}, {"grade_label": "D"}, {"grade_label": "F"}
+    ]
+    g_counts = {r["grade_label"]: 0 for r in ordered_rules}
+    for pr in pct_rows:
+        lbl = GradingSchemeValidator.resolve_grade(pr["percentage"], active_rules).get("grade_label") or "F"
+        g_counts[lbl] = g_counts.get(lbl, 0) + 1
+    grade_labels = [k for k, v in g_counts.items() if v > 0]
+    grade_counts = [v for k, v in g_counts.items() if v > 0]
     
     # Class average
     class_avg_result = conn.execute("""
@@ -147,10 +144,10 @@ def admin_class_analytics(class_name):
     for student in students:
         scores = conn.execute("""
             SELECT e.name as exam_name, sc.score, sc.total, sc.percentage,
-                   sc.status, t.username as teacher_name
+                   sc.status, COALESCE(NULLIF(TRIM(t.full_name), ''), t.username, 'Staff') as teacher_name
             FROM scores sc
             JOIN exams e ON sc.exam_id = e.id
-            JOIN teachers t ON e.teacher_id = t.id
+            LEFT JOIN teachers t ON e.teacher_id = t.id
             WHERE sc.student_id = ? AND sc.status = 'completed'
             ORDER BY e.name
         """, (student["id"],)).fetchall()
@@ -200,11 +197,11 @@ def admin_student_profile(student_id):
     # Get all exam results
     results = conn.execute("""
         SELECT sc.*, e.name as exam_name, e.subject_tag,
-               t.username as teacher_name,
+               COALESCE(NULLIF(TRIM(t.full_name), ''), t.username, 'Staff') as teacher_name,
                (strftime('%s', sc.end_time) - strftime('%s', sc.start_time)) as time_spent_seconds
         FROM scores sc
         JOIN exams e ON sc.exam_id = e.id
-        JOIN teachers t ON e.teacher_id = t.id
+        LEFT JOIN teachers t ON e.teacher_id = t.id
         WHERE sc.student_id = ? AND sc.status = 'completed'
         ORDER BY sc.end_time DESC
     """, (student_id,)).fetchall()
@@ -339,11 +336,10 @@ def admin_student_exam_detail(student_id, exam_id):
     """, (exam_id,)).fetchone()["avg_time"] or 0
     
     percentage = score_pct
-    if percentage >= 90: grade = 'A'
-    elif percentage >= 80: grade = 'B'
-    elif percentage >= 70: grade = 'C'
-    elif percentage >= 65: grade = 'D'
-    else: grade = 'F'
+    from cognitara.services.grading_service import get_active_grading_rules, GradingSchemeValidator
+    active_rules = get_active_grading_rules(conn, exam_id=exam_id, scheme_type="school")
+    resolved_grade = GradingSchemeValidator.resolve_grade(percentage, active_rules)
+    grade = resolved_grade.get("grade_label") or ("A" if percentage >= 90 else "F")
     
     conn.close()
     
@@ -367,6 +363,7 @@ def admin_school_analytics():
     if "admin_id" not in session:
         return redirect("/")
     
+    from cognitara.services.grading_service import get_active_grading_rules, GradingSchemeValidator
     conn = get_db_connection()
     
     # Total stats
@@ -375,26 +372,18 @@ def admin_school_analytics():
     total_exams = conn.execute("SELECT COUNT(*) as count FROM exams").fetchone()["count"]
     total_attempts = conn.execute("SELECT COUNT(*) as count FROM scores WHERE status='completed'").fetchone()["count"]
     
-    # School-wide grade distribution
-    grade_dist = conn.execute("""
-        SELECT 
-            CASE 
-                WHEN percentage >= 90 THEN 'A'
-                WHEN percentage >= 80 THEN 'B'
-                WHEN percentage >= 70 THEN 'C'
-                WHEN percentage >= 65 THEN 'D'
-                ELSE 'F'
-            END as grade,
-            COUNT(*) as count
-        FROM scores 
-        WHERE status = 'completed' AND percentage IS NOT NULL
-        GROUP BY grade
-        ORDER BY 
-            CASE grade WHEN 'A' THEN 1 WHEN 'B' THEN 2 WHEN 'C' THEN 3 WHEN 'D' THEN 4 ELSE 5 END
-    """).fetchall()
-    
-    grade_labels = [g["grade"] for g in grade_dist] if grade_dist else []
-    grade_counts = [g["count"] for g in grade_dist] if grade_dist else []
+    # School-wide grade distribution resolved dynamically from active grading scheme
+    active_rules = get_active_grading_rules(conn, scheme_type="school")
+    ordered_rules = sorted(active_rules, key=lambda r: float(r.get("min_percentage", 0)), reverse=True) if active_rules else [
+        {"grade_label": "A"}, {"grade_label": "B"}, {"grade_label": "C"}, {"grade_label": "D"}, {"grade_label": "F"}
+    ]
+    g_counts = {r["grade_label"]: 0 for r in ordered_rules}
+    all_pcts = conn.execute("SELECT percentage FROM scores WHERE status = 'completed' AND percentage IS NOT NULL").fetchall()
+    for row in all_pcts:
+        lbl = GradingSchemeValidator.resolve_grade(row["percentage"], active_rules).get("grade_label") or "F"
+        g_counts[lbl] = g_counts.get(lbl, 0) + 1
+    grade_labels = [k for k, v in g_counts.items() if v > 0]
+    grade_counts = [v for k, v in g_counts.items() if v > 0]
     
     # School average
     school_avg = conn.execute("""

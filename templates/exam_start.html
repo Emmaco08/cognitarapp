@@ -104,24 +104,34 @@
     </main>
   </div>
 
-  <!-- Confirmation Modal -->
+  <!-- Confirmation Modal (CogniTara Kinetic Modal System) -->
   <div class="ct-modal-backdrop" id="startModal" role="dialog" aria-modal="true" aria-hidden="true" data-ct-dismissable>
-    <div class="ct-modal" style="background:var(--st-surface);border:1px solid var(--st-line-2);box-shadow:var(--st-shadow),var(--st-specular);border-radius:20px">
-      <div class="ct-modal__head" style="border-bottom-color:var(--st-line)">
-        <div style="display:grid;gap:4px">
-          <span class="st-eyebrow">Confirm Start</span>
-          <h3 style="margin:0;font-size:18px;font-weight:720;color:var(--st-ink)">Start {{ exam.name }}?</h3>
-          <p style="margin:0;font-size:13.5px;color:var(--st-ink-2)">Your {{ exam.duration }}-minute timer will start immediately once confirmed.</p>
+    <div class="ct-modal ct-confirm-modal" data-tone="primary">
+      <div class="ct-m-head">
+        <div class="ct-m-medallion">
+          <span class="ct-m-medallion__halo" aria-hidden="true"></span>
+          <svg class="ct-m-medallion__svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle class="ct-svg-draw" style="--d:40ms" pathLength="100" cx="12" cy="12" r="9"/>
+            <path class="ct-svg-draw" style="--d:165ms" pathLength="100" d="M12 7.5V12l3 2"/>
+          </svg>
+        </div>
+        <div class="ct-m-copy">
+          <h3>Start {{ exam.name }}</h3>
+          <div class="ct-m-desc">Your {{ exam.duration }}-minute timer will start immediately once confirmed.</div>
+        </div>
+        <button type="button" class="ct-iconbtn ct-iconbtn--ghost ct-modal__close" onclick="closeStartModal()" aria-label="Close">{{ ico('i-x', 'ct-ico--sm') }}</button>
+      </div>
+      <div class="ct-m-body">
+        <div style="padding:13px 15px;border-radius:12px;background:var(--st-warn-soft);border:1px solid var(--st-warn-line);color:var(--st-warn);font-size:13px;line-height:1.55">
+          <strong>Stay inside this window:</strong> Avoid tab switching, right-clicking, or DevTools. Reaching {{ exam.max_warnings if exam.max_warnings else 5 }} warnings will automatically submit your paper.
         </div>
       </div>
-      <div class="ct-modal__body">
-        <div style="padding:13px 15px;border-radius:12px;background:var(--st-warn-soft);border:1px solid var(--st-warn-line);color:var(--st-warn);font-size:13px;line-height:1.5">
-          <strong>Stay inside this window:</strong> Avoid tab switching, right-clicking, or DevTools. Reaching 5 warnings will automatically submit your paper.
+      <div class="ct-m-foot">
+        <span class="ct-m-kbd"><kbd>Esc</kbd><span>Cancel</span></span>
+        <div class="ct-m-foot__btns">
+          <button type="button" class="st-btn st-btn--ghost" onclick="closeStartModal()">Cancel</button>
+          <button type="button" class="st-btn st-btn--primary" onclick="confirmStartExam()"><span>Start now</span>{{ ico('i-arrow-right', 'ct-ico--sm st-arrow') }}</button>
         </div>
-      </div>
-      <div class="ct-modal__actions" style="border-top-color:var(--st-line)">
-        <button type="button" class="st-btn st-btn--ghost" onclick="closeStartModal()">Cancel</button>
-        <button type="button" class="st-btn st-btn--primary" onclick="confirmStartExam()"><span>Start Now</span>{{ ico('i-arrow-right', 'ct-ico--sm st-arrow') }}</button>
       </div>
     </div>
   </div>

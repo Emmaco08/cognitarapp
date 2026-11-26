@@ -20,22 +20,22 @@
         .stat-card { background: var(--ct-surface); border-radius: 20px; padding: 20px; text-align: center; border: 1px solid var(--ct-line-2); transition: all 0.3s; }
         .stat-card:hover { transform: translateY(-3px); box-shadow: 0 10px 20px -10px rgba(0,0,0,0.1); }
         .question-card { background: var(--ct-surface); border-radius: 16px; padding: 20px; margin-bottom: 15px; border: 1px solid var(--ct-line-2); transition: all 0.3s; }
-        .question-card.correct { border-left: 4px solid #10b981; }
-        .question-card.incorrect { border-left: 4px solid #ef4444; }
-        .badge-correct { background: var(--ct-ok-soft); color: #065f46; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; }
-        .badge-incorrect { background: var(--ct-bad-soft); color: #991b1b; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; }
-        .badge-pending { background: var(--ct-warn-soft); color: #d97706; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; }
-        .badge-approved { background: var(--ct-ok-soft); color: #065f46; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; }
-        .badge-rejected { background: var(--ct-bad-soft); color: #991b1b; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+        .question-card.correct { border-left: 4px solid #575551; }
+        .question-card.incorrect { border-left: 4px solid #2B2926; }
+        .badge-correct { background: var(--ct-ok-soft); color: #171614; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+        .badge-incorrect { background: var(--ct-bad-soft); color: #171614; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+        .badge-pending { background: var(--ct-warn-soft); color: #575551; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+        .badge-approved { background: var(--ct-ok-soft); color: #171614; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+        .badge-rejected { background: var(--ct-bad-soft); color: #171614; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; }
         .badge-not-started { background: var(--ct-line-2); color: var(--ct-ink-3); padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; }
         .btn-back { background: var(--ct-surface); border: 2px solid var(--ct-line-2); padding: 10px 25px; border-radius: 12px; color: var(--ct-ink-3); text-decoration: none; display: inline-flex; align-items: center; gap: 8px; transition: all 0.3s; }
         .btn-back:hover { border-color: var(--ct-primary); color: var(--ct-primary); }
-        .btn-export { background: #10b981; color: white; border: none; padding: 10px 20px; border-radius: 10px; cursor: pointer; transition: all 0.3s; }
-        .btn-export:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(16,185,129,0.3); }
-        .btn-approve { background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; border: none; padding: 12px 24px; border-radius: 12px; font-weight: 600; cursor: pointer; transition: all 0.3s; }
-        .btn-approve:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(16,185,129,0.3); }
-        .btn-reject { background: var(--ct-surface); border: 2px solid #ef4444; color: #ef4444; padding: 10px 22px; border-radius: 12px; font-weight: 600; cursor: pointer; transition: all 0.3s; }
-        .btn-reject:hover { background: #ef4444; color: white; transform: translateY(-2px); }
+        .btn-export { background: #575551; color: white; border: none; padding: 10px 20px; border-radius: 10px; cursor: pointer; transition: all 0.3s; }
+        .btn-export:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(23, 22, 20,0.3); }
+        .btn-approve { background: linear-gradient(135deg, #575551 0%, #2B2926 100%); color: white; border: none; padding: 12px 24px; border-radius: 12px; font-weight: 600; cursor: pointer; transition: all 0.3s; }
+        .btn-approve:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(23, 22, 20,0.3); }
+        .btn-reject { background: var(--ct-surface); border: 2px solid #2B2926; color: #2B2926; padding: 10px 22px; border-radius: 12px; font-weight: 600; cursor: pointer; transition: all 0.3s; }
+        .btn-reject:hover { background: #2B2926; color: white; transform: translateY(-2px); }
         .filter-buttons { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
         .filter-btn { padding: 8px 16px; border-radius: 10px; border: 1px solid var(--ct-line-2); background: var(--ct-surface); cursor: pointer; transition: all 0.3s; }
         .filter-btn.active { background: var(--ct-primary); color: white; border-color: var(--ct-primary); }
@@ -229,7 +229,7 @@
         {% if attempt_status == 'pending' %}
         <div class="row mb-4">
             <div class="col-12">
-                <div class="stat-card" style="text-align: center; background: #fef3c7; border-color: #f59e0b;">
+                <div class="stat-card" style="text-align: center; background: #F8F8F8; border-color: #D6D4CF;">
                     <h4><i class="fas fa-user-check"></i> Pending Approval</h4>
                     <p>Review this student's exam performance and decide</p>
                     <div style="display: flex; gap: 15px; justify-content: center; margin-top: 15px;">
@@ -244,10 +244,10 @@
         <!-- Stats Cards (only if exam taken) -->
         {% if attempt_status in ['approved', 'pending', 'rejected'] and total_questions > 0 %}
         <div class="row mb-4">
-            <div class="col-md-3"><div class="stat-card"><i class="fas fa-check-circle" style="font-size: 32px; color: #10b981;"></i><h3>{{ correct_count }}</h3><p>Correct Answers</p></div></div>
-            <div class="col-md-3"><div class="stat-card"><i class="fas fa-times-circle" style="font-size: 32px; color: #ef4444;"></i><h3>{{ incorrect_count }}</h3><p>Incorrect Answers</p></div></div>
-            <div class="col-md-3"><div class="stat-card"><i class="fas fa-clock" style="font-size: 32px; color: #3b82f6;"></i><h3>{{ (total_time_spent/60)|round(1) }} min</h3><p>Total Time on Questions</p></div></div>
-            <div class="col-md-3"><div class="stat-card"><i class="fas fa-hourglass-half" style="font-size: 32px; color: #f59e0b;"></i><h3>{{ avg_time_per_question }}s</h3><p>Avg Time/Question</p></div></div>
+            <div class="col-md-3"><div class="stat-card"><i class="fas fa-check-circle" style="font-size: 32px; color: #575551;"></i><h3>{{ correct_count }}</h3><p>Correct Answers</p></div></div>
+            <div class="col-md-3"><div class="stat-card"><i class="fas fa-times-circle" style="font-size: 32px; color: #2B2926;"></i><h3>{{ incorrect_count }}</h3><p>Incorrect Answers</p></div></div>
+            <div class="col-md-3"><div class="stat-card"><i class="fas fa-clock" style="font-size: 32px; color: #575551;"></i><h3>{{ (total_time_spent/60)|round(1) }} min</h3><p>Total Time on Questions</p></div></div>
+            <div class="col-md-3"><div class="stat-card"><i class="fas fa-hourglass-half" style="font-size: 32px; color: #D6D4CF;"></i><h3>{{ avg_time_per_question }}s</h3><p>Avg Time/Question</p></div></div>
         </div>
         
         <!-- Comparison Card -->
@@ -297,13 +297,13 @@
         </div>
         {% elif attempt_status == 'not_started' %}
         <div class="stat-card text-center" style="padding: 60px;">
-            <i class="fas fa-hourglass-start" style="font-size: 60px; color: #94a3b8;"></i>
+            <i class="fas fa-hourglass-start" style="font-size: 60px; color: #D6D4CF;"></i>
             <h3 class="mt-3">Student Has Not Started the Exam</h3>
             <p>This student has registered but hasn't taken the exam yet.</p>
         </div>
         {% elif attempt_status == 'rejected' %}
         <div class="stat-card text-center" style="padding: 60px;">
-            <i class="fas fa-times-circle" style="font-size: 60px; color: #ef4444;"></i>
+            <i class="fas fa-times-circle" style="font-size: 60px; color: #2B2926;"></i>
             <h3 class="mt-3">Student Was Rejected</h3>
             <p>This student's exam was rejected. They can retake the exam.</p>
         </div>
@@ -336,8 +336,8 @@
                 html: `Approve <strong>{{ student.full_name }}</strong>? They will be added to the target class.`,
                 icon: 'question',
                 showCancelButton: true,
-                confirmButtonColor: '#10b981',
-                cancelButtonColor: '#64748b',
+                confirmButtonColor: '#575551',
+                cancelButtonColor: '#2B2926',
                 confirmButtonText: 'Yes, Approve!'
             }).then((result) => {
                 if (result.isConfirmed) {
@@ -369,8 +369,8 @@
                 html: `Reject <strong>{{ student.full_name }}</strong>? They can retake the exam.`,
                 icon: 'warning',
                 showCancelButton: true,
-                confirmButtonColor: '#ef4444',
-                cancelButtonColor: '#64748b',
+                confirmButtonColor: '#2B2926',
+                cancelButtonColor: '#2B2926',
                 confirmButtonText: 'Yes, Reject'
             }).then((result) => {
                 if (result.isConfirmed) {

@@ -87,6 +87,13 @@ export async function POST(req: NextRequest) {
     const source = body.source === "desktop" ? "desktop" : "web";
     const hwidHash = body.hwid_hash && /^[0-9a-f]{64}$/i.test(String(body.hwid_hash)) ? String(body.hwid_hash).toLowerCase() : null;
     const displayHwid = body.display_hwid ? String(body.display_hwid).trim().slice(0, 64) : null;
+    const allowedChannels = new Set(["card", "bank", "ussd", "bank_transfer", "mobile_money", "qr", "apple_pay", "eft"]);
+    const requestedChannels = Array.isArray(body.channels)
+      ? body.channels
+          .map((c) => String(c || "").trim().toLowerCase())
+          .filter((c) => allowedChannels.has(c))
+      : [];
+    const paymentMethod = typeof body.payment_method === "string" ? body.payment_method.trim().toLowerCase().slice(0, 32) : null;
 
     if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(planId)) {
       return NextResponse.json({ ok: false, error: "invalid_plan", message: "Select a valid plan." }, { status: 400 });
@@ -156,7 +163,7 @@ export async function POST(req: NextRequest) {
     const origin = req.nextUrl.origin || "https://cognitara-cloud.vercel.app";
     const callbackUrl = `${origin}/pay/done?reference=${encodeURIComponent(reference)}&source=${source}`;
 
-    const psRes = await paystackRequest(settings.paystack_secret_key, "/transaction/initialize", "POST", {
+    const psPayload: Record<string, unknown> = {
       email: account.user.email,
       amount: chargeMinor,
       currency,
@@ -172,10 +179,16 @@ export async function POST(req: NextRequest) {
         fee_mode: settings.paystack_fee_mode,
         added_fee_minor: feeBreakdown.added_fee_minor,
         source,
+        payment_method: paymentMethod || (requestedChannels[0] || "all"),
         hwid_hash: hwidHash,
         display_hwid: displayHwid,
       },
-    });
+    };
+    if (requestedChannels.length > 0) {
+      psPayload.channels = requestedChannels;
+    }
+
+    const psRes = await paystackRequest(settings.paystack_secret_key, "/transaction/initialize", "POST", psPayload);
 
     if (!psRes.ok || !psRes.data?.data?.authorization_url) {
       return NextResponse.json(
@@ -188,11 +201,12 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const subChannelLabel = paymentMethod || (requestedChannels.length === 1 ? requestedChannels[0] : null);
     const initCheck = [
       {
         step: "Checkout initialized",
         ok: true,
-        detail: `${isTestMode ? "Test" : "Live"} mode · ${currency} ${(chargeMinor / 100).toLocaleString()} (${source})`,
+        detail: `${isTestMode ? "Test" : "Live"} mode · ${currency} ${(chargeMinor / 100).toLocaleString()}${subChannelLabel ? ` · ${subChannelLabel}` : ""} (${source})`,
         at: new Date().toISOString(),
       },
     ];
@@ -201,7 +215,7 @@ export async function POST(req: NextRequest) {
       INSERT INTO subscriptions_payments (
         school_id, user_id, plan_id, paystack_reference, currency, amount_minor,
         original_amount_minor, discount_amount_minor, fee_minor, customer_paid_minor,
-        is_test, promo_code_id, promo_code_text, payment_channel, status,
+        is_test, promo_code_id, promo_code_text, payment_channel, paystack_sub_channel, status,
         pending_hwid_hash, pending_display_hwid, verification_checks_json
       ) VALUES (
         ${account.school.id}::uuid,
@@ -218,6 +232,7 @@ export async function POST(req: NextRequest) {
         ${promoId}::uuid,
         ${promoText},
         'paystack',
+        ${subChannelLabel},
         'initialized',
         ${hwidHash},
         ${displayHwid},
@@ -227,8 +242,11 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({
       ok: true,
+      mode: "browser_checkout",
       reference,
       is_test: isTestMode,
+      channels: requestedChannels,
+      payment_method: subChannelLabel,
       authorization_url: psRes.data.data.authorization_url,
       access_code: psRes.data.data.access_code,
       public_key: settings.paystack_public_key,
@@ -242,6 +260,7 @@ export async function POST(req: NextRequest) {
       fee_mode: feeBreakdown.fee_mode,
       fee_note: feeBreakdown.fee_note,
       plan_name: plan.display_name,
+      duration_days: plan.duration_days,
     });
   } catch (err) {
     console.error("Paystack initialize error:", err);

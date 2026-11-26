@@ -22,14 +22,13 @@
 
   <header class="tc-head">
     <div class="tc-head__left">
-      {{ person_avatar(student.photo, st_name, 'lg', '', 'static') }}
+      {{ person_avatar(student.photo, st_name, 'lg', '', 'uploads') }}
       <div class="tc-head__txt">
         <h1>{{ st_name }}</h1>
         <div class="tc-head__tags">
           <span class="tc-pill">@{{ student.username }}</span>
           <span class="tc-pill">{{ student.class }}</span>
           <span class="tc-pill tc-pill--accent">{{ student.specialisation or 'General' }}</span>
-          {% if student.email %}<span class="tc-pill">{{ student.email }}</span>{% endif %}
         </div>
       </div>
     </div>

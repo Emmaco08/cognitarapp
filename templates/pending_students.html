@@ -1,937 +1,154 @@
-{%- from '_ct_shell.html' import ico, ct_boot_script, admin_shell_start, teacher_shell_start, student_topbar, shell_end with context -%}
+{%- from '_ct_shell.html' import ico, person_avatar, ct_boot_script, admin_shell_start, shell_end with context -%}
 <!DOCTYPE html>
 <html lang="en" data-theme="dark">
 <head>
-    <title>Pending Approvals | COGNITARA EXAM SYSTEM</title>
-    <link href="{{ url_for('static', filename='vendor/bootstrap/css/bootstrap.min.css') }}" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='vendor/fontawesome/css/all.min.css') }}">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            background: linear-gradient(135deg, #f5f7fa 0%, #e8edf5 100%);
-            font-family: 'Segoe UI', 'Poppins', Tahoma, Geneva, Verdana, sans-serif;
-            min-height: 100vh;
-            position: relative;
-            overflow-x: hidden;
-        }
-
-        /* Animated Educational Icons Background */
-        .edu-icon {
-            position: absolute;
-            color: rgba(26, 86, 219, 0.06);
-            pointer-events: none;
-            z-index: 0;
-            animation: floatIcon 20s infinite ease-in-out;
-        }
-
-        @keyframes floatIcon {
-            0% {
-                transform: translate(0, 0) rotate(0deg);
-                opacity: 0;
-            }
-            10% {
-                opacity: 0.08;
-            }
-            90% {
-                opacity: 0.08;
-            }
-            100% {
-                transform: translate(100px, -100px) rotate(360deg);
-                opacity: 0;
-            }
-        }
-
-        .edu-icon:nth-child(1) { top: 10%; left: 5%; animation-duration: 18s; font-size: 50px; }
-        .edu-icon:nth-child(2) { top: 70%; left: 15%; animation-duration: 22s; font-size: 40px; animation-delay: 2s; }
-        .edu-icon:nth-child(3) { top: 30%; left: 85%; animation-duration: 20s; font-size: 55px; animation-delay: 4s; }
-        .edu-icon:nth-child(4) { top: 80%; left: 80%; animation-duration: 25s; font-size: 35px; animation-delay: 1s; }
-        .edu-icon:nth-child(5) { top: 50%; left: 10%; animation-duration: 19s; font-size: 45px; animation-delay: 3s; }
-        .edu-icon:nth-child(6) { top: 20%; left: 70%; animation-duration: 23s; font-size: 60px; animation-delay: 5s; }
-        .edu-icon:nth-child(7) { top: 60%; left: 90%; animation-duration: 21s; font-size: 42px; animation-delay: 2.5s; }
-        .edu-icon:nth-child(8) { top: 85%; left: 25%; animation-duration: 24s; font-size: 38px; animation-delay: 6s; }
-        .edu-icon:nth-child(9) { top: 15%; left: 45%; animation-duration: 17s; font-size: 48px; animation-delay: 1.5s; }
-        .edu-icon:nth-child(10) { top: 45%; left: 75%; animation-duration: 26s; font-size: 52px; animation-delay: 3.5s; }
-
-        /* Main Container */
-        .pending-container {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 40px 30px;
-            position: relative;
-            z-index: 10;
-        }
-
-        /* Header Section */
-        .page-header {
-            text-align: center;
-            margin-bottom: 40px;
-        }
-
-        .logo-icon {
-            width: 80px;
-            height: 80px;
-            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-            border-radius: 50%;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            margin-bottom: 20px;
-            animation: pulse 2s infinite;
-            box-shadow: 0 10px 25px rgba(245, 158, 11, 0.2);
-        }
-
-        @keyframes pulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.05); }
-        }
-
-        .logo-icon i {
-            font-size: 40px;
-            color: white;
-        }
-
-        .page-header h1 {
-            font-size: 36px;
-            font-weight: 800;
-            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            margin-bottom: 10px;
-        }
-
-        .page-header p {
-            font-size: 16px;
-            color: var(--ct-ink-3);
-        }
-
-        /* Stats Bar */
-        .stats-bar {
-            background: var(--ct-surface);
-            border-radius: 20px;
-            padding: 20px 30px;
-            margin-bottom: 30px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 20px;
-            border: 1px solid var(--ct-line-2);
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.03);
-        }
-
-        .stats-info {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-
-        .stats-icon {
-            width: 50px;
-            height: 50px;
-            background: var(--ct-warn-soft);
-            border-radius: 15px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .stats-icon i {
-            font-size: 24px;
-            color: #f59e0b;
-        }
-
-        .stats-text h3 {
-            font-size: 28px;
-            font-weight: 800;
-            color: var(--ct-ink);
-            margin: 0;
-        }
-
-        .stats-text p {
-            margin: 0;
-            color: var(--ct-ink-3);
-            font-size: 13px;
-        }
-
-        .btn-back {
-            background: var(--ct-surface);
-            border: 2px solid var(--ct-line-2);
-            padding: 10px 25px;
-            border-radius: 12px;
-            color: var(--ct-ink-3);
-            font-weight: 600;
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            transition: all 0.3s ease;
-        }
-
-        .btn-back:hover {
-            border-color: var(--ct-primary);
-            color: var(--ct-primary);
-            background: var(--ct-surface);
-            transform: translateY(-2px);
-        }
-
-        /* Student Cards Grid */
-        .students-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
-            gap: 25px;
-        }
-
-        /* Student Card */
-        .student-card {
-            background: var(--ct-surface);
-            border-radius: 24px;
-            overflow: hidden;
-            transition: all 0.3s ease;
-            border: 1px solid var(--ct-line-2);
-            position: relative;
-        }
-
-        .student-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 20px 30px -15px rgba(0, 0, 0, 0.1);
-            border-color: #f59e0b;
-        }
-
-        /* Card Header */
-        .card-header-custom {
-            background: var(--ct-surface-2);
-            padding: 18px 20px;
-            border-bottom: 1px solid #fde68a;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 10px;
-        }
-
-        .student-name {
-            font-size: 18px;
-            font-weight: 700;
-            color: var(--ct-ink);
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .student-name i {
-            color: #f59e0b;
-            font-size: 18px;
-        }
-
-        .status-badge {
-            background: var(--ct-warn-soft);
-            color: #d97706;
-            padding: 5px 12px;
-            border-radius: 50px;
-            font-size: 12px;
-            font-weight: 600;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-        /* Card Body */
-        .card-body-custom {
-            padding: 20px;
-        }
-
-        .student-info-row {
-            display: flex;
-            align-items: center;
-            gap: 20px;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
-        }
-
-        .student-photo {
-            width: 100px;
-            height: 100px;
-            border-radius: 20px;
-            object-fit: cover;
-            border: 3px solid #fef3c7;
-            background: var(--ct-surface);
-        }
-
-        .info-details {
-            flex: 1;
-        }
-
-        .info-item {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-bottom: 10px;
-            padding: 8px 12px;
-            background: var(--ct-surface);
-            border-radius: 12px;
-        }
-
-        .info-item i {
-            width: 30px;
-            color: #f59e0b;
-            font-size: 16px;
-        }
-
-        .info-item strong {
-            color: var(--ct-ink);
-            font-size: 13px;
-            min-width: 70px;
-        }
-
-        .info-item span {
-            color: var(--ct-ink-3);
-            font-size: 13px;
-        }
-
-        .registered-date {
-            margin-top: 15px;
-            padding: 10px;
-            background: var(--ct-surface);
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            font-size: 12px;
-            color: var(--ct-ink-3);
-        }
-
-        .registered-date i {
-            color: #f59e0b;
-        }
-
-        /* Card Footer */
-        .card-footer-custom {
-            padding: 15px 20px;
-            background: var(--ct-surface);
-            border-top: 1px solid var(--ct-line-2);
-            display: flex;
-            gap: 12px;
-        }
-
-        .btn-approve {
-            flex: 1;
-            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-            border: none;
-            padding: 10px;
-            border-radius: 12px;
-            color: white;
-            font-weight: 600;
-            font-size: 14px;
-            text-decoration: none;
-            text-align: center;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            transition: all 0.3s ease;
-            cursor: pointer;
-        }
-
-        .btn-approve:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(16, 185, 129, 0.3);
-        }
-
-        .btn-reject {
-            flex: 1;
-            background: var(--ct-surface);
-            border: 2px solid #fee2e2;
-            padding: 8px;
-            border-radius: 12px;
-            color: #ef4444;
-            font-weight: 600;
-            font-size: 14px;
-            text-decoration: none;
-            text-align: center;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            transition: all 0.3s ease;
-            cursor: pointer;
-        }
-
-        .btn-reject:hover {
-            background: var(--ct-bad-soft);
-            border-color: #ef4444;
-            transform: translateY(-2px);
-        }
-
-        /* Empty State */
-        .empty-state {
-            text-align: center;
-            padding: 80px 20px;
-            background: var(--ct-surface);
-            border-radius: 28px;
-            border: 1px solid var(--ct-line-2);
-        }
-
-        .empty-icon {
-            width: 100px;
-            height: 100px;
-            background: var(--ct-ok-soft);
-            border-radius: 50%;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            margin-bottom: 25px;
-        }
-
-        .empty-icon i {
-            font-size: 50px;
-            color: #10b981;
-        }
-
-        .empty-state h3 {
-            font-size: 24px;
-            color: var(--ct-ink);
-            margin-bottom: 10px;
-        }
-
-        .empty-state p {
-            color: var(--ct-ink-3);
-            margin-bottom: 25px;
-        }
-
-        /* Custom Modal Popup */
-        .modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.5);
-            backdrop-filter: blur(4px);
-            z-index: 1000;
-            display: none;
-            align-items: center;
-            justify-content: center;
-            animation: fadeIn 0.3s ease;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-
-        .modal-container {
-            background: var(--ct-surface);
-            border-radius: 32px;
-            max-width: 420px;
-            width: 90%;
-            overflow: hidden;
-            animation: slideIn 0.3s ease;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-        }
-
-        @keyframes slideIn {
-            from {
-                transform: translateY(-50px);
-                opacity: 0;
-            }
-            to {
-                transform: translateY(0);
-                opacity: 1;
-            }
-        }
-
-        .modal-header {
-            padding: 30px 25px 20px;
-            text-align: center;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .modal-icon {
-            width: 80px;
-            height: 80px;
-            border-radius: 50%;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            margin-bottom: 20px;
-        }
-
-        .modal-icon.approve {
-            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-            animation: bounce 0.5s ease;
-        }
-
-        .modal-icon.reject {
-            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-            animation: shake 0.5s ease;
-        }
-
-        @keyframes bounce {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.1); }
-        }
-
-        @keyframes shake {
-            0%, 100% { transform: translateX(0); }
-            25% { transform: translateX(-5px); }
-            75% { transform: translateX(5px); }
-        }
-
-        .modal-icon i {
-            font-size: 40px;
-            color: white;
-        }
-
-        .modal-header h3 {
-            font-size: 24px;
-            font-weight: 700;
-            color: var(--ct-ink);
-            margin-bottom: 5px;
-        }
-
-        .student-details-preview {
-            background: var(--ct-surface);
-            margin: 0 25px 20px;
-            padding: 20px;
-            border-radius: 20px;
-            border: 1px solid var(--ct-line-2);
-        }
-
-        .detail-row {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 10px 0;
-            border-bottom: 1px solid var(--ct-line-2);
-        }
-
-        .detail-row:last-child {
-            border-bottom: none;
-        }
-
-        .detail-row i {
-            width: 30px;
-            color: #f59e0b;
-            font-size: 16px;
-        }
-
-        .detail-row .label {
-            font-weight: 600;
-            color: var(--ct-ink);
-            width: 80px;
-        }
-
-        .detail-row .value {
-            color: var(--ct-ink-3);
-            flex: 1;
-        }
-
-        .modal-buttons {
-            display: flex;
-            gap: 15px;
-            padding: 0 25px 30px;
-        }
-
-        .modal-btn {
-            flex: 1;
-            padding: 12px;
-            border-radius: 14px;
-            font-weight: 600;
-            font-size: 15px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            text-align: center;
-            border: none;
-        }
-
-        .modal-btn-confirm {
-            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-            color: white;
-        }
-
-        .modal-btn-confirm:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(16, 185, 129, 0.3);
-        }
-
-        .modal-btn-cancel {
-            background: var(--ct-surface);
-            border: 2px solid var(--ct-line-2);
-            color: var(--ct-ink-3);
-        }
-
-        .modal-btn-cancel:hover {
-            border-color: var(--ct-primary);
-            color: var(--ct-primary);
-        }
-
-        .modal-btn-danger {
-            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-            color: white;
-        }
-
-        .modal-btn-danger:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(239, 68, 68, 0.3);
-        }
-
-        /* Responsive */
-        @media (max-width: 768px) {
-            .pending-container {
-                padding: 20px 15px;
-            }
-            
-            .page-header h1 {
-                font-size: 28px;
-            }
-            
-            .students-grid {
-                grid-template-columns: 1fr;
-            }
-            
-            .stats-bar {
-                flex-direction: column;
-                text-align: center;
-            }
-            
-            .student-info-row {
-                flex-direction: column;
-                text-align: center;
-            }
-            
-            .info-item {
-                justify-content: center;
-            }
-        }
-    </style>
-    <!-- CSRF Protection Shield -->
-    <meta name="csrf-token" content="{{ csrf_token() }}">
-    <script>
-    window.CSRF_TOKEN = "{{ csrf_token() }}";
-    (function() {
-        if (window.fetch) {
-            const _origFetch = window.fetch;
-            window.fetch = function(url, options) {
-                options = options || {};
-                const method = (options.method || 'GET').toUpperCase();
-                if (!['GET', 'HEAD', 'OPTIONS', 'TRACE'].includes(method)) {
-                    options.headers = options.headers || {};
-                    const token = window.CSRF_TOKEN || (document.querySelector('meta[name="csrf-token"]') && document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
-                    if (token) {
-                        if (typeof Headers !== 'undefined' && options.headers instanceof Headers) {
-                            if (!options.headers.has('X-CSRFToken')) options.headers.set('X-CSRFToken', token);
-                        } else if (Array.isArray(options.headers)) {
-                            options.headers.push(['X-CSRFToken', token]);
-                        } else {
-                            if (!options.headers['X-CSRFToken']) options.headers['X-CSRFToken'] = token;
-                        }
-                    }
-                }
-                return _origFetch(url, options);
-            };
-        }
-        if (window.$ && $.ajaxSetup) {
-            $.ajaxSetup({
-                beforeSend: function(xhr, settings) {
-                    if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type)) {
-                        xhr.setRequestHeader("X-CSRFToken", window.CSRF_TOKEN);
-                    }
-                }
-            });
-        }
-        if (navigator.sendBeacon) {
-            const _origBeacon = navigator.sendBeacon.bind(navigator);
-            navigator.sendBeacon = function(url, data) {
-                if (data instanceof FormData) {
-                    if (!data.has('csrf_token')) data.append('csrf_token', window.CSRF_TOKEN);
-                } else if (typeof data === 'string') {
-                    try {
-                        const obj = JSON.parse(data);
-                        if (typeof obj === 'object' && obj !== null && !obj.csrf_token) {
-                            obj.csrf_token = window.CSRF_TOKEN;
-                            data = JSON.stringify(obj);
-                        }
-                    } catch(e) {}
-                }
-                return _origBeacon(url, data);
-            };
-        }
-        document.addEventListener('DOMContentLoaded', function() {
-            document.querySelectorAll('form[method="POST"], form[method="post"]').forEach(function(form) {
-                if (!form.querySelector('input[name="csrf_token"]')) {
-                    var input = document.createElement('input');
-                    input.type = 'hidden';
-                    input.name = 'csrf_token';
-                    input.value = window.CSRF_TOKEN;
-                    form.appendChild(input);
-                }
-            });
-        });
-    })();
-    </script>
-
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+  <meta name="color-scheme" content="dark light">
+  <title>Pending Approvals — {{ school_branding.school_name }} | CogniTara</title>
+  <link rel="icon" href="{{ url_for('static', filename='images/cognitara-favicon.ico') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/cognitara-web.css') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/cognitara-portal-unified.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/cognitara-teacher-studio.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/cognitara-admin-studio.css') }}">
   {{ ct_boot_script() }}
+  <style>
+    .pa-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+      gap: 14px;
+    }
+    .pa-card {
+      background: var(--tc-surface);
+      border: 1px solid var(--tc-line-2);
+      border-radius: 14px;
+      padding: 18px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      transition: border-color 160ms ease, transform 180ms cubic-bezier(0.23, 1, 0.32, 1), opacity 220ms ease;
+    }
+    .pa-card:hover { border-color: var(--ct-accent-line); transform: translateY(-1px); }
+    .pa-card__top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+    .pa-card__who { display: flex; align-items: center; gap: 12px; min-width: 0; }
+    .pa-card__name { font-size: 15px; font-weight: 680; color: var(--tc-ink); line-height: 1.25; }
+    .pa-card__user { font-size: 12px; color: var(--tc-ink-3); margin-top: 2px; }
+    .pa-card__meta {
+      display: flex; flex-wrap: wrap; gap: 8px; padding: 11px 12px; border-radius: 10px;
+      background: var(--tc-surface-2); border: 1px solid var(--tc-line); font-size: 12.5px; color: var(--tc-ink-2);
+    }
+    .pa-card__foot {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding-top: 4px;
+    }
+  </style>
 </head>
-<body class="ct-app ct-bs ad-studio">
+<body class="ct-app ad-studio">
 {{ admin_shell_start(active='approvals', crumb='Pending Approvals') }}
 
-
-    <!-- Animated Educational Icons Background -->
-    <div class="edu-icon"><i class="fas fa-user-clock"></i></div>
-    <div class="edu-icon"><i class="fas fa-graduation-cap"></i></div>
-    <div class="edu-icon"><i class="fas fa-users"></i></div>
-    <div class="edu-icon"><i class="fas fa-clipboard-list"></i></div>
-    <div class="edu-icon"><i class="fas fa-hourglass-half"></i></div>
-    <div class="edu-icon"><i class="fas fa-check-double"></i></div>
-    <div class="edu-icon"><i class="fas fa-user-check"></i></div>
-    <div class="edu-icon"><i class="fas fa-school"></i></div>
-    <div class="edu-icon"><i class="fas fa-book"></i></div>
-    <div class="edu-icon"><i class="fas fa-pencil-alt"></i></div>
-
-    <!-- Custom Modal Popup -->
-    <div id="confirmationModal" class="modal-overlay">
-        <div class="modal-container">
-            <div class="modal-header">
-                <div class="modal-icon" id="modalIcon">
-                    <i id="modalIconSymbol" class="fas fa-check"></i>
-                </div>
-                <h3 id="modalTitle">Approve Student Registration</h3>
-            </div>
-            <div id="studentDetailsPreview" class="student-details-preview">
-                <div class="detail-row">
-                    <i class="fas fa-user-graduate"></i>
-                    <span class="label">Full Name:</span>
-                    <span class="value" id="previewName">-</span>
-                </div>
-                <div class="detail-row">
-                    <i class="fas fa-at"></i>
-                    <span class="label">Username:</span>
-                    <span class="value" id="previewUsername">-</span>
-                </div>
-                <div class="detail-row">
-                    <i class="fas fa-graduation-cap"></i>
-                    <span class="label">Class:</span>
-                    <span class="value" id="previewClass">-</span>
-                </div>
-                <div class="detail-row">
-                    <i class="fas fa-envelope"></i>
-                    <span class="label">Email:</span>
-                    <span class="value" id="previewEmail">-</span>
-                </div>
-            </div>
-            <div class="modal-buttons">
-                <button class="modal-btn modal-btn-cancel" id="modalCancelBtn">Cancel</button>
-                <button class="modal-btn" id="modalConfirmBtn">Confirm</button>
-            </div>
-        </div>
+  <header class="tc-head ct-animate-rise">
+    <div class="tc-head__txt">
+      <h1>Pending Student Approvals</h1>
+      <p>Review self-registered students before granting access to active school examinations.</p>
     </div>
+    <div class="tc-head__actions">
+      <span class="tc-pill {% if pending %}tc-pill--warn{% else %}tc-pill--ok{% endif %}">
+        <i class="tc-dot"></i>{{ pending|length }} awaiting review
+      </span>
+      <a href="/admin#sec-students" class="tc-btn tc-btn--secondary">{{ ico('i-users', 'ct-ico--sm') }}Students Roster</a>
+    </div>
+  </header>
 
-    <div class="pending-container">
-        <!-- Header -->
-        <div class="page-header">
-            <div class="logo-icon">
-                <i class="fas fa-user-clock"></i>
-            </div>
-            <h1>Pending Approvals</h1>
-            <p>Review and manage student registration requests</p>
-        </div>
+  {% if pending %}
+  <div style="margin-bottom:16px">
+    <label class="tc-search" style="width:min(360px,100%)">
+      {{ ico('i-search', 'ct-ico--sm') }}
+      <input type="search" id="paSearch" placeholder="Filter by student name, @username, or class…" oninput="filterPendingCards()" aria-label="Filter pending registrations">
+    </label>
+  </div>
 
-        <!-- Stats Bar -->
-        <div class="stats-bar">
-            <div class="stats-info">
-                <div class="stats-icon">
-                    <i class="fas fa-hourglass-half"></i>
-                </div>
-                <div class="stats-text">
-                    <h3>{{ pending|length }}</h3>
-                    <p>Pending Registrations</p>
-                </div>
-            </div>
-            <a href="/admin" class="btn-back">
-                <i class="fas fa-arrow-left"></i> Back to Dashboard
-            </a>
+  <section class="pa-grid" id="paGrid" data-ct-stagger>
+    {% for student in pending %}
+    {% set st_name = student.full_name or student.username %}
+    <article class="pa-card" id="pa-card-{{ student.id }}" data-search="{{ st_name|lower }} {{ (student.username or '')|lower }} {{ (student.class or '')|lower }}">
+      <div class="pa-card__top">
+        <div class="pa-card__who">
+          {{ person_avatar(student.photo, st_name, 'md', '', 'uploads') }}
+          <div style="min-width:0">
+            <div class="pa-card__name">{{ st_name }}</div>
+            <div class="pa-card__user tc-mono">@{{ student.username }}</div>
+          </div>
         </div>
+        <span class="tc-pill tc-pill--warn"><i class="tc-dot"></i>Pending</span>
+      </div>
 
-        {% if pending %}
-        <div class="students-grid">
-            {% for student in pending %}
-            <div class="student-card">
-                <div class="card-header-custom">
-                    <div class="student-name">
-                        <i class="fas fa-user-graduate"></i>
-                        {{ student.full_name }}
-                    </div>
-                    <div class="status-badge">
-                        <i class="fas fa-clock"></i> Pending Review
-                    </div>
-                </div>
-                
-                <div class="card-body-custom">
-                    <div class="student-info-row">
-                        <img src="{{ url_for('static', filename='images/' + student.photo) }}" class="student-photo" alt="Student Photo">
-                        <div class="info-details">
-                            <div class="info-item">
-                                <i class="fas fa-user"></i>
-                                <strong>Username:</strong>
-                                <span>{{ student.username }}</span>
-                            </div>
-                            <div class="info-item">
-                                <i class="fas fa-envelope"></i>
-                                <strong>Email:</strong>
-                                <span>{{ student.email }}</span>
-                            </div>
-                            <div class="info-item">
-                                <i class="fas fa-graduation-cap"></i>
-                                <strong>Class:</strong>
-                                <span>{{ student.class }}</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="registered-date">
-                        <i class="fas fa-calendar-alt"></i>
-                        Registered on: {{ student.registered_at }}
-                    </div>
-                </div>
-                
-                <div class="card-footer-custom">
-                    <button class="btn-approve" onclick="showApproveModal({{ student.id }}, '{{ student.full_name }}', '{{ student.username }}', '{{ student.class }}', '{{ student.email }}')">
-                        <i class="fas fa-check-circle"></i> Approve
-                    </button>
-                    <button class="btn-reject" onclick="showRejectModal({{ student.id }}, '{{ student.full_name }}', '{{ student.username }}', '{{ student.class }}', '{{ student.email }}')">
-                        <i class="fas fa-times-circle"></i> Reject
-                    </button>
-                </div>
-            </div>
-            {% endfor %}
-        </div>
-        {% else %}
-        <div class="empty-state">
-            <div class="empty-icon">
-                <i class="fas fa-check-circle"></i>
-            </div>
-            <h3>All Caught Up!</h3>
-            <p>No pending student registrations at this time.</p>
-            <a href="/admin" class="btn-back" style="display: inline-flex;">
-                <i class="fas fa-arrow-left"></i> Back to Dashboard
-            </a>
-        </div>
+      <div class="pa-card__meta">
+        <span class="tc-pill">{{ student.class or 'Unassigned' }}</span>
+        {% if student.specialisation is defined and student.specialisation %}
+        <span class="tc-pill tc-pill--accent">{{ student.specialisation }}</span>
         {% endif %}
+        <span class="tc-mono" style="margin-left:auto;font-size:11.5px;color:var(--tc-ink-3)">{{ (student.registered_at or '')[:16] }}</span>
+      </div>
+
+      <div class="pa-card__foot">
+        <button type="button" class="tc-btn tc-btn--ok tc-btn--sm" style="justify-content:center;height:36px" onclick="confirmPendingAction('approve', {{ student.id }}, {{ st_name|tojson|forceescape }}, {{ (student.username or '')|tojson|forceescape }}, {{ (student.class or '')|tojson|forceescape }})">
+          {{ ico('i-check-circle', 'ct-ico--xs') }}Approve
+        </button>
+        <button type="button" class="tc-btn tc-btn--danger-soft tc-btn--sm" style="justify-content:center;height:36px" onclick="confirmPendingAction('reject', {{ student.id }}, {{ st_name|tojson|forceescape }}, {{ (student.username or '')|tojson|forceescape }}, {{ (student.class or '')|tojson|forceescape }})">
+          {{ ico('i-x', 'ct-ico--xs') }}Reject
+        </button>
+      </div>
+    </article>
+    {% endfor %}
+  </section>
+  {% else %}
+  <section class="tc-card">
+    <div class="tc-empty">
+      <span class="tc-empty__ico">{{ ico('i-check-circle') }}</span>
+      <strong>All caught up</strong>
+      <p>There are no pending student registrations awaiting approval right now.</p>
+      <a href="/admin" class="tc-btn tc-btn--secondary tc-btn--sm" style="margin-top:6px">{{ ico('i-arrow-left', 'ct-ico--xs') }}Back to Overview</a>
     </div>
-
-    <script>
-        let currentAction = null;
-        let currentStudentId = null;
-
-        // Show Approve Modal
-        function showApproveModal(id, name, username, className, email) {
-            currentAction = 'approve';
-            currentStudentId = id;
-            
-            const modal = document.getElementById('confirmationModal');
-            const modalIcon = document.getElementById('modalIcon');
-            const modalIconSymbol = document.getElementById('modalIconSymbol');
-            const modalTitle = document.getElementById('modalTitle');
-            const modalConfirmBtn = document.getElementById('modalConfirmBtn');
-            const previewName = document.getElementById('previewName');
-            const previewUsername = document.getElementById('previewUsername');
-            const previewClass = document.getElementById('previewClass');
-            const previewEmail = document.getElementById('previewEmail');
-            
-            // Set approve styles
-            modalIcon.className = 'modal-icon approve';
-            modalIconSymbol.className = 'fas fa-check-circle';
-            modalTitle.textContent = 'Approve Student Registration';
-            modalConfirmBtn.className = 'modal-btn modal-btn-confirm';
-            modalConfirmBtn.innerHTML = '<i class="fas fa-check-circle"></i> Approve Student';
-            
-            // Set student details
-            previewName.textContent = name;
-            previewUsername.textContent = username;
-            previewClass.textContent = className;
-            previewEmail.textContent = email;
-            
-            modal.style.display = 'flex';
-        }
-        
-        // Show Reject Modal
-        function showRejectModal(id, name, username, className, email) {
-            currentAction = 'reject';
-            currentStudentId = id;
-            
-            const modal = document.getElementById('confirmationModal');
-            const modalIcon = document.getElementById('modalIcon');
-            const modalIconSymbol = document.getElementById('modalIconSymbol');
-            const modalTitle = document.getElementById('modalTitle');
-            const modalConfirmBtn = document.getElementById('modalConfirmBtn');
-            const previewName = document.getElementById('previewName');
-            const previewUsername = document.getElementById('previewUsername');
-            const previewClass = document.getElementById('previewClass');
-            const previewEmail = document.getElementById('previewEmail');
-            
-            // Set reject styles
-            modalIcon.className = 'modal-icon reject';
-            modalIconSymbol.className = 'fas fa-times-circle';
-            modalTitle.textContent = 'Reject Student Registration';
-            modalConfirmBtn.className = 'modal-btn modal-btn-danger';
-            modalConfirmBtn.innerHTML = '<i class="fas fa-trash-alt"></i> Reject Student';
-            
-            // Set student details
-            previewName.textContent = name;
-            previewUsername.textContent = username;
-            previewClass.textContent = className;
-            previewEmail.textContent = email;
-            
-            modal.style.display = 'flex';
-        }
-        
-        // Close Modal
-        function closeModal() {
-            const modal = document.getElementById('confirmationModal');
-            modal.style.display = 'none';
-            currentAction = null;
-            currentStudentId = null;
-        }
-        
-        // Confirm Action
-        function confirmAction() {
-            if (currentAction === 'approve') {
-                window.location.href = `/admin/approve_student/${currentStudentId}`;
-            } else if (currentAction === 'reject') {
-                window.location.href = `/admin/reject_student/${currentStudentId}`;
-            }
-        }
-        
-        // Event Listeners
-        document.getElementById('modalCancelBtn').addEventListener('click', closeModal);
-        document.getElementById('modalConfirmBtn').addEventListener('click', confirmAction);
-        
-        // Close modal when clicking outside
-        document.getElementById('confirmationModal').addEventListener('click', function(e) {
-            if (e.target === this) {
-                closeModal();
-            }
-        });
-        
-        // Close modal with Escape key
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape') {
-                closeModal();
-            }
-        });
-    </script>
+  </section>
+  {% endif %}
 
 {{ shell_end(role='admin') }}
+<script>
+(function () {
+  window.filterPendingCards = function () {
+    var q = ((document.getElementById("paSearch") || {}).value || "").trim().toLowerCase();
+    document.querySelectorAll("#paGrid .pa-card").forEach(function (card) {
+      var hay = card.getAttribute("data-search") || "";
+      card.style.display = (!q || hay.indexOf(q) > -1) ? "" : "none";
+    });
+  };
+
+  window.confirmPendingAction = async function (action, id, name, username, cls) {
+    var isApprove = action === "approve";
+    var ok = await CT.confirm({
+      title: isApprove ? "Approve student registration?" : "Reject student registration?",
+      html: (isApprove
+        ? "Approve <strong>" + CT.esc(name) + "</strong> (<span class='tc-mono'>@" + CT.esc(username) + "</span>, " + CT.esc(cls) + ") to join the school roster and take active exams?"
+        : "Reject and remove the pending registration for <strong>" + CT.esc(name) + "</strong> (<span class='tc-mono'>@" + CT.esc(username) + "</span>)?"),
+      tone: isApprove ? "ok" : "danger",
+      icon: isApprove ? "i-check-circle" : "i-trash",
+      confirmText: isApprove ? "Approve student" : "Reject registration"
+    });
+    if (!ok) return;
+    var url = isApprove ? ("/admin/approve_student/" + id) : ("/admin/reject_student/" + id);
+    try {
+      var res = await fetch(url, { method: "GET", credentials: "same-origin" });
+      if (res.ok) {
+        CT.toast(isApprove ? (name + " approved") : (name + " rejected"), "ok");
+        if (window.CTPjax && CTPjax.refresh) CTPjax.refresh();
+        else location.reload();
+      } else {
+        CT.toast("Could not complete request", "bad");
+      }
+    } catch (e) {
+      CT.toast("Network error", "bad");
+    }
+  };
+})();
+</script>
 </body>
 </html>

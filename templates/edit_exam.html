@@ -28,7 +28,7 @@
         /* Animated Educational Icons Background */
         .edu-icon {
             position: absolute;
-            color: rgba(26, 86, 219, 0.06);
+            color: rgba(23, 22, 20, 0.06);
             pointer-events: none;
             z-index: 0;
             animation: floatIcon 20s infinite ease-in-out;
@@ -87,7 +87,7 @@
             justify-content: center;
             margin-bottom: 20px;
             animation: pulse 2s infinite;
-            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.2);
+            box-shadow: 0 10px 25px rgba(23, 22, 20, 0.2);
         }
 
         @keyframes pulse {
@@ -158,7 +158,7 @@
         .remove-btn {
             background: var(--ct-bad-soft);
             border: none;
-            color: #ef4444;
+            color: #2B2926;
             padding: 6px 15px;
             border-radius: 10px;
             font-size: 12px;
@@ -167,7 +167,7 @@
         }
 
         .remove-btn:hover {
-            background: #ef4444;
+            background: #2B2926;
             color: white;
         }
 
@@ -222,7 +222,7 @@
         .question-textarea:focus {
             outline: none;
             border-color: var(--ct-primary);
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            box-shadow: 0 0 0 3px rgba(23, 22, 20, 0.1);
         }
 
         /* Live Preview */
@@ -290,21 +290,21 @@
         }
 
         .image-status.error {
-            color: #991b1b;
+            color: #171614;
             background-color: var(--ct-bad-soft);
-            border-left: 3px solid #ef4444;
+            border-left: 3px solid #2B2926;
         }
 
         .image-status.success {
-            color: #065f46;
+            color: #171614;
             background-color: var(--ct-ok-soft);
-            border-left: 3px solid #10b981;
+            border-left: 3px solid #575551;
         }
 
         .image-status.warning {
-            color: #92400e;
+            color: #2B2926;
             background-color: var(--ct-warn-soft);
-            border-left: 3px solid #f59e0b;
+            border-left: 3px solid #D6D4CF;
         }
 
         /* Options Grid */
@@ -362,11 +362,11 @@
 
         .btn-add-question:hover {
             transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+            box-shadow: 0 5px 15px rgba(23, 22, 20, 0.4);
         }
 
         .btn-submit {
-            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            background: linear-gradient(135deg, #575551 0%, #2B2926 100%);
             color: white;
             border: none;
             padding: 12px 30px;
@@ -381,7 +381,7 @@
 
         .btn-submit:hover {
             transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(16, 185, 129, 0.3);
+            box-shadow: 0 5px 15px rgba(23, 22, 20, 0.3);
         }
 
         .btn-back {
@@ -590,7 +590,7 @@
                         <!-- Old Image Display -->
                         {% if q.image %}
                             <div class="mb-2">
-                                <label style="font-size: 12px; color: #64748b;">Current Image:</label>
+                                <label style="font-size: 12px; color: #2B2926;">Current Image:</label>
                                 <img src="/static/images/{{ q.image }}" class="old-image">
                             </div>
                         {% endif %}

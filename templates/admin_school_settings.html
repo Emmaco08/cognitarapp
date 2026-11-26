@@ -101,6 +101,36 @@
       border-top: 1px solid var(--tc-line);
       background: var(--tc-surface-2);
     }
+    .ss-logo-card {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 16px;
+      padding: 16px 18px;
+      border-radius: 12px;
+      border: 1px solid var(--tc-line-2);
+      background: var(--tc-surface-2);
+      margin-bottom: 18px;
+    }
+    .ss-logo-left { display: flex; align-items: center; gap: 14px; min-width: 0; }
+    .ss-logo-preview {
+      width: 56px;
+      height: 56px;
+      border-radius: 12px;
+      overflow: hidden;
+      flex: none;
+      display: grid;
+      place-items: center;
+      background: var(--tc-surface);
+      border: 1px solid var(--tc-line-2);
+      font-weight: 760;
+      font-size: 16px;
+      color: var(--tc-ink);
+      letter-spacing: -0.02em;
+    }
+    .ss-logo-preview img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .ss-logo-actions { display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; }
     .ss-presets {
       padding: 16px 18px;
       border-radius: 12px;
@@ -304,6 +334,26 @@
     <form id="generalSettingsForm" onsubmit="event.preventDefault(); saveGeneralSettings(document.getElementById('saveGeneralBtn'));">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <div style="padding:22px">
+        <div class="ss-logo-card">
+          <div class="ss-logo-left">
+            <span class="ss-logo-preview" id="ssLogoPreview">
+              {% if school_branding.school_logo_url %}
+              <img src="{{ school_branding.school_logo_url }}" alt="{{ school_branding.school_name }} logo">
+              {% else %}
+              {{ school_branding.initials }}
+              {% endif %}
+            </span>
+            <div>
+              <strong style="display:block;font-size:14px;color:var(--tc-ink)">School Crest / Logo</strong>
+              <span class="ss-help">Shown in the sidebar, login portal, and printed reports. PNG, JPG, or WebP — no file size limit.</span>
+            </div>
+          </div>
+          <div class="ss-logo-actions">
+            <input type="file" id="ssLogoInput" accept="image/*" style="display:none" onchange="uploadSchoolLogo(this)">
+            <button type="button" class="tc-btn tc-btn--secondary tc-btn--sm" id="ssLogoUploadBtn" onclick="document.getElementById('ssLogoInput').click()">{{ ico('i-upload', 'ct-ico--xs') }}Upload Logo</button>
+            <button type="button" class="tc-btn tc-btn--ghost tc-btn--sm" id="ssLogoRemoveBtn" style="color:var(--tc-bad);{% if not school_branding.school_logo_url %}display:none{% endif %}" onclick="removeSchoolLogo()">Remove</button>
+          </div>
+        </div>
         <div class="ss-grid">
           <div class="ss-field">
             <label class="ss-label" for="ssSchoolName">School / Institution Name</label>
@@ -476,7 +526,7 @@
           <span>%</span>
         </div>
         <div class="ss-sim-result">
-          <span id="simGradeBadge" class="ss-sim-badge" style="background:#059669">B2</span>
+          <span id="simGradeBadge" class="ss-sim-badge" style="background:#2B2926">B2</span>
           <strong id="simRemarkText" style="font-size:13.5px;color:var(--tc-ink)">Very Good (3.5 GP)</strong>
         </div>
       </div>
@@ -632,25 +682,31 @@
     </section>
   </div>
 
-  <!-- Custom Class Modal (Neutral Carbon) -->
+  <!-- Custom Class Modal (CogniTara Kinetic Modal System) -->
   <div class="ct-modal-backdrop" id="addClassModal" data-ct-dismissable aria-hidden="true">
-    <div class="ct-modal ct-confirm-modal" data-tone="primary" role="dialog" aria-modal="true">
-      <div class="ct-confirm-accent"></div>
-      <div class="ct-confirm-head">
-        <div class="ct-confirm-badge"><span class="ct-confirm-badge__ring"></span><span class="ct-confirm-badge__ico">{{ ico('i-layers') }}</span></div>
-        <div class="ct-confirm-copy">
-          <h3>Add Custom Class</h3>
-          <div class="ct-confirm-desc">Create a new level in your school's class hierarchy.</div>
+    <div class="ct-modal ct-confirm-modal" data-tone="primary" role="dialog" aria-modal="true" aria-labelledby="addClassTitle">
+      <div class="ct-m-head">
+        <div class="ct-m-medallion">
+          <span class="ct-m-medallion__halo" aria-hidden="true"></span>
+          <svg class="ct-m-medallion__svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path class="ct-svg-draw" style="--d:40ms" pathLength="100" d="m12 3 9 4.5-9 4.5-9-4.5L12 3Z"/>
+            <path class="ct-svg-draw" style="--d:150ms" pathLength="100" d="m3 12 9 4.5 9-4.5"/>
+            <path class="ct-svg-draw" style="--d:230ms" pathLength="100" d="m3 16.5 9 4.5 9-4.5"/>
+          </svg>
+        </div>
+        <div class="ct-m-copy">
+          <h3 id="addClassTitle">Add custom class</h3>
+          <div class="ct-m-desc">Create a new level in your school's class hierarchy.</div>
         </div>
         <button type="button" class="ct-iconbtn ct-iconbtn--ghost ct-modal__close" data-ct-modal-close aria-label="Close">{{ ico('i-x', 'ct-ico--sm') }}</button>
       </div>
-      <div style="padding:14px 24px 6px;display:grid;gap:12px">
+      <div class="ct-m-body">
         <div class="ss-field">
-          <label class="ss-label" for="customClassName">Class Name</label>
-          <input id="customClassName" type="text" class="ss-input" placeholder="e.g. Grade 13, SSS 3 Science, Reception">
+          <label class="ss-label" for="customClassName">Class name</label>
+          <input id="customClassName" type="text" class="ss-input" data-ct-autofocus placeholder="e.g. Grade 13, SSS 3 Science, Reception">
         </div>
         <div class="ss-field">
-          <label class="ss-label" for="customClassLevel">Level Category</label>
+          <label class="ss-label" for="customClassLevel">Level category</label>
           <select id="customClassLevel" class="ss-select">
             <option value="Primary">Primary</option>
             <option value="Junior Secondary">Junior Secondary</option>
@@ -659,9 +715,12 @@
           </select>
         </div>
       </div>
-      <div class="ct-confirm-actions">
-        <button type="button" class="ct-btn ct-btn--ghost" data-ct-modal-close>Cancel</button>
-        <button type="button" class="ct-btn ct-btn--primary" onclick="submitCustomClass(this)">Add Class</button>
+      <div class="ct-m-foot">
+        <span class="ct-m-kbd"><kbd>Esc</kbd><span>Cancel</span></span>
+        <div class="ct-m-foot__btns">
+          <button type="button" class="ct-btn ct-btn--ghost" data-ct-modal-close>Cancel</button>
+          <button type="button" class="ct-btn ct-btn--primary" onclick="submitCustomClass(this)">Add class</button>
+        </div>
       </div>
     </div>
   </div>
@@ -677,22 +736,22 @@
     var SCHEMES_CACHE = {{ schemes|tojson }};
     var currentRules = [];
     var PRESET_WAEC = [
-      { grade_label: "A1", min_percentage: 75, max_percentage: 100, grade_point: 4.0, remark: "Excellent", badge_color: "#059669" },
-      { grade_label: "B2", min_percentage: 70, max_percentage: 75, grade_point: 3.5, remark: "Very Good", badge_color: "#10b981" },
-      { grade_label: "B3", min_percentage: 65, max_percentage: 70, grade_point: 3.0, remark: "Good", badge_color: "#34d399" },
-      { grade_label: "C4", min_percentage: 60, max_percentage: 65, grade_point: 2.5, remark: "Credit", badge_color: "#3b82f6" },
-      { grade_label: "C5", min_percentage: 55, max_percentage: 60, grade_point: 2.0, remark: "Credit", badge_color: "#60a5fa" },
-      { grade_label: "C6", min_percentage: 50, max_percentage: 55, grade_point: 1.5, remark: "Credit", badge_color: "#818cf8" },
-      { grade_label: "D7", min_percentage: 45, max_percentage: 50, grade_point: 1.0, remark: "Pass", badge_color: "#f59e0b" },
-      { grade_label: "E8", min_percentage: 40, max_percentage: 45, grade_point: 0.5, remark: "Pass", badge_color: "#fb923c" },
-      { grade_label: "F9", min_percentage: 0, max_percentage: 40, grade_point: 0.0, remark: "Fail", badge_color: "#ef4444" }
+      { grade_label: "A1", min_percentage: 75, max_percentage: 100, grade_point: 4.0, remark: "Excellent", badge_color: "#2B2926" },
+      { grade_label: "B2", min_percentage: 70, max_percentage: 75, grade_point: 3.5, remark: "Very Good", badge_color: "#575551" },
+      { grade_label: "B3", min_percentage: 65, max_percentage: 70, grade_point: 3.0, remark: "Good", badge_color: "#575551" },
+      { grade_label: "C4", min_percentage: 60, max_percentage: 65, grade_point: 2.5, remark: "Credit", badge_color: "#575551" },
+      { grade_label: "C5", min_percentage: 55, max_percentage: 60, grade_point: 2.0, remark: "Credit", badge_color: "#575551" },
+      { grade_label: "C6", min_percentage: 50, max_percentage: 55, grade_point: 1.5, remark: "Credit", badge_color: "#575551" },
+      { grade_label: "D7", min_percentage: 45, max_percentage: 50, grade_point: 1.0, remark: "Pass", badge_color: "#D6D4CF" },
+      { grade_label: "E8", min_percentage: 40, max_percentage: 45, grade_point: 0.5, remark: "Pass", badge_color: "#D6D4CF" },
+      { grade_label: "F9", min_percentage: 0, max_percentage: 40, grade_point: 0.0, remark: "Fail", badge_color: "#2B2926" }
     ];
     var PRESET_LETTER = [
-      { grade_label: "A", min_percentage: 90, max_percentage: 100, grade_point: 4.0, remark: "Excellent", badge_color: "#10b981" },
-      { grade_label: "B", min_percentage: 80, max_percentage: 90, grade_point: 3.0, remark: "Very Good", badge_color: "#3b82f6" },
-      { grade_label: "C", min_percentage: 70, max_percentage: 80, grade_point: 2.0, remark: "Good", badge_color: "#8b5cf6" },
-      { grade_label: "D", min_percentage: 60, max_percentage: 70, grade_point: 1.0, remark: "Pass", badge_color: "#f59e0b" },
-      { grade_label: "F", min_percentage: 0, max_percentage: 60, grade_point: 0.0, remark: "Fail", badge_color: "#ef4444" }
+      { grade_label: "A", min_percentage: 90, max_percentage: 100, grade_point: 4.0, remark: "Excellent", badge_color: "#575551" },
+      { grade_label: "B", min_percentage: 80, max_percentage: 90, grade_point: 3.0, remark: "Very Good", badge_color: "#575551" },
+      { grade_label: "C", min_percentage: 70, max_percentage: 80, grade_point: 2.0, remark: "Good", badge_color: "#575551" },
+      { grade_label: "D", min_percentage: 60, max_percentage: 70, grade_point: 1.0, remark: "Pass", badge_color: "#D6D4CF" },
+      { grade_label: "F", min_percentage: 0, max_percentage: 60, grade_point: 0.0, remark: "Fail", badge_color: "#2B2926" }
     ];
 
     document.addEventListener("DOMContentLoaded", function () {
@@ -722,7 +781,7 @@
           '<input type="number" step="0.1" value="' + rule.max_percentage + '" onchange="updateRuleField(' + idx + ',\'max_percentage\',parseFloat(this.value))" aria-label="Max percentage">' +
           '<input type="number" step="0.5" value="' + (rule.grade_point || 0) + '" onchange="updateRuleField(' + idx + ',\'grade_point\',parseFloat(this.value))" aria-label="Grade point">' +
           '<input type="text" value="' + CT.esc(rule.remark || "") + '" onchange="updateRuleField(' + idx + ',\'remark\',this.value)" aria-label="Remark">' +
-          '<input type="color" value="' + (rule.badge_color || "#10b981") + '" onchange="updateRuleField(' + idx + ',\'badge_color\',this.value)" aria-label="Badge color">' +
+          '<input type="color" value="' + (rule.badge_color || "#575551") + '" onchange="updateRuleField(' + idx + ',\'badge_color\',this.value)" aria-label="Badge color">' +
           '<button type="button" class="tc-btn tc-btn--ghost tc-btn--icon" style="color:var(--tc-bad)" onclick="removeRule(' + idx + ')" aria-label="Remove tier">' + CT.icon("i-x", "ct-ico--sm") + '</button>';
         container.appendChild(row);
       });
@@ -741,7 +800,7 @@
       renderRulesTable();
     }
     function addNewTierRule() {
-      currentRules.push({ grade_label: "New", min_percentage: 0, max_percentage: 10, grade_point: 0.0, remark: "Tier", badge_color: "#3b82f6" });
+      currentRules.push({ grade_label: "New", min_percentage: 0, max_percentage: 10, grade_point: 0.0, remark: "Tier", badge_color: "#575551" });
       renderRulesTable();
     }
 
@@ -771,7 +830,7 @@
           var seg = document.createElement("div");
           seg.className = "ss-spectrum-seg";
           seg.style.width = Math.max(2, r.max_percentage - r.min_percentage) + "%";
-          seg.style.background = r.badge_color || "#10b981";
+          seg.style.background = r.badge_color || "#575551";
           seg.textContent = r.grade_label;
           seg.title = r.grade_label + ": " + r.min_percentage + "% – " + r.max_percentage + "%";
           bar.appendChild(seg);
@@ -779,7 +838,7 @@
       } else {
         statusEl.className = "tc-pill tc-pill--bad";
         statusEl.textContent = "Coverage error: " + msg;
-        bar.innerHTML = '<div style="width:100%;height:100%;background:#DC2626;color:#fff;font-size:12px;font-weight:700;display:grid;place-items:center">' + CT.esc(msg) + '</div>';
+        bar.innerHTML = '<div style="width:100%;height:100%;background:#2B2926;color:#fff;font-size:12px;font-weight:700;display:grid;place-items:center">' + CT.esc(msg) + '</div>';
       }
     }
 
@@ -797,7 +856,7 @@
       if (match) {
         var b = document.getElementById("simGradeBadge");
         b.textContent = match.grade_label;
-        b.style.background = match.badge_color || "#10b981";
+        b.style.background = match.badge_color || "#575551";
         document.getElementById("simRemarkText").textContent = (match.remark || "") + " (" + (match.grade_point || 0) + " GP)";
       }
     }
@@ -816,6 +875,89 @@
       CT.toast("Loaded " + preset.toUpperCase() + " preset", "ok");
     }
 
+    function syncSidebarBranding(branding) {
+      if (!branding) return;
+      var nameEl = document.getElementById("ctSidebarSchoolName");
+      var metaEl = document.getElementById("ctSidebarSchoolMeta");
+      var crestEl = document.getElementById("ctSidebarSchoolCrest");
+      var prevEl = document.getElementById("ssLogoPreview");
+      var remBtn = document.getElementById("ssLogoRemoveBtn");
+      if (nameEl && branding.school_name) nameEl.textContent = branding.school_name;
+      if (metaEl && (branding.current_term || branding.academic_session)) {
+        metaEl.textContent = (branding.current_term || "Active Term") + ", " + (branding.academic_session || "");
+      }
+      if (branding.school_logo_url !== undefined) {
+        var html = branding.school_logo_url
+          ? '<img src="' + CT.esc(branding.school_logo_url) + '" alt="' + CT.esc(branding.school_name || "School") + ' logo">'
+          : CT.esc(branding.initials || "CT");
+        if (crestEl) crestEl.innerHTML = html;
+        if (prevEl) prevEl.innerHTML = html;
+        if (remBtn) remBtn.style.display = branding.school_logo_url ? "" : "none";
+      }
+    }
+
+    async function uploadSchoolLogo(input) {
+      var file = input && input.files && input.files[0];
+      if (!file) return;
+      var btn = document.getElementById("ssLogoUploadBtn");
+      if (btn) { btn.disabled = true; btn.textContent = "Uploading…"; }
+      try {
+        var fd = new FormData();
+        fd.append("logo", file);
+        var res = await fetch("/admin/school-settings/logo", {
+          method: "POST",
+          headers: { "X-CSRFToken": window.CSRF_TOKEN || "" },
+          body: fd
+        });
+        var d = await res.json();
+        if (!res.ok || !d.ok) {
+          CT.toast(d.message || "Could not upload logo", "bad");
+          return;
+        }
+        syncSidebarBranding({
+          school_name: (document.getElementById("ssSchoolName") || {}).value || "",
+          school_logo_url: d.logo_url || "",
+          initials: d.initials || "CT"
+        });
+        CT.toast("School logo updated across portal", "ok");
+      } catch (e) {
+        CT.toast("Network error uploading logo", "bad");
+      } finally {
+        if (input) input.value = "";
+        if (btn) { btn.disabled = false; btn.innerHTML = CT.icon("i-upload", "ct-ico--xs") + "Upload Logo"; }
+      }
+    }
+
+    async function removeSchoolLogo() {
+      var ok = await CT.confirm({
+        title: "Remove school logo?",
+        html: "Revert to school initials in the sidebar and login header until a new crest is uploaded.",
+        tone: "warn", icon: "i-trash", confirmText: "Remove logo"
+      });
+      if (!ok) return;
+      try {
+        var fd = new FormData();
+        fd.append("remove_logo", "1");
+        var res = await fetch("/admin/school-settings/logo", {
+          method: "POST",
+          headers: { "X-CSRFToken": window.CSRF_TOKEN || "" },
+          body: fd
+        });
+        var d = await res.json();
+        if (res.ok && d.ok) {
+          syncSidebarBranding({ school_logo_url: "", initials: d.initials || "CT" });
+          CT.toast("School logo removed", "ok");
+        } else {
+          CT.toast(d.message || "Could not remove logo", "bad");
+        }
+      } catch (e) { CT.toast("Network error", "bad"); }
+    }
+
+    function softRefreshSettings() {
+      if (window.CTPjax && CTPjax.refresh) CTPjax.refresh();
+      else location.reload();
+    }
+
     async function saveGeneralSettings(btn) {
       var data = Object.fromEntries(new FormData(document.getElementById("generalSettingsForm")).entries());
       await CogniTaraActions.execute({
@@ -823,7 +965,14 @@
         method: "POST",
         data: data,
         triggerEl: btn,
-        loadingText: "Saving…"
+        loadingText: "Saving…",
+        onSuccess: function (res) {
+          syncSidebarBranding((res && res.branding) || {
+            school_name: data.school_name,
+            current_term: data.current_term,
+            academic_session: data.academic_session
+          });
+        }
       });
     }
 
@@ -858,7 +1007,7 @@
         url: "/admin/school-settings/classes/preset",
         method: "POST",
         data: { preset: preset },
-        onSuccess: function () { setTimeout(function () { location.reload(); }, 450); }
+        onSuccess: function () { setTimeout(softRefreshSettings, 350); }
       });
     }
 
@@ -877,7 +1026,7 @@
         data: { name: name, level_category: level_category },
         triggerEl: btn,
         loadingText: "Adding…",
-        onSuccess: function () { CT.modal.close("#addClassModal"); setTimeout(function () { location.reload(); }, 450); }
+        onSuccess: function () { CT.modal.close("#addClassModal"); setTimeout(softRefreshSettings, 350); }
       });
     }
 
@@ -907,7 +1056,7 @@
         url: "/admin/school-settings/release-results",
         method: "POST",
         data: { exam_ids: [examId], action: action },
-        onSuccess: function () { setTimeout(function () { location.reload(); }, 450); }
+        onSuccess: function () { setTimeout(softRefreshSettings, 350); }
       });
     }
 
@@ -926,7 +1075,7 @@
         url: "/admin/school-settings/release-results",
         method: "POST",
         data: { exam_ids: checked, action: action },
-        onSuccess: function () { setTimeout(function () { location.reload(); }, 450); }
+        onSuccess: function () { setTimeout(softRefreshSettings, 350); }
       });
     }
 

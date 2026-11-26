@@ -85,6 +85,7 @@ def ensure_core_database_initialized(
         CREATE TABLE IF NOT EXISTS teachers (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             username TEXT UNIQUE,
+            full_name TEXT DEFAULT '',
             password TEXT,
             class TEXT,
             photo TEXT DEFAULT 'default.png',
@@ -431,6 +432,7 @@ def ensure_core_database_initialized(
             "ALTER TABLE students ADD COLUMN email TEXT",
             "ALTER TABLE students ADD COLUMN full_name TEXT",
             "ALTER TABLE students ADD COLUMN specialisation TEXT DEFAULT 'General'",
+            "ALTER TABLE teachers ADD COLUMN full_name TEXT DEFAULT ''",
             "ALTER TABLE teachers ADD COLUMN teaching_classes TEXT DEFAULT ''",
             "ALTER TABLE teachers ADD COLUMN specialisations TEXT DEFAULT ''",
             "ALTER TABLE teachers ADD COLUMN class_teacher_of TEXT DEFAULT ''",

@@ -15,12 +15,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
         :root {
-            --primary: var(--ct-primary); --primary-dark: #0e3b9e; --success: #10b981;
-            --warning: #f59e0b; --danger: #ef4444; --orange: #f97316;
+            --primary: var(--ct-primary); --primary-dark: #171614; --success: #575551;
+            --warning: #D6D4CF; --danger: #2B2926; --orange: #575551;
             --bg: var(--ct-surface-2); --card: var(--ct-surface); --border: var(--ct-line-2);
-            --text: var(--ct-ink); --text-light: #64748b;
-            --grade-a: #10b981; --grade-b: #3b82f6; --grade-c: #f59e0b;
-            --grade-d: #f97316; --grade-f: #ef4444;
+            --text: var(--ct-ink); --text-light: #2B2926;
+            --grade-a: #575551; --grade-b: #575551; --grade-c: #D6D4CF;
+            --grade-d: #575551; --grade-f: #2B2926;
         }
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { background: linear-gradient(135deg, #f5f7fa 0%, #e8edf5 100%); font-family: 'Segoe UI', 'Poppins', 'Inter', system-ui, sans-serif; min-height: 100vh; }
@@ -45,14 +45,14 @@
             border-radius: 12px; cursor: pointer; font-weight: 600; font-size: 13px;
             display: inline-flex; align-items: center; gap: 8px; transition: all 0.3s;
         }
-        .btn-export:hover { transform: translateY(-2px); box-shadow: 0 6px 18px rgba(16,185,129,0.3); }
+        .btn-export:hover { transform: translateY(-2px); box-shadow: 0 6px 18px rgba(23, 22, 20,0.3); }
         
         /* Header Card */
         .header-card {
             background: var(--ct-brand-grad);
             color: white; border-radius: 24px; padding: 28px 30px; margin-bottom: 24px;
             display: flex; justify-content: space-between; align-items: center;
-            flex-wrap: wrap; gap: 24px; box-shadow: 0 10px 30px rgba(26,86,219,0.2);
+            flex-wrap: wrap; gap: 24px; box-shadow: 0 10px 30px rgba(23, 22, 20,0.2);
         }
         .header-card .student-info h2 { font-size: 24px; font-weight: 700; margin-bottom: 4px; }
         .header-card .student-info p { font-size: 13px; opacity: 0.9; margin: 0; display: flex; align-items: center; gap: 6px; }
@@ -89,10 +89,10 @@
             border-radius: 16px; padding: 16px 20px; margin-bottom: 20px;
             border-left: 4px solid; font-size: 14px; display: flex; align-items: center; gap: 12px;
         }
-        .highlight-box.success { background: var(--ct-surface-2); border-left-color: var(--success); color: #065f46; }
-        .highlight-box.warning { background: var(--ct-surface-2); border-left-color: var(--warning); color: #92400e; }
-        .highlight-box.info { background: var(--ct-surface-2); border-left-color: var(--primary); color: #1e40af; }
-        .highlight-box.danger { background: linear-gradient(135deg, #fee2e2 0%, #fef2f2 100%); border-left-color: var(--danger); color: #991b1b; }
+        .highlight-box.success { background: var(--ct-surface-2); border-left-color: var(--success); color: #171614; }
+        .highlight-box.warning { background: var(--ct-surface-2); border-left-color: var(--warning); color: #2B2926; }
+        .highlight-box.info { background: var(--ct-surface-2); border-left-color: var(--primary); color: #171614; }
+        .highlight-box.danger { background: linear-gradient(135deg, #F8F8F8 0%, #fef2f2 100%); border-left-color: var(--danger); color: #171614; }
         .highlight-box i { font-size: 28px; flex-shrink: 0; }
         
         /* Comparison Card */
@@ -156,11 +156,11 @@
         .q-header .q-section { font-size: 11px; color: var(--text-light); }
         
         .badge-correct {
-            background: var(--ct-ok-soft); color: #065f46; padding: 4px 12px; border-radius: 20px;
+            background: var(--ct-ok-soft); color: #171614; padding: 4px 12px; border-radius: 20px;
             font-size: 12px; font-weight: 600; display: inline-flex; align-items: center; gap: 5px;
         }
         .badge-incorrect {
-            background: var(--ct-bad-soft); color: #991b1b; padding: 4px 12px; border-radius: 20px;
+            background: var(--ct-bad-soft); color: #171614; padding: 4px 12px; border-radius: 20px;
             font-size: 12px; font-weight: 600; display: inline-flex; align-items: center; gap: 5px;
         }
         
@@ -176,9 +176,9 @@
             padding: 10px 14px; border-radius: 10px; font-size: 13px;
         }
         .q-answer-box.your-answer { background: var(--ct-surface); border: 1.5px solid var(--ct-line-2); }
-        .q-answer-box.your-answer.wrong { background: var(--ct-bad-soft); border-color: #fecaca; }
-        .q-answer-box.your-answer.right { background: var(--ct-ok-soft); border-color: #a7f3d0; }
-        .q-answer-box.correct-answer { background: var(--ct-ok-soft); border-color: #a7f3d0; }
+        .q-answer-box.your-answer.wrong { background: var(--ct-bad-soft); border-color: #F3F2F0; }
+        .q-answer-box.your-answer.right { background: var(--ct-ok-soft); border-color: #F3F2F0; }
+        .q-answer-box.correct-answer { background: var(--ct-ok-soft); border-color: #F3F2F0; }
         .q-answer-box strong { display: block; font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
         
         .time-badge {
@@ -198,7 +198,7 @@
         /* Custom Modal */
         .custom-modal-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(15, 23, 42, 0.65); backdrop-filter: blur(6px);
+            background: rgba(23, 22, 20, 0.65); backdrop-filter: blur(6px);
             z-index: 10000; display: flex; align-items: center; justify-content: center;
             opacity: 0; visibility: hidden; transition: all 0.25s ease;
         }
@@ -233,7 +233,7 @@
         .modal-btn-primary { background: var(--primary); color: white; }
         .modal-btn-primary:hover { background: var(--primary-dark); }
         .modal-btn-danger { background: var(--danger); color: white; }
-        .modal-btn-danger:hover { background: #dc2626; }
+        .modal-btn-danger:hover { background: #2B2926; }
         .modal-btn-cancel { background: var(--ct-surface); border: 1.5px solid var(--ct-line-2); color: var(--text-light); }
         .modal-btn-cancel:hover { border-color: var(--primary); color: var(--primary); }
     </style>
@@ -412,7 +412,7 @@
                 </div>
             </div>
             <div class="progress-custom">
-                <div class="progress-fill" style="width: {{ percentage }}%; background: {% if percentage >= 70 %}#10b981{% elif percentage >= 50 %}#f59e0b{% else %}#ef4444{% endif %};"></div>
+                <div class="progress-fill" style="width: {{ percentage }}%; background: {% if percentage >= 70 %}#575551{% elif percentage >= 50 %}#D6D4CF{% else %}#2B2926{% endif %};"></div>
             </div>
         </div>
         
@@ -425,9 +425,9 @@
             <div class="section-row">
                 <span class="section-name">{{ section_name }}</span>
                 <div class="mini-bar">
-                    <div class="mini-bar-fill" style="width: {{ acc }}%; background: {% if acc < 40 %}#ef4444{% elif acc < 70 %}#f59e0b{% else %}#10b981{% endif %};"></div>
+                    <div class="mini-bar-fill" style="width: {{ acc }}%; background: {% if acc < 40 %}#2B2926{% elif acc < 70 %}#D6D4CF{% else %}#575551{% endif %};"></div>
                 </div>
-                <span class="section-pct" style="color: {% if acc < 40 %}#ef4444{% elif acc < 70 %}#f59e0b{% else %}#10b981{% endif %};">{{ acc }}%</span>
+                <span class="section-pct" style="color: {% if acc < 40 %}#2B2926{% elif acc < 70 %}#D6D4CF{% else %}#575551{% endif %};">{{ acc }}%</span>
             </div>
             {% endfor %}
         </div>
@@ -508,7 +508,7 @@
         <!-- Empty State -->
         {% if not missed_questions and not correct_questions %}
         <div class="empty-state">
-            <i class="fas fa-clipboard-list" style="color: #94a3b8;"></i>
+            <i class="fas fa-clipboard-list" style="color: #D6D4CF;"></i>
             <h3>No Detailed Question Data Available</h3>
             <p>This exam was taken before the detailed analytics system was enabled. Only overall scores are available for historical exams.</p>
         </div>

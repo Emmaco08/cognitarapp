@@ -341,8 +341,20 @@ export default function SignUpPage() {
                 </button>
               </form>
 
-              <p style={{ marginTop: 18, marginBottom: 0, fontSize: 13.5, color: "var(--ink-2)", textAlign: "center" }}>
-                Already have an account? <Link href="/signin">Sign in</Link>
+              <p style={{ marginTop: 20, marginBottom: 0, fontSize: 13.5, color: "var(--ink-2)", textAlign: "center" }}>
+                Already have an account?{" "}
+                <Link
+                  href="/signin"
+                  style={{
+                    color: "var(--ink)",
+                    fontWeight: 560,
+                    textDecoration: "underline",
+                    textUnderlineOffset: 3,
+                    textDecorationColor: "var(--border-3)",
+                  }}
+                >
+                  Sign in
+                </Link>
               </p>
             </>
           )}

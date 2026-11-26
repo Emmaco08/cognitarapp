@@ -48,13 +48,18 @@ def admin_dashboard():
     conn = get_db_connection()
     try:
         exams = conn.execute("""
-            SELECT e.*, t.username as teacher_name
+            SELECT e.*, COALESCE(NULLIF(TRIM(t.full_name), ''), t.username) as teacher_name
             FROM exams e
             LEFT JOIN teachers t ON e.teacher_id = t.id
             ORDER BY e.id DESC
         """).fetchall()
     except sqlite3.OperationalError:
-        exams = conn.execute("SELECT * FROM exams ORDER BY id DESC").fetchall()
+        exams = conn.execute("""
+            SELECT e.*, t.username as teacher_name
+            FROM exams e
+            LEFT JOIN teachers t ON e.teacher_id = t.id
+            ORDER BY e.id DESC
+        """).fetchall()
     
     # Common Entrance exams for dashboard
     ce_exams = conn.execute("""
@@ -81,10 +86,16 @@ def admin_dashboard():
     total_students_count = len(students)
 
     if teacher_search:
-        teachers = conn.execute(
-            "SELECT * FROM teachers WHERE username LIKE ? OR class LIKE ? ORDER BY id DESC",
-            (f'%{teacher_search}%', f'%{teacher_search}%')
-        ).fetchall()
+        try:
+            teachers = conn.execute(
+                "SELECT * FROM teachers WHERE username LIKE ? OR full_name LIKE ? OR class LIKE ? ORDER BY id DESC",
+                (f'%{teacher_search}%', f'%{teacher_search}%', f'%{teacher_search}%')
+            ).fetchall()
+        except sqlite3.OperationalError:
+            teachers = conn.execute(
+                "SELECT * FROM teachers WHERE username LIKE ? OR class LIKE ? ORDER BY id DESC",
+                (f'%{teacher_search}%', f'%{teacher_search}%')
+            ).fetchall()
     else:
         teachers = conn.execute("SELECT * FROM teachers ORDER BY id DESC").fetchall()
 
@@ -103,7 +114,7 @@ def admin_dashboard():
                          students=students,
                          teachers=teachers, 
                          student_classes=student_classes,
-                         username=session["username"],
+                         username=session.get("username") or session.get("admin_username") or "Admin",
                          search_query=search_query,
                          teacher_search=teacher_search,
                          pending_count=pending_count,

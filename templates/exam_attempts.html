@@ -1,736 +1,170 @@
-{%- from '_ct_shell.html' import ico, ct_boot_script, admin_shell_start, teacher_shell_start, student_topbar, shell_end with context -%}
+{%- from '_ct_shell.html' import ico, person_avatar, ct_boot_script, admin_shell_start, shell_end with context -%}
+{%- set completed_cnt = attempts | selectattr('status', 'equalto', 'completed') | list | length -%}
+{%- set active_cnt = (attempts | length) - completed_cnt -%}
 <!DOCTYPE html>
 <html lang="en" data-theme="dark">
 <head>
-    <title>Exam Attempts | COGNITARA EXAM SYSTEM</title>
-    <link href="{{ url_for('static', filename='vendor/bootstrap/css/bootstrap.min.css') }}" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='vendor/fontawesome/css/all.min.css') }}">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            background: linear-gradient(135deg, #f5f7fa 0%, #e8edf5 100%);
-            font-family: 'Segoe UI', 'Poppins', Tahoma, Geneva, Verdana, sans-serif;
-            min-height: 100vh;
-            position: relative;
-            overflow-x: hidden;
-        }
-
-        /* Animated Educational Icons Background */
-        .edu-icon {
-            position: absolute;
-            color: rgba(26, 86, 219, 0.06);
-            pointer-events: none;
-            z-index: 0;
-            animation: floatIcon 20s infinite ease-in-out;
-        }
-
-        @keyframes floatIcon {
-            0% {
-                transform: translate(0, 0) rotate(0deg);
-                opacity: 0;
-            }
-            10% {
-                opacity: 0.08;
-            }
-            90% {
-                opacity: 0.08;
-            }
-            100% {
-                transform: translate(100px, -100px) rotate(360deg);
-                opacity: 0;
-            }
-        }
-
-        .edu-icon:nth-child(1) { top: 10%; left: 5%; animation-duration: 18s; font-size: 50px; }
-        .edu-icon:nth-child(2) { top: 70%; left: 15%; animation-duration: 22s; font-size: 40px; animation-delay: 2s; }
-        .edu-icon:nth-child(3) { top: 30%; left: 85%; animation-duration: 20s; font-size: 55px; animation-delay: 4s; }
-        .edu-icon:nth-child(4) { top: 80%; left: 80%; animation-duration: 25s; font-size: 35px; animation-delay: 1s; }
-        .edu-icon:nth-child(5) { top: 50%; left: 10%; animation-duration: 19s; font-size: 45px; animation-delay: 3s; }
-        .edu-icon:nth-child(6) { top: 20%; left: 70%; animation-duration: 23s; font-size: 60px; animation-delay: 5s; }
-        .edu-icon:nth-child(7) { top: 60%; left: 90%; animation-duration: 21s; font-size: 42px; animation-delay: 2.5s; }
-        .edu-icon:nth-child(8) { top: 85%; left: 25%; animation-duration: 24s; font-size: 38px; animation-delay: 6s; }
-        .edu-icon:nth-child(9) { top: 15%; left: 45%; animation-duration: 17s; font-size: 48px; animation-delay: 1.5s; }
-        .edu-icon:nth-child(10) { top: 45%; left: 75%; animation-duration: 26s; font-size: 52px; animation-delay: 3.5s; }
-
-        /* Main Container */
-        .attempts-container {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 40px 30px;
-            position: relative;
-            z-index: 10;
-        }
-
-        /* Header Section */
-        .page-header {
-            text-align: center;
-            margin-bottom: 40px;
-        }
-
-        .logo-icon {
-            width: 80px;
-            height: 80px;
-            background: var(--ct-brand-grad);
-            border-radius: 50%;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            margin-bottom: 20px;
-            animation: pulse 2s infinite;
-            box-shadow: 0 10px 25px rgba(139, 92, 246, 0.2);
-        }
-
-        @keyframes pulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.05); }
-        }
-
-        .logo-icon i {
-            font-size: 40px;
-            color: white;
-        }
-
-        .page-header h1 {
-            font-size: 36px;
-            font-weight: 800;
-            background: var(--ct-brand-grad);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            margin-bottom: 10px;
-        }
-
-        .page-header p {
-            font-size: 16px;
-            color: var(--ct-ink-3);
-        }
-
-        /* Stats Bar */
-        .stats-bar {
-            background: var(--ct-surface);
-            border-radius: 20px;
-            padding: 20px 30px;
-            margin-bottom: 30px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 20px;
-            border: 1px solid var(--ct-line-2);
-            box-shadow: 0 2px 8px rgba(0,0,0,0.03);
-        }
-
-        .stats-info {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-
-        .stats-icon {
-            width: 50px;
-            height: 50px;
-            background: var(--ct-accent-soft);
-            border-radius: 15px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .stats-icon i {
-            font-size: 24px;
-            color: var(--ct-primary);
-        }
-
-        .stats-text h3 {
-            font-size: 28px;
-            font-weight: 800;
-            color: var(--ct-ink);
-            margin: 0;
-        }
-
-        .stats-text p {
-            margin: 0;
-            color: var(--ct-ink-3);
-            font-size: 13px;
-        }
-
-        .btn-back {
-            background: var(--ct-surface);
-            border: 2px solid var(--ct-line-2);
-            padding: 10px 25px;
-            border-radius: 12px;
-            color: var(--ct-ink-3);
-            font-weight: 600;
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            transition: all 0.3s ease;
-        }
-
-        .btn-back:hover {
-            border-color: var(--ct-primary);
-            color: var(--ct-primary);
-            background: var(--ct-accent-soft);
-            transform: translateY(-2px);
-        }
-
-        /* Search Filters */
-        .search-section {
-            background: var(--ct-surface);
-            border-radius: 24px;
-            padding: 25px;
-            margin-bottom: 30px;
-            border: 1px solid var(--ct-line-2);
-            box-shadow: 0 2px 8px rgba(0,0,0,0.03);
-        }
-
-        .search-title {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-bottom: 20px;
-        }
-
-        .search-title i {
-            font-size: 20px;
-            color: var(--ct-primary);
-        }
-
-        .search-title h5 {
-            margin: 0;
-            font-size: 16px;
-            font-weight: 600;
-            color: var(--ct-ink);
-        }
-
-        .filter-form {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 15px;
-            align-items: flex-end;
-        }
-
-        .filter-group {
-            flex: 1;
-            min-width: 200px;
-        }
-
-        .filter-group label {
-            font-size: 13px;
-            font-weight: 600;
-            color: var(--ct-ink);
-            margin-bottom: 8px;
-            display: block;
-        }
-
-        .filter-group label i {
-            margin-right: 6px;
-            color: var(--ct-primary);
-        }
-
-        .filter-input {
-            width: 100%;
-            padding: 12px 15px;
-            border: 2px solid var(--ct-line-2);
-            border-radius: 12px;
-            font-size: 14px;
-            transition: all 0.3s ease;
-            background: var(--ct-surface);
-        }
-
-        .filter-input:focus {
-            outline: none;
-            border-color: var(--ct-primary);
-            background: var(--ct-surface);
-            box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
-        }
-
-        .filter-select {
-            width: 100%;
-            padding: 12px 15px;
-            border: 2px solid var(--ct-line-2);
-            border-radius: 12px;
-            font-size: 14px;
-            background: var(--ct-surface);
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .filter-select:focus {
-            outline: none;
-            border-color: var(--ct-primary);
-        }
-
-        .btn-search {
-            background: var(--ct-brand-grad);
-            border: none;
-            padding: 12px 25px;
-            border-radius: 12px;
-            color: white;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .btn-search:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(139, 92, 246, 0.3);
-        }
-
-        .btn-clear {
-            background: var(--ct-surface);
-            border: 2px solid var(--ct-line-2);
-            padding: 10px 20px;
-            border-radius: 12px;
-            color: var(--ct-ink-3);
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            text-decoration: none;
-        }
-
-        .btn-clear:hover {
-            border-color: #ef4444;
-            color: #ef4444;
-        }
-
-        /* Results Header */
-        .results-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 15px;
-            margin-bottom: 20px;
-        }
-
-        .result-badge {
-            background: var(--ct-accent-soft);
-            color: var(--ct-primary);
-            padding: 8px 18px;
-            border-radius: 30px;
-            font-size: 14px;
-            font-weight: 600;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .result-badge i {
-            font-size: 16px;
-        }
-
-        /* Table Container */
-        .table-container {
-            background: var(--ct-surface);
-            border-radius: 24px;
-            border: 1px solid var(--ct-line-2);
-            overflow: hidden;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.03);
-        }
-
-        .scrollable-table {
-            max-height: 550px;
-            overflow-y: auto;
-        }
-
-        .attempts-table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        .attempts-table th {
-            padding: 16px 18px;
-            text-align: left;
-            font-size: 12px;
-            font-weight: 600;
-            color: var(--ct-ink-3);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            background: var(--ct-surface);
-            border-bottom: 2px solid var(--ct-line-2);
-            position: sticky;
-            top: 0;
-            background: var(--ct-surface);
-            z-index: 10;
-        }
-
-        .attempts-table td {
-            padding: 14px 18px;
-            border-bottom: 1px solid #f0f2f5;
-            font-size: 13px;
-            color: var(--ct-ink-2);
-        }
-
-        .attempts-table tbody tr:hover {
-            background: var(--ct-surface);
-        }
-
-        /* Score Badge */
-        .score-badge {
-            display: inline-block;
-            padding: 5px 12px;
-            border-radius: 20px;
-            font-size: 13px;
-            font-weight: 700;
-        }
-
-        .score-high {
-            background: var(--ct-ok-soft);
-            color: #065f46;
-        }
-
-        .score-low {
-            background: var(--ct-bad-soft);
-            color: #991b1b;
-        }
-
-        /* Status Badge */
-        .status-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            padding: 5px 12px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 600;
-        }
-
-        .status-completed {
-            background: var(--ct-ok-soft);
-            color: #065f46;
-        }
-
-        .status-progress {
-            background: var(--ct-warn-soft);
-            color: #d97706;
-        }
-
-        /* Timestamp */
-        .timestamp {
-            font-family: monospace;
-            font-size: 12px;
-            color: var(--ct-ink-3);
-        }
-
-        /* Empty State */
-        .empty-state {
-            text-align: center;
-            padding: 60px 20px;
-        }
-
-        .empty-icon {
-            width: 80px;
-            height: 80px;
-            background: var(--ct-surface);
-            border-radius: 50%;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            margin-bottom: 20px;
-        }
-
-        .empty-icon i {
-            font-size: 40px;
-            color: #94a3b8;
-        }
-
-        .empty-state h4 {
-            color: var(--ct-ink);
-            margin-bottom: 8px;
-        }
-
-        .empty-state p {
-            color: var(--ct-ink-3);
-        }
-
-        /* Responsive */
-        @media (max-width: 768px) {
-            .attempts-container {
-                padding: 20px 15px;
-            }
-            
-            .page-header h1 {
-                font-size: 28px;
-            }
-            
-            .stats-bar {
-                flex-direction: column;
-                text-align: center;
-            }
-            
-            .filter-form {
-                flex-direction: column;
-            }
-            
-            .filter-group {
-                width: 100%;
-            }
-            
-            .btn-search, .btn-clear {
-                width: 100%;
-                justify-content: center;
-            }
-            
-            .results-header {
-                flex-direction: column;
-                text-align: center;
-            }
-            
-            .attempts-table th, .attempts-table td {
-                padding: 10px 12px;
-                font-size: 11px;
-            }
-        }
-    </style>
-    <!-- CSRF Protection Shield -->
-    <meta name="csrf-token" content="{{ csrf_token() }}">
-    <script>
-    window.CSRF_TOKEN = "{{ csrf_token() }}";
-    (function() {
-        if (window.fetch) {
-            const _origFetch = window.fetch;
-            window.fetch = function(url, options) {
-                options = options || {};
-                const method = (options.method || 'GET').toUpperCase();
-                if (!['GET', 'HEAD', 'OPTIONS', 'TRACE'].includes(method)) {
-                    options.headers = options.headers || {};
-                    const token = window.CSRF_TOKEN || (document.querySelector('meta[name="csrf-token"]') && document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
-                    if (token) {
-                        if (typeof Headers !== 'undefined' && options.headers instanceof Headers) {
-                            if (!options.headers.has('X-CSRFToken')) options.headers.set('X-CSRFToken', token);
-                        } else if (Array.isArray(options.headers)) {
-                            options.headers.push(['X-CSRFToken', token]);
-                        } else {
-                            if (!options.headers['X-CSRFToken']) options.headers['X-CSRFToken'] = token;
-                        }
-                    }
-                }
-                return _origFetch(url, options);
-            };
-        }
-        if (window.$ && $.ajaxSetup) {
-            $.ajaxSetup({
-                beforeSend: function(xhr, settings) {
-                    if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type)) {
-                        xhr.setRequestHeader("X-CSRFToken", window.CSRF_TOKEN);
-                    }
-                }
-            });
-        }
-        if (navigator.sendBeacon) {
-            const _origBeacon = navigator.sendBeacon.bind(navigator);
-            navigator.sendBeacon = function(url, data) {
-                if (data instanceof FormData) {
-                    if (!data.has('csrf_token')) data.append('csrf_token', window.CSRF_TOKEN);
-                } else if (typeof data === 'string') {
-                    try {
-                        const obj = JSON.parse(data);
-                        if (typeof obj === 'object' && obj !== null && !obj.csrf_token) {
-                            obj.csrf_token = window.CSRF_TOKEN;
-                            data = JSON.stringify(obj);
-                        }
-                    } catch(e) {}
-                }
-                return _origBeacon(url, data);
-            };
-        }
-        document.addEventListener('DOMContentLoaded', function() {
-            document.querySelectorAll('form[method="POST"], form[method="post"]').forEach(function(form) {
-                if (!form.querySelector('input[name="csrf_token"]')) {
-                    var input = document.createElement('input');
-                    input.type = 'hidden';
-                    input.name = 'csrf_token';
-                    input.value = window.CSRF_TOKEN;
-                    form.appendChild(input);
-                }
-            });
-        });
-    })();
-    </script>
-
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+  <meta name="color-scheme" content="dark light">
+  <title>Exam Attempts — {{ school_branding.school_name }} | CogniTara</title>
+  <link rel="icon" href="{{ url_for('static', filename='images/cognitara-favicon.ico') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/cognitara-web.css') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/cognitara-portal-unified.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/cognitara-teacher-studio.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/cognitara-admin-studio.css') }}">
   {{ ct_boot_script() }}
+  <style>
+    .ea-bar {
+      display: flex; align-items: center; flex-wrap: wrap; gap: 10px;
+      padding: 14px 16px; border-radius: 14px; background: var(--tc-surface);
+      border: 1px solid var(--tc-line-2); margin-bottom: 16px;
+    }
+    .ea-select {
+      height: 36px; padding: 0 28px 0 12px; border-radius: 9px;
+      border: 1px solid var(--tc-line-2); background: var(--tc-surface-2);
+      color: var(--tc-ink); font-size: 12.5px; font-weight: 560; cursor: pointer;
+    }
+    .ea-select:focus { outline: none; border-color: var(--ct-accent-line); }
+    .ea-table th {
+      text-align: left; height: 42px; padding: 0 16px; font-size: 11px; font-weight: 650;
+      text-transform: uppercase; letter-spacing: 0.04em; color: var(--tc-ink-3); white-space: nowrap;
+    }
+    .ea-table td { padding: 13px 16px; vertical-align: middle; }
+    .ea-table th:first-child, .ea-table td:first-child { padding-left: 20px; }
+    .ea-table th:last-child, .ea-table td:last-child { padding-right: 20px; text-align: right; }
+    .ea-table th.is-center, .ea-table td.is-center { text-align: center; }
+  </style>
 </head>
-<body class="ct-app ct-bs ad-studio">
+<body class="ct-app ad-studio">
 {{ admin_shell_start(active='attempts', crumb='Exam Attempts') }}
 
-
-    <!-- Animated Educational Icons Background -->
-    <div class="edu-icon"><i class="fas fa-clock"></i></div>
-    <div class="edu-icon"><i class="fas fa-hourglass-half"></i></div>
-    <div class="edu-icon"><i class="fas fa-file-alt"></i></div>
-    <div class="edu-icon"><i class="fas fa-chart-line"></i></div>
-    <div class="edu-icon"><i class="fas fa-tasks"></i></div>
-    <div class="edu-icon"><i class="fas fa-clipboard-list"></i></div>
-    <div class="edu-icon"><i class="fas fa-graduation-cap"></i></div>
-    <div class="edu-icon"><i class="fas fa-users"></i></div>
-    <div class="edu-icon"><i class="fas fa-school"></i></div>
-    <div class="edu-icon"><i class="fas fa-book"></i></div>
-
-    <div class="attempts-container">
-        <!-- Header -->
-        <div class="page-header">
-            <div class="logo-icon">
-                <i class="fas fa-clock"></i>
-            </div>
-            <h1>Exam Attempts History</h1>
-            <p>Track and monitor student exam participation</p>
-        </div>
-
-        <!-- Stats Bar -->
-        <div class="stats-bar">
-            <div class="stats-info">
-                <div class="stats-icon">
-                    <i class="fas fa-list"></i>
-                </div>
-                <div class="stats-text">
-                    <h3>{{ attempts|length }}</h3>
-                    <p>Total Attempts</p>
-                </div>
-            </div>
-            <a href="/admin" class="btn-back">
-                <i class="fas fa-arrow-left"></i> Back to Dashboard
-            </a>
-        </div>
-
-        <!-- Search Filters -->
-        <div class="search-section">
-            <div class="search-title">
-                <i class="fas fa-filter"></i>
-                <h5>Filter Exam Attempts</h5>
-            </div>
-            <form method="GET" action="{{ url_for('exam_attempts') }}" class="filter-form">
-                <div class="filter-group">
-                    <label><i class="fas fa-user-graduate"></i> Student Name</label>
-                    <input type="text" name="search_student" class="filter-input" 
-                           placeholder="Search by student name..." value="{{ search_student }}">
-                </div>
-                <div class="filter-group">
-                    <label><i class="fas fa-file-alt"></i> Exam Name</label>
-                    <select name="search_exam" class="filter-select">
-                        <option value="">All Exams</option>
-                        {% for exam in exams_list %}
-                        <option value="{{ exam.name }}" {% if search_exam == exam.name %}selected{% endif %}>
-                            {{ exam.name }}
-                        </option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div class="filter-group" style="flex: 0 0 auto;">
-                    <button type="submit" class="btn-search">
-                        <i class="fas fa-search"></i> Search
-                    </button>
-                </div>
-                <div class="filter-group" style="flex: 0 0 auto;">
-                    <a href="{{ url_for('exam_attempts') }}" class="btn-clear">
-                        <i class="fas fa-eraser"></i> Clear
-                    </a>
-                </div>
-            </form>
-        </div>
-
-        <!-- Results Header -->
-        <div class="results-header">
-            <div class="result-badge">
-                <i class="fas fa-chart-line"></i>
-                Found <strong>{{ attempts|length }}</strong> attempt(s)
-            </div>
-            {% if search_student or search_exam %}
-            <a href="{{ url_for('exam_attempts') }}" class="btn-clear" style="padding: 6px 15px; font-size: 12px;">
-                <i class="fas fa-times"></i> Clear Filters
-            </a>
-            {% endif %}
-        </div>
-
-        <!-- Attempts Table -->
-        <div class="table-container">
-            <div class="scrollable-table ct-table-wrap">
-                <table class="attempts-table" data-ct-paginate="15" data-ct-paginate-sizes="15,30,50,100">
-                    <thead>
-                        <tr>
-                            <th><i class="fas fa-user"></i> Student</th>
-                            <th><i class="fas fa-file-alt"></i> Exam</th>
-                            <th><i class="fas fa-star"></i> Score</th>
-                            <th><i class="fas fa-play"></i> Start Time</th>
-                            <th><i class="fas fa-stop"></i> End Time</th>
-                            <th><i class="fas fa-info-circle"></i> Status</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for attempt in attempts %}
-                        {% set score_val = attempt.score if attempt.score else 0 %}
-                        {% set total_val = attempt.total if attempt.total else 0 %}
-                        {% set is_passed = score_val >= total_val/2 if total_val > 0 else false %}
-                        <tr>
-                            <td>
-                                <i class="fas fa-user-circle" style="color: var(--ct-accent); margin-right: 8px;"></i>
-                                <strong>{{ attempt.username }}</strong>
-                            </td>
-                            <td>
-                                <i class="fas fa-file-alt" style="color: #64748b; margin-right: 8px;"></i>
-                                {{ attempt.exam_name }}
-                            </td>
-                            <td>
-                                <span class="score-badge {% if is_passed %}score-high{% else %}score-low{% endif %}">
-                                    {{ score_val }}/{{ total_val }}
-                                </span>
-                            </td>
-                            <td class="timestamp">
-                                <i class="far fa-calendar-alt" style="margin-right: 5px;"></i>
-                                {{ attempt.start_time[:16] if attempt.start_time else '-' }}
-                            </td>
-                            <td class="timestamp">
-                                <i class="far fa-calendar-check" style="margin-right: 5px;"></i>
-                                {{ attempt.end_time[:16] if attempt.end_time else 'In Progress' }}
-                            </td>
-                            <td>
-                                {% if attempt.status == 'completed' %}
-                                    <span class="status-badge status-completed">
-                                        <i class="fas fa-check-circle"></i> Completed
-                                    </span>
-                                {% else %}
-                                    <span class="status-badge status-progress">
-                                        <i class="fas fa-spinner fa-pulse"></i> In Progress
-                                    </span>
-                                {% endif %}
-                            </td>
-                        </tr>
-                        {% else %}
-                        <tr>
-                            <td colspan="6">
-                                <div class="empty-state">
-                                    <div class="empty-icon">
-                                        <i class="fas fa-search"></i>
-                                    </div>
-                                    <h4>No Attempts Found</h4>
-                                    <p>No exam attempts match your search criteria.</p>
-                                </div>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
+  <header class="tc-head ct-animate-rise">
+    <div class="tc-head__txt">
+      <h1>Exam Attempts Ledger</h1>
+      <p>Complete participation audit across completed and in-progress examinations.</p>
     </div>
+    <div class="tc-head__actions">
+      <a href="/admin/exam_technical_support" class="tc-btn tc-btn--secondary">{{ ico('i-activity', 'ct-ico--sm') }}Live Support</a>
+      <a href="/admin/results" class="tc-btn tc-btn--secondary">{{ ico('i-chart', 'ct-ico--sm') }}Results</a>
+    </div>
+  </header>
+
+  <section class="tc-kpi-strip" style="grid-template-columns:repeat(3,minmax(0,1fr))" data-ct-stagger>
+    <div class="tc-kpi">
+      <span class="tc-kpi__label">Total Attempts</span>
+      <strong class="tc-kpi__val" data-ct-count>{{ attempts|length }}</strong>
+      <span class="tc-kpi__meta">Matching current filter</span>
+    </div>
+    <div class="tc-kpi">
+      <span class="tc-kpi__label">Completed</span>
+      <strong class="tc-kpi__val" style="color:var(--ct-ok)" data-ct-count>{{ completed_cnt }}</strong>
+      <span class="tc-kpi__meta">Graded submissions</span>
+    </div>
+    <div class="tc-kpi">
+      <span class="tc-kpi__label">In Progress</span>
+      <strong class="tc-kpi__val" style="color:var(--ct-warn)" data-ct-count>{{ active_cnt }}</strong>
+      <span class="tc-kpi__meta">Active sessions</span>
+    </div>
+  </section>
+
+  <form method="GET" action="{{ url_for('exam_attempts') }}" class="ea-bar" id="eaFilterForm">
+    <label class="tc-search" style="flex:1;min-width:210px">
+      {{ ico('i-search', 'ct-ico--sm') }}
+      <input type="search" name="search_student" id="eaStudentSearch" placeholder="Search by student username or exam…" value="{{ search_student or '' }}" oninput="filterAttemptsInstant()" aria-label="Search student">
+    </label>
+    <select name="search_exam" id="eaExamSelect" class="ea-select" onchange="filterAttemptsInstant()" aria-label="Filter by exam">
+      <option value="">All Examinations</option>
+      {% for exam in exams_list %}
+      <option value="{{ exam.name }}" {% if search_exam == exam.name %}selected{% endif %}>{{ exam.name }}</option>
+      {% endfor %}
+    </select>
+    <select id="eaStatusSelect" class="ea-select" onchange="filterAttemptsInstant()" aria-label="Filter by status">
+      <option value="all">All Status</option>
+      <option value="completed">Completed</option>
+      <option value="in_progress">In Progress</option>
+    </select>
+    <button type="submit" class="tc-btn tc-btn--secondary tc-btn--sm">Server Filter</button>
+    {% if search_student or search_exam %}
+    <a href="{{ url_for('exam_attempts') }}" class="tc-btn tc-btn--ghost tc-btn--sm">Reset</a>
+    {% endif %}
+  </form>
+
+  <section class="tc-card">
+    <div class="tc-table-wrap ct-table-wrap">
+      {% if attempts %}
+      <table class="tc-table ea-table" id="attemptsTable" data-ct-paginate="15" data-ct-paginate-sizes="15,30,50,100">
+        <thead>
+          <tr>
+            <th>Student</th>
+            <th>Examination</th>
+            <th class="is-center" style="width:110px">Score</th>
+            <th style="width:160px">Started</th>
+            <th style="width:160px">Finished</th>
+            <th style="width:130px;text-align:right">Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for attempt in attempts %}
+          {% set score_val = attempt.score if attempt.score is not none else 0 %}
+          {% set total_val = attempt.total if attempt.total is not none else 0 %}
+          {% set is_passed = (score_val * 2 >= total_val) if total_val > 0 else false %}
+          <tr data-search="{{ (attempt.username or '')|lower }} {{ (attempt.exam_name or '')|lower }}"
+              data-exam="{{ attempt.exam_name or '' }}"
+              data-status="{{ 'completed' if attempt.status == 'completed' else 'in_progress' }}">
+            <td>
+              <div class="tc-user-cell">
+                {{ person_avatar('', attempt.username or 'Student', 'xs') }}
+                <strong style="font-weight:640">{{ attempt.username }}</strong>
+              </div>
+            </td>
+            <td style="font-weight:580;color:var(--tc-ink)">{{ attempt.exam_name }}</td>
+            <td class="is-center">
+              <span class="tc-pill tc-mono {% if attempt.status != 'completed' %}{% elif is_passed %}tc-pill--ok{% else %}tc-pill--bad{% endif %}">
+                {{ score_val }}/{{ total_val }}
+              </span>
+            </td>
+            <td class="tc-mono" style="font-size:12px;color:var(--tc-ink-3)">{{ attempt.start_time[:16] if attempt.start_time else '—' }}</td>
+            <td class="tc-mono" style="font-size:12px;color:var(--tc-ink-3)">{{ attempt.end_time[:16] if attempt.end_time else 'In progress' }}</td>
+            <td>
+              {% if attempt.status == 'completed' %}
+              <span class="tc-pill tc-pill--ok"><i class="tc-dot"></i>Completed</span>
+              {% else %}
+              <span class="tc-pill tc-pill--warn"><i class="tc-dot"></i>In Progress</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <div class="tc-empty">
+        <span class="tc-empty__ico">{{ ico('i-layers') }}</span>
+        <strong>No exam attempts found</strong>
+        <p>Try clearing filters or wait for students to start published examinations.</p>
+      </div>
+      {% endif %}
+    </div>
+  </section>
 
 {{ shell_end(role='admin') }}
+<script>
+(function () {
+  window.filterAttemptsInstant = function () {
+    var q = ((document.getElementById("eaStudentSearch") || {}).value || "").trim().toLowerCase();
+    var ex = (document.getElementById("eaExamSelect") || {}).value || "";
+    var st = (document.getElementById("eaStatusSelect") || {}).value || "all";
+    var tbl = document.getElementById("attemptsTable");
+    if (!tbl) return;
+    tbl.querySelectorAll("tbody tr").forEach(function (tr) {
+      var matchQ = !q || (tr.getAttribute("data-search") || "").indexOf(q) > -1;
+      var matchEx = !ex || tr.getAttribute("data-exam") === ex;
+      var matchSt = st === "all" || tr.getAttribute("data-status") === st;
+      tr.dataset.ctFilteredOut = (matchQ && matchEx && matchSt) ? "0" : "1";
+    });
+    if (tbl._ctRepaginate) tbl._ctRepaginate(true);
+  };
+})();
+</script>
 </body>
 </html>

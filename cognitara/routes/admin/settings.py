@@ -2,17 +2,58 @@ import os
 import sqlite3
 import json
 import logging
-from flask import Blueprint, render_template, request, session, redirect, jsonify, url_for
+from flask import Blueprint, render_template, request, session, redirect, jsonify, url_for, current_app
 from werkzeug.utils import secure_filename
 
+from cognitara.config import Config, get_upload_path
 from cognitara.database.connection import get_db_connection
 from cognitara.security.csrf_ratelimit import get_csrf_token
 from cognitara.security.permissions import require_admin
 from cognitara.utils.helpers import log_action, get_utc_now
-from cognitara.services.grading_service import GradingSchemeValidator
+from cognitara.services.grading_service import GradingSchemeValidator, get_active_grading_rules
 
 logger = logging.getLogger("cognitara.routes.admin.settings")
 admin_settings_bp = Blueprint('admin_settings', __name__)
+
+
+def _recompute_completed_grades(conn, scheme_type="school"):
+    """Re-apply the active grading scheme rules to completed attempts so grading changes take immediate effect."""
+    rules = get_active_grading_rules(conn, scheme_type=scheme_type)
+    if not rules:
+        return 0
+    updated = 0
+    if scheme_type == "school":
+        rows = conn.execute(
+            "SELECT id, percentage FROM scores WHERE status = 'completed' AND percentage IS NOT NULL"
+        ).fetchall()
+        for r in rows:
+            g = GradingSchemeValidator.resolve_grade(r["percentage"], rules)
+            conn.execute(
+                "UPDATE scores SET grade_label = ?, grade_remark = ? WHERE id = ?",
+                (g.get("grade_label", "F9"), g.get("remark", "Completed"), r["id"]),
+            )
+            updated += 1
+    else:
+        rows = conn.execute(
+            "SELECT id, percentage FROM ce_attempts WHERE status != 'in_progress' AND percentage IS NOT NULL"
+        ).fetchall()
+        for r in rows:
+            g = GradingSchemeValidator.resolve_grade(r["percentage"], rules)
+            conn.execute(
+                "UPDATE ce_attempts SET grade_label = ?, grade_remark = ? WHERE id = ?",
+                (g.get("grade_label", "P"), g.get("remark", "Completed"), r["id"]),
+            )
+            updated += 1
+    return updated
+
+
+@admin_settings_bp.route("/admin/settings", methods=["GET"])
+def admin_settings_redirect():
+    """Compatibility redirect so /admin/settings always lands cleanly on School Settings."""
+    if "admin_id" not in session:
+        return redirect("/")
+    return redirect("/admin/school-settings")
+
 
 @admin_settings_bp.route("/admin/school-settings", methods=["GET"])
 def admin_school_settings():
@@ -30,7 +71,7 @@ def admin_school_settings():
         conn.commit()
         school_set = conn.execute("SELECT * FROM school_settings WHERE id=1").fetchone()
 
-    classes = conn.execute("SELECT * FROM classes ORDER BY display_order ASC, name ASC").fetchall()
+    classes = conn.execute("SELECT * FROM classes ORDER BY active DESC, display_order ASC, name ASC").fetchall()
     schemes = conn.execute("SELECT * FROM grading_schemes ORDER BY is_default DESC, id ASC").fetchall()
     
     # Load rules for each scheme
@@ -71,28 +112,116 @@ def admin_school_settings():
         academic_sessions=[dict(sess) for sess in sessions]
     )
 
+
+@admin_settings_bp.route("/admin/school-settings/logo", methods=["POST"])
+def admin_update_school_logo():
+    """Upload or remove the school crest/logo with zero file-size cap."""
+    if "admin_id" not in session:
+        return jsonify({"ok": False, "error": "Unauthorized"}), 401
+
+    if str(request.form.get("remove_logo", "")).lower() in ("1", "true", "yes"):
+        conn = get_db_connection()
+        try:
+            conn.execute(
+                "UPDATE school_settings SET school_logo = '', updated_at = CURRENT_TIMESTAMP WHERE id = 1"
+            )
+            log_action("Admin", session.get("username", "admin"), "Removed school logo", conn=conn)
+            conn.commit()
+        finally:
+            conn.close()
+        return jsonify({"ok": True, "success": True, "logo_url": "", "message": "School logo removed."}), 200
+
+    file = request.files.get("school_logo")
+    if not file or not file.filename:
+        return jsonify({"ok": False, "error": "Please select an image file for the school logo."}), 400
+
+    ext = os.path.splitext(file.filename)[1].lower().lstrip(".")
+    if ext not in ("png", "jpg", "jpeg", "webp", "svg", "gif"):
+        return jsonify({"ok": False, "error": "Unsupported image format. Use PNG, JPG, WebP, or SVG."}), 400
+    if ext == "jpeg":
+        ext = "jpg"
+
+    logo_filename = f"school_logo.{ext}"
+    save_path = get_upload_path(logo_filename)
+    os.makedirs(os.path.dirname(save_path), exist_ok=True)
+    file.save(save_path)
+
+    conn = get_db_connection()
+    try:
+        conn.execute("""
+            INSERT OR IGNORE INTO school_settings (id, school_name, academic_session, current_term)
+            VALUES (1, 'CogniTara High School', '2026/2027', 'First Term')
+        """)
+        conn.execute(
+            "UPDATE school_settings SET school_logo = ?, updated_at = CURRENT_TIMESTAMP WHERE id = 1",
+            (logo_filename,),
+        )
+        log_action("Admin", session.get("username", "admin"), f"Updated school logo ({logo_filename})", conn=conn)
+        conn.commit()
+    finally:
+        conn.close()
+
+    try:
+        ver = int(os.path.getmtime(save_path))
+    except OSError:
+        ver = 1
+
+    return jsonify({
+        "ok": True,
+        "success": True,
+        "school_logo": logo_filename,
+        "logo_url": f"/uploads/images/{logo_filename}?v={ver}",
+        "message": "School logo updated across all portals.",
+    }), 200
+
+
 @admin_settings_bp.route("/admin/school-settings/update", methods=["POST"])
 def admin_update_school_settings():
-    """Update primary school settings and academic calendar"""
+    """Update primary school settings and academic calendar, propagating policies across the portal."""
     if "admin_id" not in session:
         return {"ok": False, "error": "Unauthorized"}, 401
 
-    data = request.get_json(silent=True) or request.form
+    data = request.get_json(silent=True)
+    if data is None:
+        data = request.form
 
-    school_name = (data.get("school_name") or "CogniTara High School").strip()
-    school_motto = (data.get("school_motto") or "").strip()
-    school_address = (data.get("school_address") or "").strip()
-    school_phone = (data.get("school_phone") or "").strip()
-    school_email = (data.get("school_email") or "").strip()
-    academic_session = (data.get("academic_session") or "2026/2027").strip()
-    current_term = (data.get("current_term") or "First Term").strip()
-    default_result_visibility = (data.get("default_result_visibility") or "immediate").strip()
-    allow_teacher_release = 1 if str(data.get("allow_teacher_release", "0")).lower() in ("1", "true", "on") else 0
-    allow_student_review = 1 if str(data.get("allow_student_review", "1")).lower() in ("1", "true", "on") else 0
-    active_scheme_id = data.get("active_grading_scheme_id")
-    anti_cheating_profile = (data.get("anti_cheating_profile") or "medium").strip()
+    conn = get_db_connection()
+    existing_row = conn.execute("SELECT * FROM school_settings WHERE id = 1").fetchone()
+    cur = dict(existing_row) if existing_row else {}
+
+    def _pick_str(key, default):
+        if key in data and data.get(key) is not None:
+            return str(data.get(key)).strip()
+        if cur.get(key) is not None:
+            return str(cur.get(key)).strip()
+        return default
+
+    school_name = _pick_str("school_name", "CogniTara High School") or "CogniTara High School"
+    school_motto = _pick_str("school_motto", "")
+    school_address = _pick_str("school_address", "")
+    school_phone = _pick_str("school_phone", "")
+    school_email = _pick_str("school_email", "")
+    academic_session = _pick_str("academic_session", "2026/2027") or "2026/2027"
+    current_term = _pick_str("current_term", "First Term") or "First Term"
+    default_result_visibility = _pick_str("default_result_visibility", "immediate")
+    if default_result_visibility not in ("immediate", "withheld"):
+        default_result_visibility = "immediate"
+    if "allow_teacher_release" in data:
+        allow_teacher_release = 1 if str(data.get("allow_teacher_release")).lower() in ("1", "true", "on") else 0
+    else:
+        allow_teacher_release = int(cur.get("allow_teacher_release") or 0)
+    if "allow_student_review" in data:
+        allow_student_review = 1 if str(data.get("allow_student_review")).lower() in ("1", "true", "on") else 0
+    else:
+        allow_student_review = int(cur["allow_student_review"]) if cur.get("allow_student_review") is not None else 1
+
+    active_scheme_id = data.get("active_grading_scheme_id") if "active_grading_scheme_id" in data else cur.get("active_grading_scheme_id")
+    anti_cheating_profile = _pick_str("anti_cheating_profile", "medium").lower()
+    if anti_cheating_profile not in ("low", "medium", "high"):
+        anti_cheating_profile = "medium"
     try:
-        max_warnings = max(1, int(data.get("max_warnings", 5)))
+        raw_mw = data.get("max_warnings") if "max_warnings" in data else cur.get("max_warnings", 5)
+        max_warnings = max(1, min(20, int(raw_mw if raw_mw is not None else 5)))
     except (ValueError, TypeError):
         max_warnings = 5
 
@@ -101,7 +230,10 @@ def admin_update_school_settings():
     except (ValueError, TypeError):
         active_scheme_id = None
 
-    conn = get_db_connection()
+    conn.execute("""
+        INSERT OR IGNORE INTO school_settings (id, school_name, academic_session, current_term)
+        VALUES (1, ?, ?, ?)
+    """, (school_name, academic_session, current_term))
     if active_scheme_id is None:
         cur_row = conn.execute("SELECT active_grading_scheme_id FROM school_settings WHERE id=1").fetchone()
         if cur_row:
@@ -121,6 +253,16 @@ def admin_update_school_settings():
         anti_cheating_profile, max_warnings
     ))
 
+    # Propagate default result release mode to inheriting exams so change takes immediate live effect
+    try:
+        rel_val = 1 if default_result_visibility == "immediate" else 0
+        conn.execute(
+            "UPDATE exams SET results_released = ? WHERE result_release_policy IS NULL OR result_release_policy = 'inherit'",
+            (rel_val,),
+        )
+    except Exception:
+        pass
+
     # Also keep academic_sessions table in sync
     conn.execute("UPDATE academic_sessions SET is_current=0")
     conn.execute("""
@@ -135,7 +277,16 @@ def admin_update_school_settings():
     return {
         "ok": True,
         "success": True,
-        "message": "School settings saved successfully."
+        "message": "School settings saved and applied across the portal.",
+        "branding": {
+            "school_name": school_name,
+            "school_motto": school_motto,
+            "academic_session": academic_session,
+            "current_term": current_term,
+            "max_warnings": max_warnings,
+            "anti_cheating_profile": anti_cheating_profile,
+            "default_result_visibility": default_result_visibility,
+        },
     }
 
 @admin_settings_bp.route("/admin/school-settings/classes/preset", methods=["POST"])
@@ -167,6 +318,9 @@ def admin_apply_class_preset():
             for i in range(1, 13)
         ]
 
+    # Deactivate classes from previous presets cleanly without breaking historical student/exam rows
+    conn.execute("UPDATE classes SET active = 0")
+
     for c_name, order_idx, category in classes_data:
         conn.execute("""
             INSERT INTO classes (name, display_order, level_category, active)
@@ -177,7 +331,7 @@ def admin_apply_class_preset():
     log_action("Admin", session.get("username", "admin"), f"Applied {preset.upper()} class preset", conn=conn)
     conn.commit()
 
-    all_classes = conn.execute("SELECT * FROM classes WHERE active=1 ORDER BY display_order ASC").fetchall()
+    all_classes = conn.execute("SELECT * FROM classes ORDER BY active DESC, display_order ASC, name ASC").fetchall()
     conn.close()
 
     return {
@@ -310,7 +464,8 @@ def admin_save_grading_scheme():
         else:
             conn.execute("UPDATE ce_settings SET active_ce_grading_scheme_id=? WHERE id=1", (scheme_id,))
 
-        log_action("Admin", session.get("username", "admin"), f"Saved and activated grading scheme '{scheme_name}'", conn=conn)
+        recomputed = _recompute_completed_grades(conn, scheme_type=scheme_type)
+        log_action("Admin", session.get("username", "admin"), f"Saved and activated grading scheme '{scheme_name}' ({recomputed} scores refreshed)", conn=conn)
         conn.commit()
     except Exception as e:
         conn.rollback()
@@ -323,7 +478,8 @@ def admin_save_grading_scheme():
         "ok": True,
         "success": True,
         "scheme_id": scheme_id,
-        "message": f"Grading scheme '{scheme_name}' validated, saved, and activated."
+        "recomputed": recomputed,
+        "message": f"Grading scheme '{scheme_name}' activated and applied across {recomputed} recorded score(s)."
     }
 
 @admin_settings_bp.route("/admin/school-settings/grading/set-active", methods=["POST"])
@@ -344,11 +500,11 @@ def admin_set_active_grading_scheme():
         conn.execute("UPDATE school_settings SET active_grading_scheme_id=? WHERE id=1", (scheme_id,))
     else:
         conn.execute("UPDATE ce_settings SET active_ce_grading_scheme_id=? WHERE id=1", (scheme_id,))
-
+    recomputed = _recompute_completed_grades(conn, scheme_type=scheme_type)
     conn.commit()
     conn.close()
 
-    return {"ok": True, "success": True, "message": f"Active {scheme_type} grading scheme updated."}
+    return {"ok": True, "success": True, "recomputed": recomputed, "message": f"Active {scheme_type} grading scheme updated."}
 
 @admin_settings_bp.route("/admin/school-settings/release-results", methods=["POST"])
 def admin_batch_release_results():
@@ -416,26 +572,56 @@ def admin_update_ce_settings():
     if "admin_id" not in session:
         return {"ok": False, "error": "Unauthorized"}, 401
 
-    data = request.get_json(silent=True) or request.form
+    data = request.get_json(silent=True)
+    if data is None:
+        data = request.form
 
-    portal_title = (data.get("portal_title") or "Entrance Examination Portal").strip()
-    institution_name = (data.get("institution_name") or "CogniTara Academy").strip()
-    admission_session = (data.get("admission_session") or "2026/2027").strip()
-    admission_batch = (data.get("admission_batch") or "Batch A").strip()
-    registration_open = 1 if str(data.get("registration_open", "1")).lower() in ("1", "true", "on") else 0
-    result_visibility = (data.get("result_visibility") or "hidden").strip()
-    direct_submit = 1 if str(data.get("direct_submit", "0")).lower() in ("1", "true", "on") else 0
+    conn = get_db_connection()
+    existing_row = conn.execute("SELECT * FROM ce_settings WHERE id = 1").fetchone()
+    cur = dict(existing_row) if existing_row else {}
+
+    def _pick_ce(key, default):
+        if key in data and data.get(key) is not None:
+            return str(data.get(key)).strip()
+        if cur.get(key) is not None:
+            return str(cur.get(key)).strip()
+        return default
+
+    portal_title = _pick_ce("portal_title", "Entrance Examination Portal") or "Entrance Examination Portal"
+    institution_name = _pick_ce("institution_name", "CogniTara Academy") or "CogniTara Academy"
+    admission_session = _pick_ce("admission_session", "2026/2027") or "2026/2027"
+    admission_batch = _pick_ce("admission_batch", "Batch A") or "Batch A"
+    if "registration_open" in data:
+        registration_open = 1 if str(data.get("registration_open")).lower() in ("1", "true", "on") else 0
+    else:
+        registration_open = int(cur["registration_open"]) if cur.get("registration_open") is not None else 1
+
+    result_visibility = _pick_ce("result_visibility", "hidden")
+    if result_visibility not in ("hidden", "decision_only", "score_and_decision", "immediate"):
+        result_visibility = "hidden"
+
+    if "direct_submit" in data:
+        direct_submit = 1 if str(data.get("direct_submit")).lower() in ("1", "true", "on") else 0
+    else:
+        direct_submit = int(cur.get("direct_submit") or 0)
+
     try:
-        default_passing_score = int(data.get("default_passing_score", 50))
+        raw_pass = data.get("default_passing_score") if "default_passing_score" in data else cur.get("default_passing_score", 50)
+        default_passing_score = max(1, min(100, int(raw_pass if raw_pass is not None else 50)))
     except (ValueError, TypeError):
         default_passing_score = 50
 
-    pending_msg = (data.get("pending_message") or "Your examination has been completed and is currently under administrative review.").strip()
-    approved_msg = (data.get("approved_message") or "Congratulations! Your application has been approved for admission.").strip()
-    rejected_msg = (data.get("rejected_message") or "We regret to inform you that your application was unsuccessful for this session.").strip()
-    anti_cheating_profile = (data.get("anti_cheating_profile") or "medium").strip()
+    pending_msg = _pick_ce("pending_message", "Your examination has been completed and is currently under administrative review.")
+    approved_msg = _pick_ce("approved_message", "Congratulations! Your application has been approved for admission.")
+    rejected_msg = _pick_ce("rejected_message", "We regret to inform you that your application was unsuccessful for this session.")
+    anti_cheating_profile = _pick_ce("anti_cheating_profile", "medium").lower()
+    if anti_cheating_profile not in ("low", "medium", "high"):
+        anti_cheating_profile = "medium"
 
-    conn = get_db_connection()
+    conn.execute("""
+        INSERT OR IGNORE INTO ce_settings (id, portal_title, institution_name, admission_session)
+        VALUES (1, ?, ?, ?)
+    """, (portal_title, institution_name, admission_session))
     conn.execute("""
         UPDATE ce_settings SET
             portal_title=?, institution_name=?, admission_session=?, admission_batch=?,
@@ -457,7 +643,7 @@ def admin_update_ce_settings():
     return {
         "ok": True,
         "success": True,
-        "message": "Common Entrance settings saved successfully."
+        "message": "Common Entrance settings saved and applied across the candidate portal."
     }
 
 
@@ -603,6 +789,8 @@ def admin_db_health():
         "size_bytes": size_bytes,
         "journal_mode": str(jmode),
         "integrity": str(ic),
+        "tables": int(table_cnt),
+        "indexes": int(idx_cnt),
         "table_count": int(table_cnt),
         "index_count": int(idx_cnt),
         "counts": counts,

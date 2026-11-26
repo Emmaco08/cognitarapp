@@ -799,6 +799,37 @@ def api_internal_import_legacy():
 # Onboarding Setup Routes (School Profile + Super Admin Creation)
 # =============================================================================
 
+def _read_logo_as_data_url(logo_filename: str | None) -> str | None:
+    if not logo_filename:
+        return None
+    safe_name = os.path.basename(str(logo_filename).strip())
+    if not safe_name:
+        return None
+    upload_dir = current_app.config.get("UPLOAD_FOLDER") or Config.UPLOAD_FOLDER
+    candidates = [
+        os.path.join(upload_dir, safe_name),
+        os.path.join(current_app.root_path, "static", "images", safe_name),
+    ]
+    for fp in candidates:
+        if os.path.isfile(fp):
+            try:
+                ext = os.path.splitext(safe_name)[1].lower().lstrip(".")
+                mime = {
+                    "png": "image/png",
+                    "jpg": "image/jpeg",
+                    "jpeg": "image/jpeg",
+                    "webp": "image/webp",
+                    "gif": "image/gif",
+                    "svg": "image/svg+xml",
+                }.get(ext, "image/png")
+                with open(fp, "rb") as f:
+                    b64 = base64.b64encode(f.read()).decode("ascii")
+                return f"data:{mime};base64,{b64}"
+            except OSError:
+                return None
+    return None
+
+
 @internal_desktop_bp.route("/setup/status", methods=["GET"])
 def api_internal_setup_status():
     telemetry = _collect_live_telemetry()
@@ -808,17 +839,24 @@ def api_internal_setup_status():
     has_superadmin = False
     has_recovery_codes = False
     school_motto = "Knowledge, Discipline, Excellence"
+    school_logo = ""
     conn = get_db_connection()
     try:
         init_license_tables(conn)
-        row = conn.execute("SELECT school_motto FROM school_settings WHERE id = 1").fetchone()
-        if row and row.get("school_motto"):
-            school_motto = str(row["school_motto"])
+        row = conn.execute(
+            "SELECT school_motto, school_logo FROM school_settings WHERE id = 1"
+        ).fetchone()
+        if row:
+            if row.get("school_motto"):
+                school_motto = str(row["school_motto"])
+            if row.get("school_logo"):
+                school_logo = str(row["school_logo"]).strip()
         has_superadmin = conn.execute("SELECT COUNT(*) FROM admin").fetchone()[0] > 0
         has_recovery_codes = conn.execute("SELECT COUNT(*) FROM admin_recovery_codes").fetchone()[0] > 0
     finally:
         conn.close()
 
+    logo_data_url = _read_logo_as_data_url(school_logo)
     onboarding_complete = bool(lic.get("is_licensed") and has_superadmin and has_recovery_codes)
     return jsonify({
         "ok": True,
@@ -828,6 +866,9 @@ def api_internal_setup_status():
             "school_motto": school_motto,
             "academic_session": telemetry["academic_session"],
             "current_term": telemetry["current_term"],
+            "school_logo": school_logo or None,
+            "school_logo_url": f"/uploads/images/{school_logo}" if school_logo else None,
+            "logo_data_url": logo_data_url,
         },
         "network": {
             "hostname": telemetry["hostname"],
@@ -850,22 +891,35 @@ def api_internal_setup_school():
     school_motto = str(data.get("school_motto") or "").strip()[:200]
     academic_session = str(data.get("academic_session") or "2026/2027").strip()[:40]
     current_term = str(data.get("current_term") or "First Term").strip()[:40]
+    remove_logo = bool(data.get("remove_logo"))
 
     logo_filename = None
     logo_b64 = data.get("logo_data_url")
-    if isinstance(logo_b64, str) and logo_b64.startswith("data:image/"):
-        match = re.match(r"^data:image/(png|jpeg|jpg|webp|svg\+xml);base64,(.+)$", logo_b64, re.DOTALL)
+    if not remove_logo and isinstance(logo_b64, str) and logo_b64.startswith("data:image/"):
+        match = re.match(r"^data:image/([a-zA-Z0-9.+-]+);base64,(.+)$", logo_b64, re.DOTALL)
         if match:
-            ext = "svg" if match.group(1) == "svg+xml" else match.group(1).replace("jpeg", "jpg")
+            raw_fmt = match.group(1).lower()
+            ext_map = {
+                "png": "png",
+                "jpeg": "jpg",
+                "jpg": "jpg",
+                "webp": "webp",
+                "gif": "gif",
+                "svg+xml": "svg",
+                "x-icon": "ico",
+                "vnd.microsoft.icon": "ico",
+            }
+            ext = ext_map.get(raw_fmt, "png")
             raw_bytes = base64.b64decode(match.group(2))
             if raw_bytes:
-                logo_filename = f"school_logo.{ext}"
+                logo_filename = f"school_logo_{int(time.time())}.{ext}"
                 upload_dir = current_app.config.get("UPLOAD_FOLDER") or Config.UPLOAD_FOLDER
                 os.makedirs(upload_dir, exist_ok=True)
                 with open(os.path.join(upload_dir, logo_filename), "wb") as f:
                     f.write(raw_bytes)
 
     conn = get_db_connection()
+    final_logo = ""
     try:
         conn.execute(
             """
@@ -874,7 +928,18 @@ def api_internal_setup_school():
             """,
             (school_name, academic_session, current_term),
         )
-        if logo_filename:
+        if remove_logo:
+            conn.execute(
+                """
+                UPDATE school_settings
+                SET school_name = ?, school_motto = ?, academic_session = ?,
+                    current_term = ?, school_logo = '', updated_at = CURRENT_TIMESTAMP
+                WHERE id = 1
+                """,
+                (school_name, school_motto, academic_session, current_term),
+            )
+            final_logo = ""
+        elif logo_filename:
             conn.execute(
                 """
                 UPDATE school_settings
@@ -884,6 +949,7 @@ def api_internal_setup_school():
                 """,
                 (school_name, school_motto, academic_session, current_term, logo_filename),
             )
+            final_logo = logo_filename
         else:
             conn.execute(
                 """
@@ -894,6 +960,8 @@ def api_internal_setup_school():
                 """,
                 (school_name, school_motto, academic_session, current_term),
             )
+            existing_row = conn.execute("SELECT school_logo FROM school_settings WHERE id = 1").fetchone()
+            final_logo = str(existing_row["school_logo"] or "").strip() if existing_row else ""
         conn.execute("UPDATE academic_sessions SET is_current = 0")
         conn.execute(
             "INSERT OR IGNORE INTO academic_sessions (name, is_current) VALUES (?, 1)",
@@ -911,7 +979,9 @@ def api_internal_setup_school():
             "school_motto": school_motto,
             "academic_session": academic_session,
             "current_term": current_term,
-            "school_logo": logo_filename,
+            "school_logo": final_logo or None,
+            "school_logo_url": f"/uploads/images/{final_logo}" if final_logo else None,
+            "logo_data_url": _read_logo_as_data_url(final_logo),
         },
     }), 200
 

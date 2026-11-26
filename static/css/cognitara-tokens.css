@@ -127,70 +127,70 @@
        ====================================================================== */
 
     /* Outer Desktop Stage & Taskbar */
-    --ct-desktop-bg: light-dark(#DCE4F0, #05070C);
-    --ct-desktop-glow-a: light-dark(rgba(0, 102, 255, 0.10), rgba(0, 210, 255, 0.08));
-    --ct-desktop-glow-b: light-dark(rgba(14, 165, 233, 0.08), rgba(0, 102, 255, 0.09));
-    --ct-taskbar-bg: light-dark(rgba(248, 250, 252, 0.84), rgba(11, 15, 23, 0.84));
-    --ct-taskbar-border: light-dark(rgba(15, 23, 42, 0.09), rgba(226, 232, 240, 0.09));
+    --ct-desktop-bg: light-dark(#EAEAE8, #09090A);
+    --ct-desktop-glow-a: light-dark(rgba(23, 22, 20, 0.05), rgba(255, 255, 255, 0.06));
+    --ct-desktop-glow-b: light-dark(rgba(23, 22, 20, 0.03), rgba(255, 255, 255, 0.04));
+    --ct-taskbar-bg: light-dark(rgba(248, 248, 248, 0.88), rgba(17, 17, 18, 0.88));
+    --ct-taskbar-border: light-dark(rgba(23, 22, 20, 0.09), rgba(255, 255, 255, 0.09));
 
     /* Native Frameless Application Surfaces */
-    --ct-window: light-dark(#F6F8FC, #0B0E15);
-    --ct-titlebar: light-dark(#EEF2F8, #080B11);
-    --ct-rail: light-dark(#F1F5FA, #090C13);
-    --ct-canvas: light-dark(#FFFFFF, #0D121B);
-    --ct-surface: light-dark(#F8FAFC, #121825);
-    --ct-surface-raised: light-dark(#FFFFFF, #161E2E);
-    --ct-surface-hover: light-dark(#ECF2FA, #1A2437);
-    --ct-well: light-dark(#EDF2F8, #080B11);
+    --ct-window: light-dark(#F8F8F8, #111112);
+    --ct-titlebar: light-dark(#EFEFEF, #111112);
+    --ct-rail: light-dark(#EFEFEF, #111112);
+    --ct-canvas: light-dark(#F8F8F8, #151517);
+    --ct-surface: light-dark(#FFFFFF, #1B1B1E);
+    --ct-surface-raised: light-dark(#FFFFFF, #222226);
+    --ct-surface-hover: light-dark(#F3F2F0, #252529);
+    --ct-well: light-dark(#F3F2F0, #131315);
 
     /* Calibrated Ink Hierarchy (WCAG AA >= 4.8:1 across both modes) */
-    --ct-ink: light-dark(#0A0E1A, #F8FAFC);
-    --ct-ink-secondary: light-dark(#334155, #A5B5CC);
-    --ct-ink-muted: light-dark(#516278, #7F92AD);
+    --ct-ink: light-dark(#171614, #F5F5F4);
+    --ct-ink-secondary: light-dark(#575551, #A8A6A1);
+    --ct-ink-muted: light-dark(#83807B, #76746F);
 
     /* Hairline Structural Borders & Specular Rim */
-    --ct-line: light-dark(rgba(15, 23, 42, 0.085), rgba(148, 163, 184, 0.11));
-    --ct-line-strong: light-dark(rgba(15, 23, 42, 0.16), rgba(148, 163, 184, 0.22));
-    --ct-rim-top: light-dark(inset 0 1px 0 rgba(255, 255, 255, 0.9), inset 0 1px 0 rgba(255, 255, 255, 0.06));
+    --ct-line: light-dark(rgba(23, 22, 20, 0.08), rgba(255, 255, 255, 0.08));
+    --ct-line-strong: light-dark(rgba(23, 22, 20, 0.16), rgba(255, 255, 255, 0.16));
+    --ct-rim-top: light-dark(inset 0 1px 0 rgba(255, 255, 255, 0.9), inset 0 1px 0 rgba(255, 255, 255, 0.05));
 
-    /* Brand Identity Accents (Official CogniTara Tokens) */
-    --ct-logo-ink: light-dark(#0A0E1A, #FFFFFF);
-    --ct-logo-accent: light-dark(#0066FF, #00D2FF);
-    --ct-accent: light-dark(#0066FF, #00D2FF);
-    --ct-accent-text: light-dark(#0052CC, #00D2FF);
-    --ct-accent-hover: light-dark(#0052CC, #33DCFF);
-    --ct-accent-ink: light-dark(#FFFFFF, #041019);
-    --ct-accent-tint: light-dark(rgba(0, 102, 255, 0.08), rgba(0, 210, 255, 0.11));
-    --ct-accent-border: light-dark(rgba(0, 102, 255, 0.24), rgba(0, 210, 255, 0.28));
-    --ct-cobalt: #0066FF;
-    --ct-cyan: #00D2FF;
+    /* Brand Identity Accents (Pure Black & Cream-White Monochrome) */
+    --ct-logo-ink: light-dark(#171614, #FFFFFF);
+    --ct-logo-accent: light-dark(#171614, #FFFFFF);
+    --ct-accent: light-dark(#171614, #F5F5F4);
+    --ct-accent-text: light-dark(#171614, #F5F5F4);
+    --ct-accent-hover: light-dark(#2B2926, #FFFFFF);
+    --ct-accent-ink: light-dark(#FFFFFF, #171614);
+    --ct-accent-tint: light-dark(rgba(23, 22, 20, 0.07), rgba(255, 255, 255, 0.09));
+    --ct-accent-border: light-dark(rgba(23, 22, 20, 0.18), rgba(255, 255, 255, 0.20));
+    --ct-cobalt: #171614;
+    --ct-cyan: #171614;
 
-    /* Semantic Operational States */
-    --ct-ok: light-dark(#047857, #10B981);
-    --ct-ok-tint: light-dark(rgba(4, 120, 87, 0.09), rgba(16, 185, 129, 0.13));
-    --ct-ok-border: light-dark(rgba(4, 120, 87, 0.24), rgba(16, 185, 129, 0.28));
+    /* Operational States (Pure Monochrome) */
+    --ct-ok: light-dark(#171614, #F5F5F4);
+    --ct-ok-tint: light-dark(#F3F2F0, rgba(255, 255, 255, 0.08));
+    --ct-ok-border: light-dark(rgba(23, 22, 20, 0.16), rgba(255, 255, 255, 0.18));
 
-    --ct-warn: light-dark(#B45309, #F59E0B);
-    --ct-warn-tint: light-dark(rgba(180, 83, 9, 0.09), rgba(245, 158, 11, 0.13));
-    --ct-warn-border: light-dark(rgba(180, 83, 9, 0.24), rgba(245, 158, 11, 0.28));
+    --ct-warn: light-dark(#171614, #E7E5E0);
+    --ct-warn-tint: light-dark(#F3F2F0, rgba(255, 255, 255, 0.07));
+    --ct-warn-border: light-dark(rgba(23, 22, 20, 0.16), rgba(255, 255, 255, 0.18));
 
-    --ct-danger: light-dark(#B91C1C, #F87171);
-    --ct-danger-solid: #DC2626;
-    --ct-danger-tint: light-dark(rgba(185, 28, 28, 0.08), rgba(239, 68, 68, 0.13));
-    --ct-danger-border: light-dark(rgba(185, 28, 28, 0.24), rgba(239, 68, 68, 0.28));
+    --ct-danger: light-dark(#171614, #F5F5F4);
+    --ct-danger-solid: #171614;
+    --ct-danger-tint: light-dark(rgba(23, 22, 20, 0.08), rgba(255, 255, 255, 0.10));
+    --ct-danger-border: light-dark(rgba(23, 22, 20, 0.22), rgba(255, 255, 255, 0.22));
 
     /* Offset Physical Elevation */
     --ct-shadow-sm: light-dark(
-      0 1px 2px rgba(10, 14, 26, 0.05),
-      0 2px 6px rgba(2, 4, 10, 0.35)
+      0 1px 2px rgba(23, 22, 20, 0.05),
+      0 2px 6px rgba(0, 0, 0, 0.35)
     );
     --ct-shadow-float: light-dark(
-      0 16px 40px -8px rgba(15, 23, 42, 0.14),
-      0 20px 48px -8px rgba(2, 4, 10, 0.68)
+      0 16px 40px -8px rgba(23, 22, 20, 0.12),
+      0 20px 48px -8px rgba(0, 0, 0, 0.68)
     );
     --ct-shadow-window: light-dark(
-      0 32px 80px -12px rgba(15, 23, 42, 0.20), 0 8px 24px -4px rgba(15, 23, 42, 0.08), 0 0 0 1px rgba(15, 23, 42, 0.10),
-      0 36px 96px -12px rgba(0, 0, 0, 0.85), 0 12px 32px -6px rgba(0, 0, 0, 0.62), 0 0 0 1px rgba(226, 232, 240, 0.12)
+      0 32px 80px -12px rgba(23, 22, 20, 0.18), 0 8px 24px -4px rgba(23, 22, 20, 0.07), 0 0 0 1px rgba(23, 22, 20, 0.09),
+      0 36px 96px -12px rgba(0, 0, 0, 0.85), 0 12px 32px -6px rgba(0, 0, 0, 0.62), 0 0 0 1px rgba(255, 255, 255, 0.10)
     );
   }
 }

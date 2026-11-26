@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
-import { BrandMark } from "@/components/BrandHeader";
+import { CogniTaraLockup } from "@/components/CogniTaraLogo";
 import { IconLock, IconMoon, IconShield, IconSun } from "@/components/Icons";
 
 interface HqLoginGateProps {
@@ -10,7 +10,7 @@ interface HqLoginGateProps {
 }
 
 export function HqLoginGate({ onAuthenticated }: HqLoginGateProps) {
-  const [theme, setTheme] = useState<"dark" | "light">("dark");
+  const [theme, setTheme] = useState<"dark" | "light">("light");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPw, setShowPw] = useState(false);
@@ -28,7 +28,7 @@ export function HqLoginGate({ onAuthenticated }: HqLoginGateProps) {
 
   useEffect(() => {
     const cur = document.documentElement.getAttribute("data-theme");
-    setTheme(cur === "light" ? "light" : "dark");
+    setTheme(cur === "dark" ? "dark" : "light");
   }, []);
 
   useEffect(() => {
@@ -156,10 +156,7 @@ export function HqLoginGate({ onAuthenticated }: HqLoginGateProps) {
     <div className="ct-shell" style={{ maxWidth: 460, paddingTop: "clamp(24px, 7vh, 72px)" }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 22 }}>
         <Link href="/" className="ct-brand">
-          <BrandMark />
-          <span className="ct-brand__name">
-            Cogni<em>Tara</em> HQ
-          </span>
+          <CogniTaraLockup markSize={24} wordmarkHeight={15} suffix="HQ" />
         </Link>
         <button type="button" className="btn btn--ghost btn--sm" onClick={toggleTheme} aria-label="Toggle theme">
           {theme === "dark" ? <IconSun size={14} /> : <IconMoon size={14} />}

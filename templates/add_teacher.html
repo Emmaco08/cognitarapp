@@ -1,1075 +1,294 @@
-{%- from '_ct_shell.html' import ico, ct_boot_script, admin_shell_start, teacher_shell_start, student_topbar, shell_end with context -%}
+{%- from '_ct_shell.html' import ico, person_avatar, ct_boot_script, admin_shell_start, shell_end with context -%}
 <!DOCTYPE html>
 <html lang="en" data-theme="dark">
 <head>
-    <title>Add Teacher | COGNITARA EXAM SYSTEM</title>
-    <link href="{{ url_for('static', filename='vendor/bootstrap/css/bootstrap.min.css') }}" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='vendor/fontawesome/css/all.min.css') }}">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            background: linear-gradient(135deg, #f5f7fa 0%, #e8edf5 100%);
-            font-family: 'Segoe UI', 'Poppins', Tahoma, Geneva, Verdana, sans-serif;
-            min-height: 100vh;
-            position: relative;
-            overflow-x: hidden;
-        }
-
-        /* Animated Educational Icons Background */
-        .edu-icon {
-            position: absolute;
-            color: rgba(26, 86, 219, 0.06);
-            pointer-events: none;
-            z-index: 0;
-            animation: floatIcon 20s infinite ease-in-out;
-        }
-
-        @keyframes floatIcon {
-            0% { transform: translate(0, 0) rotate(0deg); opacity: 0; }
-            10% { opacity: 0.08; }
-            90% { opacity: 0.08; }
-            100% { transform: translate(100px, -100px) rotate(360deg); opacity: 0; }
-        }
-
-        .edu-icon:nth-child(1) { top: 10%; left: 5%; animation-duration: 18s; font-size: 50px; }
-        .edu-icon:nth-child(2) { top: 70%; left: 15%; animation-duration: 22s; font-size: 40px; animation-delay: 2s; }
-        .edu-icon:nth-child(3) { top: 30%; left: 85%; animation-duration: 20s; font-size: 55px; animation-delay: 4s; }
-        .edu-icon:nth-child(4) { top: 80%; left: 80%; animation-duration: 25s; font-size: 35px; animation-delay: 1s; }
-        .edu-icon:nth-child(5) { top: 50%; left: 10%; animation-duration: 19s; font-size: 45px; animation-delay: 3s; }
-        .edu-icon:nth-child(6) { top: 20%; left: 70%; animation-duration: 23s; font-size: 60px; animation-delay: 5s; }
-        .edu-icon:nth-child(7) { top: 60%; left: 90%; animation-duration: 21s; font-size: 42px; animation-delay: 2.5s; }
-        .edu-icon:nth-child(8) { top: 85%; left: 25%; animation-duration: 24s; font-size: 38px; animation-delay: 6s; }
-        .edu-icon:nth-child(9) { top: 15%; left: 45%; animation-duration: 17s; font-size: 48px; animation-delay: 1.5s; }
-        .edu-icon:nth-child(10) { top: 45%; left: 75%; animation-duration: 26s; font-size: 52px; animation-delay: 3.5s; }
-
-        .add-container {
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 40px 20px;
-            position: relative;
-            z-index: 10;
-        }
-
-        .page-header {
-            text-align: center;
-            margin-bottom: 35px;
-        }
-
-        .logo-icon {
-            width: 80px;
-            height: 80px;
-            background: var(--ct-brand-grad);
-            border-radius: 50%;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            margin-bottom: 20px;
-            animation: pulse 2s infinite;
-            box-shadow: 0 10px 25px rgba(26, 86, 219, 0.2);
-        }
-
-        @keyframes pulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.05); }
-        }
-
-        .logo-icon i {
-            font-size: 40px;
-            color: white;
-        }
-
-        .page-header h1 {
-            font-size: 32px;
-            font-weight: 800;
-            background: var(--ct-brand-grad);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            margin-bottom: 10px;
-        }
-
-        .page-header p {
-            font-size: 16px;
-            color: var(--ct-ink-3);
-        }
-
-        .form-container {
-            background: var(--ct-surface);
-            border-radius: 28px;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.05);
-            padding: 35px;
-            border: 1px solid var(--ct-line-2);
-        }
-
-        .form-group {
-            margin-bottom: 22px;
-        }
-
-        .input-group-custom {
-            position: relative;
-        }
-
-        .input-group-custom i.input-icon {
-            position: absolute;
-            left: 15px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: #94a3b8;
-            font-size: 16px;
-            z-index: 1;
-        }
-
-        .form-control-custom {
-            width: 100%;
-            padding: 13px 15px 13px 45px;
-            border: 2px solid var(--ct-line-2);
-            border-radius: 14px;
-            font-size: 14px;
-            transition: all 0.3s ease;
-            background: var(--ct-surface);
-        }
-
-        .form-control-custom:focus {
-            outline: none;
-            border-color: var(--ct-primary);
-            background: var(--ct-surface);
-            box-shadow: 0 0 0 3px rgba(26, 86, 219, 0.1);
-        }
-
-        .form-control-custom.valid {
-            border-color: #10b981;
-            background: var(--ct-ok-soft);
-        }
-
-        .form-control-custom.invalid {
-            border-color: #ef4444;
-            background: var(--ct-bad-soft);
-        }
-
-        label {
-            font-weight: 600;
-            color: var(--ct-ink);
-            margin-bottom: 8px;
-            display: block;
-            font-size: 14px;
-        }
-
-        label i {
-            margin-right: 8px;
-            color: var(--ct-primary);
-        }
-
-        .password-box {
-            position: relative;
-        }
-
-        .password-box input {
-            padding-left: 45px;
-            padding-right: 45px;
-        }
-
-        .toggle-password {
-            position: absolute;
-            right: 15px;
-            top: 50%;
-            transform: translateY(-50%);
-            cursor: pointer;
-            color: #94a3b8;
-            transition: color 0.3s ease;
-            z-index: 1;
-        }
-
-        .toggle-password:hover {
-            color: var(--ct-primary);
-        }
-
-        .validation-message {
-            font-size: 12px;
-            margin-top: 6px;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-        .validation-message.valid { color: #10b981; }
-        .validation-message.invalid { color: #ef4444; }
-
-        .password-requirements {
-            background: var(--ct-surface);
-            border-radius: 12px;
-            padding: 12px 15px;
-            margin-top: 10px;
-            border: 1px solid var(--ct-line-2);
-        }
-
-        .password-requirements p {
-            font-size: 12px;
-            font-weight: 600;
-            color: var(--ct-ink);
-            margin-bottom: 8px;
-        }
-
-        .requirement {
-            font-size: 11px;
-            color: var(--ct-ink-3);
-            margin-bottom: 5px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .requirement i { width: 14px; font-size: 10px; }
-        .requirement.valid { color: #10b981; }
-        .requirement.invalid { color: #ef4444; }
-
-        /* Multi-Class Assignment Section */
-        .class-assignments-section {
-            background: var(--ct-surface);
-            border-radius: 16px;
-            padding: 20px;
-            margin: 20px 0;
-            border: 1px solid var(--ct-line-2);
-        }
-
-        .section-subtitle {
-            font-size: 15px;
-            font-weight: 600;
-            color: var(--ct-ink);
-            margin-bottom: 15px;
-        }
-
-        .section-subtitle i {
-            margin-right: 8px;
-            color: var(--ct-primary);
-        }
-
-        .class-assignment-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr 40px;
-            gap: 12px;
-            margin-bottom: 12px;
-            align-items: center;
-        }
-
-        .class-select, .specialisation-select {
-            width: 100%;
-            padding: 10px 12px;
-            border: 2px solid var(--ct-line-2);
-            border-radius: 10px;
-            font-size: 13px;
-            background: var(--ct-surface);
-        }
-
-        .btn-remove-class {
-            width: 36px;
-            height: 36px;
-            border-radius: 10px;
-            border: none;
-            background: var(--ct-bad-soft);
-            color: #ef4444;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.2s;
-        }
-
-        .btn-remove-class:hover {
-            background: #ef4444;
-            color: white;
-        }
-
-        .btn-add-class {
-            background: var(--ct-primary);
-            color: white;
-            border: none;
-            padding: 10px 18px;
-            border-radius: 10px;
-            font-size: 13px;
-            font-weight: 500;
-            cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            margin-top: 10px;
-            transition: all 0.2s;
-        }
-
-        .btn-add-class:hover {
-            background: #0e3b9e;
-            transform: translateY(-2px);
-        }
-
-        /* Form Tutor Section */
-        .form-tutor-section {
-            background: var(--ct-surface-2);
-            border-radius: 16px;
-            padding: 20px;
-            margin: 20px 0;
-            border: 1px solid #fbbf24;
-        }
-
-        .form-tutor-section .section-subtitle i {
-            color: #d97706;
-        }
-
-        .image-preview {
-            max-width: 100px;
-            max-height: 100px;
-            margin-top: 12px;
-            border: 2px solid var(--ct-primary);
-            border-radius: 12px;
-            padding: 4px;
-            display: none;
-            object-fit: cover;
-        }
-
-        .image-status {
-            font-size: 12px;
-            margin-top: 8px;
-            padding: 8px 12px;
-            border-radius: 10px;
-            display: none;
-        }
-
-        .image-status.error {
-            color: #991b1b;
-            background-color: var(--ct-bad-soft);
-            border-left: 3px solid #ef4444;
-        }
-
-        .image-status.success {
-            color: #065f46;
-            background-color: var(--ct-ok-soft);
-            border-left: 3px solid #10b981;
-        }
-
-        .image-status.warning {
-            color: #92400e;
-            background-color: var(--ct-warn-soft);
-            border-left: 3px solid #f59e0b;
-        }
-
-        .button-group {
-            display: flex;
-            gap: 15px;
-            margin-top: 25px;
-        }
-
-        .btn-submit {
-            flex: 1;
-            padding: 14px;
-            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-            border: none;
-            border-radius: 14px;
-            color: white;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-        }
-
-        .btn-submit:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 20px -5px rgba(16, 185, 129, 0.4);
-        }
-
-        .btn-submit:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        .btn-back {
-            flex: 1;
-            padding: 14px;
-            background: var(--ct-surface);
-            border: 2px solid var(--ct-line-2);
-            border-radius: 14px;
-            color: var(--ct-ink-3);
-            font-size: 16px;
-            font-weight: 600;
-            text-decoration: none;
-            text-align: center;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            transition: all 0.3s ease;
-        }
-
-        .btn-back:hover {
-            border-color: var(--ct-primary);
-            color: var(--ct-primary);
-            background: var(--ct-surface);
-            transform: translateY(-2px);
-        }
-
-        .alert-custom {
-            background: var(--ct-bad-soft);
-            border-left: 4px solid #ef4444;
-            color: #991b1b;
-            padding: 12px 18px;
-            border-radius: 12px;
-            margin-bottom: 25px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            font-size: 14px;
-        }
-
-        .not {
-            position: absolute;
-            left: 15px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: #94a3b8;
-            font-size: 16px;
-            z-index: 1;
-        }
-
-        .username-status {
-            font-size: 12px;
-            margin-top: 5px;
-        }
-
-        .text-danger { color: #dc2626 !important; }
-        .text-success { color: #10b981 !important; }
-        .text-muted { color: var(--ct-ink-3) !important; }
-
-        input[type="file"] {
-            padding: 12px;
-            background: var(--ct-surface);
-            border: 2px solid var(--ct-line-2);
-            border-radius: 14px;
-            cursor: pointer;
-            width: 100%;
-        }
-
-        input[type="file"]:hover {
-            border-color: var(--ct-primary);
-        }
-
-        .info-badge {
-            background: #e0e7ff;
-            color: var(--ct-primary);
-            padding: 2px 10px;
-            border-radius: 20px;
-            font-size: 11px;
-            font-weight: 500;
-            margin-left: 8px;
-        }
-
-        @media (max-width: 576px) {
-            .add-container { padding: 20px 15px; }
-            .form-container { padding: 25px 20px; }
-            .page-header h1 { font-size: 26px; }
-            .button-group { flex-direction: column; gap: 12px; }
-            .btn-submit, .btn-back { padding: 12px; font-size: 14px; }
-            .class-assignment-row { grid-template-columns: 1fr; }
-            .btn-remove-class { width: 100%; }
-        }
-    </style>
-    <!-- CSRF Protection Shield -->
-    <meta name="csrf-token" content="{{ csrf_token() }}">
-    <script>
-    window.CSRF_TOKEN = "{{ csrf_token() }}";
-    (function() {
-        if (window.fetch) {
-            const _origFetch = window.fetch;
-            window.fetch = function(url, options) {
-                options = options || {};
-                const method = (options.method || 'GET').toUpperCase();
-                if (!['GET', 'HEAD', 'OPTIONS', 'TRACE'].includes(method)) {
-                    options.headers = options.headers || {};
-                    const token = window.CSRF_TOKEN || (document.querySelector('meta[name="csrf-token"]') && document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
-                    if (token) {
-                        if (typeof Headers !== 'undefined' && options.headers instanceof Headers) {
-                            if (!options.headers.has('X-CSRFToken')) options.headers.set('X-CSRFToken', token);
-                        } else if (Array.isArray(options.headers)) {
-                            options.headers.push(['X-CSRFToken', token]);
-                        } else {
-                            if (!options.headers['X-CSRFToken']) options.headers['X-CSRFToken'] = token;
-                        }
-                    }
-                }
-                return _origFetch(url, options);
-            };
-        }
-        if (window.$ && $.ajaxSetup) {
-            $.ajaxSetup({
-                beforeSend: function(xhr, settings) {
-                    if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type)) {
-                        xhr.setRequestHeader("X-CSRFToken", window.CSRF_TOKEN);
-                    }
-                }
-            });
-        }
-        if (navigator.sendBeacon) {
-            const _origBeacon = navigator.sendBeacon.bind(navigator);
-            navigator.sendBeacon = function(url, data) {
-                if (data instanceof FormData) {
-                    if (!data.has('csrf_token')) data.append('csrf_token', window.CSRF_TOKEN);
-                } else if (typeof data === 'string') {
-                    try {
-                        const obj = JSON.parse(data);
-                        if (typeof obj === 'object' && obj !== null && !obj.csrf_token) {
-                            obj.csrf_token = window.CSRF_TOKEN;
-                            data = JSON.stringify(obj);
-                        }
-                    } catch(e) {}
-                }
-                return _origBeacon(url, data);
-            };
-        }
-        document.addEventListener('DOMContentLoaded', function() {
-            document.querySelectorAll('form[method="POST"], form[method="post"]').forEach(function(form) {
-                if (!form.querySelector('input[name="csrf_token"]')) {
-                    var input = document.createElement('input');
-                    input.type = 'hidden';
-                    input.name = 'csrf_token';
-                    input.value = window.CSRF_TOKEN;
-                    form.appendChild(input);
-                }
-            });
-        });
-    })();
-    </script>
-
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+  <meta name="color-scheme" content="dark light">
+  <title>Add Teacher — {{ school_branding.school_name }} | CogniTara</title>
+  <link rel="icon" href="{{ url_for('static', filename='images/cognitara-favicon.ico') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/cognitara-web.css') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/cognitara-portal-unified.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/cognitara-teacher-studio.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/cognitara-admin-studio.css') }}">
   {{ ct_boot_script() }}
+  <style>
+    .af-shell { max-width: 820px; }
+    .af-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+    @media (max-width: 720px) { .af-grid { grid-template-columns: 1fr; } }
+    .af-field { display: grid; gap: 6px; }
+    .af-field--full { grid-column: 1 / -1; }
+    .af-label { font-size: 13px; font-weight: 620; color: var(--tc-ink); display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+    .af-req { color: var(--ct-bad); font-weight: 700; margin-left: 2px; }
+    .af-help { font-size: 12px; color: var(--tc-ink-3); min-height: 16px; }
+    .af-help--ok { color: var(--ct-ok); }
+    .af-help--bad { color: var(--ct-bad); }
+    .af-input-wrap { position: relative; display: flex; align-items: center; }
+    .af-input-ico { position: absolute; left: 13px; color: var(--tc-ink-3); pointer-events: none; display: inline-flex; }
+    .af-input, .af-select {
+      width: 100%; height: 42px; padding: 0 14px; border-radius: 10px;
+      border: 1px solid var(--tc-line-2); background: var(--tc-surface-2); color: var(--tc-ink);
+      font-size: 14px; font-family: inherit;
+      transition: border-color 150ms ease, box-shadow 150ms ease, background-color 150ms ease;
+    }
+    .af-input--ico { padding-left: 40px; }
+    .af-input--trail { padding-right: 42px; }
+    .af-input:focus, .af-select:focus {
+      outline: none; border-color: var(--ct-accent); background: var(--tc-surface);
+      box-shadow: 0 0 0 3px var(--ct-accent-soft);
+    }
+    .af-eye {
+      position: absolute; right: 7px; width: 30px; height: 30px; border-radius: 7px; border: 0;
+      background: transparent; color: var(--tc-ink-3); display: grid; place-items: center; cursor: pointer;
+    }
+    .af-eye:hover { color: var(--tc-ink); background: var(--ct-hover); }
+    .af-strength { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; margin-top: 2px; }
+    .af-strength span { height: 4px; border-radius: 99px; background: var(--tc-line-2); transition: background-color 180ms ease; }
+    .af-strength[data-level="1"] span:nth-child(1) { background: #2B2926; }
+    .af-strength[data-level="2"] span:nth-child(-n+2) { background: #D6D4CF; }
+    .af-strength[data-level="3"] span:nth-child(-n+3) { background: #575551; }
+    .af-strength[data-level="4"] span { background: #575551; }
+    .af-assign-box {
+      padding: 16px 18px; border-radius: 12px; border: 1px solid var(--tc-line-2);
+      background: var(--tc-surface-2); display: grid; gap: 12px;
+    }
+    .af-assign-row { display: grid; grid-template-columns: 1fr 1fr 38px; gap: 10px; align-items: center; }
+    @media (max-width: 600px) { .af-assign-row { grid-template-columns: 1fr; } }
+    .af-photo-row {
+      display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+      padding: 14px 16px; border-radius: 12px; border: 1px solid var(--tc-line-2); background: var(--tc-surface-2);
+    }
+    .af-photo-preview {
+      width: 56px; height: 56px; border-radius: 50%; overflow: hidden; flex: none;
+      display: inline-grid; place-items: center; border: 1px solid var(--tc-line-2);
+    }
+    .af-photo-preview img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .af-foot {
+      display: flex; align-items: center; justify-content: flex-end; gap: 10px; flex-wrap: wrap;
+      padding: 16px 22px; border-top: 1px solid var(--tc-line); background: var(--tc-surface-2);
+    }
+  </style>
 </head>
-<body class="ct-app ct-bs ad-studio">
+<body class="ct-app ad-studio">
 {{ admin_shell_start(active='teachers', crumb='Add Teacher') }}
 
+  <div class="af-shell">
+    <header class="tc-head ct-animate-rise">
+      <div class="tc-head__txt">
+        <h1>Add Teacher Account</h1>
+        <p>Create a faculty login, assign teaching classes &amp; tracks, and optionally set a Form Teacher role.</p>
+      </div>
+      <div class="tc-head__actions">
+        <a class="tc-btn tc-btn--secondary" href="/admin#sec-teachers">{{ ico('i-arrow-left', 'ct-ico--sm') }}Back to Teachers</a>
+      </div>
+    </header>
 
-    <!-- Animated Educational Icons Background -->
-    <div class="edu-icon"><i class="fas fa-chalkboard-teacher"></i></div>
-    <div class="edu-icon"><i class="fas fa-book"></i></div>
-    <div class="edu-icon"><i class="fas fa-pencil-alt"></i></div>
-    <div class="edu-icon"><i class="fas fa-flask"></i></div>
-    <div class="edu-icon"><i class="fas fa-calculator"></i></div>
-    <div class="edu-icon"><i class="fas fa-globe"></i></div>
-    <div class="edu-icon"><i class="fas fa-laptop-code"></i></div>
-    <div class="edu-icon"><i class="fas fa-brain"></i></div>
-    <div class="edu-icon"><i class="fas fa-chart-line"></i></div>
-    <div class="edu-icon"><i class="fas fa-users"></i></div>
-
-    <div class="add-container">
-        <div class="page-header">
-            <div class="logo-icon">
-                <i class="fas fa-chalkboard-teacher"></i>
-            </div>
-            <h1>Add New Teacher</h1>
-            <p>Register a new teacher with class assignments and specialisations</p>
-        </div>
-
-        <div class="form-container">
-            {% if error %}
-            <div class="alert-custom">
-                <i class="fas fa-exclamation-triangle"></i>
-                <span>{{ error }}</span>
-            </div>
-            {% endif %}
-
-            <form method="POST" enctype="multipart/form-data" onsubmit="return validateForm()">
-    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                <!-- Username -->
-                <div class="form-group">
-                    <label><i class="fas fa-id-card"></i> Username</label>
-                    <div class="input-group-custom">
-                        <i class="fas fa-at input-icon"></i>
-                        <input type="text" name="username" id="username" class="form-control-custom" 
-                               placeholder="Choose a unique username" required>
-                    </div>
-                    <div id="usernameError" class="username-status" style="display: none;"></div>
-                </div>
-
-                <!-- Password -->
-                <div class="form-group">
-                    <label><i class="fas fa-lock"></i> Password</label>
-                    <div class="password-box">
-                        <i class="fas fa-lock input-icon not"></i>
-                        <input type="password" name="password" class="form-control-custom" id="password" 
-                               placeholder="Create a strong password" required onkeyup="validatePasswordLive()">
-                        <i class="fa-solid fa-eye toggle-password"></i>
-                    </div>
-                    <div id="passwordMessage" class="validation-message"></div>
-                    
-                    <div class="password-requirements" id="passwordRequirements">
-                        <p><i class="fas fa-shield-alt"></i> Password must contain:</p>
-                        <div class="requirement" id="reqLength">
-                            <i class="fas fa-circle"></i> At least 6 characters
-                        </div>
-                        <div class="requirement" id="reqUppercase">
-                            <i class="fas fa-circle"></i> At least 1 uppercase letter (A-Z)
-                        </div>
-                        <div class="requirement" id="reqLowercase">
-                            <i class="fas fa-circle"></i> At least 1 lowercase letter (a-z)
-                        </div>
-                        <div class="requirement" id="reqNumber">
-                            <i class="fas fa-circle"></i> At least 1 number (0-9)
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Confirm Password -->
-                <div class="form-group">
-                    <label><i class="fas fa-check-circle"></i> Confirm Password</label>
-                    <div class="password-box">
-                        <i class="fas fa-check-circle input-icon not"></i>
-                        <input type="password" class="form-control-custom" id="confirm_password" 
-                               placeholder="Confirm your password" required onkeyup="validateConfirmPasswordLive()">
-                        <i class="fa-solid fa-eye toggle-password"></i>
-                    </div>
-                    <div id="confirmMessage" class="validation-message"></div>
-                </div>
-
-                <!-- ============================================ -->
-                <!-- CLASS ASSIGNMENTS SECTION (MULTI-CLASS) -->
-                <!-- ============================================ -->
-                <div class="class-assignments-section">
-                    <div class="section-subtitle">
-                        <i class="fas fa-users-between-lines"></i> 
-                        Teaching Assignments 
-                        <span class="info-badge">Can teach multiple classes</span>
-                    </div>
-                    <p style="font-size:12px; color:#64748b; margin-bottom:15px;">
-                        <i class="fas fa-info-circle"></i> 
-                        Assign which classes and specialisations this teacher will teach.
-                        "General" means they teach all students in that class.
-                    </p>
-                    
-                    <div id="classAssignmentsContainer">
-                        <!-- Dynamic rows will be added here -->
-                    </div>
-                    
-                    <button type="button" class="btn-add-class" onclick="addClassAssignment()">
-                        <i class="fas fa-plus-circle"></i> Add Class Assignment
-                    </button>
-                </div>
-
-                <!-- ============================================ -->
-                <!-- FORM TUTOR ASSIGNMENT (OPTIONAL) -->
-                <!-- ============================================ -->
-                <div class="form-tutor-section">
-                    <div class="section-subtitle">
-                        <i class="fas fa-star"></i> 
-                        Form Tutor Assignment 
-                        <span class="info-badge" style="background:#fef3c7; color:#d97706;">Optional</span>
-                    </div>
-                    <p style="font-size:12px; color:#64748b; margin-bottom:15px;">
-                        <i class="fas fa-info-circle"></i> 
-                        If assigned as Form Tutor, this teacher can view ALL results for ALL subjects 
-                        in this class (read-only access).
-                    </p>
-                    
-                    <div class="input-group-custom">
-                        <i class="fas fa-users input-icon"></i>
-                        <select name="class_teacher_of" class="form-control-custom" style="padding-left:45px;">
-                            <option value="">-- Not a Form Tutor --</option>
-                            <option value="Grade 1">Grade 1</option>
-                            <option value="Grade 2">Grade 2</option>
-                            <option value="Grade 3">Grade 3</option>
-                            <option value="Grade 4">Grade 4</option>
-                            <option value="Grade 5">Grade 5</option>
-                            <option value="Grade 6">Grade 6</option>
-                            <option value="Grade 7">Grade 7</option>
-                            <option value="Grade 8">Grade 8</option>
-                            <option value="Grade 9">Grade 9</option>
-                            <option value="Grade 10">Grade 10</option>
-                            <option value="Grade 11">Grade 11</option>
-                            <option value="Grade 12">Grade 12</option>
-                        </select>
-                    </div>
-                </div>
-
-                <!-- Photo Upload -->
-                <div class="form-group">
-                    <label><i class="fas fa-camera"></i> Profile Photo (Optional)</label>
-                    <input type="file" name="photo" id="photo" accept="image/*"
-                           onchange="previewAndValidateImage(this)">
-                    <img id="preview" class="image-preview" alt="Preview">
-                    <div id="imageStatus" class="image-status"></div>
-                    <small class="text-muted" style="display: block; margin-top: 8px;">
-                        <i class="fas fa-info-circle"></i> Optional · Original resolution, full quality (no size limit)
-                    </small>
-                </div>
-
-                <!-- Hidden fields for class assignments (populated by JS) -->
-                <div id="hiddenClassFields"></div>
-
-                <!-- Buttons -->
-                <div class="button-group">
-                    <button type="submit" class="btn-submit" id="submitBtn">
-                        <i class="fas fa-user-plus"></i> Add Teacher
-                    </button>
-                    <a href="/admin" class="btn-back">
-                        <i class="fas fa-arrow-left"></i> Back to Dashboard
-                    </a>
-                </div>
-            </form>
-        </div>
+    {% if error %}
+    <div class="ct-alert ct-alert--bad ct-alert--shake" style="margin-bottom:18px" role="alert">
+      {{ ico('i-alert') }}
+      <div class="ct-alert__body"><strong>Could not add teacher</strong><span>{{ error }}</span></div>
     </div>
+    {% endif %}
 
-    <script>
-        let imageValid = true;
-        let isPasswordValid = false;
-        let isConfirmValid = false;
-        let isUsernameValid = false;
-        let classAssignmentCount = 0;
-        
-        // Available classes and specialisations
-        const availableClasses = [
-            'Grade 1', 'Grade 2', 'Grade 3', 'Grade 4', 'Grade 5', 'Grade 6',
-            'Grade 7', 'Grade 8', 'Grade 9', 'Grade 10', 'Grade 11', 'Grade 12'
-        ];
-        
-        const availableSpecialisations = ['General', 'Science', 'Art', 'Commercial'];
-        
-        // Add class assignment row
-        function addClassAssignment() {
-            classAssignmentCount++;
-            const container = document.getElementById('classAssignmentsContainer');
-            
-            const row = document.createElement('div');
-            row.className = 'class-assignment-row';
-            row.id = `classRow${classAssignmentCount}`;
-            
-            // Class select
-            const classSelect = document.createElement('select');
-            classSelect.className = 'class-select';
-            classSelect.name = `class_name`;
-            classSelect.required = true;
-            classSelect.innerHTML = '<option value="">-- Select Class --</option>';
-            availableClasses.forEach(cls => {
-                classSelect.innerHTML += `<option value="${cls}">${cls}</option>`;
-            });
-            
-            // Specialisation select
-            const specSelect = document.createElement('select');
-            specSelect.className = 'specialisation-select';
-            specSelect.name = `specialisation`;
-            specSelect.required = true;
-            specSelect.innerHTML = '<option value="">-- Select Specialisation --</option>';
-            availableSpecialisations.forEach(spec => {
-                specSelect.innerHTML += `<option value="${spec}">${spec}</option>`;
-            });
-            
-            // Remove button
-            const removeBtn = document.createElement('button');
-            removeBtn.type = 'button';
-            removeBtn.className = 'btn-remove-class';
-            removeBtn.innerHTML = '<i class="fas fa-trash"></i>';
-            removeBtn.onclick = function() {
-                row.remove();
-                updateHiddenClassFields();
-            };
-            
-            row.appendChild(classSelect);
-            row.appendChild(specSelect);
-            row.appendChild(removeBtn);
-            
-            container.appendChild(row);
-            
-            // Update hidden fields
-            updateHiddenClassFields();
-        }
-        
-        function removeClassAssignment(id) {
-            const row = document.getElementById(`classRow${id}`);
-            if (row) {
-                row.remove();
-                updateHiddenClassFields();
-            }
-        }
-        
-        function updateHiddenClassFields() {
-            const container = document.getElementById('hiddenClassFields');
-            container.innerHTML = '';
-            
-            const rows = document.querySelectorAll('.class-assignment-row');
-            rows.forEach((row, index) => {
-                const classSelect = row.querySelector('.class-select');
-                const specSelect = row.querySelector('.specialisation-select');
-                
-                if (classSelect && specSelect) {
-                    const classInput = document.createElement('input');
-                    classInput.type = 'hidden';
-                    classInput.name = 'class_name';
-                    classInput.value = classSelect.value;
-                    
-                    const specInput = document.createElement('input');
-                    specInput.type = 'hidden';
-                    specInput.name = 'specialisation';
-                    specInput.value = specSelect.value;
-                    
-                    container.appendChild(classInput);
-                    container.appendChild(specInput);
-                }
-            });
-        }
-        
-        // Listen for changes on class/specialisation selects
-        document.addEventListener('change', function(e) {
-            if (e.target.classList.contains('class-select') || 
-                e.target.classList.contains('specialisation-select')) {
-                updateHiddenClassFields();
-            }
-        });
-        
-        // Password validation
-        function validatePasswordLive() {
-            const password = document.getElementById('password').value;
-            
-            const hasMinLength = password.length >= 6;
-            const hasUppercase = /[A-Z]/.test(password);
-            const hasLowercase = /[a-z]/.test(password);
-            const hasNumber = /[0-9]/.test(password);
-            
-            updateRequirement('reqLength', hasMinLength);
-            updateRequirement('reqUppercase', hasUppercase);
-            updateRequirement('reqLowercase', hasLowercase);
-            updateRequirement('reqNumber', hasNumber);
-            
-            isPasswordValid = hasMinLength && hasUppercase && hasLowercase && hasNumber;
-            
-            const passwordInput = document.getElementById('password');
-            const passwordMessage = document.getElementById('passwordMessage');
-            
-            if (password.length > 0) {
-                if (isPasswordValid) {
-                    passwordInput.classList.add('valid');
-                    passwordInput.classList.remove('invalid');
-                    passwordMessage.innerHTML = '<i class="fas fa-check-circle"></i> Strong password!';
-                    passwordMessage.className = 'validation-message valid';
-                } else {
-                    passwordInput.classList.add('invalid');
-                    passwordInput.classList.remove('valid');
-                    passwordMessage.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Please meet all requirements';
-                    passwordMessage.className = 'validation-message invalid';
-                }
-            } else {
-                passwordInput.classList.remove('valid', 'invalid');
-                passwordMessage.innerHTML = '';
-            }
-            
-            validateConfirmPasswordLive();
-            updateSubmitButton();
-        }
-        
-        function updateRequirement(elementId, isValid) {
-            const element = document.getElementById(elementId);
-            if (isValid) {
-                element.classList.add('valid');
-                element.classList.remove('invalid');
-                element.innerHTML = '<i class="fas fa-check-circle"></i> ' + element.innerHTML.split('</i>')[1];
-            } else {
-                element.classList.add('invalid');
-                element.classList.remove('valid');
-                element.innerHTML = '<i class="fas fa-times-circle"></i> ' + element.innerHTML.split('</i>')[1];
-            }
-        }
-        
-        function validateConfirmPasswordLive() {
-            const password = document.getElementById('password').value;
-            const confirmPassword = document.getElementById('confirm_password').value;
-            const confirmInput = document.getElementById('confirm_password');
-            const confirmMessage = document.getElementById('confirmMessage');
-            
-            if (confirmPassword.length > 0) {
-                if (password === confirmPassword && isPasswordValid) {
-                    confirmInput.classList.add('valid');
-                    confirmInput.classList.remove('invalid');
-                    confirmMessage.innerHTML = '<i class="fas fa-check-circle"></i> Passwords match!';
-                    confirmMessage.className = 'validation-message valid';
-                    isConfirmValid = true;
-                } else if (password !== confirmPassword) {
-                    confirmInput.classList.add('invalid');
-                    confirmInput.classList.remove('valid');
-                    confirmMessage.innerHTML = '<i class="fas fa-times-circle"></i> Passwords do not match!';
-                    confirmMessage.className = 'validation-message invalid';
-                    isConfirmValid = false;
-                } else {
-                    confirmInput.classList.add('invalid');
-                    confirmInput.classList.remove('valid');
-                    confirmMessage.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Please meet password requirements first';
-                    confirmMessage.className = 'validation-message invalid';
-                    isConfirmValid = false;
-                }
-            } else {
-                confirmInput.classList.remove('valid', 'invalid');
-                confirmMessage.innerHTML = '';
-                isConfirmValid = false;
-            }
-            
-            updateSubmitButton();
-        }
-        
-        function previewAndValidateImage(input) {
-            const file = input.files[0];
-            const preview = document.getElementById('preview');
-            const statusDiv = document.getElementById('imageStatus');
-            
-            if (!file) {
-                preview.style.display = 'none';
-                statusDiv.style.display = 'none';
-                imageValid = true;
-                updateSubmitButton();
-                return;
-            }
-            
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                preview.src = e.target.result;
-                preview.style.display = 'block';
-            };
-            reader.readAsDataURL(file);
-            
-            if (!file.type.startsWith('image/')) {
-                statusDiv.className = 'image-status error';
-                statusDiv.innerHTML = '<i class="fas fa-times-circle"></i> Only image files are allowed!';
-                statusDiv.style.display = 'block';
-                imageValid = false;
-                input.value = '';
-                preview.style.display = 'none';
-                updateSubmitButton();
-                return;
-            }
-            
-            const sizeKB = file.size / 1024;
-            const sizeMB = file.size / (1024 * 1024);
-            const sizeFormatted = sizeMB >= 1 ? sizeMB.toFixed(1) + ' MB' : sizeKB.toFixed(1) + ' KB';
+    <section class="tc-card" data-ct-reveal>
+      <div class="tc-card__head">
+        <div class="tc-card__title">
+          <h2>Teacher Details &amp; Teaching Scope</h2>
+          <p>Required fields are marked with an asterisk (*)</p>
+        </div>
+      </div>
 
-            statusDiv.className = 'image-status success';
-            statusDiv.innerHTML = `<i class="fas fa-check-circle"></i> Image selected (${sizeFormatted}) — Full quality preserved`;
-            statusDiv.style.display = 'block';
-            imageValid = true;
-            updateSubmitButton();
-        }
-        
-        function updateSubmitButton() {
-            const submitBtn = document.getElementById('submitBtn');
-            const rows = document.querySelectorAll('.class-assignment-row');
-            const hasClassAssignment = rows.length > 0;
-            
-            if (isPasswordValid && isConfirmValid && imageValid && isUsernameValid && hasClassAssignment) {
-                submitBtn.disabled = false;
-            } else {
-                submitBtn.disabled = true;
-            }
-        }
-        
-        function validateForm() {
-            const rows = document.querySelectorAll('.class-assignment-row');
-            if (rows.length === 0) {
-                alert('Please add at least one class assignment.');
-                return false;
-            }
-            
-            if (!isPasswordValid) {
-                alert('Please create a valid password.');
-                return false;
-            }
-            
-            if (!isConfirmValid) {
-                alert('Passwords do not match.');
-                return false;
-            }
-            
-            if (!imageValid) {
-                alert('Please select a valid image file or leave the photo field empty.');
-                return false;
-            }
-            
-            if (!isUsernameValid) {
-                alert('Please choose a valid username.');
-                return false;
-            }
-            
-            return true;
-        }
-        
-        // Username availability check
-        const usernameInput = document.getElementById('username');
-        const usernameError = document.getElementById('usernameError');
-        let checkTimeout;
-        
-        usernameInput.addEventListener('input', function() {
-            clearTimeout(checkTimeout);
-            const username = this.value.trim();
-            
-            if (username.length < 3) {
-                usernameError.style.display = 'none';
-                isUsernameValid = false;
-                updateSubmitButton();
-                return;
-            }
-            
-            usernameError.style.display = 'block';
-            usernameError.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Checking availability...';
-            usernameError.className = 'username-status text-muted';
-            
-            checkTimeout = setTimeout(() => {
-                fetch(`/check_teacher_username?username=${encodeURIComponent(username)}`)
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.exists) {
-                            usernameError.innerHTML = '<i class="fas fa-times-circle"></i> Username already exists!';
-                            usernameError.className = 'username-status text-danger';
-                            isUsernameValid = false;
-                            usernameInput.classList.add('invalid');
-                            usernameInput.classList.remove('valid');
-                        } else {
-                            usernameError.innerHTML = '<i class="fas fa-check-circle"></i> Username available';
-                            usernameError.className = 'username-status text-success';
-                            isUsernameValid = true;
-                            usernameInput.classList.add('valid');
-                            usernameInput.classList.remove('invalid');
-                        }
-                        updateSubmitButton();
-                    });
-            }, 500);
-        });
-        
-        // Password toggle
-        const toggles = document.querySelectorAll(".toggle-password");
-        toggles.forEach(function(toggle) {
-            toggle.addEventListener("click", function() {
-                const input = this.previousElementSibling;
-                if (input.type === "password") {
-                    input.type = "text";
-                    this.classList.remove("fa-eye");
-                    this.classList.add("fa-eye-slash");
-                } else {
-                    input.type = "password";
-                    this.classList.remove("fa-eye-slash");
-                    this.classList.add("fa-eye");
-                }
-            });
-        });
-        
-        // Initialize with one class assignment row
-        document.addEventListener('DOMContentLoaded', function() {
-            addClassAssignment();
-            document.getElementById('submitBtn').disabled = true;
-        });
-    </script>
+      <form method="POST" action="{{ url_for('add_teacher') }}" enctype="multipart/form-data" id="addTeacherForm">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+        <div style="padding:22px;display:grid;gap:20px">
+          <div class="af-grid">
+            <div class="af-field af-field--full">
+              <label class="af-label" for="teacherFullName"><span>Full Name<span class="af-req">*</span></span></label>
+              <div class="af-input-wrap">
+                <span class="af-input-ico">{{ ico('i-user', 'ct-ico--sm') }}</span>
+                <input type="text" id="teacherFullName" name="full_name" class="af-input af-input--ico" placeholder="e.g. Mrs. Grace Okonkwo" required autofocus>
+              </div>
+              <span class="af-help">Displayed across exams, live proctoring, and analytics reports.</span>
+            </div>
+
+            <div class="af-field">
+              <label class="af-label" for="teacherUsername"><span>Login Username<span class="af-req">*</span></span></label>
+              <div class="af-input-wrap">
+                <span class="af-input-ico">{{ ico('i-teacher', 'ct-ico--sm') }}</span>
+                <input type="text" id="teacherUsername" name="username" class="af-input af-input--ico" placeholder="e.g. grace_okonkwo" minlength="3" autocomplete="username" required>
+              </div>
+              <span class="af-help" id="teacherUserHint">Minimum 3 characters, unique across teachers.</span>
+            </div>
+
+            <div class="af-field">
+              <label class="af-label" for="teacherPassword">
+                <span>Password<span class="af-req">*</span></span>
+                <span id="teacherPassLabel" style="font-size:11.5px;color:var(--tc-ink-3)"></span>
+              </label>
+              <div class="af-input-wrap">
+                <span class="af-input-ico">{{ ico('i-lock', 'ct-ico--sm') }}</span>
+                <input type="password" id="teacherPassword" name="password" class="af-input af-input--ico af-input--trail" placeholder="Minimum 6 characters" minlength="6" autocomplete="new-password" required>
+                <button type="button" class="af-eye" onclick="toggleAddTeacherPass()" aria-label="Toggle password visibility">{{ ico('i-eye', 'ct-ico--sm') }}</button>
+              </div>
+              <div class="af-strength" id="teacherPassMeter" data-level="0" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
+            </div>
+          </div>
+
+          <!-- Teaching Assignments -->
+          <div class="af-assign-box">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
+              <div>
+                <strong style="display:block;font-size:13.5px;color:var(--tc-ink)">Teaching Class Assignments</strong>
+                <span class="af-help">Choose the classes and tracks this teacher will author exams for. "General" covers all tracks.</span>
+              </div>
+              <button type="button" class="tc-btn tc-btn--secondary tc-btn--sm" onclick="addTeacherClassRow()">{{ ico('i-plus', 'ct-ico--xs') }}Add Class</button>
+            </div>
+            <div id="teacherAssignContainer" style="display:grid;gap:10px"></div>
+          </div>
+
+          <!-- Optional Form Teacher Role -->
+          <div class="af-field">
+            <label class="af-label" for="classTeacherSelect"><span>Form Teacher / Class Teacher Assignment</span><span class="tc-pill">Optional</span></label>
+            <select name="class_teacher_of" id="classTeacherSelect" class="af-select">
+              <option value="">Not a Form Teacher</option>
+              {% for cls in school_classes %}
+              <option value="{{ cls }}">{{ cls }}</option>
+              {% endfor %}
+            </select>
+            <span class="af-help">Grants Student Progression access and full read-only result visibility for that class.</span>
+          </div>
+
+          <!-- Optional Profile Photo -->
+          <div class="af-field">
+            <label class="af-label" for="teacherPhoto"><span>Profile Photo</span><span class="tc-pill">Optional · Any size</span></label>
+            <div class="af-photo-row">
+              <span class="af-photo-preview" id="teacherPhotoPreview">{{ person_avatar('', 'Teacher preview', 'lg') }}</span>
+              <div style="flex:1;min-width:200px;display:grid;gap:6px">
+                <input type="file" name="photo" id="teacherPhoto" accept="image/*" style="font-size:13px;color:var(--tc-ink-2)" onchange="previewTeacherPhoto(this)">
+                <span class="af-help" id="teacherPhotoStatus">Optional. Full quality preserved with no file size limit.</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="af-foot">
+          <a href="/admin#sec-teachers" class="tc-btn tc-btn--ghost">Cancel</a>
+          <button type="submit" id="addTeacherSubmit" class="tc-btn tc-btn--primary">{{ ico('i-check-circle', 'ct-ico--sm') }}Create Teacher Account</button>
+        </div>
+      </form>
+    </section>
+  </div>
 
 {{ shell_end(role='admin') }}
+<script>
+(function () {
+  var CLASSES = {{ school_classes|tojson }};
+  var SPECS = ["General", "Science", "Art", "Commercial"];
+  var userTaken = false;
+  var checkTimer = null;
+
+  window.addTeacherClassRow = function (clsVal, specVal) {
+    var host = document.getElementById("teacherAssignContainer");
+    if (!host) return;
+    var row = document.createElement("div");
+    row.className = "af-assign-row";
+    var clsOpts = '<option value="">Select class…</option>' + CLASSES.map(function (c) {
+      return '<option value="' + CT.esc(c) + '"' + (c === clsVal ? " selected" : "") + '>' + CT.esc(c) + '</option>';
+    }).join("");
+    var specOpts = SPECS.map(function (s) {
+      return '<option value="' + CT.esc(s) + '"' + (s === (specVal || "General") ? " selected" : "") + '>' + CT.esc(s) + '</option>';
+    }).join("");
+    row.innerHTML =
+      '<select name="class_name" class="af-select" required>' + clsOpts + '</select>' +
+      '<select name="specialisation" class="af-select" required>' + specOpts + '</select>' +
+      '<button type="button" class="tc-btn tc-btn--ghost tc-btn--icon" style="color:var(--tc-bad)" aria-label="Remove assignment">' + CT.icon("i-trash", "ct-ico--sm") + '</button>';
+    row.querySelector("button").addEventListener("click", function () {
+      if (host.querySelectorAll(".af-assign-row").length <= 1) {
+        CT.toast("Keep at least one teaching class assignment.", "warn");
+        return;
+      }
+      row.remove();
+    });
+    host.appendChild(row);
+  };
+
+  window.toggleAddTeacherPass = function () {
+    var inp = document.getElementById("teacherPassword");
+    if (!inp) return;
+    inp.type = inp.type === "password" ? "text" : "password";
+  };
+
+  window.previewTeacherPhoto = function (input) {
+    var file = input.files && input.files[0];
+    var box = document.getElementById("teacherPhotoPreview");
+    var status = document.getElementById("teacherPhotoStatus");
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      input.value = "";
+      if (status) { status.textContent = "Please choose a valid image file."; status.className = "af-help af-help--bad"; }
+      return;
+    }
+    var r = new FileReader();
+    r.onload = function (ev) {
+      if (box) box.innerHTML = '<img src="' + ev.target.result + '" alt="Preview">';
+      if (status) { status.textContent = file.name + " (" + Math.max(1, Math.round(file.size / 1024)) + " KB) ready."; status.className = "af-help af-help--ok"; }
+    };
+    r.readAsDataURL(file);
+  };
+
+  var userInp = document.getElementById("teacherUsername");
+  var userHint = document.getElementById("teacherUserHint");
+  if (userInp) {
+    userInp.addEventListener("input", function () {
+      clearTimeout(checkTimer);
+      var val = userInp.value.trim();
+      userTaken = false;
+      if (val.length < 3) {
+        userHint.textContent = "Minimum 3 characters, unique across teachers.";
+        userHint.className = "af-help";
+        return;
+      }
+      checkTimer = setTimeout(async function () {
+        try {
+          var res = await fetch("/check_teacher_username?username=" + encodeURIComponent(val));
+          var d = await res.json();
+          userTaken = !!d.exists;
+          userHint.textContent = userTaken ? "This username is already taken." : "Username is available.";
+          userHint.className = "af-help " + (userTaken ? "af-help--bad" : "af-help--ok");
+        } catch (e) {}
+      }, 280);
+    });
+  }
+
+  var passInp = document.getElementById("teacherPassword");
+  var meter = document.getElementById("teacherPassMeter");
+  var passLbl = document.getElementById("teacherPassLabel");
+  if (passInp && meter) {
+    passInp.addEventListener("input", function () {
+      var v = passInp.value || "";
+      var lvl = 0;
+      if (v.length >= 6) lvl++;
+      if (v.length >= 9) lvl++;
+      if (/[A-Z]/.test(v) && /[a-z]/.test(v)) lvl++;
+      if (/\d/.test(v) || /[^A-Za-z0-9]/.test(v)) lvl++;
+      meter.setAttribute("data-level", String(lvl));
+      if (passLbl) passLbl.textContent = ["", "Weak", "Fair", "Good", "Strong"][lvl] || "";
+    });
+  }
+
+  var form = document.getElementById("addTeacherForm");
+  if (form) {
+    form.addEventListener("submit", function (e) {
+      if (userTaken) {
+        e.preventDefault();
+        CT.toast("Please choose an available teacher username.", "bad");
+      }
+    });
+  }
+
+  window.addTeacherClassRow(CLASSES[0] || "", "General");
+})();
+</script>
 </body>
 </html>
-

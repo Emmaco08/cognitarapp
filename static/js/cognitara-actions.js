@@ -51,7 +51,7 @@
                     document.body.appendChild(rack);
                 }
                 const toast = document.createElement('div');
-                toast.style.cssText = `padding:12px 20px;border-radius:10px;color:white;font-weight:600;font-size:14px;box-shadow:0 8px 20px rgba(0,0,0,0.15);pointer-events:auto;transition:all 0.3s;background:${type === 'success' ? '#10b981' : (type === 'error' || type === 'danger') ? '#ef4444' : '#3b82f6'};`;
+                toast.style.cssText = `padding:12px 20px;border-radius:10px;color:white;font-weight:600;font-size:14px;box-shadow:0 8px 20px rgba(0,0,0,0.15);pointer-events:auto;transition:all 0.3s;background:${type === 'success' ? '#171614' : (type === 'error' || type === 'danger') ? '#171614' : '#171614'};`;
                 toast.textContent = message;
                 rack.appendChild(toast);
                 setTimeout(() => {
@@ -71,7 +71,7 @@
                 message = 'This action cannot be undone.',
                 confirmText = 'Yes, Proceed',
                 cancelText = 'Cancel',
-                confirmColor = '#dc2626',
+                confirmColor = '#171614',
                 icon = 'warning',
                 tone = null
             } = options;
@@ -244,7 +244,7 @@
                     const method = el.getAttribute('data-method') || 'POST';
                     const confirmTitle = el.getAttribute('data-confirm-title');
                     const confirmMsg = el.getAttribute('data-confirm-msg');
-                    const confirmColor = el.getAttribute('data-confirm-color') || '#dc2626';
+                    const confirmColor = el.getAttribute('data-confirm-color') || '#171614';
 
                     let confirmConfig = null;
                     if (confirmTitle || confirmMsg) {

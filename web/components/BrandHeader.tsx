@@ -3,20 +3,12 @@
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { IconMoon, IconSun } from "./Icons";
+import { CogniTaraLockup, CogniTaraMark, ResurfMenuIcon } from "./CogniTaraLogo";
 
-export function BrandMark() {
+export function BrandMark({ size = 24 }: { size?: number }) {
   return (
-    <span className="ct-brand__icon" aria-hidden="true">
-      <svg width="20" height="20" viewBox="0 0 200 200">
-        <path
-          fill="#FFFFFF"
-          d="M 150.91,150.91 C 122.79,179.03 77.21,179.03 49.09,150.91 C 20.97,122.79 20.97,77.21 49.09,49.09 C 77.21,20.97 122.79,20.97 150.91,49.09 L 131.11,68.89 C 113.93,51.70 86.07,51.70 68.89,68.89 C 51.70,86.07 51.70,113.93 68.89,131.11 C 86.07,148.30 113.93,148.30 131.11,131.11 Z"
-        />
-        <path
-          fill="#3B82F6"
-          d="M 108.00,74.00 C 115.00,93.00 115.00,93.00 146.00,100.00 C 115.00,107.00 115.00,107.00 108.00,126.00 C 101.00,107.00 101.00,107.00 90.00,100.00 C 101.00,93.00 101.00,93.00 108.00,74.00 Z"
-        />
-      </svg>
+    <span className="ct-brand__mark" aria-hidden="true">
+      <CogniTaraMark size={size} />
     </span>
   );
 }
@@ -30,18 +22,28 @@ export function BrandHeader({
   isHq?: boolean;
   variant?: "default" | "hero";
 }) {
-  const [theme, setTheme] = useState<"dark" | "light">("dark");
+  const [theme, setTheme] = useState<"dark" | "light">("light");
   const [scrolled, setScrolled] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
     const cur = document.documentElement.getAttribute("data-theme");
-    setTheme(cur === "light" ? "light" : "dark");
+    setTheme(cur === "dark" ? "dark" : "light");
     if (variant !== "hero") return;
     const onScroll = () => setScrolled(window.scrollY > 18);
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, [variant]);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setMenuOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [menuOpen]);
 
   function toggleTheme() {
     const next = theme === "dark" ? "light" : "dark";
@@ -60,30 +62,20 @@ export function BrandHeader({
   return (
     <header className={navClass}>
       <div className="ct-nav__inner">
-        <Link href="/" className="ct-brand">
-          <BrandMark />
-          <span className="ct-brand__name">
-            Cogni<em>Tara</em>
-          </span>
+        <Link href="/" className="ct-brand" aria-label="CogniTara home">
+          <CogniTaraLockup markSize={24} wordmarkHeight={15} />
         </Link>
 
         <nav className="ct-nav__links" aria-label="Primary navigation">
-          {variant === "hero" ? (
-            <>
-              <a href="#architecture" className="ct-nav__link">
-                How it works
-              </a>
-              <a href="#reviews" className="ct-nav__link">
-                Reviews
-              </a>
-              <a href="#pricing" className="ct-nav__link">
-                Pricing
-              </a>
-              <a href="#team" className="ct-nav__link">
-                Team
-              </a>
-            </>
-          ) : null}
+          <div className="ct-nav__anchors">
+            <Link href="/download" className="ct-nav__link">
+              Download
+            </Link>
+            <Link href="/license" className="ct-nav__link">
+              Pricing
+            </Link>
+          </div>
+
           <button
             type="button"
             className="ct-nav__theme"
@@ -93,27 +85,63 @@ export function BrandHeader({
             {theme === "dark" ? <IconSun size={15} /> : <IconMoon size={15} />}
             <span className="ct-nav__theme-lbl">{theme === "dark" ? "Light" : "Dark"}</span>
           </button>
+
           {isHq ? (
             <Link href="/hq" className="ct-nav__link">
               Admin Console
             </Link>
           ) : null}
+
           {signedIn ? (
             <Link href="/dashboard" className="btn btn--primary btn--sm">
               Dashboard
             </Link>
           ) : (
             <>
-              <Link href="/signin" className="ct-nav__link">
+              <Link href="/signin" className="ct-nav__link ct-nav__signin">
                 Sign in
               </Link>
-              <Link href="/signup" className="btn btn--primary btn--sm">
-                Get started
+              <Link href="/signup" className="btn btn--primary btn--sm ct-nav__cta">
+                Create account
               </Link>
             </>
           )}
+
+          {variant === "hero" ? (
+            <button
+              type="button"
+              className="ct-nav__burger"
+              aria-expanded={menuOpen}
+              aria-controls="ct-mobile-menu"
+              aria-label={menuOpen ? "Close navigation menu" : "Open navigation menu"}
+              onClick={() => setMenuOpen((o) => !o)}
+            >
+              {menuOpen ? (
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" aria-hidden="true">
+                  <path d="M18 6 6 18M6 6l12 12" />
+                </svg>
+              ) : (
+                <ResurfMenuIcon size={19} />
+              )}
+            </button>
+          ) : null}
         </nav>
       </div>
+
+      {variant === "hero" && menuOpen ? (
+        <div id="ct-mobile-menu" className="ct-mobile-drawer" role="dialog" aria-label="Mobile navigation">
+          <Link href="/download" onClick={() => setMenuOpen(false)}>Download</Link>
+          <Link href="/license" onClick={() => setMenuOpen(false)}>Pricing</Link>
+          <div className="ct-mobile-drawer__actions">
+            <Link href="/signin" className="btn btn--outline" onClick={() => setMenuOpen(false)}>
+              Sign in
+            </Link>
+            <Link href="/signup" className="btn btn--primary" onClick={() => setMenuOpen(false)}>
+              Create account
+            </Link>
+          </div>
+        </div>
+      ) : null}
     </header>
   );
 }

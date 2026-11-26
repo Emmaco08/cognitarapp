@@ -17,11 +17,11 @@
         
         .settings-container { max-width: 1400px; margin: 0 auto; padding: 40px 30px; position: relative; z-index: 10; }
         
-        .edu-icon { position: absolute; color: rgba(139, 92, 246, 0.05); pointer-events: none; z-index: 0; animation: floatIcon 20s infinite ease-in-out; }
+        .edu-icon { position: absolute; color: rgba(23, 22, 20, 0.05); pointer-events: none; z-index: 0; animation: floatIcon 20s infinite ease-in-out; }
         @keyframes floatIcon { 0% { transform: translate(0, 0) rotate(0deg); opacity: 0; } 10% { opacity: 0.08; } 90% { opacity: 0.08; } 100% { transform: translate(100px, -100px) rotate(360deg); opacity: 0; } }
         
         .page-header { text-align: center; margin-bottom: 30px; }
-        .logo-icon { width: 80px; height: 80px; background: var(--ct-brand-grad); border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 20px; animation: pulse 2s infinite; box-shadow: 0 10px 25px rgba(139, 92, 246, 0.2); }
+        .logo-icon { width: 80px; height: 80px; background: var(--ct-brand-grad); border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 20px; animation: pulse 2s infinite; box-shadow: 0 10px 25px rgba(23, 22, 20, 0.2); }
         @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
         .logo-icon i { font-size: 40px; color: white; }
         .page-header h1 { font-size: 32px; font-weight: 800; background: var(--ct-brand-grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 8px; }
@@ -38,19 +38,19 @@
         .form-label { font-weight: 600; color: var(--ct-ink); margin-bottom: 8px; display: block; font-size: 13px; }
         .form-label i { margin-right: 6px; color: var(--ct-primary); }
         .form-control-custom { width: 100%; padding: 12px 15px; border: 2px solid var(--ct-line-2); border-radius: 12px; font-size: 14px; transition: all 0.3s; background: var(--ct-surface); }
-        .form-control-custom:focus { outline: none; border-color: var(--ct-primary); background: var(--ct-surface); box-shadow: 0 0 0 3px rgba(139,92,246,0.1); }
+        .form-control-custom:focus { outline: none; border-color: var(--ct-primary); background: var(--ct-surface); box-shadow: 0 0 0 3px rgba(23, 22, 20,0.1); }
         
-        .btn-save { background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; border: none; padding: 12px 28px; border-radius: 14px; font-weight: 600; cursor: pointer; transition: all 0.3s; display: inline-flex; align-items: center; gap: 8px; font-size: 14px; }
-        .btn-save:hover { transform: translateY(-2px); box-shadow: 0 8px 20px -5px rgba(16,185,129,0.4); }
+        .btn-save { background: linear-gradient(135deg, #575551 0%, #2B2926 100%); color: white; border: none; padding: 12px 28px; border-radius: 14px; font-weight: 600; cursor: pointer; transition: all 0.3s; display: inline-flex; align-items: center; gap: 8px; font-size: 14px; }
+        .btn-save:hover { transform: translateY(-2px); box-shadow: 0 8px 20px -5px rgba(23, 22, 20,0.4); }
         .btn-add { background: var(--ct-brand-grad); color: white; border: none; padding: 10px 22px; border-radius: 12px; font-weight: 600; font-size: 14px; cursor: pointer; transition: all 0.3s; display: inline-flex; align-items: center; gap: 8px; }
-        .btn-add:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(139,92,246,0.3); }
+        .btn-add:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(23, 22, 20,0.3); }
         .btn-add:disabled, .btn-save:disabled, .update-section-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
         
         /* Section Cards */
         .sections-list { display: flex; flex-direction: column; gap: 16px; }
         .section-card { background: var(--ct-surface); border-radius: 18px; border: 1px solid var(--ct-line-2); overflow: hidden; transition: all 0.3s; }
         .section-card:hover { border-color: var(--ct-primary); box-shadow: 0 5px 15px rgba(0,0,0,0.05); }
-        .section-card.deactivated { opacity: 0.65; background: var(--ct-bad-soft); border-color: #fecaca; }
+        .section-card.deactivated { opacity: 0.65; background: var(--ct-bad-soft); border-color: #F3F2F0; }
         .section-card.deactivated .section-header { background: #fff5f5; }
         .section-header { padding: 16px 20px; background: var(--ct-surface); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; cursor: pointer; transition: all 0.2s; }
         .section-header:hover { background: #faf5ff; }
@@ -60,9 +60,9 @@
         .section-stats { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
         .stat-chip { background: var(--ct-surface); padding: 4px 12px; border-radius: 20px; font-size: 11px; color: var(--ct-ink-2); display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
         .stat-chip i { font-size: 10px; color: var(--ct-primary); }
-        .stat-chip.deactivated-badge { background: var(--ct-bad-soft); color: #ef4444; }
-        .stat-chip.deactivated-badge i { color: #ef4444; }
-        .section-toggle i { color: #94a3b8; transition: transform 0.3s; }
+        .stat-chip.deactivated-badge { background: var(--ct-bad-soft); color: #2B2926; }
+        .stat-chip.deactivated-badge i { color: #2B2926; }
+        .section-toggle i { color: #D6D4CF; transition: transform 0.3s; }
         .section-card.expanded .section-toggle i { transform: rotate(180deg); }
         
         .section-body { padding: 0 20px 20px 20px; display: none; }
@@ -92,34 +92,34 @@
             text-decoration: none;
         }
         .btn-manage-questions { 
-            background: linear-gradient(135deg, #3b82f6 0%, var(--ct-primary) 100%); 
+            background: linear-gradient(135deg, #575551 0%, var(--ct-primary) 100%); 
             color: white; 
         }
         .btn-manage-questions:hover { 
             background: var(--ct-brand-grad); 
             transform: translateY(-2px); 
-            box-shadow: 0 4px 10px rgba(59,130,246,0.3);
+            box-shadow: 0 4px 10px rgba(23, 22, 20,0.3);
             color: white;
         }
         .btn-manage-groups { 
-            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); 
+            background: linear-gradient(135deg, #D6D4CF 0%, #575551 100%); 
             color: white; 
         }
         .btn-manage-groups:hover { 
-            background: linear-gradient(135deg, #d97706 0%, #b45309 100%); 
+            background: linear-gradient(135deg, #575551 0%, #2B2926 100%); 
             transform: translateY(-2px); 
-            box-shadow: 0 4px 10px rgba(245,158,11,0.3);
+            box-shadow: 0 4px 10px rgba(23, 22, 20,0.3);
             color: white;
         }
         .btn-delete-section { 
-            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); 
+            background: linear-gradient(135deg, #2B2926 0%, #2B2926 100%); 
             color: white; 
             border: none;
         }
         .btn-delete-section:hover { 
-            background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%); 
+            background: linear-gradient(135deg, #2B2926 0%, #171614 100%); 
             transform: translateY(-2px); 
-            box-shadow: 0 4px 10px rgba(239,68,68,0.3);
+            box-shadow: 0 4px 10px rgba(23, 22, 20,0.3);
             color: white;
         }
         
@@ -138,22 +138,22 @@
             margin-right: auto;
         }
         .btn-deactivate {
-            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            background: linear-gradient(135deg, #D6D4CF 0%, #575551 100%);
             color: white;
         }
         .btn-deactivate:hover {
-            background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
+            background: linear-gradient(135deg, #575551 0%, #2B2926 100%);
             transform: translateY(-2px);
-            box-shadow: 0 4px 10px rgba(245,158,11,0.3);
+            box-shadow: 0 4px 10px rgba(23, 22, 20,0.3);
         }
         .btn-activate {
-            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            background: linear-gradient(135deg, #575551 0%, #2B2926 100%);
             color: white;
         }
         .btn-activate:hover {
-            background: linear-gradient(135deg, #059669 0%, #047857 100%);
+            background: linear-gradient(135deg, #2B2926 0%, #2B2926 100%);
             transform: translateY(-2px);
-            box-shadow: 0 4px 10px rgba(16,185,129,0.3);
+            box-shadow: 0 4px 10px rgba(23, 22, 20,0.3);
         }
         
         .btn-back { display: inline-flex; align-items: center; gap: 8px; background: var(--ct-surface); border: 2px solid var(--ct-line-2); padding: 10px 25px; border-radius: 12px; text-decoration: none; color: var(--ct-ink-3); font-weight: 600; transition: all 0.3s; }
@@ -178,15 +178,15 @@
             box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1);
             z-index: 1000;
             animation: slideInRight 0.3s ease;
-            border-left: 4px solid #10b981;
+            border-left: 4px solid #575551;
         }
-        .toast-notification.error { border-left-color: #ef4444; }
-        .toast-notification.error i { color: #ef4444; }
+        .toast-notification.error { border-left-color: #2B2926; }
+        .toast-notification.error i { color: #2B2926; }
         @keyframes slideInRight {
             from { transform: translateX(100%); opacity: 0; }
             to { transform: translateX(0); opacity: 1; }
         }
-        .toast-notification i { font-size: 18px; color: #10b981; }
+        .toast-notification i { font-size: 18px; color: #575551; }
         .toast-notification span { font-size: 13px; color: var(--ct-ink); }
         
        /* ============ PREMIUM DELETE MODAL ============ */
@@ -231,13 +231,13 @@
 .modal-icon-wrapper {
     width: 60px;
     height: 60px;
-    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    background: linear-gradient(135deg, #2B2926 0%, #2B2926 100%);
     border-radius: 50%;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     margin-bottom: 10px;
-    box-shadow: 0 6px 15px -3px rgba(239, 68, 68, 0.4);
+    box-shadow: 0 6px 15px -3px rgba(23, 22, 20, 0.4);
     animation: iconPulse 0.4s ease;
 }
 @keyframes iconPulse {
@@ -251,12 +251,12 @@
 .premium-modal-header h3 {
     font-size: 20px;
     font-weight: 800;
-    color: #991b1b;
+    color: #171614;
     margin-bottom: 4px;
 }
 .premium-modal-header p {
     font-size: 12px;
-    color: #7f1d1d;
+    color: #171614;
     opacity: 0.8;
     margin: 0;
 }
@@ -268,12 +268,12 @@
     border-radius: 16px;
     padding: 12px 16px;
     margin-bottom: 12px;
-    border-left: 4px solid #ef4444;
+    border-left: 4px solid #2B2926;
 }
 .warning-card .section-name {
     font-size: 14px;
     font-weight: 700;
-    color: #991b1b;
+    color: #171614;
     background: var(--ct-surface);
     padding: 6px 12px;
     border-radius: 10px;
@@ -289,7 +289,7 @@
     align-items: center;
     gap: 10px;
     padding: 8px 0;
-    border-bottom: 1px solid #fee2e2;
+    border-bottom: 1px solid #F8F8F8;
 }
 .consequence-item:last-child { border-bottom: none; }
 .consequence-icon {
@@ -302,8 +302,8 @@
     justify-content: center;
 }
 .consequence-icon i { font-size: 12px; }
-.consequence-icon.warning { color: #ef4444; }
-.consequence-icon.info { color: #f59e0b; }
+.consequence-icon.warning { color: #2B2926; }
+.consequence-icon.info { color: #D6D4CF; }
 .consequence-text { flex: 1; }
 .consequence-text strong { font-size: 12px; color: var(--ct-ink); display: block; }
 .consequence-text span { font-size: 10px; color: var(--ct-ink-3); }
@@ -339,13 +339,13 @@
     transform: translateY(-1px);
 }
 .modal-btn-delete {
-    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    background: linear-gradient(135deg, #2B2926 0%, #2B2926 100%);
     color: white;
-    box-shadow: 0 3px 8px rgba(239, 68, 68, 0.3);
+    box-shadow: 0 3px 8px rgba(23, 22, 20, 0.3);
 }
 .modal-btn-delete:hover {
     transform: translateY(-1px);
-    box-shadow: 0 5px 12px rgba(239, 68, 68, 0.4);
+    box-shadow: 0 5px 12px rgba(23, 22, 20, 0.4);
 }
 .modal-btn-delete:disabled {
     opacity: 0.6;
@@ -666,8 +666,8 @@
             <div class="premium-modal-body">
                 <div class="warning-card">
                     <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
-                        <i class="fas fa-folder-open" style="color: #ef4444;"></i>
-                        <span style="font-weight: 600; color: #991b1b;">Section to be deleted:</span>
+                        <i class="fas fa-folder-open" style="color: #2B2926;"></i>
+                        <span style="font-weight: 600; color: #171614;">Section to be deleted:</span>
                     </div>
                     <div class="section-name" id="deleteSectionName">Loading...</div>
                 </div>

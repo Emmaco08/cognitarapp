@@ -29,24 +29,24 @@
         
         /* Question Cards */
         .question-card { background: var(--ct-surface); border-radius: 16px; padding: 20px; margin-bottom: 15px; border: 1px solid var(--ct-line-2); transition: all 0.3s; }
-        .question-card.correct { border-left: 4px solid #10b981; }
-        .question-card.incorrect { border-left: 4px solid #ef4444; }
+        .question-card.correct { border-left: 4px solid #575551; }
+        .question-card.incorrect { border-left: 4px solid #2B2926; }
         .question-card:hover { transform: translateX(5px); box-shadow: 0 5px 15px rgba(0,0,0,0.05); }
         
         /* Badges */
-        .badge-correct { background: var(--ct-ok-soft); color: #065f46; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 600; }
-        .badge-incorrect { background: var(--ct-bad-soft); color: #991b1b; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 600; }
-        .badge-pending { background: var(--ct-warn-soft); color: #d97706; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+        .badge-correct { background: var(--ct-ok-soft); color: #171614; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+        .badge-incorrect { background: var(--ct-bad-soft); color: #171614; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+        .badge-pending { background: var(--ct-warn-soft); color: #575551; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 600; }
         
         /* Buttons */
         .btn-back { background: var(--ct-surface); border: 2px solid var(--ct-line-2); padding: 10px 25px; border-radius: 12px; color: var(--ct-ink-3); text-decoration: none; display: inline-flex; align-items: center; gap: 8px; transition: all 0.3s; }
         .btn-back:hover { border-color: var(--ct-primary); color: var(--ct-primary); transform: translateY(-2px); }
-        .btn-approve { background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; border: none; padding: 12px 24px; border-radius: 12px; font-weight: 600; cursor: pointer; transition: all 0.3s; }
-        .btn-approve:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(16,185,129,0.3); }
-        .btn-reject { background: var(--ct-surface); border: 2px solid #ef4444; color: #ef4444; padding: 10px 22px; border-radius: 12px; font-weight: 600; cursor: pointer; transition: all 0.3s; }
-        .btn-reject:hover { background: #ef4444; color: white; transform: translateY(-2px); }
-        .btn-export { background: #3b82f6; color: white; border: none; padding: 10px 20px; border-radius: 10px; cursor: pointer; transition: all 0.3s; display: inline-flex; align-items: center; gap: 8px; }
-        .btn-export:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(59,130,246,0.3); }
+        .btn-approve { background: linear-gradient(135deg, #575551 0%, #2B2926 100%); color: white; border: none; padding: 12px 24px; border-radius: 12px; font-weight: 600; cursor: pointer; transition: all 0.3s; }
+        .btn-approve:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(23, 22, 20,0.3); }
+        .btn-reject { background: var(--ct-surface); border: 2px solid #2B2926; color: #2B2926; padding: 10px 22px; border-radius: 12px; font-weight: 600; cursor: pointer; transition: all 0.3s; }
+        .btn-reject:hover { background: #2B2926; color: white; transform: translateY(-2px); }
+        .btn-export { background: #575551; color: white; border: none; padding: 10px 20px; border-radius: 10px; cursor: pointer; transition: all 0.3s; display: inline-flex; align-items: center; gap: 8px; }
+        .btn-export:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(23, 22, 20,0.3); }
         
         /* Filter Buttons */
         .filter-buttons { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
@@ -188,32 +188,32 @@
             </div>
             <div style="text-align: center;">
                 {% if attempt_status == 'approved' %}
-                    <div class="score-ring" style="background: conic-gradient(from 0deg, #10b981 0deg, #10b981 {{ score_percentage * 3.6 }}deg, #e2e8f0 {{ score_percentage * 3.6 }}deg);">
+                    <div class="score-ring" style="background: conic-gradient(from 0deg, #575551 0deg, #575551 {{ score_percentage * 3.6 }}deg, #e2e8f0 {{ score_percentage * 3.6 }}deg);">
                         <div class="score-ring-inner">
-                            <span style="font-size: 36px; font-weight: 800; color: #10b981;">{{ score_percentage }}%</span>
-                            <span style="font-size: 12px; color: #64748b;">Score</span>
+                            <span style="font-size: 36px; font-weight: 800; color: #575551;">{{ score_percentage }}%</span>
+                            <span style="font-size: 12px; color: #2B2926;">Score</span>
                         </div>
                     </div>
                     <div><span class="badge-correct"><i class="fas fa-check-circle"></i> Approved</span></div>
                 {% elif attempt_status == 'pending' %}
-                    <div class="score-ring" style="background: conic-gradient(from 0deg, #f59e0b 0deg, #f59e0b {{ score_percentage * 3.6 }}deg, #e2e8f0 {{ score_percentage * 3.6 }}deg);">
+                    <div class="score-ring" style="background: conic-gradient(from 0deg, #D6D4CF 0deg, #D6D4CF {{ score_percentage * 3.6 }}deg, #e2e8f0 {{ score_percentage * 3.6 }}deg);">
                         <div class="score-ring-inner">
-                            <span style="font-size: 36px; font-weight: 800; color: #f59e0b;">{{ score_percentage }}%</span>
-                            <span style="font-size: 12px; color: #64748b;">Score</span>
+                            <span style="font-size: 36px; font-weight: 800; color: #D6D4CF;">{{ score_percentage }}%</span>
+                            <span style="font-size: 12px; color: #2B2926;">Score</span>
                         </div>
                     </div>
                     <div><span class="badge-pending"><i class="fas fa-hourglass-half"></i> Pending Review</span></div>
                 {% elif attempt_status == 'rejected' %}
-                    <div class="score-ring" style="background: conic-gradient(from 0deg, #ef4444 0deg, #ef4444 {{ score_percentage * 3.6 }}deg, #e2e8f0 {{ score_percentage * 3.6 }}deg);">
+                    <div class="score-ring" style="background: conic-gradient(from 0deg, #2B2926 0deg, #2B2926 {{ score_percentage * 3.6 }}deg, #e2e8f0 {{ score_percentage * 3.6 }}deg);">
                         <div class="score-ring-inner">
-                            <span style="font-size: 36px; font-weight: 800; color: #ef4444;">{{ score_percentage }}%</span>
-                            <span style="font-size: 12px; color: #64748b;">Score</span>
+                            <span style="font-size: 36px; font-weight: 800; color: #2B2926;">{{ score_percentage }}%</span>
+                            <span style="font-size: 12px; color: #2B2926;">Score</span>
                         </div>
                     </div>
                     <div><span class="badge-incorrect"><i class="fas fa-times-circle"></i> Rejected</span></div>
                 {% else %}
                     <div style="background: #e2e8f0; border-radius: 60px; padding: 20px; text-align: center;">
-                        <i class="fas fa-clock" style="font-size: 48px; color: #64748b;"></i>
+                        <i class="fas fa-clock" style="font-size: 48px; color: #2B2926;"></i>
                         <p class="mt-2">Not Started Yet</p>
                     </div>
                 {% endif %}
@@ -225,7 +225,7 @@
     {% if attempt_status == 'pending' %}
     <div class="row mb-4">
         <div class="col-12">
-            <div class="stat-card" style="text-align: center; background: #fef3c7; border-color: #f59e0b;">
+            <div class="stat-card" style="text-align: center; background: #F8F8F8; border-color: #D6D4CF;">
                 <h4><i class="fas fa-user-check"></i> Pending Approval</h4>
                 <p>Review this student's exam performance and decide</p>
                 <div style="display: flex; gap: 15px; justify-content: center; margin-top: 15px;">
@@ -242,28 +242,28 @@
     <div class="row mb-4">
         <div class="col-md-3 col-sm-6 mb-3">
             <div class="stat-card">
-                <i class="fas fa-check-circle" style="color: #10b981;"></i>
+                <i class="fas fa-check-circle" style="color: #575551;"></i>
                 <h3>{{ correct_count }}</h3>
                 <p>Correct Answers</p>
             </div>
         </div>
         <div class="col-md-3 col-sm-6 mb-3">
             <div class="stat-card">
-                <i class="fas fa-times-circle" style="color: #ef4444;"></i>
+                <i class="fas fa-times-circle" style="color: #2B2926;"></i>
                 <h3>{{ incorrect_count }}</h3>
                 <p>Incorrect Answers</p>
             </div>
         </div>
         <div class="col-md-3 col-sm-6 mb-3">
             <div class="stat-card">
-                <i class="fas fa-clock" style="color: #3b82f6;"></i>
+                <i class="fas fa-clock" style="color: #575551;"></i>
                 <h3>{{ (total_time_spent/60)|round(1) }} min</h3>
                 <p>Total Time on Questions</p>
             </div>
         </div>
         <div class="col-md-3 col-sm-6 mb-3">
             <div class="stat-card">
-                <i class="fas fa-hourglass-half" style="color: #f59e0b;"></i>
+                <i class="fas fa-hourglass-half" style="color: #D6D4CF;"></i>
                 <h3>{{ avg_time_per_question }}s</h3>
                 <p>Avg Time per Question</p>
             </div>
@@ -277,16 +277,16 @@
             <div><strong><i class="fas fa-tachometer-alt"></i> Student Score:</strong> {{ score_percentage }}%</div>
             <div><strong><i class="fas fa-chart-line"></i> Difference:</strong> 
                 {% if score_percentage > class_avg %}
-                    <span style="color: #10b981;">+{{ (score_percentage - class_avg)|round(1) }}%</span>
+                    <span style="color: #575551;">+{{ (score_percentage - class_avg)|round(1) }}%</span>
                 {% elif score_percentage < class_avg %}
-                    <span style="color: #ef4444;">{{ (score_percentage - class_avg)|round(1) }}%</span>
+                    <span style="color: #2B2926;">{{ (score_percentage - class_avg)|round(1) }}%</span>
                 {% else %}
                     {{ (score_percentage - class_avg)|round(1) }}%
                 {% endif %}
             </div>
         </div>
         <div class="progress-custom">
-            <div class="progress-fill" style="width: {{ score_percentage }}%; background: {% if score_percentage >= 70 %}#10b981{% elif score_percentage >= 50 %}#f59e0b{% else %}#ef4444{% endif %};"></div>
+            <div class="progress-fill" style="width: {{ score_percentage }}%; background: {% if score_percentage >= 70 %}#575551{% elif score_percentage >= 50 %}#D6D4CF{% else %}#2B2926{% endif %};"></div>
         </div>
     </div>
     
@@ -343,7 +343,7 @@
     
     {% elif attempt_status == 'not_started' %}
     <div class="stat-card text-center" style="padding: 60px;">
-        <i class="fas fa-hourglass-start" style="font-size: 60px; color: #94a3b8;"></i>
+        <i class="fas fa-hourglass-start" style="font-size: 60px; color: #D6D4CF;"></i>
         <h3 class="mt-3">Student Has Not Started the Exam</h3>
         <p>This student has registered but hasn't taken the exam yet.</p>
     </div>

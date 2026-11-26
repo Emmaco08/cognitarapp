@@ -324,12 +324,12 @@
 
         const grad = splashCtx.createRadialGradient(cx, cy, 8, cx, cy, Math.max(w, h) * 0.52);
         if (dark) {
-          grad.addColorStop(0, "rgba(0, 210, 255, 0.13)");
-          grad.addColorStop(0.45, "rgba(0, 102, 255, 0.06)");
+          grad.addColorStop(0, "rgba(23, 22, 20, 0.13)");
+          grad.addColorStop(0.45, "rgba(23, 22, 20, 0.06)");
           grad.addColorStop(1, "rgba(13, 18, 27, 0)");
         } else {
-          grad.addColorStop(0, "rgba(0, 102, 255, 0.10)");
-          grad.addColorStop(0.5, "rgba(0, 210, 255, 0.05)");
+          grad.addColorStop(0, "rgba(23, 22, 20, 0.10)");
+          grad.addColorStop(0.5, "rgba(23, 22, 20, 0.05)");
           grad.addColorStop(1, "rgba(255, 255, 255, 0)");
         }
         splashCtx.fillStyle = grad;
@@ -744,11 +744,11 @@
         const dark = isDarkActive();
         const strokeColor = state.engineRunning
           ? dark
-            ? "#00D2FF"
-            : "#0066FF"
+            ? "#A8A6A1"
+            : "#171614"
           : dark
-            ? "#475569"
-            : "#94A3B8";
+            ? "#171614"
+            : "#A8A6A1";
 
         waveCtx.beginPath();
         const step = w / (waveSamples.length - 1);
@@ -771,9 +771,9 @@
           0,
           state.engineRunning
             ? dark
-              ? "rgba(0, 210, 255, 0.22)"
-              : "rgba(0, 102, 255, 0.16)"
-            : "rgba(148, 163, 184, 0.05)"
+              ? "rgba(23, 22, 20, 0.22)"
+              : "rgba(23, 22, 20, 0.16)"
+            : "rgba(23, 22, 20, 0.05)"
         );
         fillGrad.addColorStop(1, "rgba(0, 0, 0, 0)");
         waveCtx.fillStyle = fillGrad;
@@ -846,7 +846,7 @@
       }
     }
 
-    host.innerHTML = `<svg viewBox="0 0 ${size} ${size}" fill="#0A0E1A" shape-rendering="crispEdges" role="img" aria-label="LAN QR code for ${urlText}">${rects.join("")}</svg>`;
+    host.innerHTML = `<svg viewBox="0 0 ${size} ${size}" fill="#171614" shape-rendering="crispEdges" role="img" aria-label="LAN QR code for ${urlText}">${rects.join("")}</svg>`;
   }
 
   /* ------------------------------------------------------------------------

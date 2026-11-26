@@ -274,7 +274,7 @@ function createWindow(): void {
     closable: true,
     center: true,
     show: false,
-    backgroundColor: settings.theme === "light" ? "#F6F8FC" : "#0A0E1A",
+    backgroundColor: settings.theme === "dark" ? "#111112" : "#EFEFEF",
     icon: fs.existsSync(iconFile) ? iconFile : undefined,
     webPreferences: {
       preload: path.resolve(__dirname, "..", "preload", "index.js"),
@@ -778,24 +778,63 @@ function registerIpcHandlers(): void {
   });
 
   ipcMain.handle("setup:school", async (_evt, payload) => {
-    const res = await engine!.callInternal("POST", "/setup/school", payload);
-    return res.data;
+    const res = await engine!.callInternal<any>("POST", "/setup/school", payload);
+    if (!res.data?.ok) return res.data;
+
+    let cloudSynced = false;
+    let cloudSyncMessage = "";
+    if (cloudAuth && cloudAuth.getSession().signedIn) {
+      const lic = await engine?.getLicenseStatus().catch(() => null);
+      const syncRes = await cloudAuth
+        .syncSchoolProfileToCloud({
+          school_name: res.data.school?.school_name || payload?.school_name,
+          school_motto: res.data.school?.school_motto ?? payload?.school_motto,
+          academic_session: res.data.school?.academic_session || payload?.academic_session,
+          current_term: res.data.school?.current_term || payload?.current_term,
+          logo_data_url: payload?.remove_logo ? null : (res.data.school?.logo_data_url || payload?.logo_data_url || undefined),
+          remove_logo: Boolean(payload?.remove_logo),
+          last_lan_ip: settings.selectedLanIp || undefined,
+          display_hwid: lic?.display_hwid || undefined,
+        })
+        .catch(() => ({ ok: false, message: "Offline — saved locally." }));
+      cloudSynced = Boolean(syncRes?.ok);
+      cloudSyncMessage = syncRes?.message || "";
+      if (cloudSynced && mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send("cloud:sessionChanged", cloudAuth.getSession());
+      }
+    }
+    return {
+      ...res.data,
+      cloud_synced: cloudSynced,
+      cloud_message: cloudSyncMessage,
+    };
   });
 
   ipcMain.handle("setup:superadmin", async (_evt, payload) => {
-    const res = await engine!.callInternal("POST", "/setup/superadmin", payload);
+    const res = await engine!.callInternal<any>("POST", "/setup/superadmin", payload);
     if (res.data?.ok) {
       settings = saveSettings({
         ...settings,
         adminFullName: String(payload?.full_name || settings.adminFullName || ""),
         adminUsername: String(payload?.username || settings.adminUsername || "superadmin"),
       });
+      if (cloudAuth && cloudAuth.getSession().signedIn) {
+        const lic = await engine?.getLicenseStatus().catch(() => null);
+        await cloudAuth
+          .syncSchoolProfileToCloud({
+            admin_full_name: settings.adminFullName || undefined,
+            admin_username: settings.adminUsername || undefined,
+            last_lan_ip: settings.selectedLanIp || undefined,
+            display_hwid: lic?.display_hwid || undefined,
+          })
+          .catch(() => {});
+      }
     }
     return res.data;
   });
 
   ipcMain.handle("setup:complete", async (_evt, payload?: { selectedLanIp?: string }) => {
-    // Enforce online-first school registration / sign-in on first onboarding!
+    // Enforce fully online school onboarding so account + all details appear in CogniTara HQ!
     const sess = cloudAuth?.getSession();
     if (!sess || !sess.signedIn || !sess.user) {
       return {
@@ -811,13 +850,45 @@ function registerIpcHandlers(): void {
         message: "Verify your 6-digit email OTP code before completing onboarding.",
       };
     }
+
+    const chosenLanIp = payload?.selectedLanIp || settings.selectedLanIp || undefined;
+    const setupRes = await engine?.callInternal<any>("GET", "/setup/status").catch(() => null);
+    const school = setupRes?.data?.school || {};
+    const lic = await engine?.getLicenseStatus().catch(() => null);
+
+    const cloudSync = await cloudAuth!.syncSchoolProfileToCloud({
+      school_name: school.school_name || sess.school?.school_name || undefined,
+      school_motto: school.school_motto ?? undefined,
+      academic_session: school.academic_session || undefined,
+      current_term: school.current_term || undefined,
+      logo_data_url: school.logo_data_url || undefined,
+      admin_full_name: settings.adminFullName || sess.user.full_name || undefined,
+      admin_username: settings.adminUsername || "superadmin",
+      onboarding_completed: true,
+      last_lan_ip: chosenLanIp || setupRes?.data?.network?.primary_lan_ip || undefined,
+      display_hwid: lic?.display_hwid || undefined,
+    });
+
+    if (!cloudSync.ok) {
+      return {
+        ok: false,
+        error: cloudSync.error || "onboarding_sync_required",
+        message:
+          cloudSync.message ||
+          "An active internet connection is required to finish onboarding and register your school profile with CogniTara Cloud.",
+      };
+    }
+
     settings = saveSettings({
       ...settings,
       onboardingComplete: true,
-      selectedLanIp: payload?.selectedLanIp || settings.selectedLanIp,
+      selectedLanIp: chosenLanIp || settings.selectedLanIp,
     });
     engine!.updateSettings(settings);
-    return { ok: true, settings };
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send("cloud:sessionChanged", cloudAuth!.getSession());
+    }
+    return { ok: true, settings, cloud_synced: true };
   });
 
   ipcMain.handle("settings:get", async () => {
@@ -841,7 +912,7 @@ function registerIpcHandlers(): void {
     tray?.refresh();
 
     if (mainWindow && !mainWindow.isDestroyed() && partial.theme) {
-      mainWindow.setBackgroundColor(partial.theme === "light" ? "#F6F8FC" : "#0A0E1A");
+      mainWindow.setBackgroundColor(partial.theme === "dark" ? "#111112" : "#EFEFEF");
     }
     return { ok: true, settings };
   });
@@ -1089,35 +1160,113 @@ function registerIpcHandlers(): void {
   ipcMain.handle("billing:startPaystack", async (_evt, payload) => {
     if (!cloudAuth) return { ok: false, message: "Cloud service unavailable." };
     const lic = await engine?.getLicenseStatus().catch(() => null);
+    const method = String(payload?.method || "card").trim().toLowerCase();
+
+    // 1. Bank Transfer -> Native In-App Paystack Charge API (Paystack-Titan account, ZERO webview/browser!)
+    if (method === "bank_transfer") {
+      const btRes = await cloudAuth.startPaystackBankTransfer({
+        plan_id: payload?.plan_id,
+        currency: payload?.currency,
+        promo_code: payload?.promo_code,
+        hwid_hash: lic?.hwid_hash || undefined,
+        display_hwid: lic?.display_hwid || undefined,
+      });
+      if (!btRes || !btRes.ok) {
+        return btRes || { ok: false, message: "Could not initialize Paystack bank transfer." };
+      }
+
+      if (btRes.mode === "native_bank_transfer" && btRes.account_number) {
+        return {
+          ok: true,
+          mode: "native_bank_transfer",
+          method: "bank_transfer",
+          reference: String(btRes.reference || ""),
+          bank_name: String(btRes.bank_name || "Paystack-Titan"),
+          account_number: String(btRes.account_number),
+          account_name: String(btRes.account_name || "PAYSTACK CHECKOUT"),
+          account_expires_at: String(btRes.account_expires_at || ""),
+          display_text: String(btRes.display_text || ""),
+          plan_name: btRes.plan_name || "CogniTara Studio Licence",
+          duration_days: btRes.duration_days ?? null,
+          original_amount_minor: btRes.original_amount_minor,
+          discount_amount_minor: btRes.discount_amount_minor,
+          amount_minor: btRes.amount_minor,
+          charge_minor: btRes.charge_minor,
+          added_fee_minor: btRes.added_fee_minor,
+          currency: btRes.currency,
+          is_test: Boolean(btRes.is_test),
+          fee_mode: btRes.fee_mode || null,
+          fee_note: btRes.fee_note || null,
+        };
+      }
+
+      // Non-NGN fallback: open pre-selected bank_transfer browser checkout
+      const fallbackUrl = String(btRes.authorization_url || "");
+      if (!fallbackUrl || !isSafeExternalUrl(fallbackUrl)) {
+        return { ok: false, message: "Unsafe or missing Paystack checkout URL." };
+      }
+      await shell.openExternal(fallbackUrl);
+      return {
+        ok: true,
+        mode: "browser_checkout",
+        method: "bank_transfer",
+        reference: String(btRes.reference || ""),
+        authorization_url: fallbackUrl,
+        plan_name: btRes.plan_name || "CogniTara Studio Licence",
+        duration_days: btRes.duration_days ?? null,
+        original_amount_minor: btRes.original_amount_minor,
+        discount_amount_minor: btRes.discount_amount_minor,
+        amount_minor: btRes.amount_minor,
+        charge_minor: btRes.charge_minor,
+        added_fee_minor: btRes.added_fee_minor,
+        currency: btRes.currency,
+        is_test: Boolean(btRes.is_test),
+        fee_mode: btRes.fee_mode || null,
+        fee_note: btRes.fee_note || null,
+      };
+    }
+
+    // 2. Card / USSD / OPay / Bank App -> Initialize with exact Paystack channel pre-selected & launch user's web browser
+    const channelMap: Record<string, string[]> = {
+      card: ["card"],
+      ussd: ["ussd"],
+      opay: ["bank"],
+      bank_app: ["bank"],
+    };
+    const channels = Array.isArray(payload?.channels) && payload.channels.length
+      ? payload.channels
+      : (channelMap[method] || ["card"]);
+
     const initRes = await cloudAuth.initializePaystack({
       plan_id: payload?.plan_id,
       currency: payload?.currency,
       promo_code: payload?.promo_code,
+      channels,
+      payment_method: method,
       hwid_hash: lic?.hwid_hash || undefined,
       display_hwid: lic?.display_hwid || undefined,
     });
-    if (!initRes.ok || (!initRes.access_code && !initRes.authorization_url)) {
+    if (!initRes.ok || !initRes.authorization_url) {
       return initRes;
     }
 
     const reference = String(initRes.reference || "");
     const checkoutUrl = String(initRes.authorization_url || "");
-    if (checkoutUrl && !isSafeExternalUrl(checkoutUrl)) {
+    if (!isSafeExternalUrl(checkoutUrl)) {
       return { ok: false, message: "Unsafe checkout URL returned by gateway." };
     }
 
-    const session = cloudAuth.getSession();
+    await shell.openExternal(checkoutUrl);
 
-    // Hand the Paystack transaction access_code & metadata directly to the locally bundled
-    // @paystack/inline-js v2 SDK in the renderer — zero <webview>, zero remote wrapper.
     return {
       ok: true,
+      mode: "browser_checkout",
+      method,
+      channels,
       reference,
-      access_code: initRes.access_code ? String(initRes.access_code) : null,
-      public_key: initRes.public_key ? String(initRes.public_key) : null,
-      email: session?.user?.email ? String(session.user.email) : null,
-      authorization_url: checkoutUrl || null,
+      authorization_url: checkoutUrl,
       plan_name: initRes.plan_name || "CogniTara Studio Licence",
+      duration_days: initRes.duration_days ?? null,
       original_amount_minor: initRes.original_amount_minor,
       discount_amount_minor: initRes.discount_amount_minor,
       amount_minor: initRes.amount_minor,

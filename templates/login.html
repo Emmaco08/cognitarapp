@@ -54,8 +54,12 @@
       <div class="ed-pane__center">
         <section class="ed-form-card" aria-label="Portal sign in">
           <div class="ed-school-row">
-            <div class="ed-crest"{% if school_branding.school_logo %} style="background-image:url('{{ url_for('static', filename='images/' + school_branding.school_logo) }}')"{% endif %}>
-              {% if not school_branding.school_logo %}{{ school_branding.initials }}{% endif %}
+            <div class="ed-crest" style="overflow:hidden">
+              {% if school_branding.school_logo_url %}
+              <img src="{{ school_branding.school_logo_url }}" alt="{{ school_branding.school_name }} logo" style="width:100%;height:100%;object-fit:cover;display:block" onerror="this.remove();this.parentNode.textContent={{ (school_branding.initials or 'CT')|tojson|forceescape }};">
+              {% else %}
+              {{ school_branding.initials }}
+              {% endif %}
             </div>
             <div style="min-width:0">
               <h1>Sign in to your portal</h1>

@@ -412,10 +412,10 @@ export default function DashboardPage() {
 
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", gap: 16, flexWrap: "wrap" }}>
             <div>
-              <h1 style={{ margin: 0, fontSize: "clamp(22px, 2.5vw, 28px)", letterSpacing: "-0.025em" }}>
+              <h1 style={{ margin: 0, fontFamily: "var(--serif)", fontWeight: 400, fontSize: "clamp(26px, 3vw, 34px)", lineHeight: 1.1, letterSpacing: "-0.022em" }}>
                 {account.school?.school_name || account.user.full_name}
               </h1>
-              <p style={{ margin: "4px 0 0", color: "var(--ink-2)" }}>
+              <p style={{ margin: "6px 0 0", color: "var(--ink-2)" }}>
                 {account.user.full_name} · {account.user.email}
               </p>
             </div>
@@ -425,10 +425,10 @@ export default function DashboardPage() {
                   Open Admin Console
                 </Link>
               ) : null}
-              <a href={RELEASES_URL} target="_blank" rel="noopener noreferrer" className={isHq ? "btn btn--ghost btn--sm" : "btn btn--primary btn--sm"}>
+              <Link href="/download" className={isHq ? "btn btn--ghost btn--sm" : "btn btn--primary btn--sm"}>
                 <IconDownload size={14} />
                 <span>Download Desktop App</span>
-              </a>
+              </Link>
               <button type="button" className="btn btn--ghost btn--sm" onClick={handleSignOut}>
                 Sign out
               </button>

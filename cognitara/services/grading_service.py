@@ -328,7 +328,9 @@ def finalize_ce_exam_attempt(attempt_id, conn=None, force_submit=0, auto_submitt
             return dict(attempt)
             
         exam = conn.execute("SELECT passing_score FROM ce_exams WHERE id=?", (attempt["exam_id"],)).fetchone()
-        passing_score = exam["passing_score"] if exam else 50
+        ce_cfg_pass = conn.execute("SELECT default_passing_score FROM ce_settings WHERE id=1").fetchone()
+        default_pass = int(ce_cfg_pass["default_passing_score"]) if (ce_cfg_pass and ce_cfg_pass["default_passing_score"]) else 50
+        passing_score = exam["passing_score"] if (exam and exam["passing_score"] is not None) else default_pass
         
         answers = {}
         time_data = {}

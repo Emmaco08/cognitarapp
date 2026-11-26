@@ -111,7 +111,7 @@ body.ct-app.ct-bs {
 .ct-app.ct-bs .exam-header-card,
 .ct-app.ct-bs .card-header-section {
   background: var(--ct-surface) !important;
-  background-image: radial-gradient(560px 200px at 94% 0%, rgba(0, 102, 255, 0.14), transparent 72%) !important;
+  background-image: none !important;
   border: 1px solid var(--ct-line) !important;
   border-radius: var(--ct-r-xl) !important;
   padding: 22px 26px !important;
@@ -123,7 +123,7 @@ body.ct-app.ct-bs {
 [data-theme="light"] .ct-app.ct-bs .page-hero,
 [data-theme="light"] .ct-app.ct-bs .header-card,
 [data-theme="light"] .ct-app.ct-bs .profile-header {
-  background-image: radial-gradient(560px 200px at 94% 0%, rgba(0, 102, 255, 0.06), transparent 72%) !important;
+  background-image: none !important;
 }
 .ct-app.ct-bs .page-header .logo-icon,
 .ct-app.ct-bs .header-card .logo-icon,
@@ -271,7 +271,7 @@ body.ct-app.ct-bs {
 .ct-app.ct-bs .settings-tab.active {
   background: var(--ct-primary) !important;
   color: #FFFFFF !important;
-  box-shadow: 0 6px 16px -8px rgba(0, 102, 255, 0.75);
+  box-shadow: 0 6px 16px -8px rgba(23, 22, 20, 0.28);
 }
 
 /* Action Buttons & Legacy Custom Button Classes */
@@ -309,7 +309,7 @@ body.ct-app.ct-bs {
   color: #FFFFFF !important;
   border-radius: var(--ct-r-sm) !important;
   font-weight: 620 !important;
-  box-shadow: 0 8px 20px -10px rgba(0, 102, 255, 0.75);
+  box-shadow: 0 8px 20px -10px rgba(23, 22, 20, 0.28);
 }
 .ct-app.ct-bs .btn-add:hover,
 .ct-app.ct-bs .btn-create:hover,

@@ -39,7 +39,7 @@
         }
         .upload-zone:hover { border-color: var(--ct-primary); background: var(--ct-surface); }
         .upload-zone i { font-size: 44px; color: var(--ct-primary); margin-bottom: 12px; }
-        .upload-zone.drag-over { border-color: #10b981; background: var(--ct-ok-soft); }
+        .upload-zone.drag-over { border-color: #575551; background: var(--ct-ok-soft); }
         
         .file-info {
             display: flex; align-items: center; gap: 10px; padding: 12px 16px;
@@ -81,9 +81,9 @@
             cursor: pointer; border: none; display: inline-flex; align-items: center; gap: 8px;
             transition: all 0.2s; width: 100%; justify-content: center;
         }
-        .btn-success { background: #10b981; color: white; }
-        .btn-success:hover { background: #059669; }
-        .btn-success:disabled { background: #9ca3af; cursor: not-allowed; }
+        .btn-success { background: #575551; color: white; }
+        .btn-success:hover { background: #2B2926; }
+        .btn-success:disabled { background: #D6D4CF; cursor: not-allowed; }
         .btn-back {
             background: var(--ct-surface); border: 1.5px solid var(--ct-line-2); color: var(--ct-ink-3); text-decoration: none;
             display: inline-flex; align-items: center; gap: 6px; padding: 10px 20px; border-radius: 10px;
@@ -190,7 +190,7 @@
             <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()">
                 <i class="fas fa-file-upload"></i>
                 <p style="font-weight:600;margin:0;">Click to select JSON or CSV Question File</p>
-                <p style="font-size:12px;color:#64748b;margin:4px 0 0;">or drag & drop here</p>
+                <p style="font-size:12px;color:#2B2926;margin:4px 0 0;">or drag & drop here</p>
                 <input type="file" id="fileInput" accept=".json,.csv,text/csv,application/json" style="display:none;" onchange="handleFileSelect(this.files[0])">
             </div>
             
@@ -216,18 +216,18 @@
         <!-- Instructions -->
         <div class="card">
             <div class="card-title"><i class="fas fa-info-circle"></i> How to Import</div>
-            <ol style="font-size:13px;color:#475569;padding-left:20px;margin:0;">
+            <ol style="font-size:13px;color:#2B2926;padding-left:20px;margin:0;">
                 <li style="margin-bottom:8px;">Click the upload area above or drag & drop a JSON file</li>
                 <li style="margin-bottom:8px;">Review the exam preview with all sections & groups</li>
                 <li style="margin-bottom:8px;">Click "Confirm Import" to add the exam to your account</li>
                 <li>You'll be redirected to the exam settings page to review</li>
             </ol>
-            <div style="margin-top:12px;padding:10px;background:#fef3c7;border-radius:8px;font-size:12px;color:#92400e;">
+            <div style="margin-top:12px;padding:10px;background:#F8F8F8;border-radius:8px;font-size:12px;color:#2B2926;">
                 <i class="fas fa-exclamation-triangle"></i> Use the <strong>Offline Exam Builder</strong> to create compatible JSON files.
             </div>
             <div style="display:flex; gap:10px; margin-top:14px; flex-wrap:wrap;">
-                <button type="button" class="btn-back" onclick="downloadCsvTemplate()" style="cursor:pointer; background: var(--ct-ok-soft); border-color:#86efac; color:#166534;">
-                    <i class="fas fa-file-csv" style="color:#16a34a;"></i> Download CSV Formula Template
+                <button type="button" class="btn-back" onclick="downloadCsvTemplate()" style="cursor:pointer; background: var(--ct-ok-soft); border-color:#F3F2F0; color:#171614;">
+                    <i class="fas fa-file-csv" style="color:#2B2926;"></i> Download CSV Formula Template
                 </button>
                 <a href="/teacher/download_builder" class="btn-back">
                     <i class="fas fa-download"></i> Download Offline Builder
@@ -399,7 +399,7 @@
             fileInfo.style.display = 'flex';
             fileInfo.className = 'file-info';
             fileInfo.innerHTML = `
-                <i class="fas fa-check-circle" style="color:#10b981;font-size:20px;"></i>
+                <i class="fas fa-check-circle" style="color:#575551;font-size:20px;"></i>
                 <div style="flex:1;">
                     <strong>${escapeHtml(data.name || 'Imported Exam')}</strong><br>
                     <small>Class: ${escapeHtml(data.class || 'N/A')} | Specialisation: ${escapeHtml(data.specialisation || 'General')}</small>
