@@ -158,6 +158,7 @@ def test_fresh_install_onboarding_admin_and_full_live_exam(tmp_path, monkeypatch
     r_add_teacher = client.post(
         "/admin/add_teacher",
         data={
+            "full_name": "Mrs. Ada Nwosu",
             "username": "teacher_e2e",
             "password": "TeacherPass123",
             "class_name": "JSS 1",
