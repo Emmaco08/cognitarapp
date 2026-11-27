@@ -7,9 +7,9 @@ import LandingFooter from "../components/landing/LandingFooter";
 import LenisGsapScope from "../components/landing/LenisGsapScope";
 import HeroProductTour from "../components/landing/HeroProductTour";
 import ResurfBentoGrid from "../components/landing/ResurfBentoGrid";
-import FiveSurfacesShowcase from "../components/landing/FiveSurfacesShowcase";
 import FormatMarquee from "../components/landing/FormatMarquee";
 import MultiDeviceShowcase from "../components/landing/MultiDeviceShowcase";
+import LandingSupportBand from "../components/landing/LandingSupportBand";
 
 interface Plan {
   id: string;
@@ -42,7 +42,8 @@ interface ReviewItem {
   school_name: string;
   author_name: string;
   author_role: string;
-  city_state: string;
+  city_region?: string;
+  city_state?: string;
   rating: number;
   headline: string;
   body: string;
@@ -337,16 +338,13 @@ export default function LandingPage() {
           {/* 3. 12-CARD SOFTLY SHADED BENTO GRID */}
           <ResurfBentoGrid />
 
-          {/* 4. FIVE SURFACES, ONE SERVER */}
-          <FiveSurfacesShowcase />
-
-          {/* 5. DUAL-ROW FORMAT MARQUEE */}
+          {/* 4. DUAL-ROW FORMAT MARQUEE */}
           <FormatMarquee />
 
-          {/* 6. BUILT FOR EVERY CLASSROOM DEVICE */}
+          {/* 5. BUILT FOR EVERY CLASSROOM DEVICE */}
           <MultiDeviceShowcase />
 
-          {/* 7. VERIFIED SCHOOL REVIEWS (/api/v1/reviews) */}
+          {/* 6. VERIFIED SCHOOL REVIEWS (/api/v1/reviews) */}
           <section id="reviews" className="rs-container rs-container--narrow" data-rs-reveal>
             <div className="rs-section-head">
               <h2 className="rs-h2">Loved by schools on exam day</h2>
@@ -354,39 +352,50 @@ export default function LandingPage() {
 
             {reviews.length > 0 ? (
               <div className="rs-reviews-grid">
-                {reviews.slice(0, 6).map((rev) => (
-                  <figure key={rev.id} className="rs-review-card">
-                    <blockquote className="rs-review-quote">
-                      <p>
-                        “{rev.headline ? `${rev.headline}. ` : ""}
-                        {rev.body}”
-                      </p>
-                    </blockquote>
-                    <figcaption className="rs-review-author">
-                      <span className="rs-review-avatar" aria-hidden="true">
-                        {initialsOf(rev.author_name || rev.school_name)}
-                      </span>
-                      <div className="rs-review-meta">
-                        <p className="rs-review-name">{rev.author_name || rev.school_name}</p>
-                        <p className="rs-review-school">
-                          {[rev.author_role, rev.school_name, rev.city_state].filter(Boolean).join(" · ")}
-                        </p>
+                {reviews.slice(0, 6).map((rev) => {
+                  const stars = Math.max(1, Math.min(5, Number(rev.rating || 5)));
+                  return (
+                    <figure key={rev.id} className="rs-review-card">
+                      <div className="rs-review-stars" aria-label={`Rated ${stars} out of 5 stars`}>
+                        <span>{"★".repeat(stars)}</span>
+                        {stars < 5 ? (
+                          <span className="rs-review-stars-dim">{"★".repeat(5 - stars)}</span>
+                        ) : null}
                       </div>
-                    </figcaption>
-                  </figure>
-                ))}
+                      <blockquote className="rs-review-quote">
+                        <p>
+                          “{rev.headline ? `${rev.headline}. ` : ""}
+                          {rev.body}”
+                        </p>
+                      </blockquote>
+                      <figcaption className="rs-review-author">
+                        <span className="rs-review-avatar" aria-hidden="true">
+                          {initialsOf(rev.author_name || rev.school_name)}
+                        </span>
+                        <div className="rs-review-meta">
+                          <p className="rs-review-name">{rev.author_name || rev.school_name}</p>
+                          <p className="rs-review-school">
+                            {[rev.author_role, rev.school_name, rev.city_region || rev.city_state]
+                              .filter(Boolean)
+                              .join(" · ")}
+                          </p>
+                        </div>
+                      </figcaption>
+                    </figure>
+                  );
+                })}
               </div>
             ) : (
               <div className="rs-review-empty">
-                <h3>Verified reviews publish straight from CogniTara Studio</h3>
+                <h3>Verified reviews from schools running live exams</h3>
                 <p>
-                  Principals and ICT coordinators submit feedback directly inside the Cloud &amp; rate screen after running live school exams. Every review appears here automatically once verified in CogniTara HQ.
+                  Principals and ICT coordinators submit ratings directly inside CogniTara Studio Desktop or share feedback with our team. Every verified review appears here automatically once published in CogniTara HQ.
                 </p>
               </div>
             )}
           </section>
 
-          {/* 8. QUIET INSTITUTIONAL PRICING (/api/v1/plans) */}
+          {/* 7. QUIET INSTITUTIONAL PRICING (/api/v1/plans) */}
           <section id="pricing" className="rs-container" data-rs-reveal>
             <div className="rs-section-head">
               <h2 className="rs-h2">Simple school licensing, zero per-student fees.</h2>
@@ -464,7 +473,7 @@ export default function LandingPage() {
             </div>
           </section>
 
-          {/* 9. QUIET CLOSING CTA */}
+          {/* 8. QUIET CLOSING CTA */}
           <section className="rs-closing" data-rs-reveal>
             <h2 className="rs-h2">
               Start running offline exams
@@ -484,6 +493,9 @@ export default function LandingPage() {
             </div>
           </section>
         </div>
+
+        {/* 9. SUPPORT BAND AT THE TOP OF THE FOOTER */}
+        <LandingSupportBand />
       </main>
 
       <LandingFooter />

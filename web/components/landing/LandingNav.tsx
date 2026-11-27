@@ -4,21 +4,42 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { CogniTaraLockup, ResurfMenuIcon } from "../CogniTaraLogo";
 
+export type NavActivePath =
+  | "/"
+  | "/download"
+  | "/license"
+  | "/about"
+  | "/roadmap"
+  | "/changelogs"
+  | "/guides"
+  | "/faq"
+  | "/blog"
+  | "/support";
+
 interface LandingNavProps {
-  activePath?: "/" | "/download" | "/license";
+  activePath?: NavActivePath;
 }
 
-const NAV_ITEMS = [
-  { label: "Features", href: "/#features" },
-  { label: "Surfaces", href: "/#surfaces" },
-  { label: "Reviews", href: "/#reviews" },
+const PRIMARY_NAV_ITEMS: { label: string; href: string }[] = [
+  { label: "Story", href: "/about" },
+  { label: "Roadmap", href: "/roadmap" },
+  { label: "Updates", href: "/changelogs" },
   { label: "Pricing", href: "/license" },
-  { label: "Sign in", href: "/signin" },
+];
+
+const RESOURCE_ITEMS: { label: string; sub: string; href: string }[] = [
+  { label: "How-to guides", sub: "Install, LAN setup & recovery", href: "/guides" },
+  { label: "FAQ", sub: "Offline exams, backups & pricing", href: "/faq" },
+  { label: "Blog", sub: "Engineering & exam-day notes", href: "/blog" },
+  { label: "Get support", sub: "Direct help for your school", href: "/support" },
+  { label: "Sign in", sub: "Manage licence & cloud backups", href: "/signin" },
 ];
 
 export default function LandingNav({ activePath = "/" }: LandingNavProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [resOpen, setResOpen] = useState(false);
   const trackRef = useRef<HTMLDivElement | null>(null);
+  const dropRef = useRef<HTMLDivElement | null>(null);
   const [pill, setPill] = useState<{ left: number; width: number; opacity: number }>({
     left: 0,
     width: 0,
@@ -27,13 +48,25 @@ export default function LandingNav({ activePath = "/" }: LandingNavProps) {
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setMobileOpen(false);
+      if (e.key === "Escape") {
+        setMobileOpen(false);
+        setResOpen(false);
+      }
+    };
+    const onDocClick = (e: MouseEvent) => {
+      if (dropRef.current && !dropRef.current.contains(e.target as Node)) {
+        setResOpen(false);
+      }
     };
     window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    document.addEventListener("mousedown", onDocClick);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      document.removeEventListener("mousedown", onDocClick);
+    };
   }, []);
 
-  const handleLinkEnter = (e: React.MouseEvent<HTMLAnchorElement>) => {
+  const handleItemEnter = (e: React.MouseEvent<HTMLElement>) => {
     const track = trackRef.current;
     if (!track) return;
     const tr = track.getBoundingClientRect();
@@ -44,6 +77,12 @@ export default function LandingNav({ activePath = "/" }: LandingNavProps) {
   const handleTrackLeave = () => {
     setPill((p) => ({ ...p, opacity: 0 }));
   };
+
+  const isResourceActive =
+    activePath === "/guides" ||
+    activePath === "/faq" ||
+    activePath === "/blog" ||
+    activePath === "/support";
 
   return (
     <header className="rs-nav-wrap">
@@ -68,30 +107,67 @@ export default function LandingNav({ activePath = "/" }: LandingNavProps) {
                 opacity: pill.opacity,
               }}
             />
-            {NAV_ITEMS.map((item) => {
-              const isHashOnHome = activePath === "/" && item.href.startsWith("/#");
-              const resolvedHref = isHashOnHome ? item.href.slice(1) : item.href;
+            {PRIMARY_NAV_ITEMS.map((item) => {
               const isCurrent = item.href === activePath;
-              return isHashOnHome ? (
-                <a
-                  key={item.label}
-                  href={resolvedHref}
-                  className={`rs-nav-link${isCurrent ? " is-current" : ""}`}
-                  onMouseEnter={handleLinkEnter}
-                >
-                  {item.label}
-                </a>
-              ) : (
+              return (
                 <Link
                   key={item.label}
-                  href={resolvedHref}
+                  href={item.href}
                   className={`rs-nav-link${isCurrent ? " is-current" : ""}`}
-                  onMouseEnter={handleLinkEnter}
+                  onMouseEnter={handleItemEnter}
                 >
                   {item.label}
                 </Link>
               );
             })}
+
+            <div
+              ref={dropRef}
+              className="rs-nav-dropdown-wrap"
+              data-open={resOpen ? "true" : "false"}
+            >
+              <button
+                type="button"
+                className={`rs-nav-link rs-nav-dropdown-trigger${isResourceActive ? " is-current" : ""}`}
+                aria-expanded={resOpen}
+                aria-haspopup="menu"
+                onMouseEnter={handleItemEnter}
+                onClick={() => setResOpen((v) => !v)}
+              >
+                <span>Resources</span>
+                <svg
+                  className="rs-nav-chevron"
+                  width="12"
+                  height="12"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.1"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
+                  <path d="m6 9 6 6 6-6" />
+                </svg>
+              </button>
+
+              {resOpen && (
+                <div className="rs-nav-popover" role="menu">
+                  {RESOURCE_ITEMS.map((sub) => (
+                    <Link
+                      key={sub.href}
+                      href={sub.href}
+                      role="menuitem"
+                      className="rs-nav-pop-item"
+                      onClick={() => setResOpen(false)}
+                    >
+                      <span className="rs-nav-pop-title">{sub.label}</span>
+                      <span className="rs-nav-pop-sub">{sub.sub}</span>
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </nav>
 
@@ -126,29 +202,26 @@ export default function LandingNav({ activePath = "/" }: LandingNavProps) {
             onClick={() => setMobileOpen(false)}
           />
           <div className="rs-mobile-sheet" role="dialog" aria-label="Navigation menu">
-            {NAV_ITEMS.map((item) => {
-              const isHashOnHome = activePath === "/" && item.href.startsWith("/#");
-              const resolvedHref = isHashOnHome ? item.href.slice(1) : item.href;
-              return isHashOnHome ? (
-                <a
-                  key={item.label}
-                  href={resolvedHref}
-                  className="rs-mobile-link"
-                  onClick={() => setMobileOpen(false)}
-                >
-                  <span>{item.label}</span>
-                </a>
-              ) : (
-                <Link
-                  key={item.label}
-                  href={resolvedHref}
-                  className="rs-mobile-link"
-                  onClick={() => setMobileOpen(false)}
-                >
-                  <span>{item.label}</span>
-                </Link>
-              );
-            })}
+            {PRIMARY_NAV_ITEMS.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                className="rs-mobile-link"
+                onClick={() => setMobileOpen(false)}
+              >
+                <span>{item.label}</span>
+              </Link>
+            ))}
+            {RESOURCE_ITEMS.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                className="rs-mobile-link"
+                onClick={() => setMobileOpen(false)}
+              >
+                <span>{item.label}</span>
+              </Link>
+            ))}
             <div style={{ paddingTop: 6 }}>
               <Link
                 href="/download"

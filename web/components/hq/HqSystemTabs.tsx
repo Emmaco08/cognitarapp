@@ -914,6 +914,20 @@ export function HqReviewsTab({
   const [filter, setFilter] = useState<"all" | "pending" | "approved" | "rejected">("all");
   const [busyId, setBusyId] = useState("");
 
+  // Admin custom review composer / editor state
+  const [composerOpen, setComposerOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [savingForm, setSavingForm] = useState(false);
+  const [schoolName, setSchoolName] = useState("");
+  const [authorName, setAuthorName] = useState("");
+  const [authorRole, setAuthorRole] = useState("Principal");
+  const [cityRegion, setCityRegion] = useState("");
+  const [rating, setRating] = useState(5);
+  const [headline, setHeadline] = useState("");
+  const [reviewBody, setReviewBody] = useState("");
+  const [publishNow, setPublishNow] = useState(true);
+  const [pinFeatured, setPinFeatured] = useState(true);
+
   async function load() {
     setLoading(true);
     const res = await fetch("/api/v1/hq/reviews", { credentials: "include" }).then((r) => r.json()).catch(() => null);
@@ -924,6 +938,88 @@ export function HqReviewsTab({
   useEffect(() => {
     void load();
   }, []);
+
+  function resetComposer() {
+    setEditingId(null);
+    setSchoolName("");
+    setAuthorName("");
+    setAuthorRole("Principal");
+    setCityRegion("");
+    setRating(5);
+    setHeadline("");
+    setReviewBody("");
+    setPublishNow(true);
+    setPinFeatured(true);
+  }
+
+  function openNewComposer() {
+    resetComposer();
+    setComposerOpen(true);
+  }
+
+  function openEditComposer(r: any) {
+    setEditingId(String(r.id));
+    setSchoolName(String(r.school_name || ""));
+    setAuthorName(String(r.author_name || ""));
+    setAuthorRole(String(r.author_role || "School Administrator"));
+    setCityRegion(String(r.city_region || ""));
+    setRating(Math.max(1, Math.min(5, Number(r.rating || 5))));
+    setHeadline(String(r.headline || ""));
+    setReviewBody(String(r.body || ""));
+    setPublishNow(r.status === "approved");
+    setPinFeatured(Boolean(r.featured));
+    setComposerOpen(true);
+  }
+
+  async function submitComposer(e: React.FormEvent) {
+    e.preventDefault();
+    setSavingForm(true);
+    const payload = editingId
+      ? {
+          action: "edit",
+          id: editingId,
+          school_name: schoolName.trim(),
+          author_name: authorName.trim(),
+          author_role: authorRole.trim(),
+          city_region: cityRegion.trim(),
+          rating,
+          headline: headline.trim(),
+          body: reviewBody.trim(),
+        }
+      : {
+          action: "create",
+          school_name: schoolName.trim(),
+          author_name: authorName.trim(),
+          author_role: authorRole.trim(),
+          city_region: cityRegion.trim(),
+          rating,
+          headline: headline.trim(),
+          body: reviewBody.trim(),
+          publish_now: publishNow,
+          featured: pinFeatured,
+        };
+
+    const res = await fetch("/api/v1/hq/reviews", {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    })
+      .then((r) => r.json())
+      .catch(() => null);
+
+    setSavingForm(false);
+    if (!res?.ok) {
+      onToast(res?.message || "Could not save review.");
+      return;
+    }
+
+    onToast(res.message || "Review saved.");
+    resetComposer();
+    setComposerOpen(false);
+    await load();
+    if (onRefreshOverview) await onRefreshOverview();
+  }
 
   async function runAction(id: string, action: "approve" | "reject" | "toggle_featured" | "delete") {
     setBusyId(id);
@@ -948,16 +1044,174 @@ export function HqReviewsTab({
       <div className="hq-head">
         <div>
           <h1>Reviews &amp; ratings</h1>
-          <p>School ratings submitted directly from CogniTara Studio Desktop. Approve ratings here to display them live on the CogniTara website.</p>
+          <p>Approve school ratings submitted from CogniTara Studio Desktop or record physical word-of-mouth testimonials from principals and ICT directors directly into the website.</p>
         </div>
-        <button type="button" className="btn btn--ghost btn--sm" onClick={() => void load()}>Refresh</button>
+        <div className="hq-btn-row">
+          <button
+            type="button"
+            className="btn btn--primary btn--sm"
+            onClick={() => (composerOpen && !editingId ? setComposerOpen(false) : openNewComposer())}
+          >
+            {composerOpen && !editingId ? "Close form" : "+ Add review & rating"}
+          </button>
+          <button type="button" className="btn btn--ghost btn--sm" onClick={() => void load()}>Refresh</button>
+        </div>
       </div>
 
+      {composerOpen ? (
+        <form className="card" onSubmit={submitComposer} style={{ display: "grid", gap: 14, marginBottom: 18 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+            <div>
+              <h2 style={{ margin: 0, fontSize: 16, fontWeight: 650, color: "var(--ink)" }}>
+                {editingId ? "Edit school review" : "Add physical / direct school review"}
+              </h2>
+              <p style={{ margin: "4px 0 0", fontSize: 13, color: "var(--ink-3)" }}>
+                Record feedback shared with you in person, over WhatsApp, or by phone — it appears immediately in the landing page Reviews section.
+              </p>
+            </div>
+            <button
+              type="button"
+              className="btn btn--ghost btn--xs"
+              onClick={() => {
+                resetComposer();
+                setComposerOpen(false);
+              }}
+            >
+              Cancel
+            </button>
+          </div>
+
+          <div className="form-grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(210px, 1fr))", gap: 12 }}>
+            <div className="field">
+              <label htmlFor="hqRevSchool">School / institution name</label>
+              <input
+                id="hqRevSchool"
+                required
+                value={schoolName}
+                onChange={(e) => setSchoolName(e.target.value)}
+                placeholder="e.g. Royal Crest International College"
+              />
+            </div>
+            <div className="field">
+              <label htmlFor="hqRevAuthor">Reviewer name</label>
+              <input
+                id="hqRevAuthor"
+                required
+                value={authorName}
+                onChange={(e) => setAuthorName(e.target.value)}
+                placeholder="e.g. Mr. Adebayo Ogunleye"
+              />
+            </div>
+            <div className="field">
+              <label htmlFor="hqRevRole">Role / title</label>
+              <input
+                id="hqRevRole"
+                value={authorRole}
+                onChange={(e) => setAuthorRole(e.target.value)}
+                placeholder="e.g. Principal, ICT Director, Exam Officer"
+              />
+            </div>
+            <div className="field">
+              <label htmlFor="hqRevCity">City / State (optional)</label>
+              <input
+                id="hqRevCity"
+                value={cityRegion}
+                onChange={(e) => setCityRegion(e.target.value)}
+                placeholder="e.g. Lagos, Nigeria"
+              />
+            </div>
+          </div>
+
+          <div className="form-grid" style={{ gridTemplateColumns: "auto 1fr", gap: 14, alignItems: "end" }}>
+            <div className="field">
+              <label>Star rating</label>
+              <div style={{ display: "inline-flex", alignItems: "center", gap: 4, height: 42, padding: "0 10px", borderRadius: 10, border: "1px solid var(--border)", background: "var(--surface)" }}>
+                {[1, 2, 3, 4, 5].map((n) => (
+                  <button
+                    key={n}
+                    type="button"
+                    aria-label={`Rate ${n} star${n === 1 ? "" : "s"}`}
+                    onClick={() => setRating(n)}
+                    style={{
+                      border: 0,
+                      background: "transparent",
+                      cursor: "pointer",
+                      fontSize: 20,
+                      lineHeight: 1,
+                      padding: "2px 3px",
+                      color: "var(--ink)",
+                      opacity: n <= rating ? 1 : 0.22,
+                      transition: "opacity 140ms ease, transform 120ms ease",
+                    }}
+                  >
+                    ★
+                  </button>
+                ))}
+                <span className="tnum" style={{ marginLeft: 6, fontSize: 12.5, fontWeight: 600, color: "var(--ink-2)" }}>
+                  {rating}/5
+                </span>
+              </div>
+            </div>
+            <div className="field">
+              <label htmlFor="hqRevHeadline">Short headline (optional)</label>
+              <input
+                id="hqRevHeadline"
+                value={headline}
+                onChange={(e) => setHeadline(e.target.value)}
+                placeholder="e.g. Zero stress during our 260-student terminal exams"
+              />
+            </div>
+          </div>
+
+          <div className="field">
+            <label htmlFor="hqRevBody">Review quote</label>
+            <textarea
+              id="hqRevBody"
+              required
+              rows={3}
+              value={reviewBody}
+              onChange={(e) => setReviewBody(e.target.value)}
+              placeholder="Write what the school administrator or teacher shared about CogniTara..."
+              style={{
+                width: "100%",
+                padding: "10px 12px",
+                borderRadius: 10,
+                border: "1px solid var(--border)",
+                background: "var(--surface)",
+                color: "var(--ink)",
+                fontFamily: "inherit",
+                fontSize: 14,
+                resize: "vertical",
+              }}
+            />
+          </div>
+
+          {!editingId ? (
+            <div style={{ display: "flex", gap: 20, flexWrap: "wrap", fontSize: 13, color: "var(--ink-2)" }}>
+              <label style={{ display: "inline-flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
+                <input type="checkbox" checked={publishNow} onChange={(e) => setPublishNow(e.target.checked)} />
+                <span>Publish live on landing page immediately</span>
+              </label>
+              <label style={{ display: "inline-flex", alignItems: "center", gap: 8, cursor: "pointer", opacity: publishNow ? 1 : 0.45 }}>
+                <input type="checkbox" checked={pinFeatured} disabled={!publishNow} onChange={(e) => setPinFeatured(e.target.checked)} />
+                <span>Pin as featured testimonial</span>
+              </label>
+            </div>
+          ) : null}
+
+          <div className="hq-btn-row" style={{ justifyContent: "flex-end" }}>
+            <button type="submit" className="btn btn--primary btn--sm" disabled={savingForm}>
+              {savingForm ? "Saving…" : editingId ? "Save changes" : publishNow ? "Publish review live" : "Save as pending"}
+            </button>
+          </div>
+        </form>
+      ) : null}
+
       <div className="hq-kpi-strip">
-        <div className="hq-kpi"><span className="hq-kpi__lbl">Pending approval</span><span className="hq-kpi__val" style={{ color: sum.pending > 0 ? "var(--warn)" : undefined }}>{sum.pending}</span></div>
-        <div className="hq-kpi"><span className="hq-kpi__lbl">Live on website</span><span className="hq-kpi__val" style={{ color: "var(--ok)" }}>{sum.approved}</span></div>
+        <div className="hq-kpi"><span className="hq-kpi__lbl">Pending approval</span><span className="hq-kpi__val">{sum.pending}</span></div>
+        <div className="hq-kpi"><span className="hq-kpi__lbl">Live on website</span><span className="hq-kpi__val">{sum.approved}</span></div>
         <div className="hq-kpi"><span className="hq-kpi__lbl">Average rating</span><span className="hq-kpi__val">{sum.average_rating ? `${sum.average_rating.toFixed(1)} / 5` : "—"}</span></div>
-        <div className="hq-kpi"><span className="hq-kpi__lbl">Total submitted</span><span className="hq-kpi__val">{sum.total}</span></div>
+        <div className="hq-kpi"><span className="hq-kpi__lbl">Total reviews</span><span className="hq-kpi__val">{sum.total}</span></div>
       </div>
 
       <div className="hq-toolbar">
@@ -974,7 +1228,7 @@ export function HqReviewsTab({
         <div className="card" style={{ textAlign: "center", padding: 36, color: "var(--ink-3)" }}>Loading school ratings…</div>
       ) : filtered.length === 0 ? (
         <div className="card" style={{ textAlign: "center", padding: 40, color: "var(--ink-3)" }}>
-          No school ratings in this view yet. Ratings sent from CogniTara Studio Desktop appear here immediately for review.
+          No school ratings in this view yet. Click <strong>+ Add review &amp; rating</strong> above to add physical school testimonials, or wait for schools to submit ratings from CogniTara Studio Desktop.
         </div>
       ) : (
         <div style={{ display: "grid", gap: 12 }}>
@@ -984,13 +1238,18 @@ export function HqReviewsTab({
                 <div style={{ display: "grid", gap: 3 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
                     <strong style={{ fontSize: 15, color: "var(--ink)" }}>{r.school_name}</strong>
-                    <span className="tnum" style={{ color: "var(--warn)", fontWeight: 700, fontSize: 14, letterSpacing: "0.06em" }}>
+                    <span className="tnum" style={{ color: "var(--ink)", fontWeight: 700, fontSize: 14, letterSpacing: "0.06em" }}>
                       {"★".repeat(Math.max(1, Math.min(5, Number(r.rating || 5))))}
-                      <span style={{ opacity: 0.25 }}>{"★".repeat(Math.max(0, 5 - Number(r.rating || 5)))}</span>
+                      <span style={{ opacity: 0.22 }}>{"★".repeat(Math.max(0, 5 - Number(r.rating || 5)))}</span>
                     </span>
                     <span className={`status-txt ${r.status === "approved" ? "status-txt--ok" : r.status === "rejected" ? "status-txt--bad" : "status-txt--warn"}`}>
                       {r.status === "approved" ? (r.featured ? "Featured live" : "Live on website") : r.status === "pending" ? "Awaiting approval" : "Hidden"}
                     </span>
+                    {r.source === "hq_manual" ? (
+                      <span style={{ fontSize: 11, fontWeight: 600, padding: "2px 7px", borderRadius: 99, background: "var(--surface-2, rgba(23,22,20,0.06))", color: "var(--ink-2)" }}>
+                        Added in HQ
+                      </span>
+                    ) : null}
                   </div>
                   <div style={{ fontSize: 12.5, color: "var(--ink-3)" }}>
                     {r.author_name} · {r.author_role}{r.city_region ? ` · ${r.city_region}` : ""}{r.app_version ? ` · Studio v${r.app_version}` : ""}
@@ -1005,6 +1264,9 @@ export function HqReviewsTab({
               <p style={{ margin: 0, fontSize: 13.5, lineHeight: 1.58, color: "var(--ink-2)" }}>&ldquo;{r.body}&rdquo;</p>
 
               <div className="hq-btn-row" style={{ justifyContent: "flex-end", paddingTop: 6, borderTop: "1px solid var(--border)" }}>
+                <button type="button" className="btn btn--ghost btn--xs" disabled={busyId === r.id} onClick={() => openEditComposer(r)}>
+                  Edit
+                </button>
                 {r.status !== "approved" ? (
                   <button type="button" className="btn btn--ok btn--xs" disabled={busyId === r.id} onClick={() => void runAction(r.id, "approve")}>
                     Approve to website

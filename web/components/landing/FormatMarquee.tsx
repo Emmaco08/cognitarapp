@@ -9,7 +9,17 @@ interface FormatItem {
 
 const ROW_ONE: FormatItem[] = [
   {
-    label: "KaTeX Math",
+    label: "Cross-Device Resume",
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="2.5" y="4.5" width="11" height="8" rx="1.5" />
+        <rect x="11.5" y="11.5" width="10" height="8" rx="1.5" />
+        <path d="M16 7l3 0l0 3" />
+      </svg>
+    ),
+  },
+  {
+    label: "KaTeX Math & Chem",
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
         <path d="M4 17l4-10 4 10M5.5 13.5h5M15 7l5 10M20 7l-5 10" />
@@ -17,31 +27,23 @@ const ROW_ONE: FormatItem[] = [
     ),
   },
   {
-    label: "Diagrams",
+    label: "Hall-Wide Pause",
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-        <rect x="3" y="4" width="18" height="16" rx="2.5" />
-        <circle cx="8.5" cy="9.5" r="1.5" />
-        <path d="M21 15l-5-5L5 20" />
+        <rect x="6" y="5" width="4" height="14" rx="1" />
+        <rect x="14" y="5" width="4" height="14" rx="1" />
       </svg>
     ),
   },
   {
-    label: "CSV Import",
+    label: "Shuffled Options",
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-        <rect x="3" y="4" width="18" height="16" rx="2" />
-        <path d="M3 10h18M9 4v16" />
-      </svg>
-    ),
-  },
-  {
-    label: "SQLite WAL",
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-        <ellipse cx="12" cy="6" rx="8" ry="3" />
-        <path d="M4 6v6c0 1.66 3.58 3 8 3s8-1.34 8-3V6" />
-        <path d="M4 12v6c0 1.66 3.58 3 8 3s8-1.34 8-3v-6" />
+        <polyline points="16 3 21 3 21 8" />
+        <line x1="4" y1="20" x2="21" y2="3" />
+        <polyline points="21 16 21 21 16 21" />
+        <line x1="15" y1="15" x2="21" y2="21" />
+        <line x1="4" y1="4" x2="9" y2="9" />
       </svg>
     ),
   },
@@ -60,23 +62,21 @@ const ROW_ONE: FormatItem[] = [
 
 const ROW_TWO: FormatItem[] = [
   {
-    label: "PDF Slips",
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-        <polyline points="14 2 14 8 20 8" />
-        <line x1="8" y1="13" x2="16" y2="13" />
-        <line x1="8" y1="17" x2="13" y2="17" />
-      </svg>
-    ),
-  },
-  {
-    label: "Calculator",
+    label: "Scientific Calc",
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
         <rect x="5" y="2.5" width="14" height="19" rx="2.5" />
         <line x1="8.5" y1="7" x2="15.5" y2="7" />
         <path d="M8.5 12h.01M12 12h.01M15.5 12h.01M8.5 16h.01M12 16h.01M15.5 16h.01" strokeWidth="2.3" />
+      </svg>
+    ),
+  },
+  {
+    label: "CSV & Diagrams",
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="3" y="4" width="18" height="16" rx="2" />
+        <path d="M3 10h18M9 4v16" />
       </svg>
     ),
   },
@@ -90,16 +90,18 @@ const ROW_TWO: FormatItem[] = [
     ),
   },
   {
-    label: "Ed25519 Keys",
+    label: "PDF Score Slips",
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-        <circle cx="8" cy="14" r="4" />
-        <path d="M11 11l8-8M16 6l2.5 2.5M19 3l2 2" />
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+        <polyline points="14 2 14 8 20 8" />
+        <line x1="8" y1="13" x2="16" y2="13" />
+        <line x1="8" y1="17" x2="13" y2="17" />
       </svg>
     ),
   },
   {
-    label: "Cloud Backups",
+    label: "Encrypted Backups",
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
         <path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z" />
@@ -114,7 +116,7 @@ export default function FormatMarquee() {
   return (
     <section className="rs-container rs-marquee-section" data-rs-reveal>
       <p className="rs-marquee-lead">
-        Math equations, diagrams, CSV imports, PDF slips, Common Entrance, and more. Every exam format works natively.
+        Cross-device exam recovery, KaTeX equations, scientific calculator, hall-wide pause, shuffled options, and more — all offline on your LAN.
       </p>
 
       <div

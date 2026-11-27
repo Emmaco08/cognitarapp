@@ -6,6 +6,19 @@ import { getClientIp } from "@/lib/rate-limit";
 
 export const dynamic = "force-dynamic";
 
+let schemaEnsured = false;
+
+async function ensureReviewColumns(sql: ReturnType<typeof getSql>) {
+  if (schemaEnsured) return;
+  try {
+    await sql`ALTER TABLE school_reviews ALTER COLUMN school_id DROP NOT NULL`;
+    await sql`ALTER TABLE school_reviews ADD COLUMN IF NOT EXISTS source TEXT NOT NULL DEFAULT 'studio'`;
+    schemaEnsured = true;
+  } catch (err) {
+    console.warn("ensureReviewColumns note:", err);
+  }
+}
+
 export async function GET(req: NextRequest) {
   try {
     const hq = await requireHqAdmin(req);
@@ -14,10 +27,13 @@ export async function GET(req: NextRequest) {
     }
 
     const sql = getSql();
+    await ensureReviewColumns(sql);
+
     const reviews = await sql`
       SELECT
         r.id, r.school_id, r.school_name, r.author_name, r.author_role, r.city_region,
         r.rating, r.headline, r.body, r.app_version, r.status, r.featured,
+        COALESCE(r.source, 'studio') AS source,
         r.reviewed_at, r.created_at, r.updated_at,
         u.email AS owner_email
       FROM school_reviews r
@@ -34,7 +50,12 @@ export async function GET(req: NextRequest) {
     const rejected = reviews.filter((r: Record<string, any>) => r.status === "rejected").length;
     const approvedRatings = reviews.filter((r: Record<string, any>) => r.status === "approved");
     const avg = approvedRatings.length
-      ? Number((approvedRatings.reduce((acc: number, r: Record<string, any>) => acc + Number(r.rating || 0), 0) / approvedRatings.length).toFixed(1))
+      ? Number(
+          (
+            approvedRatings.reduce((acc: number, r: Record<string, any>) => acc + Number(r.rating || 0), 0) /
+            approvedRatings.length
+          ).toFixed(1)
+        )
       : 0;
 
     return NextResponse.json({
@@ -63,13 +84,130 @@ export async function POST(req: NextRequest) {
 
     const body = (await req.json().catch(() => null)) as Record<string, unknown> | null;
     const action = String(body?.action || "").trim();
+    const sql = getSql();
+    const ip = getClientIp(req);
+    await ensureReviewColumns(sql);
+
+    if (action === "create") {
+      const schoolName = String(body?.school_name || "").trim().slice(0, 120);
+      const authorName = String(body?.author_name || "").trim().slice(0, 80);
+      const authorRole = String(body?.author_role || "School Principal").trim().slice(0, 80) || "School Administrator";
+      const cityRegion = String(body?.city_region || "").trim().slice(0, 80);
+      const headline = String(body?.headline || "").trim().slice(0, 120);
+      const reviewBody = String(body?.body || "").trim().slice(0, 800);
+      const rating = Math.floor(Number(body?.rating || 5));
+      const publishNow = body?.publish_now !== false;
+      const featured = Boolean(body?.featured);
+      const status = publishNow ? "approved" : "pending";
+
+      if (schoolName.length < 2) {
+        return NextResponse.json({ ok: false, message: "Please enter the school or institution name." }, { status: 400 });
+      }
+      if (authorName.length < 2) {
+        return NextResponse.json({ ok: false, message: "Please enter the reviewer's name." }, { status: 400 });
+      }
+      if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
+        return NextResponse.json({ ok: false, message: "Star rating must be between 1 and 5." }, { status: 400 });
+      }
+      if (reviewBody.length < 10) {
+        return NextResponse.json({ ok: false, message: "Please enter at least 10 characters for the review." }, { status: 400 });
+      }
+
+      const inserted = await sql`
+        INSERT INTO school_reviews (
+          school_id, user_id, school_name, author_name, author_role, city_region,
+          rating, headline, body, app_version, status, featured, source,
+          reviewed_by, reviewed_at, created_at, updated_at
+        )
+        VALUES (
+          NULL,
+          ${hq.user.id}::uuid,
+          ${schoolName},
+          ${authorName},
+          ${authorRole},
+          ${cityRegion},
+          ${rating},
+          ${headline},
+          ${reviewBody},
+          NULL,
+          ${status},
+          ${publishNow ? featured : false},
+          'hq_manual',
+          ${hq.user.id}::uuid,
+          NOW(),
+          NOW(),
+          NOW()
+        )
+        RETURNING id, school_name, author_name, author_role, city_region, rating, headline, body, status, featured, source, created_at
+      `;
+
+      const row = inserted[0];
+      await logDeveloperAudit({
+        actorUserId: hq.user.id,
+        actorEmail: hq.user.email,
+        action: "hq_create_review",
+        targetType: "school_review",
+        targetId: String(row?.id || ""),
+        ipAddress: ip,
+        details: { school_name: schoolName, author_name: authorName, rating, status, featured },
+      });
+
+      return NextResponse.json({
+        ok: true,
+        review: row,
+        message: publishNow
+          ? "Review added and published live on the CogniTara website."
+          : "Review saved as pending in HQ.",
+      });
+    }
+
     const id = String(body?.id || "").trim();
     if (!id) {
       return NextResponse.json({ ok: false, message: "Review ID is required." }, { status: 400 });
     }
 
-    const sql = getSql();
-    const ip = getClientIp(req);
+    if (action === "edit") {
+      const schoolName = String(body?.school_name || "").trim().slice(0, 120);
+      const authorName = String(body?.author_name || "").trim().slice(0, 80);
+      const authorRole = String(body?.author_role || "School Administrator").trim().slice(0, 80) || "School Administrator";
+      const cityRegion = String(body?.city_region || "").trim().slice(0, 80);
+      const headline = String(body?.headline || "").trim().slice(0, 120);
+      const reviewBody = String(body?.body || "").trim().slice(0, 800);
+      const rating = Math.floor(Number(body?.rating || 5));
+
+      if (schoolName.length < 2 || authorName.length < 2 || reviewBody.length < 10) {
+        return NextResponse.json({ ok: false, message: "School name, reviewer name, and review text are required." }, { status: 400 });
+      }
+      if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
+        return NextResponse.json({ ok: false, message: "Star rating must be between 1 and 5." }, { status: 400 });
+      }
+
+      await sql`
+        UPDATE school_reviews
+        SET school_name = ${schoolName},
+            author_name = ${authorName},
+            author_role = ${authorRole},
+            city_region = ${cityRegion},
+            rating = ${rating},
+            headline = ${headline},
+            body = ${reviewBody},
+            reviewed_by = ${hq.user.id}::uuid,
+            updated_at = NOW()
+        WHERE id = ${id}::uuid
+      `;
+
+      await logDeveloperAudit({
+        actorUserId: hq.user.id,
+        actorEmail: hq.user.email,
+        action: "hq_edit_review",
+        targetType: "school_review",
+        targetId: id,
+        ipAddress: ip,
+        details: { school_name: schoolName, rating },
+      });
+
+      return NextResponse.json({ ok: true, message: "Review updated." });
+    }
 
     if (action === "approve") {
       await sql`

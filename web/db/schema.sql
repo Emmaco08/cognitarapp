@@ -479,5 +479,6 @@ CREATE TABLE IF NOT EXISTS download_leads (
 );
 CREATE UNIQUE INDEX IF NOT EXISTS uq_download_leads_email ON download_leads(LOWER(email));
 CREATE INDEX IF NOT EXISTS idx_download_leads_created ON download_leads(created_at DESC);
-
-
+-- 22. v2.3.5: HQ-authored physical / offline school reviews & ratings
+ALTER TABLE school_reviews ALTER COLUMN school_id DROP NOT NULL;
+ALTER TABLE school_reviews ADD COLUMN IF NOT EXISTS source TEXT NOT NULL DEFAULT 'studio';

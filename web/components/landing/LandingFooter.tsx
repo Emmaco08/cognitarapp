@@ -24,29 +24,30 @@ export default function LandingFooter() {
             <h3>Product</h3>
             <ul>
               <li><Link href="/download">Download for Windows</Link></li>
-              <li><Link href="/#features">Offline LAN Engine</Link></li>
-              <li><Link href="/#surfaces">Five Surfaces</Link></li>
+              <li><Link href="/#features">Features</Link></li>
               <li><Link href="/license">Pricing &amp; Licensing</Link></li>
+              <li><Link href="/dashboard">Manage License</Link></li>
             </ul>
           </div>
 
           <div className="rs-footer-col">
-            <h3>Workspaces</h3>
+            <h3>Learn</h3>
             <ul>
-              <li><Link href="/#surfaces">Admin Control Center</Link></li>
-              <li><Link href="/#surfaces">Teacher Studio</Link></li>
-              <li><Link href="/#surfaces">Student Exam Room</Link></li>
-              <li><Link href="/#features">Common Entrance</Link></li>
+              <li><Link href="/guides">How-to Guides</Link></li>
+              <li><Link href="/faq">FAQ</Link></li>
+              <li><Link href="/blog">Blog</Link></li>
+              <li><Link href="/changelogs">Updates</Link></li>
+              <li><Link href="/roadmap">Roadmap</Link></li>
             </ul>
           </div>
 
           <div className="rs-footer-col">
-            <h3>Platform</h3>
+            <h3>Company</h3>
             <ul>
+              <li><Link href="/about">Story</Link></li>
+              <li><Link href="/support">Support</Link></li>
               <li><Link href="/#reviews">Verified Reviews</Link></li>
-              <li><Link href="/#features">KaTeX Math Editor</Link></li>
-              <li><Link href="/license">Paystack Checkout</Link></li>
-              <li><Link href="/#features">Encrypted Backups</Link></li>
+              <li><Link href="/license">School Plans</Link></li>
             </ul>
           </div>
 
@@ -65,9 +66,10 @@ export default function LandingFooter() {
       <div className="rs-divider" />
       <div className="rs-footer-bottom">
         <span>© 2026 CogniTara</span>
-        <Link href="/download">Download</Link>
-        <Link href="/license">Licensing</Link>
-        <Link href="/signin">Sign in</Link>
+        <Link href="/about">Story</Link>
+        <Link href="/guides">Guides</Link>
+        <Link href="/faq">FAQ</Link>
+        <Link href="/support">Support</Link>
       </div>
     </footer>
   );
