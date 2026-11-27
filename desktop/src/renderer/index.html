@@ -274,7 +274,7 @@
                 <p>Registering here creates your live school profile on CogniTara Cloud, verifies your email via Brevo OTP, and saves an encrypted offline session on this computer.</p>
                 <ul>
                   <li><svg><use href="#i-check"/></svg><span><strong>Real email confirmation.</strong> 6-digit OTP prevents unauthorized licence claims.</span></li>
-                  <li><svg><use href="#i-check"/></svg><span><strong>Instant Paystack &amp; vouchers.</strong> Buy licences or redeem promo codes directly inside Studio.</span></li>
+                  <li><svg><use href="#i-check"/></svg><span><strong>Verified licence sync.</strong> Activate keys obtained on cognitara.net and keep backups safe.</span></li>
                   <li><svg><use href="#i-check"/></svg><span><strong>Works 100% offline on exam day.</strong> Once verified, no internet is needed to run exams.</span></li>
                 </ul>
               </div>
@@ -315,7 +315,7 @@
           <!-- Step 4: Licence -->
           <article class="pane" data-pane="3">
             <h1 class="kinetic">Activate your licence</h1>
-            <p class="lede rv">Enter the key from your cognitara.net account, buy via Paystack, redeem a voucher, or start a 14-day trial. It locks securely to this computer.</p>
+            <p class="lede rv">Enter the licence key from cognitara.net, import a .cgnlic file, or start a free trial. It locks securely to this computer.</p>
             <div class="lic-act">
               <div class="keybox rv" id="keybox">
                 <label for="keyInput">Licence key</label>
@@ -333,11 +333,10 @@
                 <div class="lic-act__actions">
                   <button class="btn btn--primary" id="activateBtn" disabled><svg><use href="#i-key"/></svg>Activate</button>
                   <button class="btn btn--primary" id="licCloudBtn" hidden><svg><use href="#i-check"/></svg>Use my Cloud licence</button>
-                  <button class="btn btn--ghost" id="onbBuyBtn"><svg><use href="#i-spark"/></svg>Buy / Redeem</button>
                   <button class="btn btn--ghost" id="licFileBtn"><svg><use href="#i-doc"/></svg>Licence file</button>
                   <button class="btn btn--ghost" id="licTrialBtn"><svg><use href="#i-shield"/></svg>Start 14-day trial</button>
                 </div>
-                <p class="buy">No licence yet? <a id="buyLicLink" href="#">Buy via Paystack or redeem a code</a> · <a id="onbCloudLink" href="#">Manage Cloud Account</a>.</p>
+                <p class="buy">Need a school licence key? <a id="buyLicLink" href="#">Get one at cognitara.net/license ↗</a> · <a id="onbCloudLink" href="#">Manage Cloud Account</a>.</p>
               </div>
               <div class="verify stage rv" id="verify" data-state="idle" aria-live="polite">
                 <span class="ripple"></span><span class="ripple"></span><span class="ripple"></span>
@@ -431,7 +430,6 @@
           <li><button data-view="home" class="is-active"><svg><use href="#i-home"/></svg>Server</button></li>
           <li><button data-view="live"><svg><use href="#i-live"/></svg>Live exams<b class="rail__badge" id="liveBadge" hidden>0</b></button></li>
           <li><button data-view="licence"><svg><use href="#i-key"/></svg>Licence</button></li>
-          <li><button data-view="billing"><svg><use href="#i-card"/></svg>Plans &amp; billing</button></li>
           <li><button data-view="backups"><svg><use href="#i-backup"/></svg>Backups</button></li>
           <li><button data-view="cloud"><svg><use href="#i-cloud"/></svg>Cloud &amp; rate</button></li>
           <li><button data-view="activity"><svg><use href="#i-activity"/></svg>Activity</button></li>
@@ -559,7 +557,7 @@
         <!-- ===== LICENCE ===== -->
         <div class="view" data-view="licence">
           <header class="vhead">
-            <div><h1>Licence</h1><p>Your plan, how long it lasts, and how it's protected.</p></div>
+            <div><h1>Licence</h1><p>Activate or renew this computer using your Ed25519 licence key from cognitara.net.</p></div>
           </header>
           <div class="lic">
             <section class="lic__gauge">
@@ -580,13 +578,38 @@
                 <div><dt>Check in again by</dt><dd id="licLease">—</dd></div>
               </dl>
               <div class="lic__actions">
-                <button type="button" class="btn btn--primary" id="renewLicBtn"><svg><use href="#i-spark"/></svg>Buy / Upgrade (Paystack)</button>
-                <button type="button" class="btn btn--ghost" id="licRedeemBtn"><svg><use href="#i-key"/></svg>Redeem code</button>
-                <button type="button" class="btn btn--ghost" id="licImportBtn"><svg><use href="#i-doc"/></svg>Import file</button>
+                <button type="button" class="btn btn--ghost" id="licImportBtn"><svg><use href="#i-doc"/></svg>Import .cgnlic file</button>
                 <button type="button" class="btn btn--ghost" id="checkInBtn"><svg><use href="#i-restore"/></svg>Check in</button>
+                <button type="button" class="btn btn--ghost" id="getKeyWebBtn"><svg><use href="#i-external"/></svg>Get licence key on cognitara.net</button>
               </div>
             </section>
           </div>
+
+          <section class="card lic-renew" id="licRenewCard">
+            <div class="lic-renew__head">
+              <div>
+                <h2>Activate or renew with a licence key</h2>
+                <p>Purchase or renew your school licence on <strong>cognitara.net/license</strong>, then paste the Ed25519 licence key below to activate this computer.</p>
+              </div>
+            </div>
+            <form class="lic-renew__form" id="licRenewForm">
+              <input
+                id="licRenewKeyInput"
+                class="mono lic-renew__input"
+                maxlength="24"
+                spellcheck="false"
+                autocomplete="off"
+                placeholder="CGNT-XXXX-XXXX-XXXX-XXXX"
+                aria-label="Enter licence key"
+              >
+              <button type="submit" class="btn btn--primary" id="licRenewSubmitBtn">
+                <svg><use href="#i-key"/></svg>
+                <span>Activate licence key</span>
+              </button>
+            </form>
+            <div class="lic-renew__msg" id="licRenewMsg" hidden></div>
+          </section>
+
           <h2 class="subhead">Protection</h2>
           <ul class="checks">
             <li id="checkSig"><svg><use href="#i-check"/></svg><span><strong>Licence signature is genuine</strong><em>Signed by CogniTara. Edited or copied licence files are rejected.</em></span></li>
@@ -823,403 +846,6 @@
           </div>
         </div>
 
-        <!-- ===== PLANS & BILLING (SolutionTee Hybrid Paystack: In-App Bank Transfer Charge API + Pre-Selected Channel Browser Checkout) ===== -->
-        <div class="view view--full" data-view="billing" id="billingView" data-bstage="select">
-          <header class="vhead vhead--flow">
-            <div class="vhead__left">
-              <button type="button" class="btn btn--ghost btn--sm flow-return-btn" id="billingReturnBtn" hidden>
-                <svg><use href="#i-back"/></svg><span id="billingReturnLabel">Back to setup</span>
-              </button>
-              <div>
-                <h1 id="billingTitle">Plans &amp; billing</h1>
-                <p id="billingSub">Choose a school plan, pay via native Paystack bank transfer or your preferred payment channel, or redeem an HQ voucher.</p>
-              </div>
-            </div>
-            <ol class="flow-steps" id="billingFlowSteps" aria-label="Checkout progress">
-              <li class="is-active" data-step="select"><b>1</b><span>Plan</span></li>
-              <li data-step="checkout"><b>2</b><span>Checkout</span></li>
-              <li data-step="receipt"><b>3</b><span>Active</span></li>
-            </ol>
-          </header>
-
-          <div class="cloud-modal__err" id="billingErr" hidden></div>
-          <div class="cloud-modal__ok" id="billingOk" hidden></div>
-
-          <!-- STAGE 1: CLAUDE-INSPIRED ARCHITECTURAL PLANS & VOUCHER STUDIO -->
-          <div class="bstage is-active" id="billingStageSelect" data-bstage="select">
-            <div class="bplans-hero">
-              <h2>Plans that grow with your school</h2>
-              <p>Simple institutional licensing with offline Ed25519 verification, encrypted cloud backups, and instant Paystack activation.</p>
-
-              <div class="bplans-controls" id="billingTabBar">
-                <div class="seg seg--sm" id="billingTabs" role="tablist">
-                  <button type="button" class="is-active" data-btab="plans">Buy with Paystack</button>
-                  <button type="button" data-btab="redeem">Redeem voucher code</button>
-                </div>
-                <div class="seg seg--sm" id="billingCurrencySeg" aria-label="Currency">
-                  <button type="button" class="is-active" data-curr="NGN">NGN (₦)</button>
-                  <button type="button" data-curr="USD">USD ($)</button>
-                </div>
-              </div>
-            </div>
-
-            <!-- TAB 1: FULL-WIDTH ARCHITECTURAL PLAN CARDS + COMPACT PROMO BAR -->
-            <div class="bplans-pane" id="billingPlansPane">
-              <div id="billingPendingRefBox" class="bplans-pending-bar" hidden>
-                <div class="bplans-pending-bar__info">
-                  <span class="bplans-pending-dot" aria-hidden="true"></span>
-                  <span>Pending Paystack reference <code id="bsPendingRef" class="mono">—</code></span>
-                </div>
-                <button type="button" class="btn btn--primary btn--sm" id="billingResumeVerifyBtn">Verify completed payment</button>
-              </div>
-
-              <div class="bplans-grid" id="billingPlansGrid">
-                <div class="billing-loading">Loading live plans from CogniTara Cloud…</div>
-              </div>
-
-              <!-- Sleek Centered Promo Code & Sign-in Utility Strip -->
-              <div class="bplans-utility-bar">
-                <div class="bplans-promo-box">
-                  <span class="bplans-promo-label">Have a promo code?</span>
-                  <div class="billing-promo-row">
-                    <input id="billingPromoInput" class="mono" placeholder="e.g. SCHOOL20" autocomplete="off">
-                    <button type="button" class="btn btn--ghost btn--sm" id="billingApplyPromoBtn">Apply</button>
-                  </div>
-                  <span class="bplans-promo-applied" id="bsDiscountRow" hidden>
-                    <svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>
-                    <strong id="bsDiscountVal">—</strong>
-                  </span>
-                </div>
-                <div class="bplans-utility-meta">
-                  <button type="button" class="btn btn--ghost btn--sm" id="billingSignInHintBtn" hidden>Sign in or create Cloud account</button>
-                  <span class="bplans-trust-inline">
-                    <svg><use href="#i-shield"/></svg>
-                    <span>Secured by Paystack · Native bank transfer &amp; pre-selected channels</span>
-                  </span>
-                </div>
-                <!-- Hidden compatibility mirrors for legacy summary hooks -->
-                <span id="bsPlanName" hidden>—</span>
-                <span id="bsTotalVal" hidden>—</span>
-                <button type="button" id="billingPayBtn" hidden>Continue to checkout</button>
-              </div>
-            </div>
-
-            <!-- TAB 2: REDEEM VOUCHER CODE -->
-            <div class="billing-redeem-stage" id="billingRedeemPane" hidden>
-              <div class="card billing-redeem-card">
-                <div class="billing-redeem-icon"><svg><use href="#i-key"/></svg></div>
-                <h2>Redeem an HQ licence voucher</h2>
-                <p>Enter a single-use voucher issued by CogniTara HQ to immediately sign and bind an official Ed25519 school licence to this PC.</p>
-                <label class="field">
-                  <span>Voucher code</span>
-                  <input id="billingRedeemInput" class="mono billing-redeem-input" placeholder="CT-RDM-XXXX-XXXX" autocomplete="off">
-                </label>
-                <div class="billing-redeem-actions">
-                  <button type="button" class="btn btn--primary btn--lg" id="billingRedeemSubmitBtn">Redeem &amp; activate now</button>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- STAGE 2: SOLUTIONTEE HYBRID CHECKOUT (METHOD SELECTOR -> IN-APP BANK TRANSFER OR PRE-SELECTED BROWSER CHECKOUT) -->
-          <div class="bstage" id="billingStageCheckout" data-bstage="checkout" hidden>
-            <div class="ck-shell" id="ckShellRoot" data-subview="method">
-
-              <!-- SUB-VIEW A: CHECKOUT METHOD SELECTOR -->
-              <div class="ck-pane" id="bsMethodPane">
-                <div class="ck-head">
-                  <button type="button" class="ck-back-btn" id="billingBackToPlansBtn">
-                    <svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg>
-                    <span>Checkout</span>
-                  </button>
-                  <span class="ps-test-badge" id="psStageTestBadge" hidden>Test Mode</span>
-                </div>
-
-                <div class="ck-method-grid">
-                  <!-- Left Column: Payment Method Radio Group -->
-                  <div class="ck-method-col ck-method-col--left">
-                    <div class="ck-methods-section">
-                      <h3 class="ck-methods-heading">How do you want to pay?</h3>
-
-                      <div class="ck-methods-list" id="ckMethodsList" role="radiogroup" aria-label="Payment method">
-                        <button type="button" class="ck-method is-selected" data-method="card" role="radio" aria-checked="true">
-                          <span class="ck-method__ico" aria-hidden="true">
-                            <svg viewBox="0 0 24 24"><rect x="2.5" y="5" width="19" height="14" rx="2.5"/><path d="M2.5 10h19M6.5 15h4"/></svg>
-                          </span>
-                          <span class="ck-method__copy">
-                            <strong>Card</strong>
-                            <em>Visa, Mastercard or Verve · Opens directly on Card checkout</em>
-                          </span>
-                          <span class="ck-radio" aria-hidden="true"></span>
-                        </button>
-
-                        <button type="button" class="ck-method" data-method="bank_transfer" role="radio" aria-checked="false">
-                          <span class="ck-method__ico ck-method__ico--ok" aria-hidden="true">
-                            <svg viewBox="0 0 24 24"><path d="M3 10h18M5 10V19M9 10V19M15 10V19M19 10V19M2 20h20M12 3 3 8h18z"/></svg>
-                          </span>
-                          <span class="ck-method__copy">
-                            <strong>Bank transfer <span class="ck-method__pill">In-app</span></strong>
-                            <em>Instant one-time Paystack-Titan account right inside Studio</em>
-                          </span>
-                          <span class="ck-radio" aria-hidden="true"></span>
-                        </button>
-
-                        <button type="button" class="ck-method" data-method="ussd" role="radio" aria-checked="false">
-                          <span class="ck-method__ico" aria-hidden="true">
-                            <svg viewBox="0 0 24 24"><path d="M6 9h12M6 15h12M10 4 8 20M16 4l-2 16"/></svg>
-                          </span>
-                          <span class="ck-method__copy">
-                            <strong>USSD</strong>
-                            <em>Dial a short code from your phone (*737#, *966#, *919#, etc.)</em>
-                          </span>
-                          <span class="ck-radio" aria-hidden="true"></span>
-                        </button>
-
-                        <div class="ck-methods-subhead">Pay with an app</div>
-
-                        <button type="button" class="ck-method" data-method="opay" role="radio" aria-checked="false">
-                          <span class="ck-method__ico ck-method__ico--opay" aria-hidden="true">
-                            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="7.5"/><circle cx="12" cy="12" r="3"/></svg>
-                          </span>
-                          <span class="ck-method__copy">
-                            <strong>OPay</strong>
-                            <em>Pay seamlessly with your OPay wallet or mobile app</em>
-                          </span>
-                          <span class="ck-radio" aria-hidden="true"></span>
-                        </button>
-
-                        <button type="button" class="ck-method" data-method="bank_app" role="radio" aria-checked="false">
-                          <span class="ck-method__ico" aria-hidden="true">
-                            <svg viewBox="0 0 24 24"><rect x="6" y="2.5" width="12" height="19" rx="2.5"/><path d="M10.5 18h3"/></svg>
-                          </span>
-                          <span class="ck-method__copy">
-                            <strong>Bank app</strong>
-                            <em>Kuda, GTWorld, AccessMore, Zenith, and Nigerian bank apps</em>
-                          </span>
-                          <span class="ck-radio" aria-hidden="true"></span>
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-
-                  <!-- Right Column: Order Summary, Discount Code & Primary CTA -->
-                  <div class="ck-method-col ck-method-col--right">
-                    <!-- Order Summary Card -->
-                    <div class="ck-summary card">
-                      <div class="ck-summary__row">
-                        <span>Plan</span>
-                        <strong id="ckSumPlan">Annual School</strong>
-                      </div>
-                      <div class="ck-summary__row">
-                        <span>Access until</span>
-                        <strong id="ckSumAccessUntil" class="tnum">—</strong>
-                      </div>
-                      <div class="ck-summary__row ck-summary__row--disc" id="ckSumDiscRow" hidden>
-                        <span>Discount</span>
-                        <strong id="ckSumDiscVal">—</strong>
-                      </div>
-                      <div class="ck-summary__divider"></div>
-                      <div class="ck-summary__total">
-                        <span>Total</span>
-                        <strong id="ckSumTotal" class="tnum">₦75,000</strong>
-                      </div>
-                      <p class="ck-summary__fee-note" id="ckSumFeeNote">+ Paystack's processing fee, shown on the next screen before you pay.</p>
-                    </div>
-
-                    <!-- Collapsible Discount Code Row -->
-                    <div class="ck-promo-wrap">
-                      <button type="button" class="ck-promo-toggle" id="ckPromoToggleBtn" aria-expanded="false">
-                        <span class="ck-promo-toggle__left">
-                          <span class="ck-promo-ico" aria-hidden="true">%</span>
-                          <span id="ckPromoToggleLabel">Have a discount code?</span>
-                        </span>
-                        <svg class="ck-promo-chev" viewBox="0 0 24 24"><path d="m7 10 5 5 5-5"/></svg>
-                      </button>
-                      <div class="ck-promo-body" id="ckPromoBody" hidden>
-                        <div class="ck-promo-row">
-                          <input id="ckStagePromoInput" class="mono" placeholder="Enter discount code" autocomplete="off">
-                          <button type="button" class="btn btn--ghost btn--sm" id="ckStagePromoApplyBtn">Apply</button>
-                        </div>
-                      </div>
-                    </div>
-
-                    <!-- Sticky Primary Checkout CTA -->
-                    <div class="ck-cta-bar">
-                      <button type="button" class="btn btn--primary btn--lg ck-pay-cta" id="ckPayNowBtn">
-                        Pay ₦75,000 with card
-                      </button>
-                      <div class="ck-trust-foot">
-                        <svg viewBox="0 0 24 24"><path d="M12 3 4.5 6v5.5c0 4.7 3.2 8.4 7.5 9.5 4.3-1.1 7.5-4.8 7.5-9.5V6z"/><path d="m9 12 2 2 4-4"/></svg>
-                        <span>Secured by Paystack · Instant Ed25519 licence activation</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <!-- SUB-VIEW B: NATIVE IN-APP BANK TRANSFER (PAYSTACK CHARGE API) -->
-              <div class="ck-pane" id="bsBankTransferPane" hidden>
-                <div class="ck-head">
-                  <button type="button" class="ck-back-btn" id="btBackBtn">
-                    <svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg>
-                    <span>Pay by bank transfer</span>
-                  </button>
-                </div>
-
-                <div class="bt-hero">
-                  <h2>Transfer exactly <span id="btExactAmount" class="bt-hero__amt tnum">₦75,000</span></h2>
-                  <p>Open your bank app and send the exact amount to the one-time Paystack account below. Your licence activates automatically once received.</p>
-                </div>
-
-                <div class="bt-ledger card">
-                  <div class="bt-row">
-                    <span class="bt-row__k">Bank</span>
-                    <div class="bt-row__v">
-                      <strong id="btBankName">Paystack-Titan</strong>
-                    </div>
-                  </div>
-                  <div class="bt-row bt-row--highlight">
-                    <span class="bt-row__k">Account number</span>
-                    <div class="bt-row__v">
-                      <code id="btAccountNumber" class="bt-acct-num mono tnum">—</code>
-                      <button type="button" class="btn btn--ghost btn--sm bt-copy-btn" id="btCopyAcctBtn">
-                        <svg><use href="#i-copy"/></svg><span>Copy</span>
-                      </button>
-                    </div>
-                  </div>
-                  <div class="bt-row">
-                    <span class="bt-row__k">Account name</span>
-                    <div class="bt-row__v">
-                      <strong id="btAccountName">PAYSTACK CHECKOUT</strong>
-                    </div>
-                  </div>
-                  <div class="bt-row">
-                    <span class="bt-row__k">Exact amount</span>
-                    <div class="bt-row__v">
-                      <strong id="btAmountVal" class="bt-amt-num tnum">₦75,000</strong>
-                      <button type="button" class="btn btn--ghost btn--sm bt-copy-btn" id="btCopyAmtBtn">
-                        <svg><use href="#i-copy"/></svg><span>Copy</span>
-                      </button>
-                    </div>
-                  </div>
-                  <div class="bt-row bt-row--sub">
-                    <span class="bt-row__k">Reference</span>
-                    <div class="bt-row__v">
-                      <code id="btRefVal" class="mono">—</code>
-                    </div>
-                  </div>
-                </div>
-
-                <div class="bt-expiry-alert" id="btExpiryBanner">
-                  <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>
-                  <span>Use this account once, within <strong id="btCountdown" class="tnum">25:00</strong>. Send the exact amount from your bank app.</span>
-                </div>
-
-                <div class="ck-wait-card" id="btWaitingCard">
-                  <span class="ck-wait-spinner" aria-hidden="true"></span>
-                  <div>
-                    <strong>Waiting for your payment</strong>
-                    <span id="btPollStatus">Checking Paystack automatically every few seconds…</span>
-                  </div>
-                </div>
-
-                <div class="ck-cta-bar">
-                  <button type="button" class="btn btn--primary btn--lg ck-pay-cta" id="btSentBtn">I have sent the money</button>
-                </div>
-              </div>
-
-              <!-- SUB-VIEW C: PRE-SELECTED CHANNEL BROWSER CHECKOUT TRACKER -->
-              <div class="ck-pane" id="bsBrowserWaitPane" hidden>
-                <div class="ck-head">
-                  <button type="button" class="ck-back-btn" id="bwBackBtn">
-                    <svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg>
-                    <span>Change payment method</span>
-                  </button>
-                </div>
-
-                <div class="bw-card card">
-                  <div class="bw-icon" aria-hidden="true">
-                    <svg viewBox="0 0 24 24"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg>
-                  </div>
-                  <h2 id="bwTitle">Paystack opened in your web browser</h2>
-                  <p id="bwSub">We opened Paystack with Card already selected for you. Complete your payment there and CogniTara Studio will automatically activate your Ed25519 licence.</p>
-
-                  <div class="bw-meta">
-                    <div><span>Plan</span><strong id="bwPlanName">Annual School</strong></div>
-                    <div><span>Amount</span><strong id="bwAmountVal" class="tnum">₦75,000</strong></div>
-                    <div><span>Reference</span><code id="bwRefVal" class="mono">—</code></div>
-                  </div>
-
-                  <div class="ck-wait-card" id="bwWaitingCard">
-                    <span class="ck-wait-spinner" aria-hidden="true"></span>
-                    <div>
-                      <strong>Waiting for your payment</strong>
-                      <span id="bwPollStatus">Listening for Paystack settlement automatically…</span>
-                    </div>
-                  </div>
-
-                  <div class="bw-actions">
-                    <button type="button" class="btn btn--primary btn--lg ck-pay-cta" id="bwVerifyBtn">I have completed payment</button>
-                    <button type="button" class="btn btn--ghost" id="bwReopenBtn">
-                      <svg><use href="#i-external"/></svg>Reopen checkout in browser
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-            </div>
-          </div>
-
-          <!-- STAGE 3: FULL-SCREEN CELEBRATORY PAYMENT RECEIPT WITH MOTION GRAPHICS -->
-          <div class="bstage" id="billingStageReceipt" data-bstage="receipt" hidden>
-            <div class="receipt-hero card" id="receiptHeroCard">
-              <div class="receipt-shimmer" aria-hidden="true"></div>
-              <div class="receipt-seal" aria-hidden="true">
-                <svg viewBox="0 0 140 140">
-                  <circle class="rs-wave rs-wave-1" cx="70" cy="70" r="46"/>
-                  <circle class="rs-wave rs-wave-2" cx="70" cy="70" r="46"/>
-                  <circle class="rs-orbit" cx="70" cy="70" r="56"/>
-                  <g class="rs-sparks">
-                    <line class="rs-spark" x1="70" y1="10" x2="70" y2="19"/>
-                    <line class="rs-spark" x1="112" y1="28" x2="106" y2="34"/>
-                    <line class="rs-spark" x1="130" y1="70" x2="121" y2="70"/>
-                    <line class="rs-spark" x1="112" y1="112" x2="106" y2="106"/>
-                    <line class="rs-spark" x1="70" y1="130" x2="70" y2="121"/>
-                    <line class="rs-spark" x1="28" y1="112" x2="34" y2="106"/>
-                    <line class="rs-spark" x1="10" y1="70" x2="19" y2="70"/>
-                    <line class="rs-spark" x1="28" y1="28" x2="34" y2="34"/>
-                  </g>
-                  <circle class="rs-halo" cx="70" cy="70" r="42"/>
-                  <circle class="rs-ring" cx="70" cy="70" r="36" pathLength="100"/>
-                  <path class="rs-check" d="M52 71 L64 83 L89 58" pathLength="100"/>
-                </svg>
-              </div>
-              <span class="receipt-badge"><i></i>Verified &amp; Hardware-Locked</span>
-              <h2 id="brTitle">Payment confirmed &amp; licence activated</h2>
-              <p id="brSub">Your signed Ed25519 licence is active on this computer and an official receipt has been emailed to your school.</p>
-
-              <div class="billing-summary receipt-ledger" id="brDetails">
-                <div class="billing-summary__row"><span>Plan</span><strong id="brPlan">—</strong></div>
-                <div class="billing-summary__row"><span>Amount paid</span><strong class="mono" id="brAmount">—</strong></div>
-                <div class="billing-summary__row" id="brRefRow"><span>Reference</span><code id="brRef" class="mono">—</code></div>
-                <div class="billing-summary__row" id="brKeyRow">
-                  <span>Licence key</span>
-                  <span style="display:flex;align-items:center;gap:8px">
-                    <code id="brKey" class="mono" style="font-weight:600;color:var(--ok)">—</code>
-                    <button type="button" class="btn btn--ghost btn--sm" id="brCopyKeyBtn">Copy</button>
-                  </span>
-                </div>
-                <div class="billing-summary__row"><span>Status</span><strong style="color:var(--ok)" id="brStatus">Active on this PC</strong></div>
-              </div>
-
-              <div class="receipt-actions">
-                <button type="button" class="btn btn--ghost" id="brOpenWebReceiptBtn" hidden>View printable receipt</button>
-                <button type="button" class="btn btn--primary btn--lg" id="brDoneBtn">Continue to Studio</button>
-              </div>
-            </div>
-          </div>
-        </div>
-
         <!-- ===== CLOUD ACCOUNT & RATE APP (Full-Screen Animated View — ZERO POPUPS) ===== -->
         <div class="view view--full" data-view="cloud" id="cloudView">
           <header class="vhead vhead--flow">
@@ -1263,7 +889,7 @@
               </div>
 
               <div class="cloud-id-actions">
-                <button type="button" class="btn btn--primary" id="cmUpgradeBtn"><svg><use href="#i-card"/></svg>Plans &amp; billing</button>
+                <button type="button" class="btn btn--primary" id="cmLicenceBtn"><svg><use href="#i-key"/></svg>Manage licence</button>
                 <button type="button" class="btn btn--ghost" id="cmSyncNowBtn"><svg><use href="#i-restore"/></svg>Sync now</button>
                 <button type="button" class="btn btn--ghost" id="cmOpenPortalBtn"><svg><use href="#i-external"/></svg>Web portal</button>
                 <button type="button" class="btn btn--ghost" id="cmSignOutBtn">Sign out</button>
@@ -1372,7 +998,7 @@
 
             <aside class="stage onb-stage-cloud">
               <h3>Verified school identity, offline exam independence</h3>
-              <p>Sign in once with your 6-digit Brevo email code to link licences, encrypt cloud database backups, pay with embedded Paystack, and rate CogniTara Studio.</p>
+              <p>Sign in once with your 6-digit Brevo email code to sync licences, encrypt cloud database backups, and rate CogniTara Studio.</p>
               <ul>
                 <li><svg><use href="#i-shield"/></svg><span><strong>Email OTP security.</strong> Only verified school admins can activate or move licences.</span></li>
                 <li><svg><use href="#i-backup"/></svg><span><strong>Encrypted cloud backups.</strong> Restore every exam, question, and score on a replacement PC.</span></li>
@@ -1389,11 +1015,27 @@
       <div class="lock__inner">
         <svg class="lock__sym" viewBox="0 0 200 200" aria-hidden="true"><use class="lock__c" href="#ct-c"/><use class="lock__star" href="#ct-star"/></svg>
         <h1 id="lockTitle">Your licence has ended</h1>
-        <p id="lockBody">The server has stopped accepting new exams. Your exams, questions and results are safe and will be here when you renew.</p>
+        <p id="lockBody">The server has stopped accepting new exams. Your exams, questions and results are safe. Enter a new licence key from cognitara.net to unlock immediately.</p>
         <div class="drain" id="drain">
           <svg><use href="#i-clock"/></svg>
           <span><strong><span id="drainCount">0</span> exams are still in progress.</strong> Students have <b class="mono" id="drainTime">15:00</b> to finish and submit. Nobody new can start.</span>
         </div>
+        <form class="lock__keybox" id="lockKeyForm" hidden>
+          <input
+            id="lockKeyInput"
+            class="mono lock__key-input"
+            maxlength="24"
+            spellcheck="false"
+            autocomplete="off"
+            placeholder="CGNT-XXXX-XXXX-XXXX-XXXX"
+            aria-label="Enter new licence key"
+          >
+          <button type="submit" class="btn btn--primary" id="lockKeySubmitBtn">
+            <svg><use href="#i-key"/></svg>
+            <span>Activate key</span>
+          </button>
+        </form>
+        <p class="lock__key-msg" id="lockKeyMsg" hidden></p>
         <div class="lock__actions" id="lockActions"></div>
         <p class="lock__meta" id="lockMeta"></p>
       </div>

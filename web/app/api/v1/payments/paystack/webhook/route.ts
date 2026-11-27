@@ -40,7 +40,7 @@ export async function POST(req: NextRequest) {
 
     if (eventType === "charge.success" && reference) {
       const rows = await sql`
-        SELECT id, currency, amount_minor, customer_paid_minor, is_test
+        SELECT id, currency, amount_minor, customer_paid_minor, is_test, paystack_reference
         FROM subscriptions_payments
         WHERE paystack_reference = ${reference}
         LIMIT 1
@@ -48,10 +48,29 @@ export async function POST(req: NextRequest) {
       if (rows.length > 0) {
         const pay = rows[0] as Record<string, any>;
         const expectedCurrency = String(pay.currency || "NGN").trim().toUpperCase();
-        const actualCurrency = String(tx.currency || expectedCurrency).trim().toUpperCase();
+        const actualCurrency = String(tx.currency || "").trim().toUpperCase();
         const expectedMin = Number(pay.customer_paid_minor || pay.amount_minor || 0);
+        const orderIsTest = Boolean(pay.is_test);
+        const webhookIsTest = matchedTest || tx.domain === "test";
 
-        if (actualCurrency === expectedCurrency && Number(tx.amount || 0) >= expectedMin) {
+        // Strict security invariant: Test-key/test-domain webhook can NEVER fulfill a Live order (and vice-versa)
+        if (orderIsTest !== webhookIsTest || actualCurrency !== expectedCurrency || Number(tx.amount || 0) < expectedMin) {
+          await logDeveloperAudit({
+            action: "paystack_webhook_security_mismatch",
+            targetType: "payment",
+            targetId: String(pay.id),
+            ipAddress: getClientIp(req),
+            details: {
+              reference,
+              order_is_test: orderIsTest,
+              webhook_is_test: webhookIsTest,
+              expected_currency: expectedCurrency,
+              actual_currency: actualCurrency,
+              expected_min: expectedMin,
+              actual_amount: Number(tx.amount || 0),
+            },
+          });
+        } else {
           await fulfillConfirmedPaystackPayment({
             paymentId: pay.id as string,
             paystackTransactionId: tx.id ? Number(tx.id) : null,
@@ -60,7 +79,7 @@ export async function POST(req: NextRequest) {
             paystackSubChannel: tx.channel || null,
             paystackFeeMinor: tx.fees !== undefined ? Number(tx.fees) : null,
             customerPaidMinor: tx.amount !== undefined ? Number(tx.amount) : null,
-            isTest: matchedTest || tx.domain === "test" || Boolean(pay.is_test),
+            isTest: orderIsTest,
             verificationChecks: [
               {
                 step: "Webhook HMAC-SHA512 verified",
@@ -69,7 +88,7 @@ export async function POST(req: NextRequest) {
                 at: nowIso,
               },
               {
-                step: "Status, amount & currency matched",
+                step: "Status, domain, amount & currency matched",
                 ok: true,
                 detail: `${actualCurrency} ${(Number(tx.amount) / 100).toLocaleString()} via ${tx.channel || "paystack"}`,
                 at: nowIso,

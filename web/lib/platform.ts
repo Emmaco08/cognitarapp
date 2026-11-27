@@ -339,6 +339,7 @@ export async function evaluatePromoCode(params: {
   planId?: string | null;
   currency?: string;
   schoolId?: string | null;
+  email?: string | null;
 }): Promise<PromoEvalResult> {
   const code = String(params.rawCode || "").trim().toUpperCase();
   if (!code) {
@@ -349,7 +350,8 @@ export async function evaluatePromoCode(params: {
   const rows = await sql`
     SELECT p.*, gp.slug AS grant_plan_slug, gp.display_name AS grant_plan_name,
            gp.duration_days AS grant_plan_duration_days, gp.plan_tier AS grant_plan_tier,
-           gp.lease_days AS grant_plan_lease_days, gp.max_devices AS grant_plan_max_devices
+           gp.lease_days AS grant_plan_lease_days, gp.max_devices AS grant_plan_max_devices,
+           gp.price_ngn_kobo AS grant_plan_price_ngn_kobo, gp.price_usd_cents AS grant_plan_price_usd_cents
     FROM promo_codes p
     LEFT JOIN plans gp ON gp.id = p.grant_plan_id
     WHERE UPPER(p.code) = ${code}
@@ -363,6 +365,9 @@ export async function evaluatePromoCode(params: {
   const promo = rows[0] as Record<string, any>;
   if (!promo.is_active) {
     return { valid: false, error: "code_inactive", message: "This code is no longer active." };
+  }
+  if (promo.starts_at && new Date(promo.starts_at).getTime() > Date.now()) {
+    return { valid: false, error: "code_not_started", message: "This code is not active yet." };
   }
   if (promo.expires_at && new Date(promo.expires_at).getTime() <= Date.now()) {
     return { valid: false, error: "code_expired", message: "This code has expired." };
@@ -382,13 +387,34 @@ export async function evaluatePromoCode(params: {
     }
   }
 
+  const cleanEmail = String(params.email || "").trim().toLowerCase();
+  const perEmailLimit = Number(promo.per_email_limit || promo.per_school_limit || 1);
+  if (cleanEmail && perEmailLimit > 0) {
+    const usedByEmail = await sql`
+      SELECT COUNT(*)::int AS cnt
+      FROM promo_redemptions pr
+      LEFT JOIN users_hq u ON u.id = pr.user_id
+      WHERE pr.promo_code_id = ${promo.id}::uuid
+        AND (LOWER(COALESCE(pr.buyer_email, '')) = ${cleanEmail} OR LOWER(COALESCE(u.email, '')) = ${cleanEmail})
+    `;
+    if (Number(usedByEmail[0]?.cnt || 0) >= perEmailLimit) {
+      return { valid: false, error: "already_redeemed_email", message: "This email address has already used this code." };
+    }
+  }
+
+  const currency = (params.currency || "NGN").toUpperCase();
+
   if (promo.code_type === "redeem") {
+    const grantOrig =
+      currency === "USD"
+        ? Number(promo.grant_plan_price_usd_cents || 0)
+        : Number(promo.grant_plan_price_ngn_kobo || 0);
     return {
       valid: true,
       promo,
       code_type: "redeem",
-      original_amount_minor: 0,
-      discount_amount_minor: 0,
+      original_amount_minor: grantOrig,
+      discount_amount_minor: grantOrig,
       final_amount_minor: 0,
       grant_plan: promo.grant_plan_id
         ? {
@@ -401,14 +427,13 @@ export async function evaluatePromoCode(params: {
             max_devices: promo.grant_plan_max_devices || 1,
           }
         : null,
-      message: `Valid redeem voucher: grants ${promo.grant_plan_name || "CogniTara Licence"}${
+      message: `100% Free Voucher · Grants ${promo.grant_plan_name || "CogniTara Licence"}${
         promo.grant_duration_days ? ` (${promo.grant_duration_days} days)` : ""
-      }.`,
+      }`,
     };
   }
 
   // Discount code path
-  const currency = (params.currency || "NGN").toUpperCase();
   if (!params.planId) {
     return { valid: false, error: "plan_required", message: "Select a plan to apply this discount code." };
   }
@@ -424,6 +449,20 @@ export async function evaluatePromoCode(params: {
   }
   const plan = planRows[0] as Record<string, any>;
   const origMinor = Number(currency === "USD" ? plan.price_usd_cents : plan.price_ngn_kobo);
+
+  const minMinor =
+    currency === "USD"
+      ? Number(promo.min_amount_usd_cents || 0)
+      : Number(promo.min_amount_ngn_kobo || 0);
+  if (minMinor > 0 && origMinor < minMinor) {
+    const sym = currency === "USD" ? "$" : "₦";
+    return {
+      valid: false,
+      error: "below_min_amount",
+      message: `This code requires a minimum order of ${sym}${(minMinor / 100).toLocaleString()}.`,
+    };
+  }
+
   const val = Number(promo.discount_value || 0);
   let discountMinor = 0;
 
@@ -452,20 +491,23 @@ export async function evaluatePromoCode(params: {
     discount_amount_minor: discountMinor,
     final_amount_minor: finalMinor,
     message:
-      promo.discount_kind === "percent"
-        ? `${val}% discount applied!`
-        : `Discount of ${(discountMinor / 100).toLocaleString()} ${currency} applied!`,
+      finalMinor === 0
+        ? "100% discount applied — activate free!"
+        : promo.discount_kind === "percent"
+        ? `${val}% discount applied`
+        : `${currency === "USD" ? "$" : "₦"}${(discountMinor / 100).toLocaleString()} discount applied`,
   };
 }
 
 /**
  * Generates and persists a real Ed25519-signed CogniTara license for a school,
- * optionally bound to a specific machine HWID right away so Desktop activates in 1 click.
+ * optionally bound to a specific machine HWID right away.
  */
 export async function issueSignedLicenseForSchool(params: {
   schoolId: string;
   planId: string;
   paymentId?: string | null;
+  schoolNameOverride?: string | null;
   durationDaysOverride?: number | null;
   bonusDays?: number;
   hwidHash?: string | null;
@@ -481,6 +523,10 @@ export async function issueSignedLicenseForSchool(params: {
   const schoolRows = await sql`SELECT id, school_name FROM schools WHERE id = ${params.schoolId}::uuid LIMIT 1`;
   if (!schoolRows.length) throw new Error("School not found.");
   const school = schoolRows[0] as Record<string, any>;
+  const effectiveSchoolName =
+    (params.schoolNameOverride && params.schoolNameOverride.trim().length >= 2
+      ? params.schoolNameOverride.trim()
+      : String(school.school_name || "School"));
 
   const planRows = await sql`SELECT * FROM plans WHERE id = ${params.planId}::uuid LIMIT 1`;
   if (!planRows.length) throw new Error("Plan not found.");
@@ -507,7 +553,7 @@ export async function issueSignedLicenseForSchool(params: {
   const leaseEnvelope = signLicenseLease({
     licenseId,
     licenseKey,
-    schoolName: school.school_name,
+    schoolName: effectiveSchoolName,
     planTier,
     planSlug: plan.slug,
     planName: plan.display_name,

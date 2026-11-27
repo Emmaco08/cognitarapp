@@ -501,3 +501,16 @@ CREATE TABLE IF NOT EXISTS cms_entries (
 );
 CREATE INDEX IF NOT EXISTS idx_cms_entries_section ON cms_entries(section, published, sort_order, created_at DESC);
 
+-- 24. v2.4.0: Hardened Web-Only Payments & Upgraded Discount / Redeem Code Engine
+ALTER TABLE promo_codes ADD COLUMN IF NOT EXISTS starts_at TIMESTAMPTZ;
+ALTER TABLE promo_codes ADD COLUMN IF NOT EXISTS min_amount_ngn_kobo BIGINT NOT NULL DEFAULT 0;
+ALTER TABLE promo_codes ADD COLUMN IF NOT EXISTS min_amount_usd_cents BIGINT NOT NULL DEFAULT 0;
+ALTER TABLE promo_codes ADD COLUMN IF NOT EXISTS per_email_limit INTEGER NOT NULL DEFAULT 1;
+ALTER TABLE promo_codes ADD COLUMN IF NOT EXISTS description TEXT NOT NULL DEFAULT '';
+
+ALTER TABLE promo_redemptions ADD COLUMN IF NOT EXISTS buyer_email TEXT;
+ALTER TABLE promo_redemptions ADD COLUMN IF NOT EXISTS ip_address TEXT;
+CREATE INDEX IF NOT EXISTS idx_promo_redemptions_email ON promo_redemptions(promo_code_id, LOWER(buyer_email));
+
+ALTER TABLE subscriptions_payments ADD COLUMN IF NOT EXISTS buyer_school_name TEXT;
+ALTER TABLE subscriptions_payments ADD COLUMN IF NOT EXISTS buyer_email TEXT;

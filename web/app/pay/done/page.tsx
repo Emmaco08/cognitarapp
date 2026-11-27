@@ -1,20 +1,26 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
 import Link from "next/link";
-import { BrandHeader } from "@/components/BrandHeader";
-import { IconCheck, IconCopy, IconDownload } from "@/components/Icons";
+import React, { useCallback, useEffect, useRef, useState } from "react";
+import LandingNav from "../../../components/landing/LandingNav";
+import LandingFooter from "../../../components/landing/LandingFooter";
 
 interface ReceiptPayload {
   ok: boolean;
   authenticated?: boolean;
   status: string;
+  email_sent?: boolean;
+  receipt_token?: string;
+  pdf_url?: string;
+  error?: string;
   receipt?: {
     reference: string;
     school_name: string;
     owner_name: string;
     email: string;
     plan_name: string;
+    plan_slug?: string;
+    duration_days?: number | null;
     currency: string;
     original_amount_minor: number;
     discount_amount_minor: number;
@@ -41,70 +47,275 @@ interface ReceiptPayload {
 
 function fmtMoney(minor: number, currency = "NGN") {
   const sym = currency === "USD" ? "$" : currency === "NGN" ? "₦" : `${currency} `;
-  return `${sym}${(Number(minor || 0) / 100).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  const val = Number(minor || 0) / 100;
+  return `${sym}${val.toLocaleString(currency === "USD" ? "en-US" : "en-NG", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`;
+}
+
+/**
+ * Cryptographic left-to-right slot-decode reveal for Ed25519 Licence Keys.
+ * Respects `prefers-reduced-motion: reduce` by returning the exact key immediately.
+ */
+function useDecodedLicenseKey(realKey: string | undefined): { display: string; settled: boolean } {
+  const [display, setDisplay] = useState(realKey || "");
+  const [settled, setSettled] = useState(false);
+
+  useEffect(() => {
+    if (!realKey) {
+      setDisplay("");
+      setSettled(false);
+      return;
+    }
+    const reduced =
+      typeof window !== "undefined" &&
+      window.matchMedia &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (reduced) {
+      setDisplay(realKey);
+      setSettled(true);
+      return;
+    }
+
+    const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+    const chars = realKey.split("");
+    const startDelay = 340;
+    const decodeDuration = 760;
+    const t0 = performance.now();
+    let rafId = 0;
+
+    const tick = (now: number) => {
+      const elapsed = now - t0 - startDelay;
+      if (elapsed < 0) {
+        const masked = chars
+          .map((ch, idx) => (ch === "-" ? "-" : alphabet[(idx * 7 + Math.floor(now / 45)) % alphabet.length]))
+          .join("");
+        setDisplay(masked);
+        rafId = requestAnimationFrame(tick);
+        return;
+      }
+
+      const progress = Math.min(1, elapsed / decodeDuration);
+      const lockedCount = Math.floor(progress * chars.length);
+
+      const frame = chars
+        .map((ch, idx) => {
+          if (ch === "-" || idx < lockedCount) return ch;
+          return alphabet[(idx * 11 + Math.floor(now / 36)) % alphabet.length];
+        })
+        .join("");
+
+      setDisplay(frame);
+      if (progress < 1) {
+        rafId = requestAnimationFrame(tick);
+      } else {
+        setDisplay(realKey);
+        setSettled(true);
+      }
+    };
+
+    rafId = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(rafId);
+  }, [realKey]);
+
+  return { display, settled };
+}
+
+/**
+ * Architectural monochrome particle burst behind the verified seal.
+ * Pure obsidian (#171614), graphite (#575551), and warm silver (#C5C2BA) ribbons & diamonds.
+ * Runs once on confirmation and stops automatically so zero idle CPU is consumed.
+ */
+function MonochromeCelebrationCanvas({ active }: { active: boolean }) {
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+
+  useEffect(() => {
+    if (!active) return;
+    if (
+      typeof window !== "undefined" &&
+      window.matchMedia &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    ) {
+      return;
+    }
+
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    const dpr = Math.min(2, window.devicePixelRatio || 1);
+    const width = canvas.clientWidth || 720;
+    const height = canvas.clientHeight || 340;
+    canvas.width = Math.round(width * dpr);
+    canvas.height = Math.round(height * dpr);
+    ctx.scale(dpr, dpr);
+
+    const originX = width / 2;
+    const originY = 104;
+    const palette = ["#171614", "#2E2C29", "#575551", "#8E8B84", "#C9C6BE"];
+
+    interface Particle {
+      x: number;
+      y: number;
+      vx: number;
+      vy: number;
+      size: number;
+      ratio: number;
+      angle: number;
+      spin: number;
+      color: string;
+      shape: "diamond" | "ribbon" | "dot";
+      alpha: number;
+    }
+
+    const particles: Particle[] = [];
+    const count = 54;
+    for (let i = 0; i < count; i++) {
+      const theta = (Math.PI * 2 * i) / count + (Math.random() - 0.5) * 0.24;
+      const speed = 2.6 + Math.random() * 5.6;
+      particles.push({
+        x: originX,
+        y: originY,
+        vx: Math.cos(theta) * speed * (1.08 + Math.random() * 0.25),
+        vy: Math.sin(theta) * speed * 0.82 - (1.8 + Math.random() * 2.2),
+        size: 3.5 + Math.random() * 5.2,
+        ratio: 0.35 + Math.random() * 0.55,
+        angle: Math.random() * Math.PI * 2,
+        spin: (Math.random() - 0.5) * 0.16,
+        color: palette[i % palette.length],
+        shape: i % 3 === 0 ? "diamond" : i % 3 === 1 ? "ribbon" : "dot",
+        alpha: 0.92,
+      });
+    }
+
+    let rafId = 0;
+    const start = performance.now();
+    const maxDuration = 2800;
+
+    const render = (now: number) => {
+      const elapsed = now - start;
+      ctx.clearRect(0, 0, width, height);
+
+      if (elapsed > maxDuration) return;
+      const fadeProgress = Math.max(0, (elapsed - 1250) / (maxDuration - 1250));
+
+      for (const p of particles) {
+        p.vx *= 0.968;
+        p.vy = p.vy * 0.968 + 0.095;
+        p.x += p.vx;
+        p.y += p.vy;
+        p.angle += p.spin;
+        const opacity = Math.max(0, p.alpha * (1 - fadeProgress));
+        if (opacity <= 0.01) continue;
+
+        ctx.save();
+        ctx.translate(p.x, p.y);
+        ctx.rotate(p.angle);
+        ctx.globalAlpha = opacity;
+        ctx.fillStyle = p.color;
+
+        if (p.shape === "diamond") {
+          const s = p.size;
+          ctx.beginPath();
+          ctx.moveTo(0, -s);
+          ctx.lineTo(s * 0.62, 0);
+          ctx.lineTo(0, s);
+          ctx.lineTo(-s * 0.62, 0);
+          ctx.closePath();
+          ctx.fill();
+        } else if (p.shape === "ribbon") {
+          ctx.fillRect(-p.size, -p.size * p.ratio * 0.45, p.size * 2, Math.max(1.8, p.size * p.ratio));
+        } else {
+          ctx.beginPath();
+          ctx.arc(0, 0, p.size * 0.36, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.restore();
+      }
+
+      rafId = requestAnimationFrame(render);
+    };
+
+    rafId = requestAnimationFrame(render);
+    return () => cancelAnimationFrame(rafId);
+  }, [active]);
+
+  return <canvas ref={canvasRef} className="rs-done-canvas" aria-hidden="true" />;
 }
 
 export default function PaymentDonePage() {
   const [reference, setReference] = useState("");
-  const [source, setSource] = useState<"web" | "desktop">("web");
+  const [receiptToken, setReceiptToken] = useState("");
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<ReceiptPayload | null>(null);
   const [error, setError] = useState("");
+  const [errorCode, setErrorCode] = useState("");
   const [copiedKey, setCopiedKey] = useState(false);
 
-  async function fetchReceipt(ref: string) {
+  const fetchReceipt = useCallback(async (ref: string, rt: string) => {
     setLoading(true);
     setError("");
+    setErrorCode("");
     try {
-      const res = await fetch(`/api/v1/payments/receipt/${encodeURIComponent(ref)}`, {
+      const qs = rt ? `?rt=${encodeURIComponent(rt)}` : "";
+      const res = await fetch(`/api/v1/payments/receipt/${encodeURIComponent(ref)}${qs}`, {
         credentials: "include",
       });
       const json = (await res.json().catch(() => ({}))) as ReceiptPayload;
       if (!res.ok || !json.ok) {
-        setError(json.message || "We could not find this payment reference.");
+        setError(json.message || "We could not verify this payment reference.");
+        setErrorCode(json.error || (res.status === 403 ? "receipt_unauthorized" : "lookup_error"));
         setData(null);
       } else {
         setData(json);
       }
     } catch {
-      setError("Could not verify your payment right now. Click retry below.");
+      setError("Could not reach our payment verification server right now. Click retry below.");
+      setErrorCode("network_error");
     } finally {
       setLoading(false);
     }
-  }
+  }, []);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const ref = (params.get("reference") || params.get("trxref") || "").trim();
-    const src = params.get("source") === "desktop" ? "desktop" : "web";
-    setSource(src);
+    const rt = (params.get("rt") || "").trim();
     setReference(ref);
+    setReceiptToken(rt);
     if (!ref) {
       setLoading(false);
-      setError("No payment reference was provided in the link.");
+      setError("No payment reference was provided in this link.");
+      setErrorCode("missing_reference");
       return;
     }
-    void fetchReceipt(ref);
-  }, []);
+    void fetchReceipt(ref, rt);
+  }, [fetchReceipt]);
 
-  // Poll automatically for up to 30s if still waiting on Paystack confirmation
+  // Auto-poll while Paystack finishes confirming
   useEffect(() => {
-    if (!reference || !data || data.status === "success" || data.status === "failed" || data.status === "refunded") return;
-    const t = setTimeout(() => {
-      void fetchReceipt(reference);
+    if (!reference || !data || data.status === "success" || data.status === "failed" || data.status === "refunded") {
+      return;
+    }
+    const timer = setTimeout(() => {
+      void fetchReceipt(reference, receiptToken);
     }, 3500);
-    return () => clearTimeout(t);
-  }, [reference, data]);
+    return () => clearTimeout(timer);
+  }, [reference, receiptToken, data, fetchReceipt]);
 
   function copyKey(key: string) {
     navigator.clipboard?.writeText(key).catch(() => {});
     setCopiedKey(true);
-    setTimeout(() => setCopiedKey(false), 1800);
+    setTimeout(() => setCopiedKey(false), 2000);
   }
 
   function downloadLicenseFile() {
     if (!data?.license?.signed_lease) return;
-    const blob = new Blob([JSON.stringify(data.license.signed_lease, null, 2)], { type: "application/json" });
+    const blob = new Blob([JSON.stringify(data.license.signed_lease, null, 2)], {
+      type: "application/json",
+    });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
@@ -119,201 +330,363 @@ export default function PaymentDonePage() {
   const lic = data?.license;
   const isPaid = data?.status === "success";
   const isFailed = data?.status === "failed" || data?.status === "refunded";
+  const isVoucher = Boolean(r?.channel?.toLowerCase().includes("voucher"));
+  const decodedKey = useDecodedLicenseKey(isPaid ? lic?.license_key : undefined);
+
+  const pdfHref =
+    data?.pdf_url ||
+    (reference
+      ? `/api/v1/payments/receipt/${encodeURIComponent(reference)}/pdf${
+          data?.receipt_token || receiptToken
+            ? `?rt=${encodeURIComponent(data?.receipt_token || receiptToken)}`
+            : ""
+        }`
+      : "");
 
   return (
-    <div className="ct-shell">
-      <BrandHeader signedIn={Boolean(data?.authenticated)} />
-      <main className="receipt-wrap">
-        <div className="card">
+    <div className="rs-root">
+      <div className="no-print">
+        <LandingNav activePath="/license" />
+      </div>
+
+      <main id="main-content" className="rs-subpage rs-done-page">
+        <div className="rs-done-shell">
+          {/* STATE 1: Initial loading */}
           {loading && !data ? (
-            <div className="receipt-hero" style={{ borderBottom: 0, marginBottom: 0, paddingBottom: 8 }}>
-              <div className="receipt-check receipt-check--pending">
-                <span className="mono" style={{ fontSize: 13 }}>•••</span>
+            <section className="rs-done-state-card">
+              <div className="rs-done-radar" aria-hidden="true">
+                <span className="rs-done-radar-ring" />
+                <span className="rs-done-radar-core" />
               </div>
-              <h1 style={{ margin: 0, fontSize: 22 }}>Confirming your payment</h1>
-              <p style={{ margin: 0, color: "var(--ink-2)", maxWidth: "42ch" }}>
-                Checking with Paystack and preparing your school licence. This usually takes a couple of seconds.
+              <h1 className="rs-done-h1">Verifying your payment</h1>
+              <p className="rs-done-lead">
+                Confirming transaction authenticity with Paystack and sealing your school&apos;s Ed25519 licence certificate.
               </p>
-              {reference ? <code className="mono" style={{ fontSize: 12, color: "var(--ink-3)" }}>{reference}</code> : null}
-            </div>
+              {reference ? <code className="rs-done-ref-chip">{reference}</code> : null}
+            </section>
           ) : error ? (
-            <div className="receipt-hero" style={{ borderBottom: 0, marginBottom: 0 }}>
-              <div className="receipt-check receipt-check--bad">!</div>
-              <h1 style={{ margin: 0, fontSize: 22 }}>Could not load receipt</h1>
-              <p style={{ margin: 0, color: "var(--ink-2)" }}>{error}</p>
-              <div className="hq-btn-row no-print" style={{ marginTop: 12 }}>
-                {reference ? (
-                  <button type="button" className="btn btn--primary" onClick={() => void fetchReceipt(reference)}>
+            /* STATE 2: Error / 403 Unauthorized */
+            <section className="rs-done-state-card">
+              <div className="rs-done-icon-circle" aria-hidden="true">
+                {errorCode === "receipt_unauthorized" ? (
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="4" y="11" width="16" height="10" rx="2" />
+                    <path d="M8 11V7a4 4 0 0 1 8 0v4" />
+                  </svg>
+                ) : (
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="9" />
+                    <path d="M12 8v5M12 16.5h.01" />
+                  </svg>
+                )}
+              </div>
+              <h1 className="rs-done-h1">
+                {errorCode === "receipt_unauthorized" ? "Protected school receipt" : "Could not load receipt"}
+              </h1>
+              <p className="rs-done-lead">{error}</p>
+              <div className="rs-done-actions no-print">
+                {errorCode === "receipt_unauthorized" ? (
+                  <Link href="/signin" className="rs-btn rs-btn--primary">
+                    Sign in to school account
+                  </Link>
+                ) : reference ? (
+                  <button
+                    type="button"
+                    className="rs-btn rs-btn--primary"
+                    onClick={() => void fetchReceipt(reference, receiptToken)}
+                  >
                     Try again
                   </button>
                 ) : null}
-                <Link href="/dashboard" className="btn btn--ghost">
-                  Go to Dashboard
+                <Link href="/license" className="rs-btn rs-btn--soft">
+                  View licence plans
                 </Link>
               </div>
-            </div>
+            </section>
           ) : r ? (
+            /* STATE 3: Confirmed / Pending / Failed */
             <>
-              <div className={`receipt-hero ${isPaid ? "receipt-hero--paid" : ""}`}>
-                {isPaid ? <div className="pay-celebrate-shimmer" aria-hidden="true" /> : null}
+              {/* ACT 1: Monochrome Kinetic Celebration + Precision Seal */}
+              <section className={`rs-done-hero${isPaid ? " is-paid" : ""}`}>
+                {isPaid ? <MonochromeCelebrationCanvas active={isPaid} /> : null}
+
                 {isPaid ? (
-                  <div className="pay-celebrate-seal" aria-hidden="true">
-                    <svg viewBox="0 0 140 140">
-                      <circle className="pc-wave pc-wave-1" cx="70" cy="70" r="46" />
-                      <circle className="pc-wave pc-wave-2" cx="70" cy="70" r="46" />
-                      <circle className="pc-orbit" cx="70" cy="70" r="56" />
-                      <g className="pc-sparks">
-                        <line className="pc-spark" x1="70" y1="10" x2="70" y2="19" />
-                        <line className="pc-spark" x1="112" y1="28" x2="106" y2="34" />
-                        <line className="pc-spark" x1="130" y1="70" x2="121" y2="70" />
-                        <line className="pc-spark" x1="112" y1="112" x2="106" y2="106" />
-                        <line className="pc-spark" x1="70" y1="130" x2="70" y2="121" />
-                        <line className="pc-spark" x1="28" y1="112" x2="34" y2="106" />
-                        <line className="pc-spark" x1="10" y1="70" x2="19" y2="70" />
-                        <line className="pc-spark" x1="28" y1="28" x2="34" y2="34" />
+                  <div className="rs-done-seal" aria-hidden="true">
+                    <svg viewBox="0 0 156 156">
+                      <circle className="rs-seal-sonar rs-seal-sonar--1" cx="78" cy="78" r="46" />
+                      <circle className="rs-seal-sonar rs-seal-sonar--2" cx="78" cy="78" r="46" />
+                      <circle className="rs-seal-orbit" cx="78" cy="78" r="60" />
+                      <g className="rs-seal-ticks">
+                        <line x1="78" y1="10" x2="78" y2="18" />
+                        <line x1="126" y1="30" x2="120" y2="36" />
+                        <line x1="146" y1="78" x2="138" y2="78" />
+                        <line x1="126" y1="126" x2="120" y2="120" />
+                        <line x1="78" y1="146" x2="78" y2="138" />
+                        <line x1="30" y1="126" x2="36" y2="120" />
+                        <line x1="10" y1="78" x2="18" y2="78" />
+                        <line x1="30" y1="30" x2="36" y2="36" />
                       </g>
-                      <circle className="pc-halo" cx="70" cy="70" r="42" />
-                      <circle className="pc-ring" cx="70" cy="70" r="36" pathLength={100} />
-                      <path className="pc-check" d="M52 71 L64 83 L89 58" pathLength={100} />
+                      <circle className="rs-seal-disc" cx="78" cy="78" r="42" />
+                      <circle className="rs-seal-ring" cx="78" cy="78" r="36" pathLength={100} />
+                      <path className="rs-seal-check" d="M59 79 L72 92 L98 65" pathLength={100} />
+                    </svg>
+                  </div>
+                ) : isFailed ? (
+                  <div className="rs-done-icon-circle" aria-hidden="true">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round">
+                      <path d="M7 7l10 10M17 7L7 17" />
                     </svg>
                   </div>
                 ) : (
-                  <div className={`receipt-check ${isFailed ? "receipt-check--bad" : "receipt-check--pending"}`}>
-                    {isFailed ? "✕" : "…"}
+                  <div className="rs-done-radar" aria-hidden="true">
+                    <span className="rs-done-radar-ring" />
+                    <span className="rs-done-radar-core" />
                   </div>
                 )}
+
                 {isPaid ? (
-                  <span className="pay-celebrate-badge">
-                    <i />
-                    Verified &amp; Ed25519 Signed
-                  </span>
+                  <div className="rs-done-badge">
+                    <span className="rs-done-badge-dot" aria-hidden="true" />
+                    <span>{isVoucher ? "Voucher redeemed · Ed25519 signed" : "Payment verified · Ed25519 signed"}</span>
+                  </div>
                 ) : null}
-                <h1 className="pay-celebrate-title" style={{ margin: 0, fontSize: 25, letterSpacing: "-0.028em" }}>
+
+                <h1 className="rs-done-h1">
                   {isPaid
-                    ? "Payment confirmed"
+                    ? isVoucher
+                      ? "Licence activated"
+                      : "Payment confirmed"
                     : isFailed
-                    ? "Payment was not completed"
-                    : "Waiting for confirmation"}
+                    ? "Payment not completed"
+                    : "Waiting for Paystack confirmation"}
                 </h1>
-                <p className="pay-celebrate-sub" style={{ margin: 0, color: "var(--ink-2)", maxWidth: "46ch" }}>
-                  {isPaid
-                    ? `Thank you! Your ${r.plan_name} for ${r.school_name} is now active${r.is_test ? " (Test payment)" : ""}. A receipt has also been emailed to ${r.email}.`
-                    : isFailed
-                    ? "Your card or transfer was not completed. No active licence was charged — you can try again from your dashboard."
-                    : "We are waiting for Paystack to finish confirming this payment. This page updates automatically."}
+
+                <p className="rs-done-lead">
+                  {isPaid ? (
+                    <>
+                      <strong>{r.plan_name}</strong> for <strong>{r.school_name}</strong> is ready
+                      {r.is_test ? " (Test Mode)" : ""}. Copy your key below or download your official PDF receipt.
+                    </>
+                  ) : isFailed ? (
+                    "Your payment was not completed and no licence was billed. You can return to checkout and try again."
+                  ) : (
+                    "Paystack is finalizing your transaction. This page refreshes automatically the moment confirmation clears."
+                  )}
                 </p>
-              </div>
 
-              {isPaid && source === "desktop" ? (
-                <div className="alert alert--ok">
-                  <strong>CogniTara Studio syncs automatically.</strong> You can return to the desktop app now — your licence activates within seconds.
-                </div>
-              ) : null}
+                {isPaid && r.email ? (
+                  <div className="rs-done-email-pill">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <rect x="2" y="4" width="20" height="16" rx="2" />
+                      <path d="M22 7l-10 6L2 7" />
+                    </svg>
+                    <span>
+                      {data.email_sent
+                        ? `Licence key & PDF receipt emailed to ${r.email}`
+                        : `Certificate issued for ${r.email}`}
+                    </span>
+                  </div>
+                ) : null}
+              </section>
 
+              {/* ACT 2: Obsidian Ed25519 Licence Certificate Card + Cryptographic Key Slot-Decode */}
               {isPaid && lic ? (
-                <div className="receipt-key-box">
-                  <div>
-                    <div style={{ fontSize: 12, color: "var(--ink-3)", marginBottom: 3 }}>Active Licence Key</div>
-                    <div className="mono" style={{ fontSize: 18, fontWeight: 740, color: "var(--ok)", letterSpacing: "0.04em" }}>
-                      {lic.license_key}
+                <section className="rs-done-cert" aria-label="Official school licence key">
+                  <div className="rs-done-cert-sheen" aria-hidden="true" />
+
+                  <div className="rs-done-cert-top">
+                    <div>
+                      <span className="rs-done-cert-eyebrow">Official Ed25519 Licence Key</span>
+                      <div className="rs-done-cert-school">{r.school_name}</div>
                     </div>
-                    <div style={{ fontSize: 12, color: "var(--ink-3)", marginTop: 4 }}>
-                      Valid until: {lic.expires_at ? new Date(lic.expires_at).toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" }) : "Perpetual (Never expires)"}
-                    </div>
-                    <div style={{ fontSize: 12, color: "var(--ink-2)", marginTop: 4 }}>
-                      Paste this key inside <strong>CogniTara Studio Desktop → Licence → Enter key</strong>.
+                    <span className="rs-done-cert-status">ACTIVE</span>
+                  </div>
+
+                  <div className="rs-done-cert-key-stage">
+                    <div
+                      className={`rs-done-cert-key${decodedKey.settled ? " is-settled" : ""}`}
+                      aria-label={`Licence key ${lic.license_key}`}
+                    >
+                      {decodedKey.display || lic.license_key}
                     </div>
                   </div>
-                  <div className="hq-btn-row no-print">
-                    <button type="button" className="btn btn--ghost btn--sm" onClick={() => copyKey(lic.license_key)}>
-                      <IconCopy size={14} />
-                      <span>{copiedKey ? "Copied" : "Copy key"}</span>
-                    </button>
-                    {lic.signed_lease ? (
-                      <button type="button" className="btn btn--primary btn--sm" onClick={downloadLicenseFile}>
-                        <IconDownload size={14} />
-                        <span>Download .cgnlic</span>
+
+                  <div className="rs-done-cert-meta">
+                    <div>
+                      <span>Plan</span>
+                      <strong>{r.plan_name}</strong>
+                    </div>
+                    <div>
+                      <span>Valid until</span>
+                      <strong>
+                        {lic.expires_at
+                          ? new Date(lic.expires_at).toLocaleDateString("en-US", {
+                              year: "numeric",
+                              month: "short",
+                              day: "numeric",
+                            })
+                          : "Perpetual (Lifetime)"}
+                      </strong>
+                    </div>
+                    <div className="rs-done-cert-actions no-print">
+                      <button
+                        type="button"
+                        className="rs-cert-btn rs-cert-btn--solid"
+                        onClick={() => copyKey(lic.license_key)}
+                      >
+                        {copiedKey ? (
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                            <path d="M20 6L9 17l-5-5" />
+                          </svg>
+                        ) : (
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                            <rect x="9" y="9" width="13" height="13" rx="2" />
+                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                          </svg>
+                        )}
+                        <span>{copiedKey ? "Copied key" : "Copy key"}</span>
                       </button>
-                    ) : (
-                      <Link href="/download" className="btn btn--primary btn--sm">
-                        <IconDownload size={14} />
-                        <span>Download Studio</span>
-                      </Link>
-                    )}
+
+                      {lic.signed_lease ? (
+                        <button
+                          type="button"
+                          className="rs-cert-btn rs-cert-btn--ghost"
+                          onClick={downloadLicenseFile}
+                        >
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" />
+                          </svg>
+                          <span>.cgnlic file</span>
+                        </button>
+                      ) : null}
+                    </div>
                   </div>
-                </div>
+
+                  <div className="rs-done-cert-foot">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <rect x="2" y="3" width="20" height="14" rx="2" />
+                      <path d="M8 21h8M12 17v4" />
+                    </svg>
+                    <span>
+                      Activate or renew on your school PC: Open <strong>CogniTara Studio Desktop</strong> →{" "}
+                      <strong>Licence</strong> → Paste this key.
+                    </span>
+                  </div>
+                </section>
               ) : null}
 
-              <dl className="dl">
-                <div>
-                  <dt>School</dt>
-                  <dd>{r.school_name}</dd>
-                </div>
-                <div>
-                  <dt>Plan</dt>
-                  <dd>{r.plan_name}</dd>
-                </div>
-                <div>
-                  <dt>Reference</dt>
-                  <dd className="mono" style={{ fontSize: 12.5 }}>{r.reference}</dd>
-                </div>
-                <div>
-                  <dt>Payment method</dt>
-                  <dd>
-                    {r.channel}
-                    {r.is_test ? <span className="tag-test">Test</span> : null}
-                  </dd>
-                </div>
-                {r.discount_amount_minor > 0 ? (
+              {/* ACT 3: Official Payment Receipt Slip & Downloadable PDF CTA */}
+              <section className="rs-done-receipt" aria-label="Official payment receipt">
+                <div className="rs-done-receipt-head">
                   <div>
-                    <dt>Discount{r.promo_code ? ` (${r.promo_code})` : ""}</dt>
-                    <dd className="mono" style={{ color: "var(--ok)" }}>-{fmtMoney(r.discount_amount_minor, r.currency)}</dd>
+                    <span className="rs-done-receipt-eyebrow">Official Payment Receipt</span>
+                    <h2>Transaction summary</h2>
                   </div>
-                ) : null}
-                {r.fee_minor > 0 ? (
-                  <div>
-                    <dt>Paystack processing fee</dt>
-                    <dd className="mono">{fmtMoney(r.fee_minor, r.currency)}</dd>
-                  </div>
-                ) : null}
-                <div>
-                  <dt style={{ fontWeight: 680, color: "var(--ink)" }}>Total paid</dt>
-                  <dd className="mono" style={{ fontSize: 16, fontWeight: 740 }}>
-                    {fmtMoney(r.customer_paid_minor || r.amount_minor, r.currency)}
-                  </dd>
+                  <span className="rs-done-receipt-status">
+                    {isPaid ? "PAID" : isFailed ? "FAILED" : "PENDING"}
+                    {r.is_test ? " · TEST" : ""}
+                  </span>
                 </div>
-                <div>
-                  <dt>Date</dt>
-                  <dd className="tnum">
-                    {new Date(r.paid_at || r.created_at).toLocaleString(undefined, {
-                      dateStyle: "medium",
-                      timeStyle: "short",
-                    })}
-                  </dd>
-                </div>
-              </dl>
 
-              <div className="hq-btn-row no-print" style={{ marginTop: 22, justifyContent: "space-between" }}>
-                <div className="hq-btn-row">
-                  <Link href="/dashboard" className="btn btn--primary">
-                    {data?.authenticated ? "Return to Dashboard" : "Sign in to Dashboard"}
-                  </Link>
+                <dl className="rs-done-ledger">
+                  <div>
+                    <dt>School</dt>
+                    <dd>{r.school_name}</dd>
+                  </div>
+                  <div>
+                    <dt>Receipt email</dt>
+                    <dd className="rs-mono">{r.email}</dd>
+                  </div>
+                  <div>
+                    <dt>Licence plan</dt>
+                    <dd>{r.plan_name}</dd>
+                  </div>
+                  <div>
+                    <dt>Reference</dt>
+                    <dd className="rs-mono">{r.reference}</dd>
+                  </div>
+                  <div>
+                    <dt>Payment method</dt>
+                    <dd>{r.channel}</dd>
+                  </div>
+                  {r.discount_amount_minor > 0 ? (
+                    <div>
+                      <dt>Discount{r.promo_code ? ` (${r.promo_code})` : ""}</dt>
+                      <dd className="rs-mono">-{fmtMoney(r.discount_amount_minor, r.currency)}</dd>
+                    </div>
+                  ) : null}
+                  {r.fee_minor > 0 ? (
+                    <div>
+                      <dt>Processing fee</dt>
+                      <dd className="rs-mono">{fmtMoney(r.fee_minor, r.currency)}</dd>
+                    </div>
+                  ) : null}
+                  <div className="rs-done-ledger-total">
+                    <dt>Total paid</dt>
+                    <dd className="rs-mono">{fmtMoney(r.customer_paid_minor ?? r.amount_minor, r.currency)}</dd>
+                  </div>
+                  <div>
+                    <dt>Confirmed at</dt>
+                    <dd>
+                      {new Date(r.paid_at || r.created_at).toLocaleString("en-US", {
+                        dateStyle: "medium",
+                        timeStyle: "short",
+                      })}
+                    </dd>
+                  </div>
+                </dl>
+
+                <div className="rs-done-receipt-actions no-print">
+                  {isPaid && pdfHref ? (
+                    <a href={pdfHref} download={`CogniTara-Receipt-${r.reference}.pdf`} className="rs-btn rs-btn--primary">
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" />
+                      </svg>
+                      <span>Download PDF receipt</span>
+                    </a>
+                  ) : null}
+
+                  {isPaid ? (
+                    <button type="button" className="rs-btn rs-btn--soft" onClick={() => window.print()}>
+                      Print receipt
+                    </button>
+                  ) : null}
+
+                  {isFailed ? (
+                    <Link
+                      href={`/pay/checkout?plan=${encodeURIComponent(r.plan_slug || "annual")}&currency=${r.currency}`}
+                      className="rs-btn rs-btn--primary"
+                    >
+                      Try checkout again
+                    </Link>
+                  ) : null}
+
                   {!isPaid && !isFailed ? (
-                    <button type="button" className="btn btn--ghost" onClick={() => void fetchReceipt(reference)}>
+                    <button
+                      type="button"
+                      className="rs-btn rs-btn--primary"
+                      onClick={() => void fetchReceipt(reference, receiptToken)}
+                    >
                       Check status now
                     </button>
                   ) : null}
+
+                  <Link href="/download" className="rs-btn rs-btn--soft">
+                    Download Desktop App
+                  </Link>
+                  <Link href="/dashboard" className="rs-btn rs-btn--soft">
+                    {data.authenticated ? "School Dashboard" : "Sign in"}
+                  </Link>
                 </div>
-                {isPaid ? (
-                  <button type="button" className="btn btn--outline" onClick={() => window.print()}>
-                    Print receipt
-                  </button>
-                ) : null}
-              </div>
+              </section>
             </>
           ) : null}
         </div>
       </main>
+
+      <div className="no-print">
+        <LandingFooter />
+      </div>
     </div>
   );
 }

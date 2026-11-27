@@ -9,7 +9,7 @@
   "main": "dist/main/index.js",
   "scripts": {
     "build:ts": "tsc -p tsconfig.json",
-    "copy:renderer": "node -e \"const fs=require('fs');fs.cpSync('src/renderer','dist/renderer',{recursive:true});\" && node scripts/sync-vendor.mjs",
+    "copy:renderer": "node -e \"const fs=require('fs');fs.cpSync('src/renderer','dist/renderer',{recursive:true});\"",
     "harden:js": "node scripts/harden-build.mjs",
     "build": "npm run build:ts && npm run copy:renderer && npm run harden:js",
     "start": "npm run build:ts && npm run copy:renderer && electron .",
@@ -17,7 +17,6 @@
     "dist:win": "npm run build && electron-builder --win --config electron-builder.yml --publish never"
   },
   "dependencies": {
-    "@paystack/inline-js": "^2.28.2",
     "electron-updater": "^6.8.11"
   },
   "devDependencies": {

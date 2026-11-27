@@ -94,45 +94,65 @@ export function buildPaymentReceiptEmailHtml(params: {
   expiresAt: string | null;
   isTest: boolean;
   receiptUrl: string;
+  pdfReceiptUrl?: string;
 }): string {
   const sym = params.currency === "USD" ? "$" : params.currency === "NGN" ? "₦" : `${params.currency} `;
   const fmt = (minor: number) => `${sym}${(Number(minor || 0) / 100).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   const expiryText = params.expiresAt ? new Date(params.expiresAt).toUTCString().slice(0, 16) : "Perpetual (Never expires)";
+  const statusTag = params.isTest
+    ? "Payment Confirmed (Test)"
+    : Number(params.amountPaidMinor || 0) === 0
+    ? "Voucher Redeemed"
+    : "Payment Confirmed";
 
   return `<!doctype html>
 <html>
-<body style="margin:0;padding:24px;background:#111111;color:#f3f3f3;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
-  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:560px;margin:0 auto;background:#191919;border:1px solid #2b2b2b;border-radius:14px;overflow:hidden;">
+<body style="margin:0;padding:28px 16px;background:#F8F8F8;color:#171614;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Inter,Roboto,Helvetica,Arial,sans-serif;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:560px;margin:0 auto;background:#FFFFFF;border:1px solid #E5E4E0;border-radius:16px;overflow:hidden;">
     <tr>
-      <td style="padding:22px 28px;border-bottom:1px solid #262626;">
-        <span style="font-size:15px;font-weight:700;color:#ffffff;">CogniTara</span>
-        <span style="margin-left:10px;font-size:11px;font-weight:600;color:#4ade80;text-transform:uppercase;letter-spacing:0.06em;">Payment Confirmed${params.isTest ? " (Test)" : ""}</span>
+      <td style="padding:24px 28px;background:#171614;color:#FFFFFF;">
+        <div style="font-size:17px;font-weight:700;letter-spacing:-0.02em;color:#FFFFFF;">CogniTara</div>
+        <div style="margin-top:4px;font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:#B8B5AE;">${escapeHtml(statusTag)}</div>
       </td>
     </tr>
     <tr>
-      <td style="padding:26px 28px;">
-        <p style="margin:0 0 8px;font-size:15px;font-weight:600;color:#ffffff;">Thank you, ${escapeHtml(params.fullName)}</p>
-        <p style="margin:0 0 20px;font-size:13.5px;line-height:1.55;color:#a1a1aa;">
-          Your payment for <strong style="color:#e5e5e7;">${escapeHtml(params.schoolName)}</strong> has been verified and your CogniTara licence is now active.
+      <td style="padding:28px;">
+        <p style="margin:0 0 8px;font-size:16px;font-weight:700;color:#171614;">Licence ready for ${escapeHtml(params.schoolName)}</p>
+        <p style="margin:0 0 22px;font-size:14px;line-height:1.6;color:#575551;">
+          Your ${escapeHtml(params.planName)} is verified and active. Enter the licence key below inside <strong>CogniTara Studio Desktop → Licence → Activate</strong>.
         </p>
 
-        <div style="background:#111111;border:1px solid #2e3330;border-radius:10px;padding:16px 18px;margin:0 0 20px;">
-          <div style="font-size:11px;color:#8e8e93;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px;">Licence Key</div>
-          <div style="font-family:'SFMono-Regular',Consolas,Menlo,monospace;font-size:18px;font-weight:700;color:#4ade80;letter-spacing:0.06em;">${escapeHtml(params.licenseKey)}</div>
-          <div style="font-size:12px;color:#a1a1aa;margin-top:6px;">Valid until: ${escapeHtml(expiryText)}</div>
+        <div style="background:#171614;border-radius:12px;padding:20px 22px;margin:0 0 22px;text-align:center;">
+          <div style="font-size:10.5px;color:#A19E98;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:8px;">Ed25519 Licence Key</div>
+          <div style="font-family:'SFMono-Regular',Consolas,Menlo,monospace;font-size:20px;font-weight:700;color:#FFFFFF;letter-spacing:0.08em;word-break:break-all;">${escapeHtml(params.licenseKey)}</div>
+          <div style="font-size:12px;color:#C8C5BE;margin-top:8px;">Valid until: ${escapeHtml(expiryText)}</div>
         </div>
 
-        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="font-size:13px;color:#d4d4d8;border-collapse:collapse;margin-bottom:22px;">
-          <tr><td style="padding:7px 0;border-bottom:1px solid #262626;color:#8e8e93;">Plan</td><td align="right" style="padding:7px 0;border-bottom:1px solid #262626;font-weight:600;">${escapeHtml(params.planName)}</td></tr>
-          <tr><td style="padding:7px 0;border-bottom:1px solid #262626;color:#8e8e93;">Reference</td><td align="right" style="padding:7px 0;border-bottom:1px solid #262626;font-family:monospace;">${escapeHtml(params.reference)}</td></tr>
-          <tr><td style="padding:7px 0;border-bottom:1px solid #262626;color:#8e8e93;">Payment method</td><td align="right" style="padding:7px 0;border-bottom:1px solid #262626;">${escapeHtml(params.channel)}</td></tr>
-          ${params.discountMinor > 0 ? `<tr><td style="padding:7px 0;border-bottom:1px solid #262626;color:#8e8e93;">Discount applied</td><td align="right" style="padding:7px 0;border-bottom:1px solid #262626;color:#4ade80;">-${fmt(params.discountMinor)}</td></tr>` : ""}
-          ${params.feeMinor > 0 ? `<tr><td style="padding:7px 0;border-bottom:1px solid #262626;color:#8e8e93;">Processing fee</td><td align="right" style="padding:7px 0;border-bottom:1px solid #262626;">${fmt(params.feeMinor)}</td></tr>` : ""}
-          <tr><td style="padding:10px 0;font-weight:700;color:#ffffff;">Total paid</td><td align="right" style="padding:10px 0;font-weight:700;font-size:15px;color:#ffffff;">${fmt(params.amountPaidMinor)}</td></tr>
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="font-size:13.5px;color:#2C2B28;border-collapse:collapse;margin-bottom:24px;">
+          <tr><td style="padding:9px 0;border-bottom:1px solid #ECEBE7;color:#73706B;">School</td><td align="right" style="padding:9px 0;border-bottom:1px solid #ECEBE7;font-weight:600;color:#171614;">${escapeHtml(params.schoolName)}</td></tr>
+          <tr><td style="padding:9px 0;border-bottom:1px solid #ECEBE7;color:#73706B;">Plan</td><td align="right" style="padding:9px 0;border-bottom:1px solid #ECEBE7;font-weight:600;color:#171614;">${escapeHtml(params.planName)}</td></tr>
+          <tr><td style="padding:9px 0;border-bottom:1px solid #ECEBE7;color:#73706B;">Reference</td><td align="right" style="padding:9px 0;border-bottom:1px solid #ECEBE7;font-family:monospace;font-size:12.5px;color:#171614;">${escapeHtml(params.reference)}</td></tr>
+          <tr><td style="padding:9px 0;border-bottom:1px solid #ECEBE7;color:#73706B;">Payment method</td><td align="right" style="padding:9px 0;border-bottom:1px solid #ECEBE7;color:#171614;">${escapeHtml(params.channel)}</td></tr>
+          ${params.discountMinor > 0 ? `<tr><td style="padding:9px 0;border-bottom:1px solid #ECEBE7;color:#73706B;">Discount applied</td><td align="right" style="padding:9px 0;border-bottom:1px solid #ECEBE7;font-family:monospace;font-weight:600;color:#171614;">-${fmt(params.discountMinor)}</td></tr>` : ""}
+          ${params.feeMinor > 0 ? `<tr><td style="padding:9px 0;border-bottom:1px solid #ECEBE7;color:#73706B;">Processing fee</td><td align="right" style="padding:9px 0;border-bottom:1px solid #ECEBE7;font-family:monospace;">${fmt(params.feeMinor)}</td></tr>` : ""}
+          <tr><td style="padding:12px 0 4px;font-weight:700;color:#171614;">Total paid</td><td align="right" style="padding:12px 0 4px;font-family:monospace;font-weight:700;font-size:16px;color:#171614;">${fmt(params.amountPaidMinor)}</td></tr>
         </table>
 
-        <div style="text-align:center;">
-          <a href="${escapeHtml(params.receiptUrl)}" style="display:inline-block;padding:11px 22px;background:#e5e5e7;color:#111111;font-size:13.5px;font-weight:600;text-decoration:none;border-radius:8px;">View Receipt &amp; Download Licence</a>
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+          <tr>
+            <td align="center" style="padding-bottom:10px;">
+              <a href="${escapeHtml(params.receiptUrl)}" style="display:inline-block;padding:12px 24px;background:#171614;color:#FFFFFF;font-size:13.5px;font-weight:600;text-decoration:none;border-radius:10px;">View Licence &amp; Receipt</a>
+            </td>
+          </tr>
+          ${params.pdfReceiptUrl ? `<tr>
+            <td align="center">
+              <a href="${escapeHtml(params.pdfReceiptUrl)}" style="display:inline-block;padding:10px 20px;background:#F3F2EE;border:1px solid #DCDAD4;color:#171614;font-size:13px;font-weight:600;text-decoration:none;border-radius:10px;">Download PDF Receipt</a>
+            </td>
+          </tr>` : ""}
+        </table>
+
+        <div style="margin-top:24px;border-top:1px solid #ECEBE7;padding-top:14px;font-size:12px;color:#83807B;text-align:center;">
+          Keep this email safe for your school records. Need help? Contact support@cognitara.net
         </div>
       </td>
     </tr>
@@ -219,6 +239,7 @@ export async function sendPaymentReceiptEmail(params: {
   expiresAt: string | null;
   isTest: boolean;
   receiptUrl: string;
+  pdfReceiptUrl?: string;
 }): Promise<{ ok: boolean; error?: string; messageId?: string }> {
   if (!params.settings.brevo_configured || !params.settings.brevo_api_key) {
     return { ok: false, error: "Brevo not configured" };
@@ -226,15 +247,24 @@ export async function sendPaymentReceiptEmail(params: {
   const sym = params.currency === "USD" ? "$" : params.currency === "NGN" ? "₦" : `${params.currency} `;
   const amtText = `${sym}${(Number(params.amountPaidMinor || 0) / 100).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   const htmlContent = buildPaymentReceiptEmailHtml(params);
-  const textContent = `Payment confirmed for ${params.schoolName}. Plan: ${params.planName}. Amount paid: ${amtText}. Reference: ${params.reference}. Licence Key: ${params.licenseKey}. Receipt: ${params.receiptUrl}`;
+  const textContent = [
+    `CogniTara Licence Active — ${params.schoolName}`,
+    `Licence Key: ${params.licenseKey}`,
+    `Plan: ${params.planName}`,
+    `Amount paid: ${amtText}`,
+    `Reference: ${params.reference}`,
+    `View receipt & key: ${params.receiptUrl}`,
+    ...(params.pdfReceiptUrl ? [`Download PDF receipt: ${params.pdfReceiptUrl}`] : []),
+    `Activate in CogniTara Studio Desktop -> Licence -> Enter Licence Key.`,
+  ].join("\n");
 
   return brevoSendTransactionalEmail({
     apiKey: params.settings.brevo_api_key,
     senderEmail: params.settings.brevo_sender_email,
-    senderName: params.settings.brevo_sender_name,
+    senderName: params.settings.brevo_sender_name || "CogniTara",
     toEmail: params.toEmail,
     toName: params.fullName,
-    subject: `Payment Receipt (${params.reference}) — Your CogniTara Licence is Active`,
+    subject: `Your CogniTara Licence Key & Receipt (${params.reference})`,
     htmlContent,
     textContent,
     tags: ["cognitara-receipt", params.isTest ? "test-payment" : "live-payment"],

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import React, { useEffect, useMemo, useState } from "react";
 import LandingNav from "../../components/landing/LandingNav";
 import LandingFooter from "../../components/landing/LandingFooter";
@@ -30,11 +31,6 @@ interface PlatformDirectives {
   free_trial_days?: number;
   allow_paystack_checkout?: boolean;
   paystack_mode?: "test" | "live";
-  paystack_fee_mode?: "merchant" | "customer_added" | "paystack_checkout";
-  paystack_fee_pct?: number;
-  paystack_fee_flat_ngn?: number;
-  paystack_fee_cap_ngn?: number;
-  paystack_fee_flat_threshold_ngn?: number;
 }
 
 interface ReviewItem {
@@ -42,16 +38,11 @@ interface ReviewItem {
   school_name: string;
   author_name: string;
   author_role: string;
-  city_state: string;
+  city_state?: string;
+  city_region?: string;
   rating: number;
   headline: string;
   body: string;
-}
-
-interface AuthSessionInfo {
-  email: string;
-  full_name: string;
-  school_name: string;
 }
 
 const FALLBACK_PLANS: PlanItem[] = [
@@ -164,7 +155,7 @@ function shortPlanAction(plan: PlanItem): string {
   const cleaned = (plan.display_name || plan.slug || "")
     .replace(/\s*(Institutional|School|Campus|Plan)\b/gi, "")
     .trim();
-  return `Buy ${cleaned || "Licence"}`;
+  return `Pay for ${cleaned || "Licence"}`;
 }
 
 function initialsOf(name: string): string {
@@ -174,49 +165,39 @@ function initialsOf(name: string): string {
 }
 
 export default function LicensePage() {
+  const router = useRouter();
   const [plans, setPlans] = useState<PlanItem[]>(FALLBACK_PLANS);
   const [platform, setPlatform] = useState<PlatformDirectives | null>(null);
   const [reviews, setReviews] = useState<ReviewItem[]>([]);
-  const [session, setSession] = useState<AuthSessionInfo | null>(null);
   const [currency, setCurrency] = useState<"NGN" | "USD">("NGN");
-
-  // Promo code state
-  const [promoInput, setPromoInput] = useState("");
-  const [appliedPromo, setAppliedPromo] = useState<{
-    code: string;
-    discount_kind: string;
-    discount_value: number;
-    message: string;
-  } | null>(null);
-  const [promoErr, setPromoErr] = useState("");
-  const [promoBusy, setPromoBusy] = useState(false);
-
-  // Checkout modal state
-  const [selectedPlan, setSelectedPlan] = useState<PlanItem | null>(null);
-  const [buyerSchool, setBuyerSchool] = useState("");
-  const [buyerEmail, setBuyerEmail] = useState("");
-  const [buyerName, setBuyerName] = useState("");
-  const [checkoutBusy, setCheckoutBusy] = useState(false);
-  const [checkoutErr, setCheckoutErr] = useState("");
+  const [carriedPromo, setCarriedPromo] = useState("");
 
   useEffect(() => {
     let active = true;
     const params = new URLSearchParams(window.location.search);
     const curParam = (params.get("currency") || "").toUpperCase();
-    if (curParam === "USD" || curParam === "NGN") setCurrency(curParam);
+    const resolvedCur: "NGN" | "USD" = curParam === "USD" ? "USD" : "NGN";
+    if (curParam === "USD" || curParam === "NGN") setCurrency(resolvedCur);
+
     const promoParam = (params.get("promo") || "").trim().toUpperCase();
+    if (promoParam) setCarriedPromo(promoParam);
+
+    // If a direct plan link arrived at /license?plan=annual, route straight to dedicated /pay/checkout
     const planParam = (params.get("plan") || "").trim().toLowerCase();
+    if (planParam) {
+      const qs = new URLSearchParams({ plan: planParam, currency: resolvedCur });
+      if (promoParam) qs.set("promo", promoParam);
+      router.replace(`/pay/checkout?${qs.toString()}`);
+      return;
+    }
 
     Promise.all([
       fetch("/api/v1/plans").then((r) => (r.ok ? r.json() : null)).catch(() => null),
       fetch("/api/v1/reviews?limit=6").then((r) => (r.ok ? r.json() : null)).catch(() => null),
-      fetch("/api/v1/auth/me?optional=1", { credentials: "include" }).then((r) => (r.ok ? r.json() : null)).catch(() => null),
-    ]).then(([plansData, revData, meData]) => {
+    ]).then(([plansData, revData]) => {
       if (!active) return;
-      let loadedPlans: PlanItem[] = FALLBACK_PLANS;
       if (plansData?.ok) {
         if (Array.isArray(plansData.plans) && plansData.plans.length > 0) {
-          loadedPlans = plansData.plans;
           setPlans(plansData.plans);
         }
         if (plansData.platform) setPlatform(plansData.platform);
@@ -224,84 +205,12 @@ export default function LicensePage() {
       if (revData?.ok && Array.isArray(revData.reviews)) {
         setReviews(revData.reviews);
       }
-      if (meData?.ok && meData.user) {
-        setSession({
-          email: String(meData.user.email || ""),
-          full_name: String(meData.user.full_name || ""),
-          school_name: String(meData.school?.school_name || ""),
-        });
-      }
-      if (promoParam) {
-        setPromoInput(promoParam);
-        const target = loadedPlans[0];
-        if (target?.id && /^[0-9a-f-]{36}$/i.test(target.id)) {
-          void validatePromo(promoParam, target.id, curParam === "USD" ? "USD" : "NGN");
-        }
-      }
-      if (planParam) {
-        const match = loadedPlans.find(
-          (p) => p.slug?.toLowerCase() === planParam || p.id.toLowerCase() === planParam
-        );
-        if (match) setSelectedPlan(match);
-      }
     });
 
     return () => {
       active = false;
     };
-  }, []);
-
-  async function validatePromo(rawCode: string, planId: string, cur: "NGN" | "USD") {
-    const clean = rawCode.trim().toUpperCase();
-    if (!clean) {
-      setAppliedPromo(null);
-      setPromoErr("");
-      return;
-    }
-    setPromoBusy(true);
-    setPromoErr("");
-    try {
-      const res = await fetch("/api/v1/promo/validate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code: clean, plan_id: planId, currency: cur }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok || !data.ok) {
-        setAppliedPromo(null);
-        setPromoErr(data.message || "Promo code is invalid or expired.");
-      } else if (data.code_type === "redeem") {
-        setAppliedPromo(null);
-        setPromoErr("That is a 100% free voucher code. Sign in to your school dashboard to redeem it for free.");
-      } else {
-        setAppliedPromo({
-          code: String(data.code || clean),
-          discount_kind: String(data.discount_kind || "percent"),
-          discount_value: Number(data.discount_value || 0),
-          message: String(data.message || "Discount applied."),
-        });
-      }
-    } catch {
-      setPromoErr("Could not validate promo code right now.");
-    } finally {
-      setPromoBusy(false);
-    }
-  }
-
-  function computeDiscountedMinor(baseMinor: number): number {
-    if (!appliedPromo) return baseMinor;
-    if (appliedPromo.discount_kind === "percent") {
-      const off = Math.round((baseMinor * Math.min(100, Math.max(0, appliedPromo.discount_value))) / 100);
-      return Math.max(0, baseMinor - off);
-    }
-    if (appliedPromo.discount_kind === "fixed_ngn" && currency === "NGN") {
-      return Math.max(0, baseMinor - Math.round(appliedPromo.discount_value * 100));
-    }
-    if (appliedPromo.discount_kind === "fixed_usd" && currency === "USD") {
-      return Math.max(0, baseMinor - Math.round(appliedPromo.discount_value * 100));
-    }
-    return baseMinor;
-  }
+  }, [router]);
 
   const orderedPlans = useMemo(() => {
     return [...plans].sort((a, b) => {
@@ -312,49 +221,14 @@ export default function LicensePage() {
     });
   }, [plans]);
 
-  async function handleStartCheckout(e: React.FormEvent) {
-    e.preventDefault();
-    if (!selectedPlan) return;
-    setCheckoutErr("");
-    setCheckoutBusy(true);
-
-    try {
-      const endpoint = session
-        ? "/api/v1/payments/paystack/initialize"
-        : "/api/v1/payments/paystack/quick-checkout";
-      const payload = session
-        ? {
-            plan_id: selectedPlan.id,
-            currency,
-            promo_code: appliedPromo?.code || undefined,
-            source: "web",
-          }
-        : {
-            plan_id: selectedPlan.id,
-            currency,
-            promo_code: appliedPromo?.code || undefined,
-            email: buyerEmail.trim(),
-            school_name: buyerSchool.trim(),
-            full_name: buyerName.trim() || undefined,
-          };
-
-      const res = await fetch(endpoint, {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok || !data.ok || !data.authorization_url) {
-        setCheckoutErr(data.message || "Could not start Paystack checkout right now.");
-        setCheckoutBusy(false);
-        return;
-      }
-      window.location.href = String(data.authorization_url);
-    } catch {
-      setCheckoutErr("Network error while reaching Paystack. Please try again.");
-      setCheckoutBusy(false);
-    }
+  function checkoutHrefFor(plan: PlanItem, explicitPromo?: string): string {
+    const qs = new URLSearchParams({
+      plan: plan.slug || plan.id,
+      currency,
+    });
+    const code = (explicitPromo || carriedPromo).trim().toUpperCase();
+    if (code) qs.set("promo", code);
+    return `/pay/checkout?${qs.toString()}`;
   }
 
   const showPromoBanner = Boolean(
@@ -364,16 +238,23 @@ export default function LicensePage() {
   const trialEnabled = platform ? Boolean(platform.free_trial_enabled ?? platform.allow_trial_activation) : true;
   const trialDays = Number(platform?.free_trial_days || 7);
 
+  const featuredPlanForBanner =
+    orderedPlans.find((p) => (p.slug || "").toLowerCase().includes("annual")) || orderedPlans[0];
+
   const FAQS = [
     {
-      q: "How do I receive my licence key after paying?",
-      a: "As soon as Paystack confirms your payment, your Ed25519 licence key appears immediately on the confirmation screen and is also emailed to your school address. Paste it into CogniTara Studio Desktop under Licence to activate.",
+      q: "How do I activate or renew CogniTara Studio Desktop?",
+      a: "All licence purchases and renewals happen exclusively on cognitara.net. Once Paystack confirms your payment, your Ed25519 licence key and downloadable PDF receipt appear immediately on screen and are emailed to your school address. Paste the key in CogniTara Studio Desktop under Licence to activate or renew.",
+    },
+    {
+      q: "Where do I enter a discount code or 100% free redeem voucher?",
+      a: "Select any school plan above to open our secure checkout page. You can enter either a discount code or a 100% free redeem voucher right on the checkout page before completing your order.",
     },
     ...(trialEnabled
       ? [
           {
             q: `What happens when my ${trialDays}-day free trial ends?`,
-            a: "Nothing is deleted. Your exam database, students, and results remain safely on your Windows PC. Entering a school licence key unlocks hosting new live exams right where you left off.",
+            a: "Nothing is deleted. Your exam database, students, and results remain safely on your Windows PC. Purchase a licence key on cognitara.net and paste it into CogniTara Studio Desktop to resume hosting live exams immediately.",
           },
         ]
       : []),
@@ -386,38 +267,22 @@ export default function LicensePage() {
       a: "Never. One school licence covers unlimited registered students, unlimited teachers, unlimited question banks, and up to 300 concurrent student devices on your school LAN.",
     },
     {
-      q: "What if we change our school lab PC?",
-      a: "Each licence binds securely to your server computer's hardware ID. If you replace or upgrade your lab PC, contact support or request a hardware reset from your account.",
-    },
-    {
-      q: "Which payment methods does Paystack accept?",
-      a: "Paystack supports Nigerian debit/credit cards, instant Paystack-Titan bank transfer, USSD, and international USD cards.",
+      q: "Do we get an official payment receipt for school bursary records?",
+      a: "Yes. Immediately after payment or voucher redemption, you can download a signed PDF payment receipt directly from the confirmation page, and a copy with your licence key is sent to your school email.",
     },
   ];
-
-  const selectedOrigMinor = selectedPlan
-    ? Number(currency === "USD" ? selectedPlan.price_usd_cents : selectedPlan.price_ngn_kobo)
-    : 0;
-  const selectedFinalMinor = computeDiscountedMinor(selectedOrigMinor);
 
   return (
     <div className="rs-root">
       <LandingNav activePath="/license" />
 
-      <main id="main-content" className="rs-subpage">
+      <main id="main-content" className="rs-subpage rs-lic-page">
         {/* Header */}
         <section className="rs-lic-hero">
-          {showPromoBanner ? (
-            <button
-              type="button"
+          {showPromoBanner && featuredPlanForBanner ? (
+            <Link
+              href={checkoutHrefFor(featuredPlanForBanner, platform?.promo_banner_code || "")}
               className="rs-pill-badge"
-              onClick={() => {
-                if (platform?.promo_banner_code) {
-                  setPromoInput(platform.promo_banner_code);
-                  const first = orderedPlans[0];
-                  if (first?.id) void validatePromo(platform.promo_banner_code, first.id, currency);
-                }
-              }}
             >
               {platform?.promo_banner_event ? (
                 <span className="rs-pill-dot">{platform.promo_banner_event}</span>
@@ -426,15 +291,15 @@ export default function LicensePage() {
               {platform?.promo_banner_code ? (
                 <code className="rs-pill-code">{platform.promo_banner_code}</code>
               ) : null}
-              <span className="rs-pill-arrow" aria-hidden="true">Apply</span>
-            </button>
+              <span className="rs-pill-arrow" aria-hidden="true">→</span>
+            </Link>
           ) : null}
 
           <h1 className="rs-subpage-h1">Simple school licensing.</h1>
           <p className="rs-subpage-lead">
             {trialEnabled
-              ? `Try CogniTara free for ${trialDays} days. Pick a school plan when ready, pay via Paystack, and receive your offline Ed25519 licence key immediately.`
-              : "Pick a school plan, pay securely via Paystack, and receive your offline Ed25519 licence key immediately."}
+              ? `Try CogniTara free for ${trialDays} days. Pick a school plan when ready, check out securely on cognitara.net, and receive your Ed25519 licence key and PDF receipt immediately.`
+              : "Pick a school plan, check out securely via Paystack, and receive your offline Ed25519 licence key and official PDF receipt immediately."}
           </p>
 
           <div className="rs-lic-controls">
@@ -456,54 +321,11 @@ export default function LicensePage() {
                 USD ($)
               </button>
             </div>
-
-            <form
-              className="rs-promo-bar"
-              onSubmit={(e) => {
-                e.preventDefault();
-                const first = orderedPlans[0];
-                if (first?.id) void validatePromo(promoInput, first.id, currency);
-              }}
-            >
-              <input
-                type="text"
-                value={promoInput}
-                onChange={(e) => setPromoInput(e.target.value.toUpperCase())}
-                placeholder="Promo code"
-                className="rs-promo-input"
-                aria-label="Promo code"
-              />
-              {appliedPromo ? (
-                <button
-                  type="button"
-                  className="rs-btn rs-btn--soft rs-btn--compact"
-                  onClick={() => {
-                    setAppliedPromo(null);
-                    setPromoInput("");
-                    setPromoErr("");
-                  }}
-                >
-                  Clear
-                </button>
-              ) : (
-                <button
-                  type="submit"
-                  className="rs-btn rs-btn--soft rs-btn--compact"
-                  disabled={promoBusy || !promoInput.trim()}
-                >
-                  {promoBusy ? "Checking…" : "Apply"}
-                </button>
-              )}
-            </form>
           </div>
 
-          {appliedPromo ? (
+          {carriedPromo ? (
             <p className="rs-promo-ok" role="status">
-              Code <strong>{appliedPromo.code}</strong> active: {appliedPromo.message}
-            </p>
-          ) : promoErr ? (
-            <p className="rs-form-error" role="alert">
-              {promoErr}
+              Offer code <strong>{carriedPromo}</strong> will be applied automatically on the next checkout step.
             </p>
           ) : null}
         </section>
@@ -516,8 +338,6 @@ export default function LicensePage() {
               const badge = (plan.badge || "").trim();
               const isFeatured = key.includes("annual") || badge.toLowerCase().includes("best");
               const baseMinor = Number(currency === "USD" ? plan.price_usd_cents : plan.price_ngn_kobo);
-              const finalMinor = computeDiscountedMinor(baseMinor);
-              const hasDiscount = finalMinor < baseMinor;
               const days = plan.duration_days;
               const cadence =
                 days === null || days >= 36000
@@ -538,24 +358,17 @@ export default function LicensePage() {
                   </div>
 
                   <div className="rs-plan-price">
-                    {hasDiscount ? (
-                      <span className="rs-plan-strike">{fmtMoney(baseMinor, currency)}</span>
-                    ) : null}
-                    <span>{fmtMoney(finalMinor, currency)}</span>
+                    <span>{fmtMoney(baseMinor, currency)}</span>
                   </div>
                   <p className="rs-plan-cadence">{cadence}</p>
 
-                  <button
-                    type="button"
+                  <Link
+                    href={checkoutHrefFor(plan)}
                     className={`rs-btn ${isFeatured ? "rs-btn--primary" : "rs-btn--soft"}`}
                     style={{ width: "100%" }}
-                    onClick={() => {
-                      setCheckoutErr("");
-                      setSelectedPlan(plan);
-                    }}
                   >
                     {shortPlanAction(plan)}
-                  </button>
+                  </Link>
 
                   <ul className="rs-plan-features">
                     {planBullets(plan).slice(0, 4).map((feat) => (
@@ -582,7 +395,7 @@ export default function LicensePage() {
                 </div>
                 <h3>Try everything on your Windows PC for {trialDays} days</h3>
                 <p>
-                  No card required. Test live mock exams, KaTeX math equations, teacher grading, and LAN student logins right inside your computer lab before buying a licence.
+                  No card required. Test live mock exams, KaTeX math equations, teacher grading, and LAN student logins right inside your computer lab before purchasing a licence key.
                 </p>
                 <div className="rs-trial-actions">
                   <Link href="/download" className="rs-btn rs-btn--primary">
@@ -605,15 +418,15 @@ export default function LicensePage() {
                 </li>
                 <li>
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M20 6L9 17l-5-5" /></svg>
-                  <span>Activate a paid key anytime without losing data</span>
+                  <span>Activate a paid licence key anytime without losing data</span>
                 </li>
               </ul>
             </div>
           ) : null}
 
           <div className="rs-lic-trust">
-            <p>Instant Ed25519 licence key · Prices in {currency} · Secure checkout via Paystack</p>
-            <p>Buying on your phone? Your licence key appears immediately after checkout and arrives by email, ready for your Windows PC.</p>
+            <p>Instant Ed25519 licence key · Official PDF receipt · Discount &amp; redeem codes available at checkout</p>
+            <p>Have a 100% free school voucher or promo code? Pick any plan above and enter your code on the checkout page.</p>
           </div>
         </section>
 
@@ -639,7 +452,7 @@ export default function LicensePage() {
                     <div className="rs-review-meta">
                       <p className="rs-review-name">{rev.author_name || rev.school_name}</p>
                       <p className="rs-review-school">
-                        {[rev.author_role, rev.school_name, rev.city_state].filter(Boolean).join(" · ")}
+                        {[rev.author_role, rev.school_name, rev.city_region || rev.city_state].filter(Boolean).join(" · ")}
                       </p>
                     </div>
                   </figcaption>
@@ -672,119 +485,6 @@ export default function LicensePage() {
           </div>
         </section>
       </main>
-
-      {/* Clean Monochrome Paystack Checkout Modal */}
-      {selectedPlan ? (
-        <div className="rs-modal-bg" role="dialog" aria-modal="true" aria-labelledby="licCheckoutTitle" onClick={() => !checkoutBusy && setSelectedPlan(null)}>
-          <div className="rs-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="rs-modal-head">
-              <div>
-                <span className="rs-modal-eyebrow">Paystack Checkout</span>
-                <h2 id="licCheckoutTitle">{selectedPlan.display_name}</h2>
-              </div>
-              <button
-                type="button"
-                className="rs-modal-close"
-                aria-label="Close checkout"
-                disabled={checkoutBusy}
-                onClick={() => setSelectedPlan(null)}
-              >
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round">
-                  <path d="M6 6l12 12M18 6L6 18" />
-                </svg>
-              </button>
-            </div>
-
-            <div className="rs-modal-summary">
-              <div>
-                <span>Licence duration</span>
-                <strong>
-                  {selectedPlan.duration_days ? `${selectedPlan.duration_days} days` : "Perpetual (Lifetime)"}
-                </strong>
-              </div>
-              <div>
-                <span>Offline lease window</span>
-                <strong>{selectedPlan.lease_days || 14} days</strong>
-              </div>
-              {appliedPromo ? (
-                <div>
-                  <span>Promo ({appliedPromo.code})</span>
-                  <strong>{appliedPromo.message}</strong>
-                </div>
-              ) : null}
-              <div className="rs-modal-total">
-                <span>Total due</span>
-                <strong>{fmtMoney(selectedFinalMinor, currency)}</strong>
-              </div>
-            </div>
-
-            {checkoutErr ? (
-              <p className="rs-form-error" role="alert" style={{ marginBottom: 14 }}>
-                {checkoutErr}
-              </p>
-            ) : null}
-
-            <form className="rs-modal-form" onSubmit={handleStartCheckout}>
-              {session ? (
-                <div className="rs-modal-signed">
-                  <p>
-                    Signed in as <strong>{session.school_name || session.full_name}</strong> ({session.email}).
-                    Your Ed25519 licence key will be bound to this school account and emailed immediately after payment.
-                  </p>
-                </div>
-              ) : (
-                <>
-                  <div className="rs-field">
-                    <label htmlFor="chkSchool">School name</label>
-                    <input
-                      id="chkSchool"
-                      type="text"
-                      required
-                      value={buyerSchool}
-                      onChange={(e) => setBuyerSchool(e.target.value)}
-                      placeholder="Cedar Hills Academy"
-                      className="rs-input"
-                    />
-                  </div>
-                  <div className="rs-field">
-                    <label htmlFor="chkEmail">School email (for licence key delivery)</label>
-                    <input
-                      id="chkEmail"
-                      type="email"
-                      required
-                      value={buyerEmail}
-                      onChange={(e) => setBuyerEmail(e.target.value)}
-                      placeholder="principal@school.edu.ng"
-                      className="rs-input"
-                    />
-                  </div>
-                  <div className="rs-field">
-                    <label htmlFor="chkName">Your name (optional)</label>
-                    <input
-                      id="chkName"
-                      type="text"
-                      value={buyerName}
-                      onChange={(e) => setBuyerName(e.target.value)}
-                      placeholder="Adaeze Okafor"
-                      className="rs-input"
-                    />
-                  </div>
-                </>
-              )}
-
-              <button type="submit" className="rs-btn rs-btn--primary" style={{ width: "100%" }} disabled={checkoutBusy}>
-                {checkoutBusy ? "Redirecting to Paystack…" : `Pay ${fmtMoney(selectedFinalMinor, currency)} with Paystack`}
-              </button>
-
-              {!session ? (
-                <p className="rs-modal-alt">
-                  Already have a school account? <Link href="/signin">Sign in</Link>
-                </p>
-              ) : null}
-            </form>
-          </div>
-        </div>
-      ) : null}
 
       <LandingFooter />
     </div>

@@ -27,7 +27,7 @@ import { HqCmsTab } from "@/components/hq/HqCmsTab";
 import { HqLoginGate } from "@/components/hq/HqLoginGate";
 import { HqPaymentRow, HqPaymentsKpis, HqPaymentsTab } from "@/components/hq/HqPaymentsTab";
 import { HqPaymentSettingsTab, HqSettingsData } from "@/components/hq/HqPaymentSettingsTab";
-import { HqCodeRow, HqCodesTab, HqPlanRow, HqPlansTab, HqSchoolRow, HqSchoolsTab } from "@/components/hq/HqSchoolsAndPlansTabs";
+import { HqCodeRow, HqCodesTab, HqPlanRow, HqPlansTab, HqRedemptionRow, HqSchoolRow, HqSchoolsTab } from "@/components/hq/HqSchoolsAndPlansTabs";
 import {
   HqBackupsTab,
   HqBroadcastsTab,
@@ -111,6 +111,7 @@ export default function DeveloperHqPage() {
   });
   const [plans, setPlans] = useState<HqPlanRow[]>([]);
   const [codes, setCodes] = useState<HqCodeRow[]>([]);
+  const [redemptions, setRedemptions] = useState<HqRedemptionRow[]>([]);
   const [settings, setSettings] = useState<HqSettingsData | null>(null);
   const [auditLogs, setAuditLogs] = useState<any[]>([]);
   const [toast, setToast] = useState<string>("");
@@ -175,7 +176,10 @@ export default function DeveloperHqPage() {
       if (pRes.kpis) setPaymentKpis(pRes.kpis);
     }
     if (plRes?.ok) setPlans(plRes.plans || []);
-    if (cRes?.ok) setCodes(cRes.codes || []);
+    if (cRes?.ok) {
+      setCodes(cRes.codes || []);
+      setRedemptions(cRes.redemptions || []);
+    }
     if (sRes?.ok) setSettings(sRes.settings);
     if (aRes?.ok) setAuditLogs(aRes.logs || []);
   }
@@ -482,7 +486,7 @@ export default function DeveloperHqPage() {
           ) : null}
 
           {tab === "codes" ? (
-            <HqCodesTab codes={codes} plans={plans} onRefresh={loadAllData} onToast={showToast} />
+            <HqCodesTab codes={codes} redemptions={redemptions} plans={plans} onRefresh={loadAllData} onToast={showToast} />
           ) : null}
 
           {tab === "backups" ? <HqBackupsTab onToast={showToast} /> : null}

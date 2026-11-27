@@ -1001,6 +1001,91 @@ h2 + .set-row { border-top: 0; }
   .search { width: auto; }
 }
 
+/* ---------- Inline Licence Key Renewal & Lock Screen Key Activation ---------- */
+.lic-renew {
+  margin: 18px 0 6px;
+  padding: 20px 22px;
+  display: grid;
+  gap: 14px;
+}
+.lic-renew__head h2 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  color: var(--ink);
+}
+.lic-renew__head p {
+  margin: 5px 0 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--ink-2);
+}
+.lic-renew__head strong {
+  color: var(--ink);
+  font-weight: 600;
+}
+.lic-renew__form {
+  display: flex;
+  align-items: stretch;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.lic-renew__input,
+.lock__key-input {
+  flex: 1 1 260px;
+  min-width: 0;
+  height: 42px;
+  padding: 0 14px;
+  border-radius: 10px;
+  border: 1px solid var(--line-2, var(--line));
+  background: var(--field);
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  outline: none;
+  transition: border-color 150ms var(--ease), box-shadow 150ms var(--ease);
+}
+.lic-renew__input:focus,
+.lock__key-input:focus {
+  border-color: var(--ink);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+.lic-renew__msg,
+.lock__key-msg {
+  margin: 0;
+  padding: 10px 13px;
+  border-radius: 9px;
+  font-size: 12.5px;
+  font-weight: 550;
+  line-height: 1.45;
+  background: var(--field);
+  border-left: 3px solid var(--ink);
+  color: var(--ink);
+}
+.lic-renew__msg[hidden],
+.lock__key-msg[hidden] {
+  display: none;
+}
+.lock__keybox {
+  width: min(460px, 100%);
+  margin: 14px auto 0;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.lock__keybox[hidden] {
+  display: none;
+}
+.lock__key-msg {
+  width: min(460px, 100%);
+  margin: 10px auto 0;
+  text-align: left;
+}
+
 /* ---------- Reduced motion ---------- */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 1ms !important; animation-delay: 0ms !important; transition-duration: 1ms !important; }

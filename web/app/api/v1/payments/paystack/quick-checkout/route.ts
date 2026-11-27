@@ -16,20 +16,33 @@ import {
   paystackRequest,
 } from "@/lib/platform";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
+import {
+  appendReceiptGrantCookieValue,
+  generateSecurePaymentReference,
+  issueReceiptAccessToken,
+  RECEIPT_GRANT_COOKIE,
+  verifyMutationOrigin,
+} from "@/lib/security";
 
 export const dynamic = "force-dynamic";
 
 /**
- * Direct Paystack license purchase endpoint for /license:
- * - If already signed in, uses the authenticated school account.
- * - If purchasing directly on /license without signing in first, accepts email + school_name,
- *   links an existing school account (or provisions a new school account), and starts Paystack
- *   checkout. After payment, /pay/done immediately issues, displays, and emails the Ed25519 key.
+ * Hardened website checkout endpoint (`/pay/checkout`):
+ * - Accepts school_name + email + plan (UUID or slug) + currency + optional discount code.
+ * - Enforces CSRF origin validation, IP + email rate limiting, exact server-side pricing,
+ *   per-school & per-email promo limits, 128-bit unpredictable reference, and HMAC receipt grant cookie.
  */
 export async function POST(req: NextRequest) {
   try {
+    if (!verifyMutationOrigin(req)) {
+      return NextResponse.json(
+        { ok: false, error: "invalid_origin", message: "Cross-origin checkout request blocked." },
+        { status: 403 }
+      );
+    }
+
     const ip = getClientIp(req);
-    const rl = checkRateLimit(`ps-quick:${ip}`, 12, 60_000);
+    const rl = checkRateLimit(`ps-quick:${ip}`, 10, 60_000);
     if (!rl.allowed) {
       return NextResponse.json(
         { ok: false, error: "rate_limited", message: `Too many checkout attempts. Retry in ${rl.retryAfterSec}s.` },
@@ -77,27 +90,58 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: false, error: "invalid_json", message: "Invalid JSON body." }, { status: 400 });
     }
 
-    const planId = String(body.plan_id || "").trim();
-    const currency = String(body.currency || settings.default_currency || "NGN").trim().toUpperCase();
+    const planIdRaw = String(body.plan_id || "").trim();
+    const planSlugRaw = String(body.plan_slug || "").trim().toLowerCase();
+    const currencyRaw = String(body.currency || settings.default_currency || "NGN").trim().toUpperCase();
+    const currency = currencyRaw === "USD" ? "USD" : "NGN";
     const promoCodeRaw = String(body.promo_code || "").trim().toUpperCase();
 
-    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(planId)) {
-      return NextResponse.json({ ok: false, error: "invalid_plan", message: "Select a valid licence plan." }, { status: 400 });
-    }
-
     const sql = getSql();
-    const planRows = await sql`SELECT * FROM plans WHERE id = ${planId}::uuid AND is_active = TRUE LIMIT 1`;
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(planIdRaw);
+    const planRows = isUuid
+      ? await sql`SELECT * FROM plans WHERE id = ${planIdRaw}::uuid AND is_active = TRUE LIMIT 1`
+      : planSlugRaw
+      ? await sql`SELECT * FROM plans WHERE LOWER(slug) = ${planSlugRaw} AND is_active = TRUE LIMIT 1`
+      : [];
+
     if (!planRows.length) {
-      return NextResponse.json({ ok: false, error: "plan_not_found", message: "Selected plan is no longer available." }, { status: 404 });
+      return NextResponse.json({ ok: false, error: "plan_not_found", message: "Select a valid licence plan." }, { status: 404 });
     }
     const plan = planRows[0] as Record<string, any>;
 
+    const emailInput = normalizeEmail(String(body.email || account?.user.email || ""));
+    const schoolNameInput = String(body.school_name || account?.school?.school_name || "")
+      .trim()
+      .replace(/\s+/g, " ")
+      .slice(0, 160);
+
+    if (schoolNameInput.length < 2) {
+      return NextResponse.json(
+        { ok: false, error: "invalid_school_name", message: "Enter your school name to bind your licence certificate." },
+        { status: 400 }
+      );
+    }
+    if (!isValidEmail(emailInput)) {
+      return NextResponse.json(
+        { ok: false, error: "invalid_email", message: "Enter a valid school email so we can deliver your licence key and receipt." },
+        { status: 400 }
+      );
+    }
+
+    const emailRl = checkRateLimit(`ps-quick-email:${emailInput}`, 8, 60_000);
+    if (!emailRl.allowed) {
+      return NextResponse.json(
+        { ok: false, error: "rate_limited", message: `Too many checkout attempts for this email. Retry in ${emailRl.retryAfterSec}s.` },
+        { status: 429 }
+      );
+    }
+
     let targetUserId: string;
     let targetSchoolId: string;
-    let targetSchoolName: string;
-    let targetEmail: string;
+    const targetSchoolName = schoolNameInput;
+    const targetEmail = emailInput;
 
-    if (account?.school) {
+    if (account?.school && normalizeEmail(account.user.email) === emailInput) {
       if (account.school.status !== "active") {
         return NextResponse.json(
           { ok: false, error: "school_suspended", message: "Your school account is currently suspended." },
@@ -106,25 +150,12 @@ export async function POST(req: NextRequest) {
       }
       targetUserId = account.user.id;
       targetSchoolId = account.school.id;
-      targetSchoolName = account.school.school_name;
-      targetEmail = account.user.email;
     } else {
-      const email = normalizeEmail(String(body.email || ""));
-      const schoolNameInput = String(body.school_name || "").trim().slice(0, 160);
-      const fullNameInput = String(body.full_name || "").trim().slice(0, 120);
-
-      if (!isValidEmail(email)) {
-        return NextResponse.json(
-          { ok: false, error: "invalid_email", message: "Enter a valid school email so we can deliver your licence key." },
-          { status: 400 }
-        );
-      }
-
       const existingUsers = await sql`
         SELECT u.id, u.email, u.status, u.role, s.id AS school_id, s.school_name, s.status AS school_status
         FROM users_hq u
         LEFT JOIN schools s ON s.owner_user_id = u.id
-        WHERE LOWER(u.email) = ${email}
+        WHERE LOWER(u.email) = ${emailInput}
         LIMIT 1
       `;
 
@@ -137,7 +168,6 @@ export async function POST(req: NextRequest) {
           );
         }
         targetUserId = String(u.id);
-        targetEmail = String(u.email);
         if (u.school_id) {
           if (u.school_status !== "active") {
             return NextResponse.json(
@@ -146,45 +176,33 @@ export async function POST(req: NextRequest) {
             );
           }
           targetSchoolId = String(u.school_id);
-          targetSchoolName = String(u.school_name || schoolNameInput || "School");
         } else {
-          const derivedSchool = schoolNameInput || email.split("@")[0];
           const createdSchool = await sql`
             INSERT INTO schools (owner_user_id, school_name, contact_email)
-            VALUES (${targetUserId}::uuid, ${derivedSchool}, ${targetEmail})
-            RETURNING id, school_name
+            VALUES (${targetUserId}::uuid, ${schoolNameInput}, ${targetEmail})
+            RETURNING id
           `;
           targetSchoolId = String(createdSchool[0].id);
-          targetSchoolName = String(createdSchool[0].school_name);
         }
       } else {
-        if (schoolNameInput.length < 2) {
-          return NextResponse.json(
-            { ok: false, error: "invalid_school_name", message: "Enter your school name to bind your licence certificate." },
-            { status: 400 }
-          );
-        }
         const randomPassword = crypto.randomBytes(24).toString("hex");
         const passwordHash = hashPassword(randomPassword);
-        const ownerName = fullNameInput.length >= 2 ? fullNameInput : `${schoolNameInput} Admin`;
+        const ownerName = `${schoolNameInput} Admin`.slice(0, 120);
 
         const createdUser = await sql`
           INSERT INTO users_hq (email, password_hash, full_name, role, status)
-          VALUES (${email}, ${passwordHash}, ${ownerName}, 'school_owner', 'active')
-          RETURNING id, email
+          VALUES (${targetEmail}, ${passwordHash}, ${ownerName}, 'school_owner', 'active')
+          RETURNING id
         `;
         targetUserId = String(createdUser[0].id);
-        targetEmail = String(createdUser[0].email);
 
         const createdSchool = await sql`
           INSERT INTO schools (owner_user_id, school_name, contact_email)
           VALUES (${targetUserId}::uuid, ${schoolNameInput}, ${targetEmail})
-          RETURNING id, school_name
+          RETURNING id
         `;
         targetSchoolId = String(createdSchool[0].id);
-        targetSchoolName = String(createdSchool[0].school_name);
 
-        // Auto-create referral code so they can share once signed in
         try {
           await sql`
             INSERT INTO referrals (owner_user_id, school_id, referral_code, reward_mode)
@@ -209,6 +227,7 @@ export async function POST(req: NextRequest) {
         planId: plan.id,
         currency,
         schoolId: targetSchoolId,
+        email: targetEmail,
       });
       if (!ev.valid) {
         return NextResponse.json(
@@ -221,7 +240,7 @@ export async function POST(req: NextRequest) {
           {
             ok: false,
             error: "use_redeem_endpoint",
-            message: "This is a 100% voucher code. Sign in to your dashboard and redeem it for free.",
+            message: "This is a 100% free voucher code — click Redeem & Issue Licence Free.",
           },
           { status: 400 }
         );
@@ -234,7 +253,11 @@ export async function POST(req: NextRequest) {
 
     if (discountedMinor <= 0) {
       return NextResponse.json(
-        { ok: false, error: "zero_amount", message: "Sign in to redeem a 100% discount code." },
+        {
+          ok: false,
+          error: "use_redeem_endpoint",
+          message: "Your 100% discount makes this order free — click Redeem & Issue Licence Free.",
+        },
         { status: 400 }
       );
     }
@@ -246,9 +269,10 @@ export async function POST(req: NextRequest) {
     });
 
     const chargeMinor = feeBreakdown.charge_minor;
-    const reference = `CTPAY_${Date.now()}_${crypto.randomBytes(5).toString("hex").toUpperCase()}`;
-    const origin = req.nextUrl.origin || "https://cognitara-cloud.vercel.app";
-    const callbackUrl = `${origin}/pay/done?reference=${encodeURIComponent(reference)}&source=license`;
+    const reference = generateSecurePaymentReference("CTPAY");
+    const receiptToken = issueReceiptAccessToken(reference);
+    const origin = req.nextUrl.origin || "https://cognitara.net";
+    const callbackUrl = `${origin}/pay/done?reference=${encodeURIComponent(reference)}&rt=${encodeURIComponent(receiptToken)}`;
 
     const psRes = await paystackRequest(settings.paystack_secret_key, "/transaction/initialize", "POST", {
       email: targetEmail,
@@ -259,13 +283,14 @@ export async function POST(req: NextRequest) {
       metadata: {
         school_id: targetSchoolId,
         school_name: targetSchoolName,
+        buyer_email: targetEmail,
         user_id: targetUserId,
         plan_id: plan.id,
         plan_slug: plan.slug,
         promo_code: promoText,
         fee_mode: settings.paystack_fee_mode,
         added_fee_minor: feeBreakdown.added_fee_minor,
-        source: "license",
+        source: "web_checkout",
       },
     });
 
@@ -282,9 +307,9 @@ export async function POST(req: NextRequest) {
 
     const initCheck = [
       {
-        step: "License page checkout initialized",
+        step: "Secure web checkout initialized",
         ok: true,
-        detail: `${isTestMode ? "Test" : "Live"} mode · ${currency} ${(chargeMinor / 100).toLocaleString()} (license)`,
+        detail: `${isTestMode ? "Test" : "Live"} mode · ${currency} ${(chargeMinor / 100).toLocaleString()} · ${targetSchoolName}`,
         at: new Date().toISOString(),
       },
     ];
@@ -293,7 +318,8 @@ export async function POST(req: NextRequest) {
       INSERT INTO subscriptions_payments (
         school_id, user_id, plan_id, paystack_reference, currency, amount_minor,
         original_amount_minor, discount_amount_minor, fee_minor, customer_paid_minor,
-        is_test, promo_code_id, promo_code_text, payment_channel, status, verification_checks_json
+        is_test, promo_code_id, promo_code_text, payment_channel, status,
+        buyer_school_name, buyer_email, verification_checks_json
       ) VALUES (
         ${targetSchoolId}::uuid,
         ${targetUserId}::uuid,
@@ -310,26 +336,44 @@ export async function POST(req: NextRequest) {
         ${promoText},
         'paystack',
         'initialized',
+        ${targetSchoolName},
+        ${targetEmail},
         ${JSON.stringify(initCheck)}::jsonb
       )
     `;
 
-    return NextResponse.json({
+    const res = NextResponse.json({
       ok: true,
       reference,
-      is_test: isTestMode,
+      receipt_token: receiptToken,
       authorization_url: psRes.data.data.authorization_url,
       access_code: psRes.data.data.access_code,
-      callback_url: callbackUrl,
+      is_test: isTestMode,
       currency,
+      original_amount_minor: originalMinor,
+      discount_amount_minor: discountMinor,
       amount_minor: discountedMinor,
+      added_fee_minor: feeBreakdown.added_fee_minor,
       charge_minor: chargeMinor,
       plan_name: plan.display_name,
     });
+
+    res.cookies.set(
+      RECEIPT_GRANT_COOKIE,
+      appendReceiptGrantCookieValue(req.cookies.get(RECEIPT_GRANT_COOKIE)?.value, reference),
+      {
+        httpOnly: true,
+        sameSite: "lax",
+        secure: process.env.NODE_ENV === "production",
+        path: "/",
+        maxAge: 60 * 60 * 24 * 14, // 14 days
+      }
+    );
+    return res;
   } catch (err) {
-    console.error("POST /api/v1/payments/paystack/quick-checkout error:", err);
+    console.error("Quick Paystack checkout error:", err);
     return NextResponse.json(
-      { ok: false, error: "quick_checkout_failed", message: "Could not start Paystack checkout right now." },
+      { ok: false, error: "checkout_init_failed", message: "Could not start checkout right now." },
       { status: 500 }
     );
   }

@@ -1,6 +1,6 @@
 /**
- * CogniTara Studio — Hardened Cloud Auth, Paystack Billing,
- * Promo/Redeem Codes, Cloud Exam Database Backups & Live Directives
+ * CogniTara Studio — Hardened Cloud Auth,
+ * Cloud Exam Database Backups, Licence Sync & Live Directives
  */
 
 import fs from "fs";
@@ -422,50 +422,7 @@ export class CloudAuthManager {
     return { ok: true, session: this.getSession() };
   }
 
-  // ---- Dynamic Plans, Promo/Redeem Codes & Paystack Checkout ----
-
-  public async fetchPlans(): Promise<{ ok: boolean; plans?: any[]; platform?: any; message?: string }> {
-    const res = await this.requestJson("/api/v1/plans", "GET");
-    if (!res.ok) {
-      return { ok: false, message: res.data?.message || "Could not load CogniTara plans." };
-    }
-    return { ok: true, plans: res.data.plans || [], platform: res.data.platform || {} };
-  }
-
-  public async validatePromo(payload: {
-    code: string;
-    plan_id?: string | null;
-    currency?: string;
-  }): Promise<any> {
-    const token = this.getAccessToken();
-    const res = await this.requestJson("/api/v1/promo/validate", "POST", payload, token);
-    return res.ok ? res.data : { ok: false, error: res.data?.error, message: res.data?.message || "Invalid code." };
-  }
-
-  public async redeemCode(payload: {
-    code: string;
-    plan_id?: string | null;
-    currency?: string;
-    hwid_hash?: string;
-    display_hwid?: string;
-    hw_component_hashes?: Record<string, string>;
-  }): Promise<any> {
-    const token = this.getAccessToken();
-    if (!token) {
-      return { ok: false, error: "unauthorized", message: "Sign in to your CogniTara Cloud account first." };
-    }
-    const res = await this.requestJson(
-      "/api/v1/promo/redeem",
-      "POST",
-      {
-        ...payload,
-        machine_hostname: os.hostname(),
-        os_version: `${os.platform()} ${os.release()}`,
-      },
-      token
-    );
-    return res.ok ? res.data : { ok: false, error: res.data?.error, message: res.data?.message || "Redeem failed." };
-  }
+  // ---- School Profile Sync ----
 
   public async syncSchoolProfileToCloud(payload: {
     school_name?: string;
@@ -517,71 +474,6 @@ export class CloudAuthManager {
     return res.ok
       ? { ok: true, school: res.data.school, message: res.data.message }
       : { ok: false, error: res.data?.error || "profile_sync_failed", message: res.data?.message || "Could not sync school profile to CogniTara Cloud." };
-  }
-
-  public async initializePaystack(payload: {
-    plan_id: string;
-    currency?: string;
-    promo_code?: string;
-    channels?: string[];
-    payment_method?: string;
-    hwid_hash?: string;
-    display_hwid?: string;
-  }): Promise<any> {
-    const token = this.getAccessToken();
-    if (!token) {
-      return { ok: false, error: "unauthorized", message: "Sign in to your CogniTara Cloud account first." };
-    }
-    const res = await this.requestJson(
-      "/api/v1/payments/paystack/initialize",
-      "POST",
-      { ...payload, source: "desktop" },
-      token
-    );
-    return res.ok ? res.data : { ok: false, error: res.data?.error, message: res.data?.message || "Checkout failed." };
-  }
-
-  public async startPaystackBankTransfer(payload: {
-    plan_id: string;
-    currency?: string;
-    promo_code?: string;
-    hwid_hash?: string;
-    display_hwid?: string;
-  }): Promise<any> {
-    const token = this.getAccessToken();
-    if (!token) {
-      return { ok: false, error: "unauthorized", message: "Sign in to your CogniTara Cloud account first." };
-    }
-    const res = await this.requestJson(
-      "/api/v1/payments/paystack/bank-transfer",
-      "POST",
-      { ...payload, source: "desktop" },
-      token
-    );
-    return res.ok ? res.data : { ok: false, error: res.data?.error, message: res.data?.message || "Could not create bank transfer account." };
-  }
-
-  public async verifyPaystack(payload: {
-    reference: string;
-    hwid_hash?: string;
-    display_hwid?: string;
-    hw_component_hashes?: Record<string, string>;
-  }): Promise<any> {
-    const token = this.getAccessToken();
-    if (!token) {
-      return { ok: false, error: "unauthorized", message: "Sign in to verify your payment." };
-    }
-    const res = await this.requestJson(
-      "/api/v1/payments/paystack/verify",
-      "POST",
-      {
-        ...payload,
-        machine_hostname: os.hostname(),
-        os_version: `${os.platform()} ${os.release()}`,
-      },
-      token
-    );
-    return res.ok ? res.data : { ok: false, error: res.data?.error, message: res.data?.message || "Verification failed." };
   }
 
   // ---- Cloud Exam Database Backups & 7-Day Configurable Reminder ----

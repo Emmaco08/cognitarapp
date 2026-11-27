@@ -7,7 +7,7 @@ import { getClientIp } from "@/lib/rate-limit";
 
 export const dynamic = "force-dynamic";
 
-function randomCodePart(len = 6): string {
+function randomCodePart(len = 4): string {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
   const bytes = crypto.randomBytes(len);
   let out = "";
@@ -22,14 +22,34 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ ok: false, error: "forbidden", message: "Developer HQ access required." }, { status: 403 });
     }
     const sql = getSql();
-    const codes = await sql`
-      SELECT pc.*, gp.display_name AS grant_plan_name, gp.slug AS grant_plan_slug
-      FROM promo_codes pc
-      LEFT JOIN plans gp ON gp.id = pc.grant_plan_id
-      ORDER BY pc.created_at DESC
-      LIMIT 300
-    `;
-    return NextResponse.json({ ok: true, codes });
+    const [codes, redemptions] = await Promise.all([
+      sql`
+        SELECT pc.*, gp.display_name AS grant_plan_name, gp.slug AS grant_plan_slug
+        FROM promo_codes pc
+        LEFT JOIN plans gp ON gp.id = pc.grant_plan_id
+        ORDER BY pc.created_at DESC
+        LIMIT 300
+      `,
+      sql`
+        SELECT
+          pr.id, pr.promo_code_id, pr.discount_applied_minor, pr.buyer_email, pr.ip_address, pr.created_at,
+          pc.code, pc.code_type,
+          COALESCE(sp.buyer_school_name, s.school_name) AS school_name,
+          COALESCE(pr.buyer_email, u.email) AS email,
+          sp.paystack_reference AS reference,
+          sp.currency,
+          l.license_key
+        FROM promo_redemptions pr
+        JOIN promo_codes pc ON pc.id = pr.promo_code_id
+        LEFT JOIN schools s ON s.id = pr.school_id
+        LEFT JOIN users_hq u ON u.id = pr.user_id
+        LEFT JOIN subscriptions_payments sp ON sp.id = pr.payment_id
+        LEFT JOIN licenses l ON l.id = pr.license_id
+        ORDER BY pr.created_at DESC
+        LIMIT 150
+      `,
+    ]);
+    return NextResponse.json({ ok: true, codes, redemptions });
   } catch (err) {
     console.error("HQ codes GET error:", err);
     return NextResponse.json({ ok: false, error: "hq_codes_failed" }, { status: 500 });
@@ -70,11 +90,11 @@ export async function POST(req: NextRequest) {
 
     const codeType = body.code_type === "redeem" ? "redeem" : "discount";
     const batchCount = Math.max(1, Math.min(50, Math.floor(Number(body.batch_count || 1))));
-    const prefix = String(body.prefix || (codeType === "redeem" ? "CT-RDM" : "SAVE"))
+    const prefix = String(body.prefix || (codeType === "redeem" ? "CT-FREE" : "SAVE"))
       .trim()
       .toUpperCase()
       .replace(/[^A-Z0-9_-]/g, "")
-      .slice(0, 20);
+      .slice(0, 18);
     const customCode = String(body.code || "")
       .trim()
       .toUpperCase()
@@ -95,7 +115,7 @@ export async function POST(req: NextRequest) {
 
     const grantPlanId = codeType === "redeem" && body.grant_plan_id ? String(body.grant_plan_id).trim() : null;
     if (codeType === "redeem" && !grantPlanId) {
-      return NextResponse.json({ ok: false, message: "Select a Plan that this redeem code will grant." }, { status: 400 });
+      return NextResponse.json({ ok: false, message: "Select a Plan that this redeem voucher will grant." }, { status: 400 });
     }
     const grantDurationDays =
       codeType === "redeem" && body.grant_duration_days !== "" && body.grant_duration_days !== null && body.grant_duration_days !== undefined
@@ -106,9 +126,19 @@ export async function POST(req: NextRequest) {
         ? (codeType === "redeem" ? 1 : null)
         : Math.max(1, Math.floor(Number(body.max_uses)));
     const perSchoolLimit = Math.max(1, Math.floor(Number(body.per_school_limit || 1)));
+    const perEmailLimit = Math.max(1, Math.floor(Number(body.per_email_limit || perSchoolLimit || 1)));
+    const startsAt = body.starts_at ? new Date(String(body.starts_at)).toISOString() : null;
     const expiresAt = body.expires_at ? new Date(String(body.expires_at)).toISOString() : null;
+    if (startsAt && expiresAt && new Date(startsAt).getTime() >= new Date(expiresAt).getTime()) {
+      return NextResponse.json({ ok: false, message: "Expiry date must be after start date." }, { status: 400 });
+    }
+    const minAmountNgnKobo = Math.max(0, Math.round(Number(body.min_amount_ngn || 0) * 100));
+    const minAmountUsdCents = Math.max(0, Math.round(Number(body.min_amount_usd || 0) * 100));
     const notes = String(body.notes || "").trim().slice(0, 240);
-    const applicablePlanIds = Array.isArray(body.applicable_plan_ids) ? body.applicable_plan_ids : [];
+    const description = String(body.description || notes || "").trim().slice(0, 240);
+    const applicablePlanIds = Array.isArray(body.applicable_plan_ids)
+      ? body.applicable_plan_ids.map((x) => String(x)).filter((x) => /^[0-9a-f-]{36}$/i.test(x))
+      : [];
 
     const created: Array<Record<string, any>> = [];
     for (let i = 0; i < batchCount; i++) {
@@ -119,7 +149,9 @@ export async function POST(req: NextRequest) {
       const rows = await sql`
         INSERT INTO promo_codes (
           code, code_type, discount_kind, discount_value, grant_plan_id, grant_duration_days,
-          applicable_plan_ids, max_uses, per_school_limit, expires_at, is_active, notes, created_by
+          applicable_plan_ids, max_uses, per_school_limit, per_email_limit,
+          min_amount_ngn_kobo, min_amount_usd_cents, starts_at, expires_at,
+          is_active, notes, description, created_by
         ) VALUES (
           ${codeStr},
           ${codeType},
@@ -130,9 +162,14 @@ export async function POST(req: NextRequest) {
           ${JSON.stringify(applicablePlanIds)}::jsonb,
           ${maxUses},
           ${perSchoolLimit},
+          ${perEmailLimit},
+          ${minAmountNgnKobo},
+          ${minAmountUsdCents},
+          ${startsAt}::timestamptz,
           ${expiresAt}::timestamptz,
           TRUE,
           ${notes},
+          ${description},
           ${hq.user.id}::uuid
         )
         RETURNING *
@@ -154,6 +191,8 @@ export async function POST(req: NextRequest) {
         discount_kind: discountKind,
         discount_value: discountValue,
         grant_plan_id: grantPlanId,
+        applicable_plan_ids: applicablePlanIds,
+        expires_at: expiresAt,
       },
     });
 

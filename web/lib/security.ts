@@ -160,3 +160,84 @@ export function verifyMutationOrigin(req: NextRequest): boolean {
     return false;
   }
 }
+
+/* ==========================================================================
+   Payment Security: High-Entropy References & Signed Receipt Access Tokens
+   ========================================================================== */
+export const RECEIPT_GRANT_COOKIE = "ct_receipt_grant";
+
+/**
+ * Generates an unpredictable 128-bit cryptographic payment reference
+ * (no leaking timestamps or guessable sequential counters).
+ */
+export function generateSecurePaymentReference(prefix: "CTPAY" | "CTRDM" = "CTPAY"): string {
+  const rand = crypto.randomBytes(10).toString("hex").toUpperCase();
+  return `${prefix}-${rand.slice(0, 4)}-${rand.slice(4, 12)}-${rand.slice(12, 20)}`;
+}
+
+/**
+ * Mints a deterministic, non-guessable HMAC-SHA256 receipt access token bound to a specific
+ * payment reference. Required to read licence keys or download PDF receipts when not signed in.
+ */
+export function issueReceiptAccessToken(reference: string): string {
+  const cleanRef = String(reference || "").trim();
+  return crypto
+    .createHmac("sha256", `${getAuthSecret()}:receipt-v1`)
+    .update(cleanRef, "utf8")
+    .digest("base64url");
+}
+
+export function verifyReceiptAccessToken(reference: string, token: string | null | undefined): boolean {
+  const cleanRef = String(reference || "").trim();
+  const cleanTok = String(token || "").trim();
+  if (!cleanRef || !cleanTok) return false;
+  try {
+    const expected = issueReceiptAccessToken(cleanRef);
+    const a = Buffer.from(cleanTok, "utf8");
+    const b = Buffer.from(expected, "utf8");
+    if (a.length !== b.length) return false;
+    return crypto.timingSafeEqual(a, b);
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Stores up to 8 recent `reference:token` grants inside an HttpOnly cookie so Paystack redirects
+ * and page refreshes remain authorized even if query strings are stripped.
+ */
+export function appendReceiptGrantCookieValue(existingCookie: string | undefined, reference: string): string {
+  const cleanRef = String(reference || "").trim();
+  const tok = issueReceiptAccessToken(cleanRef);
+  const existing = String(existingCookie || "")
+    .split(",")
+    .map((p) => p.trim())
+    .filter((p) => p.includes(":") && !p.startsWith(`${cleanRef}:`));
+  existing.unshift(`${cleanRef}:${tok}`);
+  return existing.slice(0, 8).join(",");
+}
+
+export function hasValidReceiptAccess(req: NextRequest, reference: string): boolean {
+  const cleanRef = String(reference || "").trim();
+  if (!cleanRef) return false;
+
+  // 1. Query param `?rt=<token>` or header `x-receipt-token`
+  const qTok = req.nextUrl.searchParams.get("rt") || req.headers.get("x-receipt-token") || "";
+  if (qTok && verifyReceiptAccessToken(cleanRef, qTok)) return true;
+
+  // 2. HttpOnly checkout receipt grant cookie
+  const cookieVal = req.cookies.get(RECEIPT_GRANT_COOKIE)?.value || "";
+  if (cookieVal) {
+    for (const pair of cookieVal.split(",")) {
+      const idx = pair.indexOf(":");
+      if (idx <= 0) continue;
+      const ref = pair.slice(0, idx).trim();
+      const tok = pair.slice(idx + 1).trim();
+      if (ref === cleanRef && verifyReceiptAccessToken(cleanRef, tok)) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+

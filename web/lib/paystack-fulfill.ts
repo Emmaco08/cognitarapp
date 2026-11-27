@@ -1,6 +1,7 @@
 import { getSql } from "./db";
 import { getPlatformSettings, issueSignedLicenseForSchool, logDeveloperAudit } from "./platform";
 import { sendPaymentReceiptEmail } from "./brevo";
+import { issueReceiptAccessToken } from "./security";
 
 export interface VerificationCheck {
   step: string;
@@ -206,6 +207,7 @@ export async function fulfillConfirmedPaystackPayment(params: {
     schoolId: updatedPay.school_id,
     planId: updatedPay.plan_id,
     paymentId: updatedPay.id,
+    schoolNameOverride: updatedPay.buyer_school_name || null,
     bonusDays: refereeBonusDays,
     hwidHash: effectiveHwid,
     displayHwid: effectiveDisplayHwid,
@@ -231,14 +233,16 @@ export async function fulfillConfirmedPaystackPayment(params: {
         UPDATE promo_codes SET uses_count = uses_count + 1 WHERE id = ${updatedPay.promo_code_id}::uuid
       `;
       await sql`
-        INSERT INTO promo_redemptions (promo_code_id, user_id, school_id, payment_id, license_id, discount_applied_minor)
+        INSERT INTO promo_redemptions (promo_code_id, user_id, school_id, payment_id, license_id, discount_applied_minor, buyer_email, ip_address)
         VALUES (
           ${updatedPay.promo_code_id}::uuid,
           ${updatedPay.user_id}::uuid,
           ${updatedPay.school_id}::uuid,
           ${updatedPay.id}::uuid,
           ${license.id}::uuid,
-          ${Number(updatedPay.discount_amount_minor || 0)}
+          ${Number(updatedPay.discount_amount_minor || 0)},
+          ${updatedPay.buyer_email || null},
+          ${params.ipAddress || null}
         )
       `;
     }
@@ -339,13 +343,17 @@ export async function fulfillConfirmedPaystackPayment(params: {
     `;
     if (metaRows.length && settings.brevo_configured) {
       const m = metaRows[0] as Record<string, any>;
-      const baseOrigin = params.originUrl || "https://cognitara-cloud.vercel.app";
-      const receiptUrl = `${baseOrigin}/pay/done?reference=${encodeURIComponent(updatedPay.paystack_reference)}`;
+      const toEmail = String(updatedPay.buyer_email || m.email || "");
+      const schoolDisplay = String(updatedPay.buyer_school_name || m.school_name || "Your School");
+      const baseOrigin = params.originUrl || "https://cognitara.net";
+      const receiptTok = issueReceiptAccessToken(String(updatedPay.paystack_reference));
+      const receiptUrl = `${baseOrigin}/pay/done?reference=${encodeURIComponent(updatedPay.paystack_reference)}&rt=${encodeURIComponent(receiptTok)}`;
+      const pdfReceiptUrl = `${baseOrigin}/api/v1/payments/receipt/${encodeURIComponent(updatedPay.paystack_reference)}/pdf?rt=${encodeURIComponent(receiptTok)}`;
       const emailRes = await sendPaymentReceiptEmail({
         settings,
-        toEmail: String(m.email),
+        toEmail,
         fullName: String(m.full_name || "Administrator"),
-        schoolName: String(m.school_name || "Your School"),
+        schoolName: schoolDisplay,
         planName: String(m.plan_name || "CogniTara Licence"),
         reference: String(updatedPay.paystack_reference),
         currency: String(updatedPay.currency || "NGN").trim(),
@@ -358,11 +366,12 @@ export async function fulfillConfirmedPaystackPayment(params: {
         expiresAt: license.expires_at ? new Date(license.expires_at).toISOString() : null,
         isTest,
         receiptUrl,
+        pdfReceiptUrl,
       });
       checks.push({
         step: "Receipt email",
         ok: emailRes.ok,
-        detail: emailRes.ok ? `Sent to ${m.email}` : `Skipped (${emailRes.error || "unavailable"})`,
+        detail: emailRes.ok ? `Sent to ${toEmail}` : `Skipped (${emailRes.error || "unavailable"})`,
         at: new Date().toISOString(),
       });
     }

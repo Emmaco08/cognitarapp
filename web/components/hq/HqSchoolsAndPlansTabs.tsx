@@ -87,12 +87,34 @@ export interface HqCodeRow {
   grant_plan_id: string | null;
   grant_plan_name?: string | null;
   grant_duration_days: number | null;
+  applicable_plan_ids?: string[] | null;
+  min_amount_ngn_kobo?: number | null;
+  min_amount_usd_cents?: number | null;
   max_uses: number | null;
   uses_count: number;
   per_school_limit: number;
+  per_email_limit?: number;
+  starts_at?: string | null;
   expires_at: string | null;
   is_active: boolean;
   notes: string | null;
+  description?: string | null;
+  created_at: string;
+}
+
+export interface HqRedemptionRow {
+  id: string;
+  promo_code_id: string;
+  code: string;
+  code_type: "discount" | "redeem";
+  school_name: string | null;
+  email: string | null;
+  buyer_email?: string | null;
+  reference: string | null;
+  currency: string | null;
+  discount_applied_minor: number;
+  license_key: string | null;
+  ip_address: string | null;
   created_at: string;
 }
 
@@ -914,33 +936,141 @@ export function HqPlansTab({
 }
 
 /* ==========================================================================
-   3. REDEEM & DISCOUNT CODES TAB
+   3. REDEEM & DISCOUNT CODES TAB (Upgraded: Eligibility, Windows, Limits, CSV, Audit Log)
    ========================================================================== */
 export function HqCodesTab({
   codes,
+  redemptions = [],
   plans,
   onRefresh,
   onToast,
 }: {
   codes: HqCodeRow[];
+  redemptions?: HqRedemptionRow[];
   plans: HqPlanRow[];
   onRefresh: () => Promise<void>;
   onToast: (msg: string) => void;
 }) {
+  const [subTab, setSubTab] = useState<"codes" | "redemptions">("codes");
+  const [search, setSearch] = useState("");
+  const [typeFilter, setTypeFilter] = useState<"all" | "discount" | "redeem">("all");
+  const [statusFilter, setStatusFilter] = useState<"all" | "active" | "paused" | "expired">("all");
+
+  // Generator form state
   const [codeType, setCodeType] = useState<"discount" | "redeem">("discount");
   const [customCode, setCustomCode] = useState("");
+  const [prefix, setPrefix] = useState("SAVE");
   const [batchCount, setBatchCount] = useState("1");
   const [discountKind, setDiscountKind] = useState("percent");
   const [discountValue, setDiscountValue] = useState("20");
   const [grantPlanId, setGrantPlanId] = useState(plans[0]?.id || "");
   const [grantDays, setGrantDays] = useState("");
+  const [applicablePlanIds, setApplicablePlanIds] = useState<string[]>([]);
+  const [minAmountNgn, setMinAmountNgn] = useState("");
+  const [minAmountUsd, setMinAmountUsd] = useState("");
   const [maxUses, setMaxUses] = useState("25");
+  const [perSchoolLimit, setPerSchoolLimit] = useState("1");
+  const [perEmailLimit, setPerEmailLimit] = useState("1");
+  const [startsAt, setStartsAt] = useState("");
+  const [expiresAt, setExpiresAt] = useState("");
+  const [description, setDescription] = useState("");
   const [notes, setNotes] = useState("");
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     if (!grantPlanId && plans[0]?.id) setGrantPlanId(plans[0].id);
   }, [plans, grantPlanId]);
+
+  function togglePlanEligibility(id: string) {
+    setApplicablePlanIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+  }
+
+  function codeStatus(c: HqCodeRow): { label: string; kind: "ok" | "warn" | "bad" } {
+    const now = Date.now();
+    if (!c.is_active) return { label: "Paused", kind: "warn" };
+    if (c.expires_at && new Date(c.expires_at).getTime() <= now) return { label: "Expired", kind: "bad" };
+    if (c.starts_at && new Date(c.starts_at).getTime() > now) return { label: "Scheduled", kind: "warn" };
+    if (c.max_uses && c.uses_count >= c.max_uses) return { label: "Exhausted", kind: "bad" };
+    return { label: "Active", kind: "ok" };
+  }
+
+  const filteredCodes = codes.filter((c) => {
+    if (typeFilter !== "all" && c.code_type !== typeFilter) return false;
+    const st = codeStatus(c);
+    if (statusFilter === "active" && st.label !== "Active") return false;
+    if (statusFilter === "paused" && st.label !== "Paused" && st.label !== "Scheduled") return false;
+    if (statusFilter === "expired" && st.label !== "Expired" && st.label !== "Exhausted") return false;
+    const q = search.trim().toLowerCase();
+    if (!q) return true;
+    return (
+      c.code.toLowerCase().includes(q) ||
+      (c.notes || "").toLowerCase().includes(q) ||
+      (c.description || "").toLowerCase().includes(q) ||
+      (c.grant_plan_name || "").toLowerCase().includes(q)
+    );
+  });
+
+  const filteredRedemptions = redemptions.filter((r) => {
+    const q = search.trim().toLowerCase();
+    if (!q) return true;
+    return (
+      (r.code || "").toLowerCase().includes(q) ||
+      (r.school_name || "").toLowerCase().includes(q) ||
+      (r.email || "").toLowerCase().includes(q) ||
+      (r.reference || "").toLowerCase().includes(q) ||
+      (r.license_key || "").toLowerCase().includes(q)
+    );
+  });
+
+  function exportCodesCsv() {
+    const headers = [
+      "Code",
+      "Type",
+      "Value_or_Plan",
+      "Uses",
+      "Max_Uses",
+      "Per_School_Limit",
+      "Per_Email_Limit",
+      "Starts_At",
+      "Expires_At",
+      "Status",
+      "Description",
+      "Notes",
+    ];
+    const rows = filteredCodes.map((c) => {
+      const val =
+        c.code_type === "redeem"
+          ? c.grant_plan_name || "Licence"
+          : c.discount_kind === "percent"
+          ? `${c.discount_value}%`
+          : `${c.discount_kind === "fixed_usd" ? "$" : "NGN "}${c.discount_value}`;
+      return [
+        c.code,
+        c.code_type,
+        val,
+        String(c.uses_count),
+        c.max_uses === null ? "Unlimited" : String(c.max_uses),
+        String(c.per_school_limit || 1),
+        String(c.per_email_limit || 1),
+        c.starts_at || "",
+        c.expires_at || "",
+        codeStatus(c).label,
+        (c.description || "").replace(/"/g, '""'),
+        (c.notes || "").replace(/"/g, '""'),
+      ];
+    });
+    const csv = [headers.join(","), ...rows.map((r) => r.map((v) => `"${v}"`).join(","))].join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `cognitara-codes-${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+    onToast(`Exported ${filteredCodes.length} codes to CSV.`);
+  }
 
   async function createCode(e: React.FormEvent) {
     e.preventDefault();
@@ -953,19 +1083,30 @@ export function HqCodesTab({
         body: JSON.stringify({
           code_type: codeType,
           code: customCode.trim() || undefined,
+          prefix: prefix.trim() || (codeType === "redeem" ? "CT-FREE" : "SAVE"),
           batch_count: Number(batchCount || 1),
           discount_kind: discountKind,
           discount_value: Number(discountValue || 0),
           grant_plan_id: codeType === "redeem" ? grantPlanId : undefined,
           grant_duration_days: grantDays.trim() ? Number(grantDays) : undefined,
+          applicable_plan_ids: codeType === "discount" ? applicablePlanIds : [],
+          min_amount_ngn: codeType === "discount" && minAmountNgn.trim() ? Number(minAmountNgn) : 0,
+          min_amount_usd: codeType === "discount" && minAmountUsd.trim() ? Number(minAmountUsd) : 0,
           max_uses: maxUses.trim() ? Number(maxUses) : null,
-          notes,
+          per_school_limit: Number(perSchoolLimit || 1),
+          per_email_limit: Number(perEmailLimit || 1),
+          starts_at: startsAt ? new Date(startsAt).toISOString() : null,
+          expires_at: expiresAt ? new Date(expiresAt).toISOString() : null,
+          description: description.trim() || undefined,
+          notes: notes.trim() || undefined,
         }),
       }).then((r) => r.json());
       onToast(res?.message || "Created.");
       if (res?.ok) {
         setCustomCode("");
+        setDescription("");
         setNotes("");
+        setApplicablePlanIds([]);
         await onRefresh();
       }
     } finally {
@@ -993,63 +1134,431 @@ export function HqCodesTab({
     await onRefresh();
   }
 
+  const activeCount = codes.filter((c) => codeStatus(c).label === "Active").length;
+  const voucherCount = codes.filter((c) => c.code_type === "redeem").length;
+  const totalUses = codes.reduce((sum, c) => sum + Number(c.uses_count || 0), 0);
+
   return (
-    <div>
-      <div className="hq-head">
+    <div style={{ display: "grid", gap: 18 }}>
+      <div className="hq-head" style={{ marginBottom: 0 }}>
         <div>
           <h1>Redeem &amp; discount codes</h1>
-          <p>Create percentage or fixed-amount promo codes for Paystack checkout, or 100% free licence vouchers.</p>
+          <p>
+            Manage checkout discount campaigns and 100% free school redeem vouchers with plan eligibility, date windows,
+            per-email limits, CSV batch export, and full redemption audit trails.
+          </p>
+        </div>
+        <div className="hq-btn-row">
+          <button type="button" className="btn btn--ghost btn--sm" onClick={exportCodesCsv} disabled={filteredCodes.length === 0}>
+            Export CSV ({filteredCodes.length})
+          </button>
         </div>
       </div>
 
-      <div className="hq-grid2">
+      {/* KPI Strip */}
+      <div className="hq-kpi-strip">
+        <div className="hq-kpi">
+          <span className="hq-kpi__lbl">Active codes</span>
+          <span className="hq-kpi__val">{activeCount}</span>
+          <span className="hq-kpi__sub">{codes.length} total created</span>
+        </div>
+        <div className="hq-kpi">
+          <span className="hq-kpi__lbl">100% Free vouchers</span>
+          <span className="hq-kpi__val">{voucherCount}</span>
+          <span className="hq-kpi__sub">{codes.length - voucherCount} discount codes</span>
+        </div>
+        <div className="hq-kpi">
+          <span className="hq-kpi__lbl">Total redemptions</span>
+          <span className="hq-kpi__val">{totalUses}</span>
+          <span className="hq-kpi__sub">{redemptions.length} audited log entries</span>
+        </div>
+      </div>
+
+      {/* Sub-tabs + Search/Filter */}
+      <div className="hq-toolbar" style={{ flexWrap: "wrap", gap: 10 }}>
+        <div className="hq-chips">
+          <button
+            type="button"
+            className={`hq-chip ${subTab === "codes" ? "is-active" : ""}`}
+            onClick={() => setSubTab("codes")}
+          >
+            All codes ({codes.length})
+          </button>
+          <button
+            type="button"
+            className={`hq-chip ${subTab === "redemptions" ? "is-active" : ""}`}
+            onClick={() => setSubTab("redemptions")}
+          >
+            Redemption audit log ({redemptions.length})
+          </button>
+        </div>
+
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+          {subTab === "codes" ? (
+            <>
+              <select
+                value={typeFilter}
+                onChange={(e) => setTypeFilter(e.target.value as any)}
+                style={{ height: 34, padding: "0 10px", borderRadius: 8, border: "1px solid var(--border-2)", background: "var(--field)", color: "var(--ink)", fontSize: 12.5 }}
+              >
+                <option value="all">All types</option>
+                <option value="discount">Discount codes</option>
+                <option value="redeem">100% Free vouchers</option>
+              </select>
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value as any)}
+                style={{ height: 34, padding: "0 10px", borderRadius: 8, border: "1px solid var(--border-2)", background: "var(--field)", color: "var(--ink)", fontSize: 12.5 }}
+              >
+                <option value="all">All statuses</option>
+                <option value="active">Active</option>
+                <option value="paused">Paused / Scheduled</option>
+                <option value="expired">Expired / Exhausted</option>
+              </select>
+            </>
+          ) : null}
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder={subTab === "codes" ? "Search code or note…" : "Search school, email, ref, key…"}
+            className="hq-search"
+            style={{ width: 220 }}
+          />
+        </div>
+      </div>
+
+      {subTab === "codes" ? (
+        <div className="hq-grid2" style={{ alignItems: "start" }}>
+          <div className="hq-table-wrap">
+            <table className="hq-table">
+              <thead>
+                <tr>
+                  <th>Code &amp; Rules</th>
+                  <th>Value</th>
+                  <th>Usage</th>
+                  <th>Status</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredCodes.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} style={{ textAlign: "center", padding: 32, color: "var(--ink-3)" }}>
+                      No matching codes found.
+                    </td>
+                  </tr>
+                ) : (
+                  filteredCodes.map((c) => {
+                    const st = codeStatus(c);
+                    const restrictedPlans = Array.isArray(c.applicable_plan_ids) ? c.applicable_plan_ids : [];
+                    return (
+                      <tr key={c.id}>
+                        <td>
+                          <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+                            <code className="mono" style={{ fontWeight: 700 }}>{c.code}</code>
+                            <button
+                              type="button"
+                              className="btn btn--ghost btn--xs"
+                              title="Copy code"
+                              onClick={() => {
+                                navigator.clipboard?.writeText(c.code);
+                                onToast(`Copied ${c.code}`);
+                              }}
+                            >
+                              <IconCopy size={12} />
+                            </button>
+                          </div>
+                          <div style={{ fontSize: 11.5, color: "var(--ink-3)", marginTop: 2 }}>
+                            {c.code_type === "redeem" ? "100% Free voucher" : "Discount code"}
+                            {restrictedPlans.length > 0 ? ` · ${restrictedPlans.length} plan(s)` : ""}
+                            {c.expires_at ? ` · Exp ${new Date(c.expires_at).toLocaleDateString()}` : ""}
+                          </div>
+                          {c.description || c.notes ? (
+                            <div style={{ fontSize: 11.5, color: "var(--ink-2)", marginTop: 2 }}>
+                              {c.description || c.notes}
+                            </div>
+                          ) : null}
+                        </td>
+                        <td className="mono" style={{ fontSize: 12.5 }}>
+                          {c.code_type === "redeem"
+                            ? `${c.grant_plan_name || "Licence"}${c.grant_duration_days ? ` (${c.grant_duration_days}d)` : ""}`
+                            : c.discount_kind === "percent"
+                            ? `${c.discount_value}% off`
+                            : `${c.discount_kind === "fixed_usd" ? "$" : "₦"}${Number(c.discount_value).toLocaleString()} off`}
+                        </td>
+                        <td className="mono" style={{ fontSize: 12 }}>
+                          <div>{c.uses_count}{c.max_uses ? ` / ${c.max_uses}` : " / ∞"}</div>
+                          <div style={{ fontSize: 11, color: "var(--ink-3)" }}>
+                            {c.per_email_limit || c.per_school_limit || 1}/email
+                          </div>
+                        </td>
+                        <td>
+                          <span className={`status-txt status-txt--${st.kind}`}>{st.label}</span>
+                        </td>
+                        <td style={{ textAlign: "right" }}>
+                          <div className="hq-btn-row" style={{ justifyContent: "flex-end" }}>
+                            <button type="button" className="btn btn--ghost btn--xs" onClick={() => void toggleCode(c.id)}>
+                              {c.is_active ? "Pause" : "Resume"}
+                            </button>
+                            <button type="button" className="btn btn--danger btn--xs" onClick={() => void deleteCode(c.id)}>
+                              Delete
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          <section className="card">
+            <h2 style={{ margin: "0 0 14px", fontSize: 16 }}>Create discount or redeem code</h2>
+            <form className="form-grid" onSubmit={createCode}>
+              <div className="hq-chips">
+                <button
+                  type="button"
+                  className={`hq-chip ${codeType === "discount" ? "is-active" : ""}`}
+                  onClick={() => {
+                    setCodeType("discount");
+                    setPrefix("SAVE");
+                    setMaxUses("25");
+                  }}
+                >
+                  Discount code (% / ₦ / $)
+                </button>
+                <button
+                  type="button"
+                  className={`hq-chip ${codeType === "redeem" ? "is-active" : ""}`}
+                  onClick={() => {
+                    setCodeType("redeem");
+                    setPrefix("CT-FREE");
+                    setMaxUses("1");
+                  }}
+                >
+                  100% Free voucher
+                </button>
+              </div>
+
+              <div className="form-row3">
+                <div className="field">
+                  <label>Custom code (1 code)</label>
+                  <input
+                    className="mono"
+                    value={customCode}
+                    onChange={(e) => setCustomCode(e.target.value.toUpperCase())}
+                    placeholder="TERM2026"
+                    disabled={Number(batchCount || 1) > 1}
+                  />
+                </div>
+                <div className="field">
+                  <label>Batch prefix</label>
+                  <input
+                    className="mono"
+                    value={prefix}
+                    onChange={(e) => setPrefix(e.target.value.toUpperCase())}
+                    placeholder={codeType === "redeem" ? "CT-FREE" : "SAVE"}
+                  />
+                </div>
+                <div className="field">
+                  <label>Batch count (1–50)</label>
+                  <input type="number" min={1} max={50} value={batchCount} onChange={(e) => setBatchCount(e.target.value)} />
+                </div>
+              </div>
+
+              {codeType === "discount" ? (
+                <>
+                  <div className="form-row">
+                    <div className="field">
+                      <label>Discount kind</label>
+                      <select value={discountKind} onChange={(e) => setDiscountKind(e.target.value)}>
+                        <option value="percent">Percent off (%)</option>
+                        <option value="fixed_ngn">Fixed ₦ off</option>
+                        <option value="fixed_usd">Fixed $ off</option>
+                      </select>
+                    </div>
+                    <div className="field">
+                      <label>Value</label>
+                      <input type="number" min={1} required value={discountValue} onChange={(e) => setDiscountValue(e.target.value)} />
+                    </div>
+                  </div>
+
+                  <div className="field">
+                    <label>Eligible plans (leave all unchecked for ALL plans)</label>
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 4 }}>
+                      {plans.map((p) => {
+                        const checked = applicablePlanIds.includes(p.id);
+                        return (
+                          <label
+                            key={p.id}
+                            style={{
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: 7,
+                              padding: "6px 10px",
+                              borderRadius: 8,
+                              border: `1px solid ${checked ? "var(--ink)" : "var(--border-2)"}`,
+                              background: checked ? "var(--surface-2)" : "var(--field)",
+                              fontSize: 12,
+                              fontWeight: 500,
+                              cursor: "pointer",
+                              lineHeight: 1.25,
+                            }}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={checked}
+                              onChange={() => togglePlanEligibility(p.id)}
+                              style={{
+                                width: 15,
+                                height: 15,
+                                minHeight: 0,
+                                padding: 0,
+                                margin: 0,
+                                flexShrink: 0,
+                                accentColor: "var(--ink)",
+                              }}
+                            />
+                            <span>{p.display_name}</span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  <div className="form-row">
+                    <div className="field">
+                      <label>Min order (₦ NGN, optional)</label>
+                      <input type="number" min={0} value={minAmountNgn} onChange={(e) => setMinAmountNgn(e.target.value)} placeholder="0" />
+                    </div>
+                    <div className="field">
+                      <label>Min order ($ USD, optional)</label>
+                      <input type="number" min={0} value={minAmountUsd} onChange={(e) => setMinAmountUsd(e.target.value)} placeholder="0" />
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <div className="form-row">
+                  <div className="field">
+                    <label>Plan granted</label>
+                    <select value={grantPlanId} onChange={(e) => setGrantPlanId(e.target.value)}>
+                      {plans.map((p) => (
+                        <option key={p.id} value={p.id}>{p.display_name}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="field">
+                    <label>Override days (optional)</label>
+                    <input type="number" min={1} value={grantDays} onChange={(e) => setGrantDays(e.target.value)} placeholder="Plan default" />
+                  </div>
+                </div>
+              )}
+
+              <div className="form-row3">
+                <div className="field">
+                  <label>Max total uses</label>
+                  <input type="number" min={1} value={maxUses} onChange={(e) => setMaxUses(e.target.value)} placeholder="Unlimited" />
+                </div>
+                <div className="field">
+                  <label>Per-school limit</label>
+                  <input type="number" min={1} value={perSchoolLimit} onChange={(e) => setPerSchoolLimit(e.target.value)} />
+                </div>
+                <div className="field">
+                  <label>Per-email limit</label>
+                  <input type="number" min={1} value={perEmailLimit} onChange={(e) => setPerEmailLimit(e.target.value)} />
+                </div>
+              </div>
+
+              <div className="form-row">
+                <div className="field">
+                  <label>Starts at (optional)</label>
+                  <input type="datetime-local" value={startsAt} onChange={(e) => setStartsAt(e.target.value)} />
+                </div>
+                <div className="field">
+                  <label>Expires at (optional)</label>
+                  <input type="datetime-local" value={expiresAt} onChange={(e) => setExpiresAt(e.target.value)} />
+                </div>
+              </div>
+
+              <div className="form-row">
+                <div className="field">
+                  <label>Checkout description (shown to buyer)</label>
+                  <input value={description} onChange={(e) => setDescription(e.target.value)} placeholder="20% back-to-school launch offer" />
+                </div>
+                <div className="field">
+                  <label>Internal HQ note</label>
+                  <input value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Lagos school partner batch" />
+                </div>
+              </div>
+
+              <button type="submit" className="btn btn--primary" disabled={busy}>
+                {busy
+                  ? "Generating…"
+                  : Number(batchCount || 1) > 1
+                  ? `Generate ${batchCount} unique codes`
+                  : codeType === "redeem"
+                  ? "Create 100% free voucher"
+                  : "Create discount code"}
+              </button>
+            </form>
+          </section>
+        </div>
+      ) : (
+        /* REDEMPTION AUDIT LOG TABLE */
         <div className="hq-table-wrap">
           <table className="hq-table">
             <thead>
-              <tr><th>Code</th><th>Type</th><th>Value</th><th>Uses</th><th>Status</th><th></th></tr>
+              <tr>
+                <th>Code</th>
+                <th>School &amp; Buyer Email</th>
+                <th>Savings</th>
+                <th>Reference &amp; Licence Key</th>
+                <th>IP &amp; Date</th>
+              </tr>
             </thead>
             <tbody>
-              {codes.length === 0 ? (
-                <tr><td colSpan={6} style={{ textAlign: "center", padding: 28, color: "var(--ink-3)" }}>No codes created yet.</td></tr>
+              {filteredRedemptions.length === 0 ? (
+                <tr>
+                  <td colSpan={5} style={{ textAlign: "center", padding: 34, color: "var(--ink-3)" }}>
+                    No code redemptions recorded yet.
+                  </td>
+                </tr>
               ) : (
-                codes.map((c) => (
-                  <tr key={c.id}>
+                filteredRedemptions.map((r) => (
+                  <tr key={r.id}>
                     <td>
-                      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                        <code className="mono" style={{ fontWeight: 680 }}>{c.code}</code>
-                        <button
-                          type="button"
-                          className="btn btn--ghost btn--xs"
-                          onClick={() => { navigator.clipboard?.writeText(c.code); onToast(`Copied ${c.code}`); }}
-                        >
-                          <IconCopy size={12} />
-                        </button>
+                      <code className="mono" style={{ fontWeight: 700 }}>{r.code}</code>
+                      <div style={{ fontSize: 11, color: "var(--ink-3)" }}>
+                        {r.code_type === "redeem" ? "Free voucher" : "Discount"}
                       </div>
-                      {c.notes ? <div style={{ fontSize: 11.5, color: "var(--ink-3)" }}>{c.notes}</div> : null}
                     </td>
-                    <td>{c.code_type === "redeem" ? "Free voucher" : "Discount"}</td>
+                    <td>
+                      <div style={{ fontWeight: 600 }}>{r.school_name || "—"}</div>
+                      <div className="mono" style={{ fontSize: 11.5, color: "var(--ink-3)" }}>
+                        {r.email || r.buyer_email || "—"}
+                      </div>
+                    </td>
                     <td className="mono">
-                      {c.code_type === "redeem"
-                        ? c.grant_plan_name || "Licence"
-                        : c.discount_kind === "percent"
-                        ? `${c.discount_value}%`
-                        : `${c.discount_kind === "fixed_usd" ? "$" : "₦"}${Number(c.discount_value).toLocaleString()}`}
+                      {r.currency === "USD"
+                        ? `$${(Number(r.discount_applied_minor || 0) / 100).toLocaleString("en-US")}`
+                        : fmtNgn(r.discount_applied_minor || 0)}
                     </td>
-                    <td className="mono">{c.uses_count}{c.max_uses ? ` / ${c.max_uses}` : ""}</td>
                     <td>
-                      <span className={`status-txt ${c.is_active ? "status-txt--ok" : "status-txt--warn"}`}>
-                        {c.is_active ? "Active" : "Paused"}
-                      </span>
+                      {r.reference ? <div className="mono" style={{ fontSize: 11.5 }}>{r.reference}</div> : null}
+                      {r.license_key ? (
+                        <div className="mono" style={{ fontSize: 11.5, color: "var(--ink-2)", fontWeight: 600 }}>
+                          {r.license_key}
+                        </div>
+                      ) : (
+                        <span style={{ fontSize: 11.5, color: "var(--ink-3)" }}>—</span>
+                      )}
                     </td>
-                    <td style={{ textAlign: "right" }}>
-                      <div className="hq-btn-row" style={{ justifyContent: "flex-end" }}>
-                        <button type="button" className="btn btn--ghost btn--xs" onClick={() => void toggleCode(c.id)}>
-                          {c.is_active ? "Pause" : "Resume"}
-                        </button>
-                        <button type="button" className="btn btn--danger btn--xs" onClick={() => void deleteCode(c.id)}>
-                          Delete
-                        </button>
+                    <td style={{ fontSize: 12, color: "var(--ink-2)" }}>
+                      <div className="tnum">
+                        {new Date(r.created_at).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })}
                       </div>
+                      {r.ip_address ? <div className="mono" style={{ fontSize: 11, color: "var(--ink-3)" }}>{r.ip_address}</div> : null}
                     </td>
                   </tr>
                 ))
@@ -1057,79 +1566,8 @@ export function HqCodesTab({
             </tbody>
           </table>
         </div>
-
-        <section className="card">
-          <h2 style={{ margin: "0 0 14px", fontSize: 16 }}>Generate code</h2>
-          <form className="form-grid" onSubmit={createCode}>
-            <div className="hq-chips">
-              <button type="button" className={`hq-chip ${codeType === "discount" ? "is-active" : ""}`} onClick={() => setCodeType("discount")}>
-                Discount code (% / ₦ off)
-              </button>
-              <button type="button" className={`hq-chip ${codeType === "redeem" ? "is-active" : ""}`} onClick={() => setCodeType("redeem")}>
-                100% Free voucher
-              </button>
-            </div>
-
-            <div className="form-row">
-              <div className="field">
-                <label>Custom code (optional)</label>
-                <input className="mono" value={customCode} onChange={(e) => setCustomCode(e.target.value.toUpperCase())} placeholder="TERM2026" />
-              </div>
-              <div className="field">
-                <label>Batch count (1–50)</label>
-                <input type="number" min={1} max={50} value={batchCount} onChange={(e) => setBatchCount(e.target.value)} />
-              </div>
-            </div>
-
-            {codeType === "discount" ? (
-              <div className="form-row">
-                <div className="field">
-                  <label>Discount kind</label>
-                  <select value={discountKind} onChange={(e) => setDiscountKind(e.target.value)}>
-                    <option value="percent">Percent off (%)</option>
-                    <option value="fixed_ngn">Fixed ₦ off</option>
-                    <option value="fixed_usd">Fixed $ off</option>
-                  </select>
-                </div>
-                <div className="field">
-                  <label>Value</label>
-                  <input type="number" min={1} required value={discountValue} onChange={(e) => setDiscountValue(e.target.value)} />
-                </div>
-              </div>
-            ) : (
-              <div className="form-row">
-                <div className="field">
-                  <label>Plan granted</label>
-                  <select value={grantPlanId} onChange={(e) => setGrantPlanId(e.target.value)}>
-                    {plans.map((p) => (
-                      <option key={p.id} value={p.id}>{p.display_name}</option>
-                    ))}
-                  </select>
-                </div>
-                <div className="field">
-                  <label>Override days (optional)</label>
-                  <input type="number" min={1} value={grantDays} onChange={(e) => setGrantDays(e.target.value)} placeholder="Plan default" />
-                </div>
-              </div>
-            )}
-
-            <div className="form-row">
-              <div className="field">
-                <label>Max total uses</label>
-                <input type="number" min={1} value={maxUses} onChange={(e) => setMaxUses(e.target.value)} placeholder="Unlimited" />
-              </div>
-              <div className="field">
-                <label>Internal note</label>
-                <input value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Lagos school campaign" />
-              </div>
-            </div>
-
-            <button type="submit" className="btn btn--primary" disabled={busy}>
-              {busy ? "Generating…" : "Generate code"}
-            </button>
-          </form>
-        </section>
-      </div>
+      )}
     </div>
   );
 }
+

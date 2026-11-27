@@ -114,18 +114,9 @@ export interface CloudDirectives {
   school_ban_reason?: string | null;
   school_notice?: string;
   school_notice_level?: string;
-  allow_paystack_checkout?: boolean;
   allow_trial_activation?: boolean;
-  paystack_public_key?: string;
-  paystack_mode?: string;
-  paystack_fee_mode?: "merchant" | "customer_added" | "paystack_checkout";
-  paystack_fee_pct?: number;
-  paystack_fee_flat_ngn?: number;
-  paystack_fee_cap_ngn?: number;
-  paystack_fee_flat_threshold_ngn?: number;
   backup_reminder_days?: number;
   last_cloud_backup_at?: string | null;
-  default_currency?: string;
   feature_overrides?: Record<string, unknown>;
 }
 

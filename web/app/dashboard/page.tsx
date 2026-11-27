@@ -255,23 +255,23 @@ export default function DashboardPage() {
       body: JSON.stringify({ code: clean, plan_id: firstPlan?.id, currency }),
     }).then((r) => r.json()).catch(() => null);
 
-    if (!res?.ok || !res.valid) {
+    if (!res?.ok) {
       setAppliedPromo(null);
       setMsg({ kind: "bad", text: res?.message || "Invalid discount code." });
       return;
     }
-    if (res.code_type === "redeem") {
+    if (res.code_type === "redeem" || res.is_free) {
       setRedeemCode(clean);
       setPromoCode("");
       setTab("overview");
-      setMsg({ kind: "ok", text: "This is a free voucher code — click Redeem in the Overview tab to activate immediately." });
+      setMsg({ kind: "ok", text: "This is a 100% free voucher code — click Redeem in the Overview tab to activate immediately." });
       return;
     }
     setAppliedPromo({
       code: clean,
       message: res.message || "Discount applied!",
-      discountKind: res.promo?.discount_kind,
-      discountValue: Number(res.promo?.discount_value || 0),
+      discountKind: res.discount_kind,
+      discountValue: Number(res.discount_value || 0),
     });
     setMsg({ kind: "ok", text: res.message || `Code ${clean} applied to plans below.` });
   }
@@ -324,6 +324,10 @@ export default function DashboardPage() {
     }).then((r) => r.json());
     if (res?.ok) {
       setRedeemCode("");
+      if (res.redirect_url) {
+        router.push(String(res.redirect_url));
+        return;
+      }
       setMsg({ kind: "ok", text: `${res.message} Licence key: ${res.license?.license_key}` });
       await loadAll();
     } else {
@@ -701,9 +705,20 @@ export default function DashboardPage() {
                               {new Date(pay.paid_at || pay.created_at).toLocaleDateString(undefined, { dateStyle: "medium" })}
                             </td>
                             <td style={{ textAlign: "right" }}>
-                              <Link href={`/pay/done?reference=${encodeURIComponent(pay.paystack_reference)}`} className="btn btn--ghost btn--xs">
-                                Receipt
-                              </Link>
+                              <div className="hq-btn-row" style={{ justifyContent: "flex-end" }}>
+                                <Link href={`/pay/done?reference=${encodeURIComponent(pay.paystack_reference)}`} className="btn btn--ghost btn--xs">
+                                  Receipt
+                                </Link>
+                                {pay.status === "success" ? (
+                                  <a
+                                    href={`/api/v1/payments/receipt/${encodeURIComponent(pay.paystack_reference)}/pdf`}
+                                    download={`CogniTara-Receipt-${pay.paystack_reference}.pdf`}
+                                    className="btn btn--outline btn--xs"
+                                  >
+                                    PDF
+                                  </a>
+                                ) : null}
+                              </div>
                             </td>
                           </tr>
                         ))}

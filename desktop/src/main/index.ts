@@ -320,60 +320,14 @@ function createWindow(): void {
     });
   }
 
-  // Enforce strict navigation & popup boundaries.
-  // Preserve window.opener ONLY for bank 3D-Secure / OPay / Pay-with-Bank auth popups
-  // initiated by Paystack's official checkout frame; route all other external links to OS browser.
+  // Enforce strict navigation & popup boundaries: route safe external links to OS browser.
   const expectedRendererHref = pathToFileURL(getRendererEntry()).href.toLowerCase();
   mainWindow.webContents.setWindowOpenHandler((details) => {
     const targetUrl = String(details.url || "");
-    let refOrigin = "";
-    try {
-      refOrigin = details.referrer?.url ? new URL(details.referrer.url).origin : "";
-    } catch {
-      refOrigin = "";
-    }
-    const isPaystackOpener =
-      refOrigin === "https://checkout.paystack.com" ||
-      refOrigin === "https://standard.paystack.co" ||
-      refOrigin === "https://api.paystack.co";
-    const isSafeAuthPopupUrl =
-      targetUrl === "" ||
-      targetUrl === "about:blank" ||
-      targetUrl.startsWith("https://");
-
-    if (isPaystackOpener && isSafeAuthPopupUrl) {
-      return {
-        action: "allow",
-        overrideBrowserWindowOptions: {
-          parent: mainWindow || undefined,
-          width: 520,
-          height: 680,
-          autoHideMenuBar: true,
-          title: "Bank Verification — Paystack",
-          backgroundColor: "#FFFFFF",
-          webPreferences: {
-            nodeIntegration: false,
-            contextIsolation: true,
-            sandbox: true,
-            webviewTag: false,
-            webSecurity: true,
-            devTools: !app.isPackaged,
-          },
-        },
-      };
-    }
-
     if (isSafeExternalUrl(targetUrl)) {
       shell.openExternal(targetUrl).catch(() => {});
     }
     return { action: "deny" };
-  });
-
-  mainWindow.webContents.on("did-create-window", (childWindow) => {
-    childWindow.setMenuBarVisibility(false);
-    if (app.isPackaged) {
-      childWindow.webContents.on("context-menu", (ev) => ev.preventDefault());
-    }
   });
 
   mainWindow.webContents.on("will-navigate", (event, targetUrl) => {
@@ -571,7 +525,7 @@ function registerIpcHandlers(): void {
       return {
         ok: false,
         error: "trial_disabled_by_hq",
-        message: "Free trial activation is currently disabled by CogniTara HQ. Purchase a plan or redeem a voucher code.",
+        message: "Free trial activation is currently disabled by CogniTara HQ. Obtain a school licence key at cognitara.net/license and enter it here.",
       };
     }
     const res = await engine!.callInternal("POST", "/license/start-trial", {
@@ -1039,7 +993,7 @@ function registerIpcHandlers(): void {
     return res;
   });
 
-  // ---- Paystack Billing, Dynamic Plans, Discount & Redeem Codes ----
+  // ---- Cloud Licence Activation (Key / Signed Lease Only — Zero In-App Payments) ----
   async function activateSignedLeaseLocally(
     signedLease: Record<string, unknown> | null | undefined,
     fallbackLicenseKey?: string | null
@@ -1080,202 +1034,6 @@ function registerIpcHandlers(): void {
       ok: false,
       error: act?.error || "activation_failed",
       message: act?.message || "Could not activate the cloud licence on this computer.",
-    };
-  });
-
-  ipcMain.handle("billing:getPlans", async () => {
-    if (!cloudAuth) return { ok: false, message: "Cloud service unavailable." };
-    return cloudAuth.fetchPlans();
-  });
-
-  ipcMain.handle("billing:validatePromo", async (_evt, payload) => {
-    if (!cloudAuth) return { ok: false, message: "Cloud service unavailable." };
-    return cloudAuth.validatePromo(payload);
-  });
-
-  ipcMain.handle("billing:redeemCode", async (_evt, payload) => {
-    if (!cloudAuth) return { ok: false, message: "Cloud service unavailable." };
-    const lic = await engine?.getLicenseStatus().catch(() => null);
-    const res = await cloudAuth.redeemCode({
-      ...payload,
-      hwid_hash: lic?.hwid_hash || undefined,
-      display_hwid: lic?.display_hwid || undefined,
-      hw_component_hashes: (lic as any)?.component_hashes || undefined,
-    });
-    if (!res.ok) return res;
-
-    const localAct = await activateSignedLeaseLocally(res.signed_lease, res.license?.license_key);
-    await cloudAuth.syncProfile().catch(() => {});
-    if (mainWindow && !mainWindow.isDestroyed()) {
-      mainWindow.webContents.send("cloud:sessionChanged", cloudAuth.getSession());
-      mainWindow.webContents.send("billing:completed", {
-        ok: true,
-        source: "redeem",
-        license: localAct?.status || res.license,
-        message: res.message || "Voucher redeemed and licence activated!",
-      });
-    }
-    return {
-      ok: true,
-      message: res.message || "Code redeemed and licence activated on this PC!",
-      license: localAct?.status || res.license,
-      license_key: res.license?.license_key,
-    };
-  });
-
-  ipcMain.handle("billing:verifyPaystack", async (_evt, reference: string) => {
-    if (!cloudAuth) return { ok: false, message: "Cloud service unavailable." };
-    const lic = await engine?.getLicenseStatus().catch(() => null);
-    const res = await cloudAuth.verifyPaystack({
-      reference: String(reference || "").trim(),
-      hwid_hash: lic?.hwid_hash || undefined,
-      display_hwid: lic?.display_hwid || undefined,
-      hw_component_hashes: (lic as any)?.component_hashes || undefined,
-    });
-    if (!res.ok) return res;
-
-    const localAct = await activateSignedLeaseLocally(res.signed_lease, res.license?.license_key);
-    await cloudAuth.syncProfile().catch(() => {});
-    if (mainWindow && !mainWindow.isDestroyed()) {
-      mainWindow.webContents.send("cloud:sessionChanged", cloudAuth.getSession());
-      mainWindow.webContents.send("billing:completed", {
-        ok: true,
-        source: "paystack",
-        reference: String(reference || "").trim(),
-        receipt: res.receipt || null,
-        license: localAct?.status || res.license,
-        license_key: res.license?.license_key,
-        message: res.message || "Payment confirmed and licence activated!",
-      });
-    }
-    return {
-      ok: true,
-      message: res.message || "Payment verified and licence activated!",
-      receipt: res.receipt || null,
-      license: localAct?.status || res.license,
-      license_key: res.license?.license_key,
-    };
-  });
-
-  ipcMain.handle("billing:startPaystack", async (_evt, payload) => {
-    if (!cloudAuth) return { ok: false, message: "Cloud service unavailable." };
-    const lic = await engine?.getLicenseStatus().catch(() => null);
-    const method = String(payload?.method || "card").trim().toLowerCase();
-
-    // 1. Bank Transfer -> Native In-App Paystack Charge API (Paystack-Titan account, ZERO webview/browser!)
-    if (method === "bank_transfer") {
-      const btRes = await cloudAuth.startPaystackBankTransfer({
-        plan_id: payload?.plan_id,
-        currency: payload?.currency,
-        promo_code: payload?.promo_code,
-        hwid_hash: lic?.hwid_hash || undefined,
-        display_hwid: lic?.display_hwid || undefined,
-      });
-      if (!btRes || !btRes.ok) {
-        return btRes || { ok: false, message: "Could not initialize Paystack bank transfer." };
-      }
-
-      if (btRes.mode === "native_bank_transfer" && btRes.account_number) {
-        return {
-          ok: true,
-          mode: "native_bank_transfer",
-          method: "bank_transfer",
-          reference: String(btRes.reference || ""),
-          bank_name: String(btRes.bank_name || "Paystack-Titan"),
-          account_number: String(btRes.account_number),
-          account_name: String(btRes.account_name || "PAYSTACK CHECKOUT"),
-          account_expires_at: String(btRes.account_expires_at || ""),
-          display_text: String(btRes.display_text || ""),
-          plan_name: btRes.plan_name || "CogniTara Studio Licence",
-          duration_days: btRes.duration_days ?? null,
-          original_amount_minor: btRes.original_amount_minor,
-          discount_amount_minor: btRes.discount_amount_minor,
-          amount_minor: btRes.amount_minor,
-          charge_minor: btRes.charge_minor,
-          added_fee_minor: btRes.added_fee_minor,
-          currency: btRes.currency,
-          is_test: Boolean(btRes.is_test),
-          fee_mode: btRes.fee_mode || null,
-          fee_note: btRes.fee_note || null,
-        };
-      }
-
-      // Non-NGN fallback: open pre-selected bank_transfer browser checkout
-      const fallbackUrl = String(btRes.authorization_url || "");
-      if (!fallbackUrl || !isSafeExternalUrl(fallbackUrl)) {
-        return { ok: false, message: "Unsafe or missing Paystack checkout URL." };
-      }
-      await shell.openExternal(fallbackUrl);
-      return {
-        ok: true,
-        mode: "browser_checkout",
-        method: "bank_transfer",
-        reference: String(btRes.reference || ""),
-        authorization_url: fallbackUrl,
-        plan_name: btRes.plan_name || "CogniTara Studio Licence",
-        duration_days: btRes.duration_days ?? null,
-        original_amount_minor: btRes.original_amount_minor,
-        discount_amount_minor: btRes.discount_amount_minor,
-        amount_minor: btRes.amount_minor,
-        charge_minor: btRes.charge_minor,
-        added_fee_minor: btRes.added_fee_minor,
-        currency: btRes.currency,
-        is_test: Boolean(btRes.is_test),
-        fee_mode: btRes.fee_mode || null,
-        fee_note: btRes.fee_note || null,
-      };
-    }
-
-    // 2. Card / USSD / OPay / Bank App -> Initialize with exact Paystack channel pre-selected & launch user's web browser
-    const channelMap: Record<string, string[]> = {
-      card: ["card"],
-      ussd: ["ussd"],
-      opay: ["bank"],
-      bank_app: ["bank"],
-    };
-    const channels = Array.isArray(payload?.channels) && payload.channels.length
-      ? payload.channels
-      : (channelMap[method] || ["card"]);
-
-    const initRes = await cloudAuth.initializePaystack({
-      plan_id: payload?.plan_id,
-      currency: payload?.currency,
-      promo_code: payload?.promo_code,
-      channels,
-      payment_method: method,
-      hwid_hash: lic?.hwid_hash || undefined,
-      display_hwid: lic?.display_hwid || undefined,
-    });
-    if (!initRes.ok || !initRes.authorization_url) {
-      return initRes;
-    }
-
-    const reference = String(initRes.reference || "");
-    const checkoutUrl = String(initRes.authorization_url || "");
-    if (!isSafeExternalUrl(checkoutUrl)) {
-      return { ok: false, message: "Unsafe checkout URL returned by gateway." };
-    }
-
-    await shell.openExternal(checkoutUrl);
-
-    return {
-      ok: true,
-      mode: "browser_checkout",
-      method,
-      channels,
-      reference,
-      authorization_url: checkoutUrl,
-      plan_name: initRes.plan_name || "CogniTara Studio Licence",
-      duration_days: initRes.duration_days ?? null,
-      original_amount_minor: initRes.original_amount_minor,
-      discount_amount_minor: initRes.discount_amount_minor,
-      amount_minor: initRes.amount_minor,
-      charge_minor: initRes.charge_minor,
-      added_fee_minor: initRes.added_fee_minor,
-      currency: initRes.currency,
-      is_test: Boolean(initRes.is_test),
-      fee_mode: initRes.fee_mode || null,
-      fee_note: initRes.fee_note || null,
     };
   });
 

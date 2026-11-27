@@ -400,7 +400,7 @@ export default function LandingPage() {
             <div className="rs-section-head">
               <h2 className="rs-h2">Simple school licensing, zero per-student fees.</h2>
               <p className="rs-section-sub">
-                Pay securely via Paystack online or by direct bank transfer inside CogniTara Studio. Receive a hardware-bound Ed25519 licence key immediately.
+                Pay securely online via Paystack (card, bank transfer, or USSD). Receive a hardware-bound Ed25519 licence key and PDF receipt immediately to activate CogniTara Studio.
               </p>
 
               <div className="rs-currency-switch" role="group" aria-label="Currency selector">
@@ -450,7 +450,7 @@ export default function LandingPage() {
                     <p className="rs-plan-cadence">{cadence}</p>
 
                     <Link
-                      href={`/license?plan=${encodeURIComponent(plan.slug || plan.id)}&currency=${currency}`}
+                      href={`/pay/checkout?plan=${encodeURIComponent(plan.slug || plan.id)}&currency=${currency}`}
                       className={`rs-btn ${isFeatured ? "rs-btn--primary" : "rs-btn--soft"}`}
                       style={{ width: "100%" }}
                     >
