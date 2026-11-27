@@ -8,6 +8,7 @@ import {
   verifyPassword,
 } from "@/lib/auth";
 import { getPlatformSettings, logDeveloperAudit, toPublicPlatformDirectives } from "@/lib/platform";
+import { syncEnvSuperAdminIfConfigured } from "@/lib/hq-bootstrap";
 import { createAndSendEmailOtp } from "@/lib/brevo";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 import {
@@ -63,6 +64,8 @@ export async function POST(req: NextRequest) {
         { status: 429 }
       );
     }
+
+    await syncEnvSuperAdminIfConfigured();
 
     const sql = getSql();
     const users = await sql`

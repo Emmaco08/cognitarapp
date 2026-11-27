@@ -18,12 +18,13 @@ export function HqLoginGate({ onAuthenticated }: HqLoginGateProps) {
   const [notice, setNotice] = useState("");
   const [busy, setBusy] = useState(false);
 
-  // Step 2: Mandatory 2FA challenge
-  const [step, setStep] = useState<"credentials" | "2fa">("credentials");
+  // Step 2: Mandatory 2FA challenge or self-service email-OTP password reset
+  const [step, setStep] = useState<"credentials" | "2fa" | "reset_request" | "reset_confirm">("credentials");
   const [challengeToken, setChallengeToken] = useState("");
   const [methods, setMethods] = useState<string[]>(["email_otp"]);
   const [method, setMethod] = useState<"totp" | "email_otp" | "recovery_code">("email_otp");
   const [code, setCode] = useState("");
+  const [newPassword, setNewPassword] = useState("");
   const [cooldown, setCooldown] = useState(0);
 
   useEffect(() => {
@@ -152,6 +153,63 @@ export function HqLoginGate({ onAuthenticated }: HqLoginGateProps) {
     setCooldown(45);
   }
 
+  async function onRequestReset(e: React.FormEvent) {
+    e.preventDefault();
+    setError("");
+    setNotice("");
+    setBusy(true);
+    try {
+      const res = await fetch("/api/v1/auth/password-reset/request", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email.trim() }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.ok) {
+        setError(data.message || "Could not send reset code.");
+        setBusy(false);
+        return;
+      }
+      setNotice(data.message || "If an admin account matches that email, a 6-digit reset code has been sent.");
+      setCode("");
+      setNewPassword("");
+      setStep("reset_confirm");
+      setBusy(false);
+    } catch {
+      setError("Could not reach CogniTara HQ right now.");
+      setBusy(false);
+    }
+  }
+
+  async function onConfirmReset(e: React.FormEvent) {
+    e.preventDefault();
+    setError("");
+    setNotice("");
+    setBusy(true);
+    try {
+      const res = await fetch("/api/v1/auth/password-reset/confirm", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email.trim(), code: code.trim(), new_password: newPassword }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.ok) {
+        setError(data.message || "Could not update password.");
+        setBusy(false);
+        return;
+      }
+      setPassword(newPassword);
+      setNewPassword("");
+      setCode("");
+      setNotice("Password updated. Sign in with your new credentials.");
+      setStep("credentials");
+      setBusy(false);
+    } catch {
+      setError("Network error while resetting password.");
+      setBusy(false);
+    }
+  }
+
   return (
     <div className="ct-shell" style={{ maxWidth: 460, paddingTop: "clamp(24px, 7vh, 72px)" }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 22 }}>
@@ -177,6 +235,7 @@ export function HqLoginGate({ onAuthenticated }: HqLoginGateProps) {
             </div>
 
             {error ? <div className="alert alert--bad" role="alert">{error}</div> : null}
+            {notice ? <div className="alert alert--ok">{notice}</div> : null}
 
             <form className="form-grid" onSubmit={onSubmitCredentials}>
               <div className="field">
@@ -192,7 +251,21 @@ export function HqLoginGate({ onAuthenticated }: HqLoginGateProps) {
                 />
               </div>
               <div className="field">
-                <label htmlFor="hqPassword">Password</label>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+                  <label htmlFor="hqPassword">Password</label>
+                  <button
+                    type="button"
+                    className="btn btn--ghost btn--sm"
+                    style={{ height: "auto", padding: "2px 4px", fontSize: 12 }}
+                    onClick={() => {
+                      setError("");
+                      setNotice("");
+                      setStep("reset_request");
+                    }}
+                  >
+                    Forgot password?
+                  </button>
+                </div>
                 <div className="pw-wrap">
                   <input
                     id="hqPassword"
@@ -210,6 +283,102 @@ export function HqLoginGate({ onAuthenticated }: HqLoginGateProps) {
               </div>
               <button type="submit" className="btn btn--primary btn--lg" disabled={busy}>
                 {busy ? "Checking credentials…" : "Continue to verification"}
+              </button>
+            </form>
+          </>
+        ) : step === "reset_request" ? (
+          <>
+            <div className="auth-head">
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8, color: "var(--ink-2)" }}>
+                <IconLock size={15} />
+                <span style={{ fontSize: 12.5, fontWeight: 600 }}>Administrator Recovery</span>
+              </div>
+              <h1>Reset HQ password</h1>
+              <p>Enter your administrator email address to receive a 6-digit verification code.</p>
+            </div>
+            {error ? <div className="alert alert--bad" role="alert">{error}</div> : null}
+            <form className="form-grid" onSubmit={onRequestReset}>
+              <div className="field">
+                <label htmlFor="hqResetEmail">Administrator email</label>
+                <input
+                  id="hqResetEmail"
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="admin@domain.com"
+                  autoComplete="email"
+                />
+              </div>
+              <button type="submit" className="btn btn--primary btn--lg" disabled={busy}>
+                {busy ? "Sending code…" : "Send 6-digit reset code"}
+              </button>
+              <button
+                type="button"
+                className="btn btn--ghost btn--sm"
+                onClick={() => {
+                  setError("");
+                  setNotice("");
+                  setStep("credentials");
+                }}
+              >
+                Back to sign in
+              </button>
+            </form>
+          </>
+        ) : step === "reset_confirm" ? (
+          <>
+            <div className="auth-head">
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8, color: "var(--ink-2)" }}>
+                <IconShield size={15} />
+                <span style={{ fontSize: 12.5, fontWeight: 600 }}>Set New Password</span>
+              </div>
+              <h1>Enter reset code</h1>
+              <p>Enter the 6-digit code sent to {email.trim()} and choose a new password.</p>
+            </div>
+            {error ? <div className="alert alert--bad" role="alert">{error}</div> : null}
+            {notice ? <div className="alert alert--ok">{notice}</div> : null}
+            <form className="form-grid" onSubmit={onConfirmReset}>
+              <div className="field">
+                <label htmlFor="hqResetCode">6-digit reset code</label>
+                <input
+                  id="hqResetCode"
+                  className="mono"
+                  inputMode="numeric"
+                  maxLength={6}
+                  required
+                  value={code}
+                  onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                  placeholder="000000"
+                  style={{ textAlign: "center", fontSize: 22, letterSpacing: "0.28em", height: 50 }}
+                />
+              </div>
+              <div className="field">
+                <label htmlFor="hqNewPassword">New password</label>
+                <input
+                  id="hqNewPassword"
+                  type={showPw ? "text" : "password"}
+                  minLength={8}
+                  required
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="Minimum 8 characters"
+                  autoComplete="new-password"
+                />
+              </div>
+              <button type="submit" className="btn btn--primary btn--lg" disabled={busy || code.length < 6}>
+                {busy ? "Updating password…" : "Update HQ password"}
+              </button>
+              <button
+                type="button"
+                className="btn btn--ghost btn--sm"
+                onClick={() => {
+                  setError("");
+                  setNotice("");
+                  setStep("credentials");
+                }}
+              >
+                Back to sign in
               </button>
             </form>
           </>

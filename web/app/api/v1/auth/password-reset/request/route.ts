@@ -4,6 +4,7 @@ import { isValidEmail, normalizeEmail } from "@/lib/auth";
 import { createAndSendEmailOtp } from "@/lib/brevo";
 import { getPlatformSettings } from "@/lib/platform";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
+import { syncEnvSuperAdminIfConfigured } from "@/lib/hq-bootstrap";
 
 export const dynamic = "force-dynamic";
 
@@ -31,6 +32,8 @@ export async function POST(req: NextRequest) {
         { status: 503 }
       );
     }
+
+    await syncEnvSuperAdminIfConfigured();
 
     const sql = getSql();
     const users = await sql`
