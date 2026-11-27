@@ -5247,6 +5247,17 @@ body:has(.rs-root) {
   color: rgba(255, 255, 255, 0.56);
 }
 
+.rs-done-cert-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.rs-done-cert-brand svg {
+  color: #FFFFFF;
+  flex-shrink: 0;
+}
+
 .rs-done-cert-school {
   margin-top: 5px;
   font-size: 17px;
@@ -5407,6 +5418,17 @@ body:has(.rs-root) {
   animation: rsDoneRise 560ms cubic-bezier(0.23, 1, 0.32, 1) 620ms both;
 }
 
+.rs-done-receipt-brandbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 16px;
+  margin-bottom: 16px;
+  border-bottom: 1px solid var(--rs-hairline);
+  color: #171614;
+}
+
 .rs-done-receipt-head {
   display: flex;
   align-items: flex-start;
@@ -5558,7 +5580,8 @@ body:has(.rs-root) {
 }
 
 @media print {
-  .no-print {
+  .no-print,
+  .skip-link {
     display: none !important;
   }
 

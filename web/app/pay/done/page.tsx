@@ -4,6 +4,7 @@ import Link from "next/link";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import LandingNav from "../../../components/landing/LandingNav";
 import LandingFooter from "../../../components/landing/LandingFooter";
+import { CogniTaraLockup, CogniTaraMark } from "../../../components/CogniTaraLogo";
 
 interface ReceiptPayload {
   ok: boolean;
@@ -496,7 +497,10 @@ export default function PaymentDonePage() {
 
                   <div className="rs-done-cert-top">
                     <div>
-                      <span className="rs-done-cert-eyebrow">Official Ed25519 Licence Key</span>
+                      <span className="rs-done-cert-eyebrow rs-done-cert-brand">
+                        <CogniTaraMark size={15} />
+                        <span>Official Ed25519 Licence Key</span>
+                      </span>
                       <div className="rs-done-cert-school">{r.school_name}</div>
                     </div>
                     <span className="rs-done-cert-status">ACTIVE</span>
@@ -577,15 +581,18 @@ export default function PaymentDonePage() {
 
               {/* ACT 3: Official Payment Receipt Slip & Downloadable PDF CTA */}
               <section className="rs-done-receipt" aria-label="Official payment receipt">
+                <div className="rs-done-receipt-brandbar">
+                  <CogniTaraLockup markSize={22} wordmarkHeight={16} />
+                  <span className="rs-done-receipt-status">
+                    {isPaid ? "PAID" : isFailed ? "FAILED" : "PENDING"}
+                    {r.is_test ? " · TEST" : ""}
+                  </span>
+                </div>
                 <div className="rs-done-receipt-head">
                   <div>
                     <span className="rs-done-receipt-eyebrow">Official Payment Receipt</span>
                     <h2>Transaction summary</h2>
                   </div>
-                  <span className="rs-done-receipt-status">
-                    {isPaid ? "PAID" : isFailed ? "FAILED" : "PENDING"}
-                    {r.is_test ? " · TEST" : ""}
-                  </span>
                 </div>
 
                 <dl className="rs-done-ledger">
