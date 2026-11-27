@@ -1,0 +1,2163 @@
+/* ==========================================================================
+   CogniTara Exam Studio v5 - Live CBT Examination & Precision Hardware Calc
+   --------------------------------------------------------------------------
+   True Neutral Carbon Dark (#111111 -> #191919 -> #202020 -> #181818 chassis)
+   and Neutral Paper Light (#F7F7F8 -> #FFFFFF -> #EFEFF1 chassis).
+   Zero blue cast · Zero white outlines · Zero pill clutter · Zero pulses.
+   ========================================================================== */
+
+:root,
+[data-theme="light"] {
+  --ex-canvas: #F8F8F8;
+  --ex-surface: #FFFFFF;
+  --ex-surface-2: #F3F2F0;
+  --ex-elevated: #EAE8E4;
+  --ex-well: #F3F2F0;
+  --ex-ink: #171614;
+  --ex-ink-2: #575551;
+  --ex-ink-3: #83807B;
+  --ex-line: rgba(23, 22, 20, 0.08);
+  --ex-line-2: rgba(23, 22, 20, 0.13);
+  --ex-line-3: rgba(23, 22, 20, 0.22);
+  --ex-specular: 0 0 0 0 transparent;
+  --ex-shadow: 0 14px 36px -22px rgba(23, 22, 20, 0.10), 0 1px 2px rgba(23, 22, 20, 0.03);
+  --ex-cta-bg: #171614;
+  --ex-cta-ink: #FFFFFF;
+  --ex-cta-hover: #2B2926;
+  --ex-sel: #171614;
+  --ex-sel-soft: rgba(23, 22, 20, 0.065);
+  --ex-ok: #171614;
+  --ex-ok-soft: #F3F2F0;
+  --ex-ok-line: rgba(23, 22, 20, 0.16);
+  --ex-warn: #171614;
+  --ex-warn-soft: #F3F2F0;
+  --ex-warn-line: rgba(23, 22, 20, 0.16);
+  --ex-bad: #171614;
+  --ex-bad-soft: rgba(23, 22, 20, 0.08);
+  --ex-bad-line: rgba(23, 22, 20, 0.22);
+
+  /* Hardware Scientific Calculator Tokens - Cream-White & Obsidian Monochrome */
+  --calc-chassis: #EFEFEF;
+  --calc-chassis-edge: rgba(23, 22, 20, 0.12);
+  --calc-head: #E8E7E4;
+  --calc-lcd: #FFFFFF;
+  --calc-lcd-edge: rgba(23, 22, 20, 0.09);
+  --calc-key-sci: #E6E5E2;
+  --calc-key-sci-hover: #DBD9D5;
+  --calc-key-sci-ink: #3D3B37;
+  --calc-key-num: #FFFFFF;
+  --calc-key-num-hover: #F5F4F2;
+  --calc-key-num-ink: #171614;
+  --calc-key-op: #E8E7E4;
+  --calc-key-op-hover: #DDDCD8;
+  --calc-key-op-ink: #171614;
+  --calc-key-util: #E6E5E2;
+  --calc-key-util-hover: #DBD9D5;
+  --calc-key-clear-ink: #171614;
+  --calc-key-eq: #171614;
+  --calc-key-eq-hover: #2B2926;
+  --calc-key-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.65), 0 1px 2px rgba(23, 22, 20, 0.06);
+  --calc-key-num-shadow: inset 0 1px 0 #FFFFFF, 0 1px 2px rgba(23, 22, 20, 0.08);
+}
+
+[data-theme="dark"] {
+  --ex-canvas: #151517;
+  --ex-surface: #1B1B1E;
+  --ex-surface-2: #222226;
+  --ex-elevated: #2A2A2E;
+  --ex-well: #131315;
+  --ex-ink: #F5F5F4;
+  --ex-ink-2: #A8A6A1;
+  --ex-ink-3: #76746F;
+  --ex-line: rgba(255, 255, 255, 0.07);
+  --ex-line-2: rgba(255, 255, 255, 0.11);
+  --ex-line-3: rgba(255, 255, 255, 0.18);
+  --ex-specular: 0 0 0 0 transparent;
+  --ex-shadow: 0 12px 32px -18px rgba(0, 0, 0, 0.55);
+  --ex-cta-bg: #F5F5F4;
+  --ex-cta-ink: #171614;
+  --ex-cta-hover: #FFFFFF;
+  --ex-sel: #F5F5F4;
+  --ex-sel-soft: rgba(255, 255, 255, 0.09);
+  --ex-ok: #F5F5F4;
+  --ex-ok-soft: rgba(255, 255, 255, 0.08);
+  --ex-ok-line: rgba(255, 255, 255, 0.18);
+  --ex-warn: #E7E5E0;
+  --ex-warn-soft: rgba(255, 255, 255, 0.07);
+  --ex-warn-line: rgba(255, 255, 255, 0.16);
+  --ex-bad: #F5F5F4;
+  --ex-bad-soft: rgba(255, 255, 255, 0.10);
+  --ex-bad-line: rgba(255, 255, 255, 0.22);
+
+  /* Hardware Scientific Calculator Tokens - Anodized Neutral Carbon */
+  --calc-chassis: #18181A;
+  --calc-chassis-edge: rgba(255, 255, 255, 0.08);
+  --calc-head: #131315;
+  --calc-lcd: #0E0E10;
+  --calc-lcd-edge: rgba(255, 255, 255, 0.07);
+  --calc-key-sci: #202024;
+  --calc-key-sci-hover: #29292D;
+  --calc-key-sci-ink: #A8A6A1;
+  --calc-key-num: #29292D;
+  --calc-key-num-hover: #333338;
+  --calc-key-num-ink: #F5F5F4;
+  --calc-key-op: #242428;
+  --calc-key-op-hover: #2F2F34;
+  --calc-key-op-ink: #F5F5F4;
+  --calc-key-util: #222226;
+  --calc-key-util-hover: #2C2C30;
+  --calc-key-clear-ink: #F5F5F4;
+  --calc-key-eq: #F5F5F4;
+  --calc-key-eq-hover: #FFFFFF;
+  --calc-key-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04), 0 1px 2px rgba(0, 0, 0, 0.36);
+  --calc-key-num-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 1px 3px rgba(0, 0, 0, 0.34);
+}
+
+body.ct-exam-studio {
+  background: var(--ex-canvas) !important;
+  color: var(--ex-ink) !important;
+  font-family: var(--ct-font) !important;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  transition: background-color 260ms var(--ct-ease), color 260ms var(--ct-ease);
+}
+
+/* Fix logo mark contrast across both themes */
+body.ct-exam-studio .ct-appicon {
+  --ct-logo-c: #FFFFFF;
+  --ct-logo-star: #FFFFFF;
+  background: #1B1B1B !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+/* ==========================================================================
+   1. CALM ARCHITECTURAL FIXED HEADER
+   ========================================================================== */
+body.ct-exam-studio .fixed-header {
+  position: fixed !important;
+  top: 0; left: 0; right: 0;
+  z-index: 1000;
+  background: var(--ex-canvas) !important;
+  border-bottom: 1px solid var(--ex-line) !important;
+  box-shadow: none !important;
+  padding: 10px 28px !important;
+}
+body.ct-exam-studio .header-top {
+  max-width: 1180px !important;
+  margin: 0 auto !important;
+  display: flex !important;
+  justify-content: space-between;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+body.ct-exam-studio .exam-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 11px;
+  font-size: 15px !important;
+  font-weight: 680 !important;
+  letter-spacing: -0.018em;
+  color: var(--ex-ink) !important;
+}
+body.ct-exam-studio .header-actions {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+}
+
+body.ct-exam-studio .ct-iconbtn {
+  width: 34px !important;
+  height: 34px !important;
+  border-radius: 8px !important;
+  background: transparent !important;
+  border: 1px solid transparent !important;
+  color: var(--ex-ink-2) !important;
+  box-shadow: none !important;
+}
+body.ct-exam-studio .ct-iconbtn:hover {
+  background: var(--ex-surface-2) !important;
+  border-color: transparent !important;
+  color: var(--ex-ink) !important;
+}
+
+/* Quiet Tonal Calculator Toggle */
+body.ct-exam-studio .calculator-btn {
+  height: 34px !important;
+  min-height: 34px !important;
+  width: auto !important;
+  min-width: 34px !important;
+  padding: 0 12px !important;
+  border-radius: 8px !important;
+  border: 1px solid var(--ex-line-2) !important;
+  background: var(--ex-surface-2) !important;
+  color: var(--ex-ink) !important;
+  box-shadow: none !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 7px !important;
+  font-size: 12.5px !important;
+  font-weight: 580 !important;
+  cursor: pointer;
+  transition: background-color 160ms var(--ct-ease), border-color 160ms var(--ct-ease) !important;
+}
+body.ct-exam-studio .calculator-btn:hover {
+  background: var(--ex-elevated) !important;
+  border-color: var(--ex-line-3) !important;
+  color: var(--ex-ink) !important;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+/* Clean Borderless Student Identity */
+body.ct-exam-studio .student-name-badge {
+  height: 34px !important;
+  background: transparent !important;
+  border: 0 !important;
+  padding: 0 8px !important;
+  border-radius: 8px !important;
+  font-size: 12.5px !important;
+  font-weight: 560 !important;
+  color: var(--ex-ink-2) !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+}
+body.ct-exam-studio .student-name-badge span { color: var(--ex-ink-3) !important; }
+
+/* Precision Monochrome Timepiece */
+body.ct-exam-studio .timer-box {
+  height: 36px !important;
+  background: var(--ex-surface) !important;
+  color: var(--ex-ink) !important;
+  padding: 0 14px !important;
+  border-radius: 9px !important;
+  min-width: 126px !important;
+  border: 1px solid var(--ex-line-2) !important;
+  box-shadow: none !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  animation: none !important;
+  transition: background-color 220ms cubic-bezier(0.23, 1, 0.32, 1), border-color 220ms ease, color 220ms ease !important;
+}
+body.ct-exam-studio .timer-label {
+  font-family: var(--ct-mono) !important;
+  font-size: 9.5px !important;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--ex-ink-3) !important;
+  opacity: 1 !important;
+  font-weight: 600 !important;
+}
+body.ct-exam-studio .timer-value {
+  font-family: var(--ct-mono) !important;
+  font-size: 15.5px !important;
+  font-weight: 740 !important;
+  color: var(--ex-ink) !important;
+  font-variant-numeric: tabular-nums;
+  line-height: 1 !important;
+}
+body.ct-exam-studio .timer-box.timer-warning {
+  background: var(--ex-elevated) !important;
+  border-color: var(--ex-ink) !important;
+  animation: none !important;
+}
+body.ct-exam-studio .timer-box.timer-warning .timer-label,
+body.ct-exam-studio .timer-box.timer-warning .timer-value { color: var(--ex-ink) !important; }
+body.ct-exam-studio .timer-box.timer-danger {
+  background: var(--ex-cta-bg) !important;
+  border-color: var(--ex-cta-bg) !important;
+  animation: ex-timer-tick 1.6s cubic-bezier(0.23, 1, 0.32, 1) infinite !important;
+}
+body.ct-exam-studio .timer-box.timer-danger .timer-label {
+  color: var(--ex-cta-ink) !important;
+  opacity: 0.72 !important;
+}
+body.ct-exam-studio .timer-box.timer-danger .timer-value { color: var(--ex-cta-ink) !important; }
+@keyframes ex-timer-tick {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(23, 22, 20, 0.28); }
+  50% { box-shadow: 0 0 0 5px rgba(23, 22, 20, 0); }
+}
+
+/* Sub-Row: Section Tabs & Minimalist Progress Bar */
+body.ct-exam-studio .nav-row,
+body.ct-exam-studio .progress-wrapper {
+  max-width: 1200px !important;
+  margin: 8px auto 0 !important;
+  padding-top: 8px !important;
+  border-top: 1px solid var(--ex-line) !important;
+  display: flex !important;
+  flex-wrap: nowrap !important;
+  align-items: center !important;
+  justify-content: space-between;
+  gap: 14px;
+}
+body.ct-exam-studio .section-tabs {
+  display: flex;
+  gap: 6px;
+  flex-wrap: nowrap !important;
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 1px;
+}
+body.ct-exam-studio .section-tabs::-webkit-scrollbar { display: none; }
+body.ct-exam-studio .section-tab {
+  flex: 0 0 auto;
+  white-space: nowrap;
+  padding: 5px 12px !important;
+  background: transparent !important;
+  border: 1px solid transparent !important;
+  border-radius: 8px !important;
+  color: var(--ex-ink-2) !important;
+  font-size: 12px !important;
+  font-weight: 560 !important;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  transition: background-color 160ms var(--ct-ease), color 160ms var(--ct-ease), border-color 160ms var(--ct-ease) !important;
+}
+body.ct-exam-studio .section-tab .section-progress {
+  font-family: var(--ct-mono);
+  font-size: 10.5px;
+  padding: 1px 6px;
+  border-radius: 5px;
+  background: var(--ex-surface-2);
+  color: var(--ex-ink-3);
+}
+body.ct-exam-studio .section-tab:hover {
+  background: var(--ex-surface-2) !important;
+  color: var(--ex-ink) !important;
+}
+body.ct-exam-studio .section-tab.active {
+  background: var(--ex-cta-bg) !important;
+  border-color: var(--ex-cta-bg) !important;
+  color: var(--ex-cta-ink) !important;
+  font-weight: 640 !important;
+}
+body.ct-exam-studio .section-tab.active .section-progress {
+  background: rgba(255, 255, 255, 0.16);
+  color: var(--ex-cta-ink);
+}
+[data-theme="dark"] body.ct-exam-studio .section-tab.active .section-progress {
+  background: rgba(23, 22, 20, 0.16);
+}
+body.ct-exam-studio .mini-progress {
+  display: flex;
+  flex: 0 0 auto;
+  white-space: nowrap;
+  align-items: center;
+  gap: 10px;
+  background: transparent !important;
+  border: 0 !important;
+  padding: 0 !important;
+}
+body.ct-exam-studio .mini-progress-bar,
+body.ct-exam-studio .progress-bar-custom {
+  width: 132px !important;
+  height: 5px !important;
+  background: var(--ex-elevated) !important;
+  border-radius: 99px !important;
+  overflow: hidden;
+}
+body.ct-exam-studio .mini-progress-fill,
+body.ct-exam-studio .progress-fill {
+  height: 100%;
+  background: var(--ex-ink) !important;
+  border-radius: 99px !important;
+  transition: width 320ms var(--ct-ease);
+}
+body.ct-exam-studio .mini-progress-text,
+body.ct-exam-studio .progress-text {
+  font-family: var(--ct-mono) !important;
+  font-size: 11.5px !important;
+  font-weight: 660 !important;
+  color: var(--ex-ink) !important;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ==========================================================================
+   2. TWO-COLUMN MONOCHROME EXAMINATION WORKSPACE (.main-content Grid)
+   Left: Distraction-free Question Reading Sheet
+   Right (.exam-rail): Sticky Command Column with
+     1. Previous / Next Dock AT THE VERY TOP (immediately visible above palette!)
+     2. Question Navigator Palette with Monochrome Legend
+     3. Submit Exam Action CTA
+   ========================================================================== */
+body.ct-exam-studio .main-content {
+  max-width: 1200px !important;
+  margin: 114px auto 72px !important;
+  padding: 0 28px !important;
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) 316px !important;
+  column-gap: 24px !important;
+  row-gap: 16px !important;
+  align-items: start !important;
+}
+body.ct-exam-studio #questionsContainer {
+  grid-column: 1 !important;
+  min-width: 0;
+}
+
+/* Sticky Right-Hand Exam Command Rail */
+body.ct-exam-studio .exam-rail {
+  grid-column: 2 !important;
+  position: sticky !important;
+  top: 114px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 12px !important;
+  max-height: calc(100vh - 160px) !important;
+  min-width: 0;
+}
+
+/* Previous / Next Card - Right-Hand Side ABOVE Question Palette */
+body.ct-exam-studio .nav-buttons {
+  position: static !important;
+  width: 100% !important;
+  left: auto !important;
+  right: auto !important;
+  bottom: auto !important;
+  z-index: auto !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: stretch !important;
+  gap: 10px !important;
+  margin: 0 !important;
+  padding: 15px 16px 14px !important;
+  border-radius: 18px !important;
+  background: var(--ex-surface) !important;
+  border: 1px solid var(--ex-line-2) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  box-shadow: var(--ex-shadow) !important;
+}
+body.ct-exam-studio .nav-rail-head {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 8px !important;
+}
+body.ct-exam-studio .nav-rail-eyebrow {
+  font-family: var(--ct-mono) !important;
+  font-size: 10px !important;
+  font-weight: 660 !important;
+  letter-spacing: 0.10em !important;
+  text-transform: uppercase !important;
+  color: var(--ex-ink-3) !important;
+}
+body.ct-exam-studio .nav-rail-pos {
+  font-family: var(--ct-mono) !important;
+  font-size: 11.5px !important;
+  font-weight: 700 !important;
+  font-variant-numeric: tabular-nums !important;
+  color: var(--ex-ink) !important;
+  padding: 2px 8px !important;
+  border-radius: 6px !important;
+  background: var(--ex-well) !important;
+  border: 1px solid var(--ex-line) !important;
+}
+body.ct-exam-studio .nav-rail-grid {
+  display: grid !important;
+  grid-template-columns: 1fr 1fr !important;
+  gap: 8px !important;
+}
+body.ct-exam-studio .nav-rail-hint {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 6px !important;
+  font-family: var(--ct-mono) !important;
+  font-size: 10.5px !important;
+  color: var(--ex-ink-3) !important;
+  padding-top: 2px !important;
+}
+body.ct-exam-studio .nav-rail-hint kbd {
+  font-family: var(--ct-mono) !important;
+  font-size: 10px !important;
+  padding: 1px 5px !important;
+  border-radius: 4px !important;
+  background: var(--ex-well) !important;
+  border: 1px solid var(--ex-line-2) !important;
+  color: var(--ex-ink-2) !important;
+}
+
+body.ct-exam-studio .palette-container {
+  grid-column: auto !important;
+  grid-row: auto !important;
+  position: static !important;
+  top: auto !important;
+  display: flex !important;
+  flex-direction: column !important;
+  flex: 1 1 auto !important;
+  min-height: 150px !important;
+  max-height: calc(100vh - 368px) !important;
+  background: var(--ex-surface) !important;
+  border: 1px solid var(--ex-line-2) !important;
+  border-radius: 18px !important;
+  padding: 16px !important;
+  margin: 0 !important;
+  box-shadow: var(--ex-shadow) !important;
+}
+
+/* Monochrome Palette Legend */
+body.ct-exam-studio .palette-legend {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 8px !important;
+  padding-bottom: 10px !important;
+  margin-bottom: 10px !important;
+  border-bottom: 1px solid var(--ex-line) !important;
+  font-size: 11px !important;
+  color: var(--ex-ink-3) !important;
+}
+body.ct-exam-studio .palette-legend-item {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 5px !important;
+  white-space: nowrap !important;
+}
+body.ct-exam-studio .palette-swatch {
+  width: 10px !important;
+  height: 10px !important;
+  border-radius: 3px !important;
+  display: inline-block !important;
+  flex: none !important;
+}
+body.ct-exam-studio .palette-swatch--current {
+  background: var(--ex-cta-bg) !important;
+  border: 1px solid var(--ex-cta-bg) !important;
+}
+body.ct-exam-studio .palette-swatch--answered {
+  background: var(--ex-elevated) !important;
+  border: 1.5px solid var(--ex-ink) !important;
+}
+body.ct-exam-studio .palette-swatch--unanswered {
+  background: var(--ex-surface) !important;
+  border: 1px solid var(--ex-line-2) !important;
+}
+
+/* Submit Exam Button - Anchored Cleanly Inside Right Rail */
+body.ct-exam-studio .submit-btn {
+  position: static !important;
+  bottom: auto !important;
+  right: auto !important;
+  width: 100% !important;
+  z-index: auto !important;
+  height: 50px !important;
+  flex: none !important;
+  border-radius: 14px !important;
+  border: 1.5px solid var(--ex-ink) !important;
+  background: var(--ex-surface) !important;
+  color: var(--ex-ink) !important;
+  font-family: var(--ct-font) !important;
+  font-size: 14px !important;
+  font-weight: 680 !important;
+  letter-spacing: -0.01em;
+  cursor: pointer;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  box-shadow: var(--ex-shadow) !important;
+  transition: background-color 180ms cubic-bezier(0.23, 1, 0.32, 1), border-color 180ms ease, color 180ms ease, transform 140ms cubic-bezier(0.23, 1, 0.32, 1) !important;
+}
+@media (hover: hover) and (pointer: fine) {
+  body.ct-exam-studio .submit-btn:hover {
+    background: var(--ex-cta-bg) !important;
+    color: var(--ex-cta-ink) !important;
+    border-color: var(--ex-cta-bg) !important;
+    transform: translateY(-1px);
+    filter: none !important;
+  }
+}
+body.ct-exam-studio .submit-btn:active { transform: scale(0.985); }
+
+/* Question Reading Card */
+body.ct-exam-studio .question-card {
+  background: var(--ex-surface) !important;
+  border: 1px solid var(--ex-line-2) !important;
+  border-radius: 20px !important;
+  padding: 30px 36px 34px !important;
+  margin: 0 !important;
+  box-shadow: var(--ex-shadow) !important;
+  color: var(--ex-ink) !important;
+}
+body.ct-exam-studio .question-card.active {
+  display: block;
+  animation: ex-question-in 240ms cubic-bezier(0.23, 1, 0.32, 1) both !important;
+}
+@keyframes ex-question-in {
+  from { opacity: 0; transform: translate3d(0, 6px, 0); }
+  to { opacity: 1; transform: translate3d(0, 0, 0); }
+}
+body.ct-exam-studio .question-header {
+  display: flex !important;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px !important;
+  padding-bottom: 14px !important;
+  border-bottom: 1px solid var(--ex-line) !important;
+}
+body.ct-exam-studio .question-number {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 10px !important;
+  border-radius: 7px !important;
+  background: var(--ex-well) !important;
+  border: 1px solid var(--ex-line) !important;
+  color: var(--ex-ink) !important;
+  font-family: var(--ct-mono) !important;
+  font-size: 11px !important;
+  font-weight: 680 !important;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+body.ct-exam-studio .mandatory-badge {
+  padding: 4px 10px;
+  border-radius: 7px;
+  background: var(--ex-cta-bg) !important;
+  color: var(--ex-cta-ink) !important;
+  border: 1px solid transparent !important;
+  font-family: var(--ct-mono);
+  font-size: 10.5px;
+  font-weight: 660;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+/* Passage / Group Box */
+body.ct-exam-studio .group-content-box {
+  background: var(--ex-well) !important;
+  border: 1px solid var(--ex-line-2) !important;
+  border-left: 3px solid var(--ex-ink) !important;
+  border-radius: 14px !important;
+  padding: 18px 20px !important;
+  margin-bottom: 22px !important;
+  color: var(--ex-ink) !important;
+}
+body.ct-exam-studio .group-content-box h4 {
+  color: var(--ex-ink) !important;
+  font-size: 14.5px !important;
+  font-weight: 700 !important;
+}
+body.ct-exam-studio .group-instruction {
+  background: var(--ex-surface) !important;
+  border: 1px solid var(--ex-line-2) !important;
+  color: var(--ex-ink) !important;
+  border-radius: 9px !important;
+}
+body.ct-exam-studio .passage-text-content,
+body.ct-exam-studio .passage-text {
+  color: var(--ex-ink-2) !important;
+  line-height: 1.72;
+}
+body.ct-exam-studio .passage-fade-overlay {
+  background: linear-gradient(to bottom, transparent 0%, var(--ex-well) 100%) !important;
+}
+body.ct-exam-studio .passage-expand-cta {
+  background: var(--ex-surface) !important;
+  color: var(--ex-ink) !important;
+  border: 1px solid var(--ex-line-2) !important;
+}
+
+/* Generous High-Legibility Question Stem + Stacked Image Media */
+body.ct-exam-studio .question-text {
+  font-size: 18.5px !important;
+  font-weight: 540 !important;
+  line-height: 1.66 !important;
+  letter-spacing: -0.012em;
+  color: var(--ex-ink) !important;
+  margin-bottom: 24px !important;
+}
+body.ct-exam-studio .question-image,
+body.ct-exam-studio .passage-image {
+  display: block !important;
+  max-width: 100% !important;
+  max-height: 220px !important;
+  width: auto !important;
+  height: auto !important;
+  object-fit: contain !important;
+  border-radius: 14px !important;
+  border: 1px solid var(--ex-line-2) !important;
+  background: var(--ex-well) !important;
+  margin: 0 0 8px 0 !important;
+  cursor: zoom-in !important;
+}
+body.ct-exam-studio .image-enlarge-hint {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  padding: 5px 11px !important;
+  border-radius: 8px !important;
+  background: var(--ex-well) !important;
+  border: 1px solid var(--ex-line) !important;
+  color: var(--ex-ink-2) !important;
+  font-size: 11.5px !important;
+  font-weight: 560 !important;
+  margin: 0 0 18px 0 !important;
+  text-decoration: none !important;
+}
+body.ct-exam-studio .image-enlarge-hint:hover {
+  color: var(--ex-ink) !important;
+  border-color: var(--ex-line-3) !important;
+  background: var(--ex-surface-2) !important;
+  text-decoration: none !important;
+}
+body.ct-exam-studio .radio-option label .frac-num,
+body.ct-exam-studio .radio-option label [class*="frac-num"],
+body.ct-exam-studio .question-text .frac-num {
+  border-bottom-color: currentColor !important;
+}
+
+/* Tactile A/B/C/D Keycap MCQ Option Cards with Crisp Monochrome Check Indicator */
+body.ct-exam-studio .options-container {
+  display: grid !important;
+  gap: 11px !important;
+  counter-reset: ct-opt;
+}
+body.ct-exam-studio .radio-option {
+  position: relative;
+  counter-increment: ct-opt;
+  display: flex !important;
+  align-items: center !important;
+  gap: 14px !important;
+  padding: 15px 46px 15px 16px !important;
+  border-radius: 14px !important;
+  border: 1.5px solid var(--ex-line-2) !important;
+  background: var(--ex-well) !important;
+  color: var(--ex-ink) !important;
+  cursor: pointer;
+  margin: 0 !important;
+  transition: transform 140ms cubic-bezier(0.23, 1, 0.32, 1), border-color 160ms ease, background-color 160ms ease !important;
+}
+[data-theme="light"] body.ct-exam-studio .radio-option { background: #FAF9F7 !important; }
+
+/* Auto-generated crisp A / B / C / D keycap badge */
+body.ct-exam-studio .radio-option::before {
+  content: counter(ct-opt, upper-alpha);
+  flex: none;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  border: 1px solid var(--ex-line-2);
+  background: var(--ex-surface);
+  color: var(--ex-ink-2);
+  font-family: var(--ct-mono);
+  font-size: 12.5px;
+  font-weight: 700;
+  display: inline-grid;
+  place-items: center;
+  transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease, transform 160ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+/* Crisp right-side check circle that illuminates on selection */
+body.ct-exam-studio .radio-option::after {
+  content: "";
+  position: absolute;
+  right: 16px;
+  top: 50%;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 1.5px solid var(--ex-line-2);
+  background: transparent;
+  transform: translateY(-50%);
+  transition: background-color 160ms ease, border-color 160ms ease, transform 180ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+@media (hover: hover) and (pointer: fine) {
+  body.ct-exam-studio .radio-option:hover {
+    border-color: var(--ex-line-3) !important;
+    background: var(--ex-surface-2) !important;
+  }
+}
+body.ct-exam-studio .radio-option:active {
+  transform: scale(0.994);
+}
+body.ct-exam-studio .radio-option.selected,
+body.ct-exam-studio .radio-option:has(input:checked) {
+  border-color: var(--ex-ink) !important;
+  background: var(--ex-surface-2) !important;
+  box-shadow: 0 2px 10px -4px rgba(23, 22, 20, 0.14) !important;
+}
+body.ct-exam-studio .radio-option.selected::before,
+body.ct-exam-studio .radio-option:has(input:checked)::before {
+  background: var(--ex-cta-bg);
+  border-color: var(--ex-cta-bg);
+  color: var(--ex-cta-ink);
+}
+body.ct-exam-studio .radio-option.selected::after,
+body.ct-exam-studio .radio-option:has(input:checked)::after {
+  border-color: var(--ex-cta-bg);
+  background: var(--ex-cta-bg);
+  box-shadow: inset 0 0 0 4px var(--ex-surface-2);
+}
+/* Keep real native radio accessible while visual keycap leads */
+body.ct-exam-studio .radio-option input[type="radio"] {
+  position: absolute !important;
+  opacity: 0 !important;
+  width: 1px !important;
+  height: 1px !important;
+  margin: 0 !important;
+  pointer-events: none;
+}
+body.ct-exam-studio .radio-option label {
+  flex: 1;
+  font-size: 15.5px !important;
+  line-height: 1.56 !important;
+  color: var(--ex-ink) !important;
+  cursor: pointer;
+  margin: 0 !important;
+}
+
+/* Previous / Next Navigation Buttons (Inside Right Rail Above Palette) */
+body.ct-exam-studio .nav-btn {
+  width: 100% !important;
+  height: 44px !important;
+  padding: 0 14px !important;
+  border-radius: 11px !important;
+  font-family: var(--ct-font) !important;
+  font-size: 13.5px !important;
+  font-weight: 660 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 7px;
+  cursor: pointer;
+  transition: transform 140ms cubic-bezier(0.23, 1, 0.32, 1), background-color 160ms ease, border-color 160ms ease, opacity 160ms ease !important;
+}
+body.ct-exam-studio .nav-btn:disabled {
+  opacity: 0.38 !important;
+  cursor: not-allowed !important;
+  transform: none !important;
+}
+body.ct-exam-studio .nav-btn:active:not(:disabled) { transform: scale(0.97); }
+body.ct-exam-studio .nav-btn-secondary {
+  background: var(--ex-well) !important;
+  border: 1px solid var(--ex-line-2) !important;
+  color: var(--ex-ink) !important;
+  box-shadow: none !important;
+}
+@media (hover: hover) and (pointer: fine) {
+  body.ct-exam-studio .nav-btn-secondary:hover:not(:disabled) {
+    background: var(--ex-elevated) !important;
+    border-color: var(--ex-line-3) !important;
+  }
+}
+body.ct-exam-studio .nav-btn-primary {
+  background: var(--ex-cta-bg) !important;
+  border: 1px solid var(--ex-cta-bg) !important;
+  color: var(--ex-cta-ink) !important;
+  box-shadow: 0 2px 6px rgba(23, 22, 20, 0.16) !important;
+}
+@media (hover: hover) and (pointer: fine) {
+  body.ct-exam-studio .nav-btn-primary:hover:not(:disabled) {
+    background: var(--ex-cta-hover) !important;
+    filter: none !important;
+    transform: translateY(-1px);
+  }
+}
+
+/* Right Rail: Question Map */
+body.ct-exam-studio .palette-title {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  flex: none !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.01em !important;
+  color: var(--ex-ink) !important;
+  margin-bottom: 10px !important;
+  padding-bottom: 0 !important;
+  border-bottom: 0 !important;
+}
+body.ct-exam-studio .palette-title i { display: none; }
+body.ct-exam-studio .palette-count-pill {
+  font-family: var(--ct-mono);
+  font-size: 11px;
+  font-weight: 660;
+  color: var(--ex-ink-2);
+  padding: 2px 8px;
+  border-radius: 6px;
+  background: var(--ex-well);
+  border: 1px solid var(--ex-line);
+  font-variant-numeric: tabular-nums;
+}
+body.ct-exam-studio #answeredCount {
+  font-family: var(--ct-mono);
+  font-size: inherit;
+  font-weight: 700;
+  color: var(--ex-ink);
+  padding: 0;
+  border-radius: 0;
+  background: transparent;
+  border: 0;
+}
+body.ct-exam-studio .palette-buttons {
+  display: grid !important;
+  grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+  gap: 7px !important;
+  overflow-y: auto !important;
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  padding: 2px 2px 4px 2px !important;
+}
+body.ct-exam-studio .palette-btn {
+  position: relative !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  min-height: 36px !important;
+  height: 36px !important;
+  border-radius: 9px !important;
+  font-family: var(--ct-mono) !important;
+  font-size: 12.5px !important;
+  font-weight: 640 !important;
+  border: 1px solid var(--ex-line-2) !important;
+  cursor: pointer;
+  transition: transform 120ms cubic-bezier(0.23, 1, 0.32, 1), background-color 150ms ease, border-color 150ms ease, color 150ms ease !important;
+}
+body.ct-exam-studio .palette-btn:hover { border-color: var(--ex-ink) !important; }
+body.ct-exam-studio .palette-btn.unanswered {
+  background: var(--ex-surface) !important;
+  color: var(--ex-ink-3) !important;
+}
+body.ct-exam-studio .palette-btn.answered {
+  background: var(--ex-elevated) !important;
+  border-color: var(--ex-ink) !important;
+  color: var(--ex-ink) !important;
+  font-weight: 740 !important;
+}
+body.ct-exam-studio .palette-btn.answered::after {
+  content: "";
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--ex-ink);
+}
+body.ct-exam-studio .palette-btn.current {
+  background: var(--ex-cta-bg) !important;
+  border-color: var(--ex-cta-bg) !important;
+  color: var(--ex-cta-ink) !important;
+  box-shadow: 0 0 0 2px var(--ex-surface), 0 0 0 3.5px var(--ex-cta-bg) !important;
+  font-weight: 760 !important;
+  transform: none !important;
+}
+body.ct-exam-studio .palette-btn.current::after {
+  background: var(--ex-cta-ink);
+}
+
+/* Dedicated Non-Overlapping Bottom Status Rail */
+body.ct-exam-studio::after {
+  content: "";
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 36px;
+  z-index: 880;
+  background: var(--ex-canvas);
+  border-top: 1px solid var(--ex-line);
+  pointer-events: none;
+}
+body.ct-exam-studio .warning-badge {
+  position: fixed !important;
+  bottom: 4px !important;
+  left: 24px !important;
+  top: auto !important;
+  right: auto !important;
+  z-index: 900 !important;
+  height: 28px;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 7px;
+  padding: 0 10px !important;
+  border-radius: 7px !important;
+  font-family: var(--ct-mono) !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  border: 1px solid transparent !important;
+  background: transparent !important;
+  color: var(--ex-ink-3) !important;
+  box-shadow: none !important;
+  transition: background-color 200ms ease, color 200ms ease, border-color 200ms ease !important;
+}
+body.ct-exam-studio .warning-badge.stage-clean {
+  color: var(--ex-ink-2) !important;
+}
+body.ct-exam-studio .warning-badge.stage-low,
+body.ct-exam-studio .warning-badge.stage-warn,
+body.ct-exam-studio .warning-badge.warning {
+  background: var(--ex-surface) !important;
+  border-color: var(--ex-line-2) !important;
+  color: var(--ex-ink) !important;
+}
+body.ct-exam-studio .warning-badge.stage-mid {
+  background: var(--ex-elevated) !important;
+  border-color: var(--ex-ink) !important;
+  color: var(--ex-ink) !important;
+}
+body.ct-exam-studio .warning-badge.stage-critical,
+body.ct-exam-studio .warning-badge.stage-danger,
+body.ct-exam-studio .warning-badge.danger {
+  background: var(--ex-cta-bg) !important;
+  border-color: var(--ex-cta-bg) !important;
+  color: var(--ex-cta-ink) !important;
+}
+
+body.ct-exam-studio #saveStatusIndicator {
+  position: fixed !important;
+  bottom: 3px !important;
+  right: 24px !important;
+  top: auto !important;
+  z-index: 900 !important;
+  height: 28px !important;
+  padding: 0 !important;
+  border-radius: 0 !important;
+  font-family: var(--ct-mono) !important;
+  font-size: 11.5px !important;
+  font-weight: 560 !important;
+  background: transparent !important;
+  border: 0 !important;
+  color: var(--ex-ink-3) !important;
+  box-shadow: none !important;
+}
+
+/* ==========================================================================
+   3. HARDWARE-PRECISION SCIENTIFIC CALCULATOR (#calculatorModal)
+      Anodized Neutral Carbon (Dark) & Brushed Aluminum (Light)
+   ========================================================================== */
+#calculatorModal.calculator-modal,
+#calculatorModal.ct-calc-modal,
+.calculator-modal {
+  position: fixed !important;
+  z-index: 10020 !important;
+  width: 348px !important;
+  min-width: 296px !important;
+  max-width: min(440px, calc(100vw - 24px)) !important;
+  min-height: 0 !important;
+  height: auto !important;
+  background: var(--calc-chassis) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  border: 1px solid var(--calc-chassis-edge) !important;
+  border-radius: 20px !important;
+  box-shadow: 0 28px 64px -18px rgba(0, 0, 0, 0.72) !important;
+  color: var(--ex-ink) !important;
+  font-family: var(--ct-font) !important;
+  overflow: hidden !important;
+  resize: none !important;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: translateY(14px) scale(0.96);
+  transition: opacity 220ms var(--ct-ease), transform 280ms var(--ct-ease), visibility 0s linear 220ms !important;
+  user-select: none;
+}
+[data-theme="light"] #calculatorModal.calculator-modal,
+[data-theme="light"] #calculatorModal.ct-calc-modal,
+[data-theme="light"] .calculator-modal {
+  box-shadow: 0 24px 56px -18px rgba(20, 20, 22, 0.20), 0 0 0 1px rgba(20, 20, 22, 0.05) !important;
+}
+#calculatorModal.calculator-modal.show,
+#calculatorModal.ct-calc-modal.show,
+.calculator-modal.show {
+  display: flex !important;
+  flex-direction: column !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  pointer-events: auto !important;
+  transform: translateY(0) scale(1) !important;
+  transition: opacity 220ms var(--ct-ease), transform 280ms var(--ct-ease), visibility 0s !important;
+}
+#calculatorModal.compact,
+.calculator-modal.compact { width: 304px !important; }
+
+/* Anodized Minimal Header Rail */
+#calculatorModal .calculator-header,
+#calculatorHeader {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 8px !important;
+  padding: 12px 14px !important;
+  background: var(--calc-head) !important;
+  border-bottom: 1px solid var(--ex-line) !important;
+  cursor: grab !important;
+  color: var(--ex-ink) !important;
+}
+#calculatorHeader:active { cursor: grabbing !important; }
+
+#calculatorModal .calc-header-title,
+#calculatorModal .calculator-title {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  font-size: 12px !important;
+  font-weight: 680 !important;
+  letter-spacing: 0.04em !important;
+  text-transform: uppercase !important;
+  color: var(--ex-ink-2) !important;
+}
+#calculatorModal .calc-header-title i,
+#calculatorModal .calc-header-title svg {
+  color: var(--ex-ink-3) !important;
+  font-size: 13px !important;
+}
+#calculatorModal .calc-header-actions,
+#calculatorModal .calculator-controls {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 5px !important;
+}
+#calculatorModal .calc-tool-btn,
+#calculatorModal .calculator-close,
+#calculatorModal .calc-close-btn,
+#calculatorModal .calc-size-btn {
+  width: 28px !important;
+  height: 28px !important;
+  border-radius: 8px !important;
+  border: 1px solid transparent !important;
+  background: transparent !important;
+  color: var(--ex-ink-3) !important;
+  font-size: 12px !important;
+  display: inline-grid !important;
+  place-items: center !important;
+  cursor: pointer !important;
+  box-shadow: none !important;
+  transition: background-color 150ms var(--ct-ease), color 150ms var(--ct-ease), border-color 150ms var(--ct-ease) !important;
+}
+#calculatorModal .calc-tool-btn:hover,
+#calculatorModal .calculator-close:hover,
+#calculatorModal .calc-close-btn:hover,
+#calculatorModal .calc-size-btn:hover {
+  background: var(--calc-key-sci) !important;
+  border-color: var(--ex-line) !important;
+  color: var(--ex-ink) !important;
+  transform: none !important;
+}
+#calculatorModal .calculator-close:hover,
+#calculatorModal .calc-close-btn:hover {
+  color: var(--ex-bad) !important;
+  background: var(--ex-bad-soft) !important;
+}
+
+/* Recessed Matte Optical LCD Display Well - STRICT RIGHT ALIGNMENT */
+#calculatorModal .calculator-display {
+  margin: 12px 14px 4px !important;
+  padding: 14px 16px 12px !important;
+  min-height: 92px !important;
+  border-radius: 14px !important;
+  background: var(--calc-lcd) !important;
+  backdrop-filter: none !important;
+  border: 1px solid var(--calc-lcd-edge) !important;
+  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.22) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: flex-end !important;
+  justify-content: flex-end !important;
+  text-align: right !important;
+  gap: 5px !important;
+}
+[data-theme="light"] #calculatorModal .calculator-display {
+  box-shadow: inset 0 1px 3px rgba(23, 22, 20, 0.06) !important;
+}
+
+#calculatorModal .calculator-expression,
+#calculatorModal .calc-expression,
+#calcExpression {
+  width: 100% !important;
+  min-height: 18px !important;
+  font-family: var(--ct-mono) !important;
+  font-size: 12.5px !important;
+  font-weight: 500 !important;
+  letter-spacing: 0.01em !important;
+  color: var(--ex-ink-3) !important;
+  text-align: right !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+#calculatorModal .calculator-preview { display: none !important; }
+#calculatorModal .calculator-result,
+#calculatorModal .calc-result,
+#calcResult {
+  width: 100% !important;
+  font-family: var(--ct-mono) !important;
+  font-size: 32px !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.035em !important;
+  line-height: 1.12 !important;
+  color: var(--ex-ink) !important;
+  text-align: right !important;
+  font-variant-numeric: tabular-nums !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+  margin-top: 0 !important;
+}
+#calculatorModal.compact #calcResult { font-size: 25px !important; }
+
+/* Button Container */
+#calculatorModal #calculatorButtons,
+#calculatorModal .calculator-body {
+  padding: 6px 14px 14px !important;
+  background: transparent !important;
+}
+
+/* Instrument Control Bar (Segmented DEG / RAD + Copy Answer) */
+#calculatorModal .cogni-calc-sci-topbar {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  padding: 4px 0 10px !important;
+  margin: 0 !important;
+  background: transparent !important;
+  border: 0 !important;
+}
+#calculatorModal .calc-deg-badge {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  height: 26px !important;
+  padding: 0 10px !important;
+  border-radius: 8px !important;
+  border: 1px solid var(--ex-line-2) !important;
+  background: var(--calc-key-sci) !important;
+  color: var(--ex-ink) !important;
+  font-family: var(--ct-mono) !important;
+  font-size: 10.5px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.08em !important;
+  box-shadow: none !important;
+  cursor: pointer !important;
+  transition: background-color 150ms var(--ct-ease), border-color 150ms var(--ct-ease) !important;
+}
+#calculatorModal .calc-deg-badge:hover {
+  background: var(--calc-key-sci-hover) !important;
+  border-color: var(--ex-line-3) !important;
+}
+#calculatorModal .calc-deg-badge .deg-dot {
+  width: 6px !important;
+  height: 6px !important;
+  border-radius: 50% !important;
+  background: var(--calc-key-eq) !important;
+}
+#calculatorModal .calc-deg-badge.rad-active .deg-dot {
+  background: var(--ex-sel) !important;
+}
+#calculatorModal .calc-copy-btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 5px !important;
+  height: 26px !important;
+  padding: 0 9px !important;
+  border-radius: 8px !important;
+  border: 1px solid transparent !important;
+  background: transparent !important;
+  color: var(--ex-ink-3) !important;
+  font-family: var(--ct-mono) !important;
+  font-size: 10.5px !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.03em !important;
+  cursor: pointer !important;
+  transition: color 150ms var(--ct-ease), background-color 150ms var(--ct-ease) !important;
+}
+#calculatorModal .calc-copy-btn:hover {
+  background: var(--calc-key-sci) !important;
+  color: var(--ex-ink) !important;
+}
+#calculatorModal .calc-copy-btn.is-copied {
+  color: var(--ex-ok) !important;
+}
+
+/* Precision 5-Column Hardware Keycap Grid (ZERO double borders, ZERO white halos) */
+#calculatorModal .cogni-calc-grid {
+  padding: 0 !important;
+  display: grid !important;
+  grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+  gap: 7px !important;
+  background: transparent !important;
+  overflow: visible !important;
+}
+#calculatorModal .calc-btn {
+  position: relative !important;
+  overflow: hidden !important;
+  min-height: 41px !important;
+  height: 41px !important;
+  padding: 0 !important;
+  border: 1px solid transparent !important;
+  border-radius: 10px !important;
+  background: var(--calc-key-sci) !important;
+  color: var(--calc-key-sci-ink) !important;
+  font-family: var(--ct-font) !important;
+  font-size: 13px !important;
+  font-weight: 620 !important;
+  box-shadow: var(--calc-key-shadow) !important;
+  display: inline-grid !important;
+  place-items: center !important;
+  cursor: pointer !important;
+  transition: transform 80ms var(--ct-ease), background-color 140ms var(--ct-ease), color 140ms var(--ct-ease) !important;
+}
+#calculatorModal.compact .calc-btn {
+  min-height: 35px !important;
+  height: 35px !important;
+  font-size: 12px !important;
+  border-radius: 8px !important;
+}
+#calculatorModal .calc-btn:hover {
+  background: var(--calc-key-sci-hover) !important;
+  color: var(--ex-ink) !important;
+  transform: none !important;
+  box-shadow: var(--calc-key-shadow) !important;
+}
+#calculatorModal .calc-btn:active,
+#calculatorModal .calc-btn.calc-active {
+  transform: translateY(1px) scale(0.97) !important;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.35) !important;
+}
+
+/* Zone A - Scientific & Paren Functions */
+#calculatorModal .calc-btn.scientific,
+#calculatorModal .calc-btn.paren,
+#calculatorModal .calc-btn.sign {
+  background: var(--calc-key-sci) !important;
+  color: var(--calc-key-sci-ink) !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  border-color: transparent !important;
+  box-shadow: var(--calc-key-shadow) !important;
+}
+#calculatorModal .calc-btn.scientific:hover,
+#calculatorModal .calc-btn.paren:hover,
+#calculatorModal .calc-btn.sign:hover {
+  background: var(--calc-key-sci-hover) !important;
+  color: var(--ex-ink) !important;
+}
+
+/* Zone B - Elevated Tactile Number Pad (0-9, .) */
+#calculatorModal .calc-btn.num,
+#calculatorModal .calc-btn.decimal {
+  background: var(--calc-key-num) !important;
+  color: var(--calc-key-num-ink) !important;
+  font-family: var(--ct-mono) !important;
+  font-size: 15.5px !important;
+  font-weight: 660 !important;
+  border-color: transparent !important;
+  box-shadow: var(--calc-key-num-shadow) !important;
+}
+#calculatorModal .calc-btn.num:hover,
+#calculatorModal .calc-btn.decimal:hover {
+  background: var(--calc-key-num-hover) !important;
+  color: var(--calc-key-num-ink) !important;
+  box-shadow: var(--calc-key-num-shadow) !important;
+}
+
+/* Zone C - Clear & Backspace (Refined Braun Terracotta Ink, Zero Muddy Boxes) */
+#calculatorModal .calc-btn.clear,
+#calculatorModal .calc-btn.backspace {
+  background: var(--calc-key-util) !important;
+  color: var(--calc-key-clear-ink) !important;
+  border-color: transparent !important;
+  box-shadow: var(--calc-key-shadow) !important;
+}
+#calculatorModal .calc-btn.clear:hover,
+#calculatorModal .calc-btn.backspace:hover {
+  background: var(--calc-key-util-hover) !important;
+}
+
+/* Zone D - Arithmetic Operators */
+#calculatorModal .calc-btn.operator {
+  background: var(--calc-key-op) !important;
+  color: var(--calc-key-op-ink) !important;
+  font-size: 16.5px !important;
+  font-weight: 650 !important;
+  border-color: transparent !important;
+  box-shadow: var(--calc-key-shadow) !important;
+}
+#calculatorModal .calc-btn.operator:hover {
+  background: var(--calc-key-op-hover) !important;
+  color: var(--calc-key-op-ink) !important;
+}
+
+/* Zone E - Iconic Dieter Rams Warm Amber Equals Key */
+#calculatorModal .calc-btn.equals {
+  background: var(--calc-key-eq) !important;
+  color: var(--ex-cta-ink) !important;
+  font-size: 18px !important;
+  font-weight: 700 !important;
+  border-color: transparent !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16), 0 2px 6px rgba(23, 22, 20, 0.24) !important;
+}
+#calculatorModal .calc-btn.equals:hover {
+  background: var(--calc-key-eq-hover) !important;
+  color: var(--ex-cta-ink) !important;
+}
+#calculatorModal .calc-span-2 { grid-column: span 2 !important; }
+#calculatorModal .calc-ripple { background: rgba(255, 255, 255, 0.16) !important; }
+#calculatorModal .calc-resize-handle { display: none !important; }
+
+/* ==========================================================================
+   4. MODALS & MOTION-GRAPHICS OVERLAYS INSIDE EXAM STUDIO
+      100% Native Neutral Carbon (Dark) & Paper (Light) - Zero White-Box Glare
+   ========================================================================== */
+@keyframes ex-backdrop-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes ex-card-in {
+  from { opacity: 0; transform: translate3d(0, 18px, 0) scale(0.965); }
+  to { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
+}
+@keyframes ex-stagger-in {
+  from { opacity: 0; transform: translate3d(0, 10px, 0); }
+  to { opacity: 1; transform: translate3d(0, 0, 0); }
+}
+@keyframes ex-seal-draw {
+  from { stroke-dashoffset: 64; }
+  to { stroke-dashoffset: 0; }
+}
+@keyframes ex-ring-pulse {
+  0% { transform: scale(0.92); opacity: 0.45; }
+  100% { transform: scale(1.26); opacity: 0; }
+}
+
+body.ct-exam-studio .modal-overlay,
+body.ct-exam-studio .submit-premium-modal,
+body.ct-exam-studio .loading-modal,
+body.ct-exam-studio .passage-modal-overlay,
+body.ct-exam-studio .paused-overlay {
+  background: rgba(8, 9, 12, 0.78) !important;
+  backdrop-filter: blur(10px) !important;
+  -webkit-backdrop-filter: blur(10px) !important;
+  padding: 20px !important;
+}
+[data-theme="light"] body.ct-exam-studio .modal-overlay,
+[data-theme="light"] body.ct-exam-studio .submit-premium-modal,
+[data-theme="light"] body.ct-exam-studio .loading-modal,
+[data-theme="light"] body.ct-exam-studio .passage-modal-overlay,
+[data-theme="light"] body.ct-exam-studio .paused-overlay {
+  background: rgba(15, 17, 23, 0.52) !important;
+}
+body.ct-exam-studio .modal-overlay.show,
+body.ct-exam-studio .submit-premium-modal.show,
+body.ct-exam-studio .loading-modal.show {
+  animation: ex-backdrop-in 200ms cubic-bezier(0.22, 1, 0.36, 1) both !important;
+}
+
+body.ct-exam-studio .modal-container,
+body.ct-exam-studio .ex-scene-card,
+body.ct-exam-studio .submit-premium-content,
+body.ct-exam-studio .loading-content,
+body.ct-exam-studio .passage-modal-dialog,
+body.ct-exam-studio .paused-content {
+  background: var(--ex-surface) !important;
+  border: 1px solid var(--ex-line-2) !important;
+  border-radius: 22px !important;
+  color: var(--ex-ink) !important;
+  box-shadow: 0 32px 72px -20px rgba(0, 0, 0, 0.68), 0 0 0 1px var(--ex-line) !important;
+  animation: ex-card-in 340ms cubic-bezier(0.22, 1, 0.36, 1) both !important;
+  overflow: hidden !important;
+}
+[data-theme="light"] body.ct-exam-studio .modal-container,
+[data-theme="light"] body.ct-exam-studio .ex-scene-card,
+[data-theme="light"] body.ct-exam-studio .submit-premium-content,
+[data-theme="light"] body.ct-exam-studio .loading-content,
+[data-theme="light"] body.ct-exam-studio .passage-modal-dialog,
+[data-theme="light"] body.ct-exam-studio .paused-content {
+  box-shadow: 0 28px 64px -20px rgba(15, 17, 23, 0.24), 0 0 0 1px var(--ex-line) !important;
+}
+
+/* ---------- Minimalist Submit Confirmation Modal (#beautifulSubmitModal) ---------- */
+body.ct-exam-studio .submit-premium-content {
+  width: min(348px, calc(100vw - 28px)) !important;
+  max-width: 348px !important;
+  padding: 32px 26px 26px !important;
+  text-align: center !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  gap: 18px !important;
+}
+body.ct-exam-studio .submit-min-ring {
+  position: relative;
+  width: 88px;
+  height: 88px;
+  display: grid;
+  place-items: center;
+}
+body.ct-exam-studio .submit-min-ring svg {
+  width: 88px;
+  height: 88px;
+  transform: rotate(-90deg);
+}
+body.ct-exam-studio .ex-ring-track {
+  stroke: var(--ex-elevated) !important;
+}
+body.ct-exam-studio #submitProgressCircle {
+  transition: stroke-dashoffset 620ms cubic-bezier(0.23, 1, 0.32, 1) !important;
+}
+body.ct-exam-studio .submit-min-ring .ring-center {
+  position: absolute !important;
+  inset: 0 !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  transform: none !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+body.ct-exam-studio .ring-center .answered-num {
+  font-family: var(--ct-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 22px !important;
+  font-weight: 780 !important;
+  color: var(--ex-ink) !important;
+  line-height: 1.05;
+}
+body.ct-exam-studio .ring-center .total-num {
+  font-family: var(--ct-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 11px !important;
+  color: var(--ex-ink-3) !important;
+  margin-top: 2px;
+}
+body.ct-exam-studio .submit-min-copy {
+  display: grid;
+  gap: 5px;
+  text-align: center;
+}
+body.ct-exam-studio .submit-min-copy h3 {
+  font-size: 20px !important;
+  font-weight: 740 !important;
+  letter-spacing: -0.025em !important;
+  color: var(--ex-ink) !important;
+  margin: 0 !important;
+  line-height: 1.2;
+}
+body.ct-exam-studio .submit-min-copy p {
+  font-family: var(--ct-mono);
+  font-size: 12.5px !important;
+  font-weight: 560 !important;
+  color: var(--ex-ink-2) !important;
+  margin: 0 !important;
+}
+body.ct-exam-studio .submit-premium-footer,
+body.ct-exam-studio .passage-modal-footer {
+  width: 100% !important;
+  padding: 6px 0 0 !important;
+  background: transparent !important;
+  border-top: 0 !important;
+  display: flex !important;
+  gap: 10px !important;
+}
+body.ct-exam-studio .passage-modal-footer {
+  padding: 14px 22px 18px !important;
+  border-top: 1px solid var(--ex-line) !important;
+  background: var(--ex-well) !important;
+  justify-content: flex-end;
+}
+body.ct-exam-studio .submit-premium-footer .btn-cancel,
+body.ct-exam-studio .btn-cancel {
+  flex: 1;
+  height: 44px;
+  padding: 0 16px !important;
+  background: var(--ex-well) !important;
+  border: 1px solid var(--ex-line-2) !important;
+  color: var(--ex-ink) !important;
+  border-radius: 11px !important;
+  font-size: 13.5px !important;
+  font-weight: 640 !important;
+  transition: background-color 160ms ease, border-color 160ms ease !important;
+}
+@media (hover: hover) and (pointer: fine) {
+  body.ct-exam-studio .submit-premium-footer .btn-cancel:hover,
+  body.ct-exam-studio .btn-cancel:hover {
+    background: var(--ex-elevated) !important;
+    border-color: var(--ex-line-3) !important;
+  }
+}
+body.ct-exam-studio .submit-premium-footer .btn-submit,
+body.ct-exam-studio .btn-submit {
+  flex: 1;
+  height: 44px;
+  padding: 0 18px !important;
+  background: var(--ex-cta-bg) !important;
+  color: var(--ex-cta-ink) !important;
+  border-radius: 11px !important;
+  border: 0 !important;
+  font-size: 13.5px !important;
+  font-weight: 660 !important;
+  transition: background-color 160ms ease, transform 140ms cubic-bezier(0.23, 1, 0.32, 1) !important;
+}
+@media (hover: hover) and (pointer: fine) {
+  body.ct-exam-studio .submit-premium-footer .btn-submit:hover,
+  body.ct-exam-studio .btn-submit:hover {
+    background: var(--ex-cta-hover) !important;
+    transform: translateY(-1px) !important;
+  }
+}
+
+/* ==========================================================================
+   5. MINIMALIST MONOCHROME STUDENT SCORE MODAL (#resultModal)
+      Zero repetition · Zero explanation clutter · Pure score clarity
+   ========================================================================== */
+@keyframes sc-folio-reveal {
+  from { opacity: 0; transform: translate3d(0, 12px, 0) scale(0.975); filter: blur(5px); }
+  to { opacity: 1; transform: translate3d(0, 0, 0) scale(1); filter: blur(0); }
+}
+body.ct-exam-studio #resultModal .modal-container.sc-modal-card {
+  width: min(376px, calc(100vw - 28px)) !important;
+  max-width: 376px !important;
+  padding: 32px 28px 26px !important;
+  background: var(--ex-surface) !important;
+  border: 1px solid var(--ex-line-2) !important;
+  border-radius: 22px !important;
+  color: var(--ex-ink) !important;
+  text-align: center !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  gap: 20px !important;
+  animation: sc-folio-reveal 400ms cubic-bezier(0.23, 1, 0.32, 1) both !important;
+}
+body.ct-exam-studio .sc-min-exam {
+  margin: 0 !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  color: var(--ex-ink-3) !important;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+body.ct-exam-studio .sc-min-hero {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+body.ct-exam-studio #resultPercentageDisplay {
+  font-family: var(--ct-mono) !important;
+  font-variant-numeric: tabular-nums !important;
+  font-size: 62px !important;
+  font-weight: 800 !important;
+  letter-spacing: -0.055em !important;
+  line-height: 0.95 !important;
+  color: var(--ex-ink) !important;
+}
+body.ct-exam-studio .sc-scale__track {
+  width: 100%;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--ex-elevated);
+  overflow: hidden;
+}
+body.ct-exam-studio .sc-scale__fill {
+  height: 100%;
+  width: 100%;
+  border-radius: 999px;
+  background: var(--ex-ink);
+  transform-origin: left center;
+  transform: scaleX(0);
+  transition: transform 760ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+body.ct-exam-studio .sc-min-pair {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  border: 1px solid var(--ex-line-2);
+  border-radius: 14px;
+  background: var(--ex-well);
+  overflow: hidden;
+}
+body.ct-exam-studio .sc-min-cell {
+  padding: 13px 14px;
+  display: grid;
+  gap: 3px;
+  text-align: center;
+  border-right: 1px solid var(--ex-line);
+}
+body.ct-exam-studio .sc-min-cell:last-child { border-right: 0; }
+body.ct-exam-studio .sc-min-cell span {
+  font-family: var(--ct-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ex-ink-3);
+}
+body.ct-exam-studio .sc-min-cell strong {
+  font-family: var(--ct-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 20px;
+  font-weight: 780;
+  color: var(--ex-ink);
+  line-height: 1.15;
+}
+body.ct-exam-studio #resultScoreDisplay,
+body.ct-exam-studio #resultTotalDisplay {
+  font-family: inherit !important;
+  font-size: inherit !important;
+  font-weight: inherit !important;
+  color: inherit !important;
+  background: transparent !important;
+  border: 0 !important;
+  width: auto !important;
+  height: auto !important;
+}
+body.ct-exam-studio #resultGradeLetter {
+  font-family: var(--ct-mono) !important;
+  font-size: 20px !important;
+  font-weight: 780 !important;
+  line-height: 1.15 !important;
+  color: var(--ex-ink) !important;
+  background: transparent !important;
+  border: 0 !important;
+  width: auto !important;
+  height: auto !important;
+}
+body.ct-exam-studio .sc-min-withheld {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 6px 0;
+}
+body.ct-exam-studio .sc-modal-card[data-grade="withheld"] .sc-min-hero,
+body.ct-exam-studio .sc-modal-card[data-grade="withheld"] .sc-min-pair {
+  display: none !important;
+}
+body.ct-exam-studio .sc-modal-card[data-grade="withheld"] .sc-min-withheld {
+  display: flex !important;
+}
+body.ct-exam-studio .sc-min-withheld h2 {
+  margin: 0 !important;
+  font-size: 20px !important;
+  font-weight: 740 !important;
+  letter-spacing: -0.02em !important;
+  color: var(--ex-ink) !important;
+}
+body.ct-exam-studio .ex-result-foot {
+  width: 100% !important;
+  padding: 0 !important;
+  background: transparent !important;
+  border-top: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  gap: 12px !important;
+}
+body.ct-exam-studio .ex-result-cta {
+  width: 100%;
+  height: 44px;
+  padding: 0 20px;
+  border-radius: 11px;
+  background: var(--ex-cta-bg);
+  color: var(--ex-cta-ink) !important;
+  text-decoration: none;
+  font-size: 13.5px;
+  font-weight: 660;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: background-color 160ms ease, transform 140ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+@media (hover: hover) and (pointer: fine) {
+  body.ct-exam-studio .ex-result-cta:hover {
+    background: var(--ex-cta-hover);
+    transform: translateY(-1px);
+  }
+}
+body.ct-exam-studio .ex-result-countdown {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--ex-ink-3);
+  font-variant-numeric: tabular-nums;
+}
+body.ct-exam-studio .ex-result-countdown strong {
+  font-family: var(--ct-mono);
+  color: var(--ex-ink);
+  font-weight: 700;
+}
+body.ct-exam-studio .ex-stay-btn {
+  background: transparent;
+  border: 0;
+  border-left: 1px solid var(--ex-line-2);
+  padding: 0 0 0 10px;
+  margin-left: 2px;
+  color: var(--ex-ink-2);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 640;
+  cursor: pointer;
+  transition: color 160ms ease;
+}
+body.ct-exam-studio .ex-stay-btn:hover { color: var(--ex-ink); }
+
+/* ==========================================================================
+   6. MINIMALIST PURE-MONOCHROME ANIMATED EXAM SCENARIO OVERLAYS
+      Icon + Clear Title (+ Single Action or Sweep Line) - Zero Clutter
+   ========================================================================== */
+@keyframes ex-sonar-wave {
+  0% { opacity: 0.48; transform: scale3d(0.86, 0.86, 1); }
+  100% { opacity: 0; transform: scale3d(1.42, 1.42, 1); }
+}
+@keyframes ex-orbit-rotate {
+  to { transform: rotate(360deg); }
+}
+@keyframes ex-pause-breathe {
+  0%, 100% { transform: scaleY(1); opacity: 1; }
+  50% { transform: scaleY(0.76); opacity: 0.65; }
+}
+@keyframes ex-sweep-bar {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(260%); }
+}
+@keyframes ex-clock-sweep {
+  from { stroke-dashoffset: 164; }
+  to { stroke-dashoffset: 0; }
+}
+@keyframes ex-check-draw {
+  from { stroke-dashoffset: 48; }
+  to { stroke-dashoffset: 0; }
+}
+@keyframes ex-dot-live {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.35; transform: scale(0.75); }
+}
+
+body.ct-exam-studio .ex-scene-card,
+body.ct-exam-studio .paused-content.ex-scene-card,
+body.ct-exam-studio .loading-content.ex-scene-card,
+body.ct-exam-studio #supersededModal .ex-scene-card {
+  width: min(336px, calc(100vw - 28px)) !important;
+  max-width: 336px !important;
+  padding: 36px 28px 32px !important;
+  background: var(--ex-surface) !important;
+  border: 1px solid var(--ex-line-2) !important;
+  border-radius: 22px !important;
+  color: var(--ex-ink) !important;
+  text-align: center !important;
+  box-shadow: 0 30px 64px -20px rgba(23, 22, 20, 0.32), 0 0 0 1px var(--ex-line) !important;
+  overflow: hidden !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  gap: 18px !important;
+}
+
+/* Bespoke Animated Monochrome Emblem Stage */
+body.ct-exam-studio .ex-scene-emblem {
+  position: relative;
+  width: 88px;
+  height: 88px;
+  display: grid;
+  place-items: center;
+}
+body.ct-exam-studio .ex-emblem-ring {
+  position: absolute;
+  inset: 6px;
+  border-radius: 50%;
+  border: 1.5px solid var(--ex-ink);
+  opacity: 0;
+  pointer-events: none;
+}
+body.ct-exam-studio .ex-emblem-ring--1 {
+  animation: ex-sonar-wave 2.4s cubic-bezier(0.23, 1, 0.32, 1) infinite;
+}
+body.ct-exam-studio .ex-emblem-ring--2 {
+  animation: ex-sonar-wave 2.4s cubic-bezier(0.23, 1, 0.32, 1) 1.2s infinite;
+}
+body.ct-exam-studio .ex-emblem-orbit {
+  position: absolute;
+  inset: 2px;
+  border-radius: 50%;
+  border: 1.5px dashed var(--ex-line-3);
+  animation: ex-orbit-rotate 7s linear infinite;
+  pointer-events: none;
+}
+body.ct-exam-studio .ex-emblem-core {
+  position: relative;
+  z-index: 2;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: var(--ex-cta-bg);
+  color: var(--ex-cta-ink);
+  display: grid;
+  place-items: center;
+  box-shadow: 0 12px 24px -10px rgba(23, 22, 20, 0.36);
+}
+body.ct-exam-studio .ex-emblem-core--outline {
+  background: var(--ex-well);
+  color: var(--ex-ink);
+  border: 2px solid var(--ex-ink);
+  box-shadow: none;
+}
+body.ct-exam-studio .ex-emblem-core svg {
+  width: 26px;
+  height: 26px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2.1;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+body.ct-exam-studio .ex-pause-bar {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: ex-pause-breathe 2s ease-in-out infinite;
+}
+body.ct-exam-studio .ex-pause-bar--2 {
+  animation-delay: 260ms;
+}
+body.ct-exam-studio .ex-lock-svg {
+  position: absolute;
+  inset: 0;
+  width: 88px;
+  height: 88px;
+  transform: rotate(-90deg);
+}
+body.ct-exam-studio .ex-lock-track {
+  fill: none;
+  stroke: var(--ex-elevated);
+  stroke-width: 2.5;
+}
+body.ct-exam-studio .ex-lock-arc {
+  fill: none;
+  stroke: var(--ex-ink);
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-dasharray: 164;
+  stroke-dashoffset: 164;
+  animation: ex-clock-sweep 2.2s cubic-bezier(0.23, 1, 0.32, 1) infinite;
+}
+body.ct-exam-studio .ex-check-stroke {
+  stroke-dasharray: 48;
+  animation: ex-check-draw 620ms cubic-bezier(0.23, 1, 0.32, 1) 180ms both;
+}
+
+body.ct-exam-studio .ex-scene-card h2,
+body.ct-exam-studio .ex-scene-card h3,
+body.ct-exam-studio .ex-scene-card .modal-title {
+  margin: 0 !important;
+  font-size: 20px !important;
+  font-weight: 740 !important;
+  letter-spacing: -0.025em !important;
+  color: var(--ex-ink) !important;
+  line-height: 1.2 !important;
+}
+body.ct-exam-studio .ex-scene-sub {
+  margin: -8px 0 0 !important;
+  font-family: var(--ct-mono);
+  font-size: 12px !important;
+  color: var(--ex-ink-3) !important;
+}
+
+/* Thin Sweeping Monochrome Live Line */
+body.ct-exam-studio .ex-auto-bar {
+  width: 100%;
+  max-width: 220px;
+  height: 3px;
+  border-radius: 999px;
+  background: var(--ex-elevated);
+  overflow: hidden;
+  position: relative;
+}
+body.ct-exam-studio .ex-auto-bar > i {
+  position: absolute !important;
+  inset: 0 auto 0 0 !important;
+  width: 42% !important;
+  height: 100% !important;
+  margin: 0 !important;
+  font-size: 0 !important;
+  border-radius: 999px;
+  background: var(--ex-ink) !important;
+  color: transparent !important;
+  animation: ex-sweep-bar 1.5s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+}
+body.ct-exam-studio .ex-scene-action {
+  width: 100%;
+  margin-top: 4px;
+}
+body.ct-exam-studio .ex-scene-btn {
+  width: 100%;
+  height: 44px;
+  padding: 0 20px;
+  border-radius: 11px;
+  border: 1px solid var(--ex-cta-bg);
+  background: var(--ex-cta-bg) !important;
+  color: var(--ex-cta-ink) !important;
+  font-family: var(--ct-font);
+  font-size: 13.5px;
+  font-weight: 660;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  text-decoration: none !important;
+  cursor: pointer;
+  transition: background-color 160ms ease, transform 140ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+@media (hover: hover) and (pointer: fine) {
+  body.ct-exam-studio .ex-scene-btn:hover {
+    background: var(--ex-cta-hover) !important;
+    transform: translateY(-1px);
+  }
+}
+body.ct-exam-studio .ex-scene-btn:active { transform: scale(0.98); }
+
+/* Monochrome initials fallback inside student badge when photo file is absent */
+body.ct-exam-studio .ex-avatar-initials {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--ex-cta-bg);
+  color: var(--ex-cta-ink);
+  font-family: var(--ct-mono);
+  font-size: 10px;
+  font-weight: 700;
+  display: inline-grid;
+  place-items: center;
+  flex-shrink: 0;
+  letter-spacing: 0.02em;
+}
+
+/* Fallback for generic modal-container / spinners */
+body.ct-exam-studio .modal-container:not(.ex-scene-card):not(.sc-modal-card) {
+  padding: 32px 28px !important;
+  max-width: min(444px, calc(100vw - 28px)) !important;
+}
+body.ct-exam-studio .loading-spinner-large,
+body.ct-exam-studio .modal-spinner {
+  border-color: var(--ex-elevated) !important;
+  border-top-color: var(--ex-cta-bg) !important;
+}
+body.ct-exam-studio .passage-modal-title {
+  color: var(--ex-ink) !important;
+  font-size: 18px !important;
+  font-weight: 720 !important;
+  letter-spacing: -0.02em;
+}
+body.ct-exam-studio .passage-modal-body {
+  color: var(--ex-ink-2) !important;
+  font-size: 14px !important;
+  line-height: 1.65 !important;
+}
+
+/* Theme-native monochrome toast cards */
+body.ct-exam-studio .toast-custom {
+  background: var(--ex-surface) !important;
+  border: 1px solid var(--ex-line-2) !important;
+  border-left: 3px solid var(--ex-ink) !important;
+  border-radius: 12px !important;
+  color: var(--ex-ink) !important;
+  box-shadow: 0 18px 40px -16px rgba(23, 22, 20, 0.28) !important;
+}
+body.ct-exam-studio .toast-custom.danger {
+  background: var(--ex-cta-bg) !important;
+  border-color: var(--ex-cta-bg) !important;
+  border-left-color: var(--ex-cta-bg) !important;
+  color: var(--ex-cta-ink) !important;
+}
+body.ct-exam-studio .toast-custom.danger .toast-message,
+body.ct-exam-studio .toast-custom.danger .toast-icon,
+body.ct-exam-studio .toast-custom.danger .toast-close {
+  color: var(--ex-cta-ink) !important;
+}
+body.ct-exam-studio .toast-message { color: var(--ex-ink) !important; font-size: 13px !important; font-weight: 560 !important; }
+body.ct-exam-studio .toast-close { color: var(--ex-ink-3) !important; }
+
+@media (max-width: 560px) {
+  body.ct-exam-studio .sc-masthead__main { flex-direction: column; align-items: flex-start; gap: 14px; }
+  body.ct-exam-studio .sc-metrics { grid-template-columns: 1fr; }
+  body.ct-exam-studio .sc-metric { border-right: 0; border-bottom: 1px solid var(--ex-line); }
+  body.ct-exam-studio .sc-metric:last-child { border-bottom: 0; }
+  body.ct-exam-studio .ex-result-foot { flex-direction: column; align-items: stretch; }
+  body.ct-exam-studio .ex-result-countdown { justify-content: center; }
+  body.ct-exam-studio .ex-scene-meta { grid-template-columns: 1fr; }
+}
+@media (prefers-reduced-motion: reduce) {
+  body.ct-exam-studio .modal-container,
+  body.ct-exam-studio .submit-premium-content,
+  body.ct-exam-studio .loading-content,
+  body.ct-exam-studio .progress-ring-container,
+  body.ct-exam-studio .warning-message-box,
+  body.ct-exam-studio .success-message-box,
+  body.ct-exam-studio .submit-animation-icon .circle-bg,
+  body.ct-exam-studio .ex-seal-path,
+  body.ct-exam-studio .ex-emblem-ring,
+  body.ct-exam-studio .ex-emblem-orbit,
+  body.ct-exam-studio .ex-pause-bar,
+  body.ct-exam-studio .ex-lock-arc,
+  body.ct-exam-studio .ex-auto-bar > i,
+  body.ct-exam-studio .ex-scene-pill i,
+  body.ct-exam-studio .ex-scene-status-line i,
+  body.ct-exam-studio .timer-box.timer-danger {
+    animation: none !important;
+  }
+}
+
+/* Responsive Collapse (Tablets & Mobile <= 960px) */
+@media (max-width: 960px) {
+  body.ct-exam-studio .main-content {
+    grid-template-columns: 1fr !important;
+    margin: 158px auto 132px !important;
+    padding: 0 16px !important;
+  }
+  body.ct-exam-studio #questionsContainer { grid-column: 1 !important; }
+  body.ct-exam-studio .exam-rail {
+    grid-column: 1 !important;
+    position: static !important;
+    max-height: none !important;
+  }
+  /* On small mobile screens, dock Previous / Next flush above the bottom status bar so students never have to scroll to navigate */
+  body.ct-exam-studio .nav-buttons {
+    position: fixed !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 36px !important;
+    width: auto !important;
+    z-index: 860 !important;
+    padding: 10px 16px !important;
+    border-radius: 0 !important;
+    border-left: 0 !important;
+    border-right: 0 !important;
+    border-bottom: 0 !important;
+    gap: 10px !important;
+    box-shadow: 0 -10px 26px -12px rgba(23, 22, 20, 0.16) !important;
+  }
+  body.ct-exam-studio .nav-rail-head,
+  body.ct-exam-studio .nav-rail-hint {
+    display: none !important;
+  }
+  body.ct-exam-studio .palette-container {
+    max-height: none !important;
+  }
+  body.ct-exam-studio .fixed-header { padding: 10px 16px !important; }
+  body.ct-exam-studio .question-card { padding: 22px 18px !important; }
+}
+@media (max-width: 600px) {
+  body.ct-exam-studio .main-content { margin-top: 176px !important; }
+  body.ct-exam-studio .student-name-badge { display: none !important; }
+  body.ct-exam-studio .timer-label { display: none !important; }
+  body.ct-exam-studio .timer-box { min-width: 82px !important; padding: 0 10px !important; }
+}

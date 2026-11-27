@@ -168,13 +168,17 @@ export async function syncSqliteBufferToOnlinePortal(params: {
 
     await sql`
       INSERT INTO portal_school_settings (
-        school_id, school_name, school_motto, academic_session, current_term,
+        school_id, school_name, school_motto, school_address, school_phone, school_email,
+        academic_session, current_term,
         default_result_visibility, allow_teacher_release, allow_student_review,
         anti_cheating_profile, max_warnings, classes_json, grading_rules_json, updated_at
       ) VALUES (
         ${schoolId}::uuid,
         ${String(sRow.school_name || "CogniTara School").slice(0, 160)},
         ${String(sRow.school_motto || "").slice(0, 240)},
+        ${String(sRow.school_address || sRow.address || "").slice(0, 240)},
+        ${String(sRow.school_phone || sRow.phone || "").slice(0, 80)},
+        ${String(sRow.school_email || sRow.email || "").slice(0, 160)},
         ${String(sRow.academic_session || "2026/2027").slice(0, 40)},
         ${String(sRow.current_term || "First Term").slice(0, 40)},
         ${String(sRow.default_result_visibility || "immediate")},
@@ -189,6 +193,9 @@ export async function syncSqliteBufferToOnlinePortal(params: {
       ON CONFLICT (school_id) DO UPDATE SET
         school_name = EXCLUDED.school_name,
         school_motto = EXCLUDED.school_motto,
+        school_address = COALESCE(NULLIF(EXCLUDED.school_address, ''), portal_school_settings.school_address),
+        school_phone = COALESCE(NULLIF(EXCLUDED.school_phone, ''), portal_school_settings.school_phone),
+        school_email = COALESCE(NULLIF(EXCLUDED.school_email, ''), portal_school_settings.school_email),
         academic_session = EXCLUDED.academic_session,
         current_term = EXCLUDED.current_term,
         default_result_visibility = EXCLUDED.default_result_visibility,

@@ -695,3 +695,47 @@ CREATE TABLE IF NOT EXISTS portal_attempts (
 CREATE INDEX IF NOT EXISTS idx_portal_attempts_school_exam ON portal_attempts(school_id, exam_local_id, submitted);
 CREATE INDEX IF NOT EXISTS idx_portal_attempts_unsynced ON portal_attempts(school_id, synced_to_desktop) WHERE origin = 'online' AND synced_to_desktop = FALSE;
 
+-- 26. v2.6.0: Full Offline Parity for Online Portal (Live Support, School Settings, Audit Logs, Warning Logs, Deactivation)
+ALTER TABLE portal_school_settings ADD COLUMN IF NOT EXISTS school_address TEXT NOT NULL DEFAULT '';
+ALTER TABLE portal_school_settings ADD COLUMN IF NOT EXISTS school_phone TEXT NOT NULL DEFAULT '';
+ALTER TABLE portal_school_settings ADD COLUMN IF NOT EXISTS school_email TEXT NOT NULL DEFAULT '';
+ALTER TABLE portal_school_settings ADD COLUMN IF NOT EXISTS school_logo_b64 TEXT NOT NULL DEFAULT '';
+ALTER TABLE portal_school_settings ADD COLUMN IF NOT EXISTS grading_scheme_name TEXT NOT NULL DEFAULT 'WAEC 9-Point';
+ALTER TABLE portal_school_settings ADD COLUMN IF NOT EXISTS grading_scheme_desc TEXT NOT NULL DEFAULT 'Standard grading scale';
+
+ALTER TABLE portal_exams ADD COLUMN IF NOT EXISTS deactivation_note TEXT NOT NULL DEFAULT '';
+ALTER TABLE portal_exams ADD COLUMN IF NOT EXISTS deactivated_at TIMESTAMPTZ;
+ALTER TABLE portal_exams ADD COLUMN IF NOT EXISTS randomize_questions BOOLEAN NOT NULL DEFAULT FALSE;
+ALTER TABLE portal_exams ADD COLUMN IF NOT EXISTS randomize_options BOOLEAN NOT NULL DEFAULT TRUE;
+
+ALTER TABLE portal_attempts ADD COLUMN IF NOT EXISTS last_heartbeat_at TIMESTAMPTZ;
+ALTER TABLE portal_attempts ADD COLUMN IF NOT EXISTS resume_requested BOOLEAN NOT NULL DEFAULT FALSE;
+ALTER TABLE portal_attempts ADD COLUMN IF NOT EXISTS resume_reason TEXT NOT NULL DEFAULT '';
+ALTER TABLE portal_attempts ADD COLUMN IF NOT EXISTS time_spent_seconds INTEGER NOT NULL DEFAULT 0;
+
+CREATE TABLE IF NOT EXISTS portal_audit_logs (
+    id BIGSERIAL PRIMARY KEY,
+    school_id UUID NOT NULL REFERENCES schools(id) ON DELETE CASCADE,
+    actor_role TEXT NOT NULL DEFAULT 'admin',
+    actor_username TEXT NOT NULL DEFAULT '',
+    action TEXT NOT NULL,
+    details TEXT NOT NULL DEFAULT '',
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_portal_audit_school_time ON portal_audit_logs(school_id, created_at DESC);
+
+CREATE TABLE IF NOT EXISTS portal_warning_logs (
+    id BIGSERIAL PRIMARY KEY,
+    school_id UUID NOT NULL REFERENCES schools(id) ON DELETE CASCADE,
+    student_local_id INTEGER NOT NULL DEFAULT 0,
+    student_name TEXT NOT NULL DEFAULT '',
+    exam_local_id INTEGER NOT NULL DEFAULT 0,
+    exam_name TEXT NOT NULL DEFAULT '',
+    warning_type TEXT NOT NULL DEFAULT 'focus_loss',
+    message TEXT NOT NULL DEFAULT '',
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_portal_warnings_school_time ON portal_warning_logs(school_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_portal_warnings_school_student ON portal_warning_logs(school_id, student_local_id, exam_local_id);
+
+

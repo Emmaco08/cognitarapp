@@ -1,27 +1,21 @@
 "use client";
 
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { CogniTaraMark } from "@/components/CogniTaraLogo";
+import { CT_ICONS_URL, CtIco, CtThemeToggle, getInitials } from "@/components/portal/CtIco";
 import { MathText } from "@/components/portal/MathText";
-import { ScientificCalculator } from "@/components/portal/ScientificCalculator";
-import {
-  getMonogram,
-  PIconArrowLeft,
-  PIconArrowRight,
-  PIconCalculator,
-  PIconCheck,
-  PIconCloud,
-  PIconPause,
-  PortalThemeToggle,
-} from "@/components/portal/PortalIcons";
+import { OfflineCalc } from "@/components/portal/OfflineCalc";
 
 interface ExamQuestion {
   index: number;
   local_id: number;
   section_name: string;
-  passage: { name: string; content: string; instruction: string } | null;
+  passage: {
+    name: string;
+    content: string;
+    instruction: string;
+  } | null;
   question: string;
   options: string[];
 }
@@ -52,618 +46,1029 @@ interface GradedResult {
   results_released: boolean;
 }
 
-const OPTION_LETTERS = ["A", "B", "C", "D"];
-
-function fmtClock(sec: number): string {
-  const s = Math.max(0, Math.floor(sec));
-  const h = Math.floor(s / 3600);
-  const m = Math.floor((s % 3600) / 60);
-  const rem = s % 60;
-  if (h > 0) {
-    return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(rem).padStart(2, "0")}`;
+function formatTimer(totalSec: number): string {
+  const s = Math.max(0, Math.floor(totalSec));
+  const hrs = Math.floor(s / 3600);
+  const mins = Math.floor((s % 3600) / 60);
+  const secs = s % 60;
+  if (hrs > 0) {
+    return `${String(hrs).padStart(2, "0")}:${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
   }
-  return `${String(m).padStart(2, "0")}:${String(rem).padStart(2, "0")}`;
+  return `${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
 }
 
-export default function OnlineExamRoomPage() {
-  const params = useParams<{ examId: string }>();
+export default function PortalExamRoomPage() {
+  const params = useParams();
   const router = useRouter();
-  const examId = String(params?.examId || "");
+  const examId = Number(params?.examId || 0);
 
   const [loading, setLoading] = useState(true);
-  const [loadErr, setLoadErr] = useState("");
-  const [studentInfo, setStudentInfo] = useState<{ full_name: string; student_class: string } | null>(null);
+  const [err, setErr] = useState("");
+  const [student, setStudent] = useState<{ full_name: string; username: string; student_class: string }>({
+    full_name: "Student",
+    username: "student",
+    student_class: "",
+  });
   const [attempt, setAttempt] = useState<ExamAttempt | null>(null);
   const [questions, setQuestions] = useState<ExamQuestion[]>([]);
-  const [currentIdx, setCurrentIdx] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [currentIdx, setCurrentIdx] = useState(0);
+  const [activeSection, setActiveSection] = useState<string>("ALL");
+
   const [remainingSec, setRemainingSec] = useState(0);
-  const [warningsCount, setWarningsCount] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
+  const [warningsCount, setWarningsCount] = useState(0);
+  const [saveState, setSaveState] = useState<"ready" | "saving" | "saved" | "offline">("ready");
 
-  const [showCalc, setShowCalc] = useState(false);
-  const [showSubmitModal, setShowSubmitModal] = useState(false);
+  const [calcOpen, setCalcOpen] = useState(false);
+  const [passageModal, setPassageModal] = useState<{ name: string; content: string } | null>(null);
+  const [submitConfirmOpen, setSubmitConfirmOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [syncState, setSyncState] = useState<"saved" | "saving" | "local">("saved");
-  const [warningFlash, setWarningFlash] = useState(false);
-  const [finalResult, setFinalResult] = useState<GradedResult | null>(null);
+  const [endReason, setEndReason] = useState<"" | "time_up" | "max_warnings" | "force_submit">("");
+  const [result, setResult] = useState<GradedResult | null>(null);
+  const [countdown, setCountdown] = useState(12);
+  const [countdownPaused, setCountdownPaused] = useState(false);
+  const [toastMsg, setToastMsg] = useState("");
 
+  const dirtyRef = useRef(false);
   const answersRef = useRef<Record<string, string>>({});
-  const warningsRef = useRef<number>(0);
-  const dirtyRef = useRef<boolean>(false);
-  const attemptIdRef = useRef<string>("");
-  const deadlineMsRef = useRef<number>(0);
-  const submittedRef = useRef<boolean>(false);
-
-  const storageKey = (attId: string) => `ct_portal_attempt_${attId}`;
-
-  const flushSync = useCallback(async (force = false, keepalive = false) => {
-    const attId = attemptIdRef.current;
-    if (!attId || submittedRef.current) return;
-    if (!force && !dirtyRef.current) return;
-
-    setSyncState("saving");
-    try {
-      const res = await fetch(`/api/v1/portal/student/attempts/${encodeURIComponent(attId)}/sync`, {
-        method: "POST",
-        credentials: "include",
-        keepalive,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          answers: answersRef.current,
-          warnings_count: warningsRef.current,
-        }),
-      });
-      if (keepalive) return;
-      const data = await res.json().catch(() => ({}));
-      if (res.ok && data.ok) {
-        dirtyRef.current = false;
-        setSyncState("saved");
-        if (data.submitted && data.result) {
-          submittedRef.current = true;
-          setFinalResult(data.result);
-          try {
-            localStorage.removeItem(storageKey(attId));
-          } catch {}
-          return;
-        }
-        if (typeof data.is_paused === "boolean") setIsPaused(data.is_paused);
-        if (typeof data.remaining_seconds === "number") {
-          setRemainingSec(data.remaining_seconds);
-          if (!data.is_paused) {
-            deadlineMsRef.current = Date.now() + data.remaining_seconds * 1000;
-          }
-        }
-      } else {
-        setSyncState("local");
-      }
-    } catch {
-      setSyncState("local");
-    }
-  }, []);
-
-  const submitExam = useCallback(async (autoSubmitted = false) => {
-    const attId = attemptIdRef.current;
-    if (!attId || submittedRef.current) return;
-    setSubmitting(true);
-    setShowSubmitModal(false);
-    try {
-      const res = await fetch(`/api/v1/portal/student/attempts/${encodeURIComponent(attId)}/submit`, {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          answers: answersRef.current,
-          warnings_count: warningsRef.current,
-          auto_submitted: autoSubmitted,
-        }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (res.ok && data.ok && data.result) {
-        submittedRef.current = true;
-        setFinalResult(data.result);
-        try {
-          localStorage.removeItem(storageKey(attId));
-        } catch {}
-      } else {
-        setSubmitting(false);
-      }
-    } catch {
-      setSubmitting(false);
-    }
-  }, []);
+  const warningsRef = useRef(0);
+  const attemptRef = useRef<ExamAttempt | null>(null);
+  const submittedRef = useRef(false);
+  const lastWarnAtRef = useRef(0);
 
   useEffect(() => {
+    answersRef.current = answers;
+  }, [answers]);
+
+  useEffect(() => {
+    warningsRef.current = warningsCount;
+  }, [warningsCount]);
+
+  useEffect(() => {
+    attemptRef.current = attempt;
+  }, [attempt]);
+
+  const showToast = useCallback((msg: string) => {
+    setToastMsg(msg);
+    setTimeout(() => setToastMsg((cur) => (cur === msg ? "" : cur)), 3200);
+  }, []);
+
+  // Load/Start attempt once on mount
+  useEffect(() => {
     if (!examId) return;
-    fetch(`/api/v1/portal/student/exams/${encodeURIComponent(examId)}/start`, {
+    let alive = true;
+    fetch(`/api/v1/portal/student/exams/${examId}/start`, {
       method: "POST",
       credentials: "include",
     })
       .then(async (res) => {
-        const data = await res.json().catch(() => ({}));
-        if (res.status === 401) {
+        if (res.status === 401 || res.status === 403) {
           router.replace("/");
-          return;
+          return null;
         }
-        if (!res.ok || !data.ok) {
-          setLoadErr(data.message || "Could not start this examination.");
+        return res.json();
+      })
+      .then((data) => {
+        if (!alive || !data) return;
+        if (!data.ok) {
+          setErr(data.message || "Could not start this examination.");
           return;
-        }
-        if (data.student) {
-          setStudentInfo({
-            full_name: String(data.student.full_name || ""),
-            student_class: String(data.student.student_class || ""),
-          });
         }
         if (data.already_submitted && data.result) {
           submittedRef.current = true;
-          setFinalResult(data.result);
+          setResult(data.result);
           return;
         }
+        setStudent(data.student || { full_name: "Student", username: "student", student_class: "" });
         const att: ExamAttempt = data.attempt;
-        const qs: ExamQuestion[] = Array.isArray(data.questions) ? data.questions : [];
+        setAttempt(att);
+        setQuestions(data.questions || []);
+        const lsKey = `ct_exam_ans_${att.id}`;
         let merged = { ...(att.answers || {}) };
         try {
-          const rawLocal = localStorage.getItem(storageKey(att.id));
-          if (rawLocal) {
-            const parsed = JSON.parse(rawLocal) as Record<string, string>;
-            if (parsed && typeof parsed === "object") {
-              merged = { ...merged, ...parsed };
-            }
+          const cached = localStorage.getItem(lsKey);
+          if (cached) {
+            const parsed = JSON.parse(cached);
+            if (parsed && typeof parsed === "object") merged = { ...merged, ...parsed };
           }
-        } catch {}
-
-        attemptIdRef.current = att.id;
-        answersRef.current = merged;
-        warningsRef.current = att.warnings_count || 0;
-        deadlineMsRef.current = Date.now() + Math.max(0, att.remaining_seconds) * 1000;
-
-        setAttempt(att);
-        setQuestions(qs);
+        } catch {
+          // ignore
+        }
         setAnswers(merged);
-        setRemainingSec(att.remaining_seconds);
-        setWarningsCount(att.warnings_count || 0);
+        answersRef.current = merged;
+        setRemainingSec(Number(att.remaining_seconds || 0));
         setIsPaused(Boolean(att.is_paused));
+        setWarningsCount(Number(att.warnings_count || 0));
       })
-      .catch(() => setLoadErr("Network error while loading exam."))
-      .finally(() => setLoading(false));
+      .catch(() => {
+        if (alive) setErr("Connection error while starting examination.");
+      })
+      .finally(() => {
+        if (alive) setLoading(false);
+      });
+    return () => {
+      alive = false;
+    };
   }, [examId, router]);
 
-  useEffect(() => {
-    if (!attempt || isPaused || finalResult) return;
-    const t = setInterval(() => {
-      const left = Math.max(0, Math.floor((deadlineMsRef.current - Date.now()) / 1000));
-      setRemainingSec(left);
-      if (left <= 0 && !submittedRef.current) {
-        void submitExam(true);
-      }
-    }, 1000);
-    return () => clearInterval(t);
-  }, [attempt, isPaused, finalResult, submitExam]);
+  const syncWithServer = useCallback(
+    async (opts?: { force?: boolean; warningEvent?: { type: string; message: string } }) => {
+      const att = attemptRef.current;
+      if (!att || submittedRef.current) return;
+      if (!opts?.force && !dirtyRef.current && !opts?.warningEvent) return;
 
-  useEffect(() => {
-    if (!attempt || finalResult) return;
-    const t = setInterval(() => {
-      if (dirtyRef.current && !submittedRef.current) {
-        void flushSync(false, false);
-      }
-    }, 45_000);
-    return () => clearInterval(t);
-  }, [attempt, finalResult, flushSync]);
-
-  useEffect(() => {
-    if (!attempt || finalResult) return;
-    const onVis = () => {
-      if (document.hidden && !submittedRef.current && !isPaused) {
-        const nextW = warningsRef.current + 1;
-        warningsRef.current = nextW;
-        dirtyRef.current = true;
-        setWarningsCount(nextW);
-        setWarningFlash(true);
-        setTimeout(() => setWarningFlash(false), 2600);
-        void flushSync(true, false);
-      }
-    };
-    const onHide = () => {
-      if (dirtyRef.current && !submittedRef.current) {
-        void flushSync(true, true);
-      }
-    };
-    document.addEventListener("visibilitychange", onVis);
-    window.addEventListener("pagehide", onHide);
-    return () => {
-      document.removeEventListener("visibilitychange", onVis);
-      window.removeEventListener("pagehide", onHide);
-    };
-  }, [attempt, isPaused, finalResult, flushSync]);
-
-  const selectAnswer = useCallback(
-    (qLocalId: number, optionText: string) => {
-      if (isPaused || submittedRef.current) return;
-      const key = String(qLocalId);
-      const next = { ...answersRef.current, [key]: optionText };
-      answersRef.current = next;
-      dirtyRef.current = true;
-      setAnswers(next);
-      setSyncState("local");
+      setSaveState("saving");
       try {
-        localStorage.setItem(storageKey(attemptIdRef.current), JSON.stringify(next));
-      } catch {}
+        const res = await fetch(`/api/v1/portal/student/attempts/${att.id}/sync`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({
+            answers: answersRef.current,
+            warnings_count: warningsRef.current,
+            warning_event: opts?.warningEvent || undefined,
+          }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok || !data.ok) {
+          setSaveState("offline");
+          return;
+        }
+        dirtyRef.current = false;
+        setSaveState("saved");
+
+        if (data.submitted && data.result) {
+          submittedRef.current = true;
+          try {
+            localStorage.removeItem(`ct_exam_ans_${att.id}`);
+          } catch {
+            // ignore
+          }
+          if (data.reason === "force_submit") setEndReason("force_submit");
+          else if (data.reason === "max_warnings") setEndReason("max_warnings");
+          else if (data.reason === "time_up") setEndReason("time_up");
+          setTimeout(() => {
+            setEndReason("");
+            setResult(data.result);
+          }, data.reason ? 1100 : 0);
+          return;
+        }
+
+        if (typeof data.is_paused === "boolean") setIsPaused(data.is_paused);
+        if (typeof data.remaining_seconds === "number") setRemainingSec(data.remaining_seconds);
+        if (typeof data.warnings_count === "number") setWarningsCount(data.warnings_count);
+      } catch {
+        setSaveState("offline");
+      }
     },
-    [isPaused]
+    []
   );
 
+  const submitExam = useCallback(
+    async (autoSubmitted = false, reason: "" | "time_up" | "max_warnings" = "") => {
+      const att = attemptRef.current;
+      if (!att || submittedRef.current) return;
+      submittedRef.current = true;
+      setSubmitConfirmOpen(false);
+      if (reason) setEndReason(reason);
+      else setSubmitting(true);
+
+      try {
+        const res = await fetch(`/api/v1/portal/student/attempts/${att.id}/submit`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({
+            answers: answersRef.current,
+            warnings_count: warningsRef.current,
+            auto_submitted: autoSubmitted,
+          }),
+        });
+        const data = await res.json().catch(() => ({}));
+        try {
+          localStorage.removeItem(`ct_exam_ans_${att.id}`);
+        } catch {
+          // ignore
+        }
+        if (data.ok && data.result) {
+          setTimeout(() => {
+            setSubmitting(false);
+            setEndReason("");
+            setResult(data.result);
+          }, reason ? 1000 : 400);
+        } else {
+          submittedRef.current = false;
+          setSubmitting(false);
+          setEndReason("");
+          showToast(data.message || "Could not submit exam. Please try again.");
+        }
+      } catch {
+        submittedRef.current = false;
+        setSubmitting(false);
+        setEndReason("");
+        showToast("Connection lost while submitting. Please tap Submit again.");
+      }
+    },
+    [showToast]
+  );
+
+  // Authoritative 1-second local countdown
   useEffect(() => {
-    if (!attempt || isPaused || finalResult || showSubmitModal) return;
+    if (!attempt || isPaused || result || submitting) return;
+    const id = setInterval(() => {
+      setRemainingSec((prev) => {
+        if (prev <= 1) {
+          clearInterval(id);
+          void submitExam(true, "time_up");
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(id);
+  }, [attempt, isPaused, result, submitting, submitExam]);
+
+  // Free Vercel Hobby friendly low-frequency sync:
+  // - Every 45s when dirty (or heartbeat check for admin pause/time changes)
+  // - Every 18s ONLY while paused so student resumes promptly once invigilator unpauses
+  useEffect(() => {
+    if (!attempt || result) return;
+    const intervalMs = isPaused ? 18_000 : 45_000;
+    const id = setInterval(() => {
+      if (document.visibilityState === "visible") {
+        void syncWithServer({ force: true });
+      }
+    }, intervalMs);
+    return () => clearInterval(id);
+  }, [attempt, isPaused, result, syncWithServer]);
+
+  // Flush on pagehide
+  useEffect(() => {
+    const onHide = () => {
+      if (dirtyRef.current && attemptRef.current && !submittedRef.current) {
+        const blob = new Blob(
+          [
+            JSON.stringify({
+              answers: answersRef.current,
+              warnings_count: warningsRef.current,
+            }),
+          ],
+          { type: "application/json" }
+        );
+        navigator.sendBeacon?.(`/api/v1/portal/student/attempts/${attemptRef.current.id}/sync`, blob);
+      }
+    };
+    window.addEventListener("pagehide", onHide);
+    return () => window.removeEventListener("pagehide", onHide);
+  }, []);
+
+  // Anti-cheating integrity monitoring
+  useEffect(() => {
+    if (!attempt || result || attempt.anti_cheating_profile === "none") return;
+
+    const recordWarning = (type: string, message: string) => {
+      if (submittedRef.current || isPaused) return;
+      const now = Date.now();
+      if (now - lastWarnAtRef.current < 2500) return;
+      lastWarnAtRef.current = now;
+      const next = warningsRef.current + 1;
+      setWarningsCount(next);
+      warningsRef.current = next;
+      showToast(`Warning ${next}/${attempt.max_warnings}: ${message}`);
+      if (next >= attempt.max_warnings) {
+        void submitExam(true, "max_warnings");
+      } else {
+        void syncWithServer({ force: true, warningEvent: { type, message } });
+      }
+    };
+
+    const onVis = () => {
+      if (document.hidden) recordWarning("tab_switch", "Tab switching or minimizing is not allowed.");
+    };
+    const onContext = (e: MouseEvent) => {
+      e.preventDefault();
+      recordWarning("right_click", "Right-click is disabled during examination.");
+    };
+    const onCopy = (e: ClipboardEvent) => {
+      e.preventDefault();
+      recordWarning("copy_paste", "Copying exam content is not allowed.");
+    };
+
+    document.addEventListener("visibilitychange", onVis);
+    document.addEventListener("contextmenu", onContext);
+    document.addEventListener("copy", onCopy);
+    return () => {
+      document.removeEventListener("visibilitychange", onVis);
+      document.removeEventListener("contextmenu", onContext);
+      document.removeEventListener("copy", onCopy);
+    };
+  }, [attempt, isPaused, result, showToast, submitExam, syncWithServer]);
+
+  // Result modal auto-return countdown
+  useEffect(() => {
+    if (!result || countdownPaused) return;
+    const id = setInterval(() => {
+      setCountdown((prev) => {
+        if (prev <= 1) {
+          clearInterval(id);
+          router.push("/student");
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(id);
+  }, [result, countdownPaused, router]);
+
+  const sections = useMemo(() => {
+    const seen = new Set<string>();
+    const list: string[] = [];
+    for (const q of questions) {
+      const s = q.section_name || "";
+      if (s && !seen.has(s)) {
+        seen.add(s);
+        list.push(s);
+      }
+    }
+    return list;
+  }, [questions]);
+
+  const selectOption = useCallback((qid: number, optionText: string) => {
+    if (isPaused || submittedRef.current) return;
+    setAnswers((prev) => {
+      const next = { ...prev, [String(qid)]: optionText };
+      answersRef.current = next;
+      dirtyRef.current = true;
+      if (attemptRef.current) {
+        try {
+          localStorage.setItem(`ct_exam_ans_${attemptRef.current.id}`, JSON.stringify(next));
+        } catch {
+          // ignore
+        }
+      }
+      return next;
+    });
+    setSaveState("ready");
+  }, [isPaused]);
+
+  const currentQuestion = questions[currentIdx] || null;
+
+  // Keyboard shortcuts: Left/Right arrows + A/B/C/D options
+  useEffect(() => {
+    if (!questions.length || result || submitConfirmOpen || isPaused || calcOpen || passageModal) return;
     const onKey = (e: KeyboardEvent) => {
-      const target = e.target as HTMLElement | null;
-      if (target && ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName)) return;
+      if ((e.target as HTMLElement)?.tagName === "INPUT" || (e.target as HTMLElement)?.tagName === "TEXTAREA") return;
       if (e.key === "ArrowRight") {
         setCurrentIdx((i) => Math.min(questions.length - 1, i + 1));
       } else if (e.key === "ArrowLeft") {
         setCurrentIdx((i) => Math.max(0, i - 1));
       } else {
-        const idx = OPTION_LETTERS.indexOf(e.key.toUpperCase());
-        const q = questions[currentIdx];
-        if (idx >= 0 && q && q.options[idx] !== undefined) {
-          selectAnswer(q.local_id, q.options[idx]);
+        const up = e.key.toUpperCase();
+        const optIdx = ["A", "B", "C", "D"].indexOf(up);
+        if (optIdx >= 0 && currentQuestion && currentQuestion.options[optIdx]) {
+          selectOption(currentQuestion.local_id, currentQuestion.options[optIdx]);
         }
       }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [attempt, isPaused, finalResult, showSubmitModal, questions, currentIdx, selectAnswer]);
+  }, [questions.length, currentQuestion, result, submitConfirmOpen, isPaused, calcOpen, passageModal, selectOption]);
+
+  const answeredCount = useMemo(
+    () => questions.filter((q) => Boolean(answers[String(q.local_id)])).length,
+    [questions, answers]
+  );
+  const progressPct = questions.length > 0 ? Math.round((answeredCount / questions.length) * 100) : 0;
+  const unansweredCount = Math.max(0, questions.length - answeredCount);
 
   if (loading) {
     return (
-      <div className="pt-modal-backdrop" style={{ background: "var(--pt-canvas)" }}>
-        <div className="pt-modal">
-          <h2>Loading exam...</h2>
+      <div className="st-body" style={{ minHeight: "100vh", display: "grid", placeItems: "center" }}>
+        <div className="sc-min-card sc-min-card--compact">
+          <div className="sc-min-card__emblem" aria-hidden="true">
+            <div className="sc-min-card__core">
+              <svg viewBox="0 0 24 24">
+                <path d="M12 3l7.5 3.2v5.4c0 4.6-3.1 8.1-7.5 9.6-4.4-1.5-7.5-5-7.5-9.6V6.2L12 3z" />
+                <path d="M9.2 12.2l2 2 3.8-4" />
+              </svg>
+            </div>
+          </div>
+          <h3 className="sc-min-card__title">Preparing Exam Room</h3>
+          <div className="sc-sweep-track" aria-hidden="true">
+            <i />
+          </div>
         </div>
       </div>
     );
   }
 
-  if (loadErr) {
+  if (err && !result) {
     return (
-      <div className="pt-modal-backdrop" style={{ background: "var(--pt-canvas)" }}>
-        <div className="pt-modal">
-          <div className="pt-alert pt-alert--dark" style={{ marginBottom: 16 }}>
-            {loadErr}
+      <div className="st-body" style={{ minHeight: "100vh", display: "grid", placeItems: "center", padding: 20 }}>
+        <section className="sc-min-card sc-min-card--compact">
+          <h1 className="sc-min-card__title">Cannot Open Exam</h1>
+          <p style={{ margin: 0, fontSize: 13.5, color: "var(--st-ink-2)" }}>{err}</p>
+          <div className="sc-min-card__stack">
+            <Link href="/student" className="st-btn st-btn--primary st-btn--lg st-btn--block">
+              Back to Dashboard
+            </Link>
           </div>
-          <Link href="/student" className="pt-btn pt-btn--primary pt-btn--lg">
-            Back to Student Portal
-          </Link>
-        </div>
+        </section>
       </div>
     );
   }
 
-  if (finalResult) {
-    return (
-      <div className="pt-modal-backdrop" style={{ background: "var(--pt-canvas)" }}>
-        <div className="pt-modal">
-          <div className="pt-modal-icon">
-            <PIconCheck size={22} />
+  const maxWarn = attempt?.max_warnings || 5;
+  const warnStage =
+    warningsCount === 0
+      ? "stage-clean"
+      : warningsCount >= maxWarn - 1
+        ? "stage-critical"
+        : warningsCount >= Math.ceil(maxWarn / 2)
+          ? "stage-mid"
+          : "stage-low";
+  const timerClass =
+    remainingSec <= 60 ? "timer-box danger" : remainingSec <= 300 ? "timer-box warning" : "timer-box";
+  const calcType = attempt?.calculator_type || "none";
+  const hasCalc = calcType !== "none";
+  const studentInitials = getInitials(student.full_name || student.username, "ST");
+  const ringOffset = 188.5 * (1 - (questions.length ? answeredCount / questions.length : 0));
+
+  const resPct = result?.results_released ? Math.round(Number(result.percentage || 0)) : 0;
+  const resGrade =
+    result?.grade_label ||
+    (resPct >= 85 ? "A" : resPct >= 70 ? "B" : resPct >= 60 ? "C" : resPct >= 50 ? "D" : "F");
+
+  return (
+    <div className="ct-app ct-exam-studio" style={{ minHeight: "100vh" }}>
+      {/* Exact Offline Fixed Header */}
+      <div className="fixed-header">
+        <div className="header-top">
+          <div className="exam-title">
+            <span className="ct-appicon" style={{ width: 28, height: 28, borderRadius: 8, flex: "none" }}>
+              <svg viewBox="0 0 200 200">
+                <use href={`${CT_ICONS_URL}#ct-mark`} />
+              </svg>
+            </span>
+            <span>{attempt?.exam_name || "Examination"}</span>
           </div>
-          {finalResult.results_released && finalResult.score !== null && finalResult.total !== null ? (
-            <>
-              <div className="pt-score-big">
-                {finalResult.score} / {finalResult.total}
+
+          <div className="header-actions">
+            <CtThemeToggle variant="ct" />
+
+            {hasCalc && (
+              <button
+                type="button"
+                className="calculator-btn"
+                id="calculatorBtn"
+                title="Open Calculator"
+                onClick={() => setCalcOpen((v) => !v)}
+              >
+                <CtIco name="i-calculator" className="ct-ico--sm" />
+                <span>Calculator</span>
+              </button>
+            )}
+
+            <div className="student-name-badge">
+              <span className="ex-avatar-initials" aria-hidden="true">
+                {studentInitials}
+              </span>
+              <span>{student.full_name || student.username}</span>
+              {student.student_class && <span style={{ marginLeft: 4 }}>· {student.student_class}</span>}
+            </div>
+
+            <div className={timerClass} id="timerContainer">
+              <div className="timer-label">Time Remaining</div>
+              <div className="timer-value" id="timer">
+                {formatTimer(remainingSec)}
               </div>
-              <div className="pt-score-sub">
-                {finalResult.percentage}%{finalResult.grade_label ? ` · ${finalResult.grade_label}` : ""}
+            </div>
+          </div>
+        </div>
+
+        <div className="nav-row">
+          <div className="section-tabs" id="sectionTabs">
+            {sections.length > 0 ? (
+              <>
+                <button
+                  type="button"
+                  className={`section-tab${activeSection === "ALL" ? " active" : ""}`}
+                  onClick={() => setActiveSection("ALL")}
+                >
+                  All Sections ({questions.length})
+                </button>
+                {sections.map((sec) => {
+                  const firstIdx = questions.findIndex((q) => q.section_name === sec);
+                  const count = questions.filter((q) => q.section_name === sec).length;
+                  return (
+                    <button
+                      type="button"
+                      key={sec}
+                      className={`section-tab${activeSection === sec ? " active" : ""}`}
+                      onClick={() => {
+                        setActiveSection(sec);
+                        if (firstIdx >= 0) setCurrentIdx(firstIdx);
+                      }}
+                    >
+                      {sec} ({count})
+                    </button>
+                  );
+                })}
+              </>
+            ) : (
+              <span className="section-tab active">Main Paper ({questions.length} Questions)</span>
+            )}
+          </div>
+
+          <div className="mini-progress">
+            <div className="mini-progress-bar">
+              <div className="mini-progress-fill" id="miniProgressFill" style={{ width: `${progressPct}%` }} />
+            </div>
+            <div className="mini-progress-text" id="miniProgressText">
+              {answeredCount}/{questions.length}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Exact Offline Warning Badge & Save Status Indicator */}
+      <div className={`warning-badge ${warnStage}`} id="warningBadge">
+        <CtIco name="i-shield" className="ct-ico--xs" />{" "}
+        {warningsCount === 0 ? "Clean Record:" : "Warnings:"} <strong>{warningsCount}</strong> / <span>{maxWarn}</span>
+      </div>
+
+      <div id="saveStatusIndicator" onClick={() => void syncWithServer({ force: true })} style={{ cursor: "pointer" }}>
+        <CtIco name={saveState === "offline" ? "i-alert" : "i-check-circle"} className="ct-ico--xs" />
+        <span id="saveStatusText">
+          {saveState === "saving"
+            ? "Saving..."
+            : saveState === "saved"
+              ? "Saved"
+              : saveState === "offline"
+                ? "Offline cached"
+                : "Auto-save ready"}
+        </span>
+      </div>
+
+      {toastMsg && (
+        <div className="ct-toasts" style={{ top: 118 }}>
+          <div className="ct-toast ct-toast--warn">
+            <CtIco name="i-alert" className="ct-ico--sm" />
+            <span>{toastMsg}</span>
+          </div>
+        </div>
+      )}
+
+      {/* Exact Offline Main Content + Right Command Rail */}
+      {!result && currentQuestion && (
+        <div className="main-content">
+          <div id="questionsContainer">
+            <div className="question-card active" data-qid={currentQuestion.local_id}>
+              <div className="question-header">
+                <span className="question-number">
+                  Question {currentIdx + 1} of {questions.length}
+                  {currentQuestion.section_name ? ` · ${currentQuestion.section_name}` : ""}
+                </span>
+              </div>
+
+              {currentQuestion.passage && (
+                <div className="group-content-box">
+                  <h4>
+                    <CtIco name="i-layers" className="ct-ico--sm" /> {currentQuestion.passage.name || "Reading Passage"}
+                  </h4>
+                  {currentQuestion.passage.instruction && (
+                    <div className="group-instruction">
+                      <CtIco name="i-info" className="ct-ico--xs" /> {currentQuestion.passage.instruction}
+                    </div>
+                  )}
+                  {Boolean(currentQuestion.passage.content?.trim()) && (
+                    <>
+                      <div
+                        className="passage-preview-box"
+                        onClick={() =>
+                          setPassageModal({
+                            name: currentQuestion.passage!.name || "Reading Passage",
+                            content: currentQuestion.passage!.content,
+                          })
+                        }
+                      >
+                        <div className="passage-text-content">
+                          <MathText text={currentQuestion.passage.content} />
+                        </div>
+                        <div className="passage-fade-overlay" />
+                      </div>
+                      <div
+                        className="passage-expand-cta"
+                        onClick={() =>
+                          setPassageModal({
+                            name: currentQuestion.passage!.name || "Reading Passage",
+                            content: currentQuestion.passage!.content,
+                          })
+                        }
+                      >
+                        Click to read full passage
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
+
+              <div className="question-text">
+                <MathText text={currentQuestion.question} />
+              </div>
+
+              <div className="options-container">
+                {currentQuestion.options.map((optText, oIdx) => {
+                  const selected = answers[String(currentQuestion.local_id)] === optText;
+                  const inputId = `q${currentQuestion.local_id}_${oIdx}`;
+                  return (
+                    <div
+                      key={inputId}
+                      className={`radio-option${selected ? " selected" : ""}`}
+                      data-opt-index={oIdx}
+                      onClick={() => selectOption(currentQuestion.local_id, optText)}
+                    >
+                      <input
+                        type="radio"
+                        name={`q${currentQuestion.local_id}`}
+                        id={inputId}
+                        value={optText}
+                        checked={selected}
+                        onChange={() => selectOption(currentQuestion.local_id, optText)}
+                      />
+                      <label
+                        htmlFor={inputId}
+                        style={{ wordWrap: "break-word", overflowWrap: "break-word", maxWidth: "100%", display: "block" }}
+                      >
+                        <MathText text={optText} />
+                      </label>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+
+          {/* Exact Offline Sticky Right-Hand Command Rail: Previous/Next ABOVE Question Navigator + Submit */}
+          <aside className="exam-rail" aria-label="Question navigation and overview">
+            <div className="nav-buttons">
+              <div className="nav-rail-head">
+                <span className="nav-rail-eyebrow">Question Controls</span>
+                <span className="nav-rail-pos" id="railQuestionPos">
+                  Q {currentIdx + 1} / {questions.length}
+                </span>
+              </div>
+              <div className="nav-rail-grid">
+                <button
+                  type="button"
+                  className="nav-btn nav-btn-secondary"
+                  id="prevBtn"
+                  disabled={currentIdx <= 0}
+                  onClick={() => setCurrentIdx((i) => Math.max(0, i - 1))}
+                >
+                  <CtIco name="i-arrow-left" className="ct-ico--xs" /> Previous
+                </button>
+                <button
+                  type="button"
+                  className="nav-btn nav-btn-primary"
+                  id="nextBtn"
+                  disabled={currentIdx >= questions.length - 1}
+                  onClick={() => setCurrentIdx((i) => Math.min(questions.length - 1, i + 1))}
+                >
+                  Next <CtIco name="i-arrow-right" className="ct-ico--xs" />
+                </button>
+              </div>
+              <div className="nav-rail-hint">
+                <span>
+                  <kbd>←</kbd> <kbd>→</kbd> navigate
+                </span>
+                <span>·</span>
+                <span>
+                  <kbd>A</kbd>-<kbd>D</kbd> answer
+                </span>
+              </div>
+            </div>
+
+            <div className="palette-container">
+              <div className="palette-title">
+                <span>Question Navigator</span>
+                <span className="palette-count-pill">
+                  <span id="answeredCount">{answeredCount}</span> / {questions.length}
+                </span>
+              </div>
+              <div className="palette-legend" aria-hidden="true">
+                <span className="palette-legend-item">
+                  <i className="palette-swatch palette-swatch--current" />
+                  Current
+                </span>
+                <span className="palette-legend-item">
+                  <i className="palette-swatch palette-swatch--answered" />
+                  Answered
+                </span>
+                <span className="palette-legend-item">
+                  <i className="palette-swatch palette-swatch--unanswered" />
+                  Blank
+                </span>
+              </div>
+              <div className="palette-buttons" id="questionPalette">
+                {questions.map((q, idx) => {
+                  const isCurr = idx === currentIdx;
+                  const isAns = Boolean(answers[String(q.local_id)]);
+                  if (activeSection !== "ALL" && q.section_name && q.section_name !== activeSection) {
+                    return null;
+                  }
+                  return (
+                    <button
+                      key={q.local_id}
+                      type="button"
+                      className={`palette-btn ${isCurr ? "current" : isAns ? "answered" : "unanswered"}`}
+                      onClick={() => setCurrentIdx(idx)}
+                    >
+                      {idx + 1}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <button
+              type="button"
+              className="submit-btn"
+              id="mainSubmitBtn"
+              onClick={() => setSubmitConfirmOpen(true)}
+            >
+              <span>Submit Exam</span>
+              <CtIco name="i-arrow-right" className="ct-ico--sm" />
+            </button>
+          </aside>
+        </div>
+      )}
+
+      {/* Exact Offline Calculator */}
+      {hasCalc && (
+        <OfflineCalc
+          mode={calcType === "scientific" || calcType === "advanced" ? "scientific" : "basic"}
+          open={calcOpen}
+          onClose={() => setCalcOpen(false)}
+        />
+      )}
+
+      {/* Exact Offline Paused Overlay */}
+      <div id="pausedOverlay" className={`paused-overlay${isPaused && !result ? " show" : ""}`}>
+        <div className="paused-content ex-scene-card">
+          <div className="ex-scene-emblem" aria-hidden="true">
+            <span className="ex-emblem-ring ex-emblem-ring--1" />
+            <span className="ex-emblem-ring ex-emblem-ring--2" />
+            <div className="ex-emblem-core">
+              <svg viewBox="0 0 24 24">
+                <rect className="ex-pause-bar" x="7" y="5" width="3.5" height="14" rx="1.2" fill="currentColor" stroke="none" />
+                <rect className="ex-pause-bar ex-pause-bar--2" x="13.5" y="5" width="3.5" height="14" rx="1.2" fill="currentColor" stroke="none" />
+              </svg>
+            </div>
+          </div>
+          <h2>Exam Paused</h2>
+          <div className="ex-auto-bar" aria-hidden="true">
+            <i />
+          </div>
+        </div>
+      </div>
+
+      {/* Exact Offline Submit Confirmation Modal */}
+      <div id="beautifulSubmitModal" className={`submit-premium-modal${submitConfirmOpen ? " show" : ""}`}>
+        <div className="submit-premium-content">
+          <div className="submit-min-ring">
+            <svg width="88" height="88" viewBox="0 0 70 70" aria-hidden="true">
+              <circle className="ex-ring-track" cx="35" cy="35" r="30" fill="none" strokeWidth="5.5" />
+              <circle
+                id="submitProgressCircle"
+                cx="35"
+                cy="35"
+                r="30"
+                fill="none"
+                stroke="var(--ex-ink)"
+                strokeWidth="5.5"
+                strokeDasharray="188.5"
+                strokeDashoffset={ringOffset}
+                strokeLinecap="round"
+              />
+            </svg>
+            <div className="ring-center">
+              <div className="answered-num">{answeredCount}</div>
+              <div className="total-num">/ {questions.length}</div>
+            </div>
+          </div>
+          <div className="submit-min-copy">
+            <h3>Submit Exam?</h3>
+            <p>{unansweredCount === 0 ? "All questions answered" : `${unansweredCount} unanswered`}</p>
+          </div>
+          <div className="submit-premium-footer">
+            <button type="button" className="btn-cancel" onClick={() => setSubmitConfirmOpen(false)}>
+              Review
+            </button>
+            <button type="button" className="btn-submit" onClick={() => void submitExam(false)}>
+              Submit
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Exact Offline Submitting Loader Modal */}
+      <div id="loadingModal" className={`loading-modal${submitting ? " show" : ""}`}>
+        <div className="loading-content ex-scene-card">
+          <div className="ex-scene-emblem" aria-hidden="true">
+            <svg className="ex-lock-svg" viewBox="0 0 88 88">
+              <circle className="ex-lock-track" cx="44" cy="44" r="40" />
+              <circle className="ex-lock-arc" cx="44" cy="44" r="40" />
+            </svg>
+            <div className="ex-emblem-core ex-emblem-core--outline">
+              <svg viewBox="0 0 24 24">
+                <path d="M12 16V4m0 0-4 4m4-4 4 4" />
+                <path d="M4 17v1.5A2.5 2.5 0 0 0 6.5 21h11a2.5 2.5 0 0 0 2.5-2.5V17" />
+              </svg>
+            </div>
+          </div>
+          <h3>Submitting...</h3>
+          <div className="ex-auto-bar" aria-hidden="true">
+            <i />
+          </div>
+        </div>
+      </div>
+
+      {/* Auto-End Overlays: Time Up / Max Warnings / Force Submit */}
+      <div id="timeupModal" className={`modal-overlay${endReason === "time_up" ? " show" : ""}`}>
+        <div className="modal-container ex-scene-card">
+          <div className="ex-scene-emblem" aria-hidden="true">
+            <svg className="ex-lock-svg" viewBox="0 0 88 88">
+              <circle className="ex-lock-track" cx="44" cy="44" r="40" />
+              <circle className="ex-lock-arc" cx="44" cy="44" r="40" />
+            </svg>
+            <div className="ex-emblem-core">
+              <svg viewBox="0 0 24 24">
+                <circle cx="12" cy="13" r="8" />
+                <path d="M12 9v4l2.5 1.8" />
+                <path d="M9.5 2.5h5" />
+              </svg>
+            </div>
+          </div>
+          <div className="modal-title">Time&apos;s Up</div>
+          <div className="ex-auto-bar" aria-hidden="true">
+            <i />
+          </div>
+        </div>
+      </div>
+
+      <div id="maxWarningModal" className={`modal-overlay${endReason === "max_warnings" ? " show" : ""}`}>
+        <div className="modal-container ex-scene-card">
+          <div className="ex-scene-emblem" aria-hidden="true">
+            <span className="ex-emblem-ring ex-emblem-ring--1" />
+            <span className="ex-emblem-ring ex-emblem-ring--2" />
+            <div className="ex-emblem-core">
+              <svg viewBox="0 0 24 24">
+                <path d="M12 3l8 3.6v5.2c0 5-3.4 8.6-8 10.2-4.6-1.6-8-5.2-8-10.2V6.6L12 3z" />
+                <path d="M12 8.5v4.5" />
+                <circle cx="12" cy="16.2" r="0.9" fill="currentColor" stroke="none" />
+              </svg>
+            </div>
+          </div>
+          <div className="modal-title">Warning Limit Reached</div>
+          <div className="ex-auto-bar" aria-hidden="true">
+            <i />
+          </div>
+        </div>
+      </div>
+
+      <div id="forceSubmitModal" className={`modal-overlay${endReason === "force_submit" ? " show" : ""}`}>
+        <div className="modal-container ex-scene-card">
+          <div className="ex-scene-emblem" aria-hidden="true">
+            <span className="ex-emblem-ring ex-emblem-ring--1" />
+            <div className="ex-emblem-core">
+              <svg viewBox="0 0 24 24">
+                <path className="ex-check-stroke" d="M5 12.5l4.2 4.2L19 7.5" />
+              </svg>
+            </div>
+          </div>
+          <div className="modal-title">Exam Submitted</div>
+          <div className="ex-auto-bar" aria-hidden="true">
+            <i />
+          </div>
+        </div>
+      </div>
+
+      {/* Exact Offline Monochrome Student Score Modal (#resultModal) */}
+      <div id="resultModal" className={`modal-overlay${result ? " show" : ""}`}>
+        <div
+          className={`modal-container sc-modal-card${result && !result.results_released ? " is-withheld" : ""}`}
+          id="resultCard"
+          data-grade={resGrade[0] || "A"}
+        >
+          <p className="sc-min-exam">{attempt?.exam_name || "Examination"}</p>
+
+          {result?.results_released ? (
+            <>
+              <div className="sc-min-hero">
+                <div id="resultPercentageDisplay">{resPct}%</div>
+                <div className="sc-scale__track" aria-hidden="true">
+                  <div className="sc-scale__fill" style={{ width: `${resPct}%` }} />
+                </div>
+              </div>
+              <div className="sc-min-pair">
+                <div className="sc-min-cell">
+                  <span>Score</span>
+                  <strong>
+                    {result.score} / {result.total}
+                  </strong>
+                </div>
+                <div className="sc-min-cell">
+                  <span>Grade</span>
+                  <strong>{resGrade}</strong>
+                </div>
               </div>
             </>
           ) : (
-            <h2 style={{ marginBottom: 20 }}>Exam Submitted</h2>
+            <div className="sc-min-withheld" style={{ display: "flex" }}>
+              <div className="ex-emblem-core" aria-hidden="true">
+                <svg viewBox="0 0 24 24">
+                  <rect x="5" y="11" width="14" height="9" rx="2.5" />
+                  <path d="M8 11V7.5a4 4 0 0 1 8 0V11" />
+                </svg>
+              </div>
+              <h2>Score Withheld</h2>
+            </div>
           )}
-          <Link href="/student" className="pt-btn pt-btn--primary pt-btn--lg">
-            Back to Student Portal
-          </Link>
-        </div>
-      </div>
-    );
-  }
 
-  if (!attempt || questions.length === 0) {
-    return (
-      <div className="pt-modal-backdrop" style={{ background: "var(--pt-canvas)" }}>
-        <div className="pt-modal">
-          <h2>No questions available</h2>
-          <Link href="/student" className="pt-btn pt-btn--primary pt-btn--lg" style={{ marginTop: 14 }}>
-            Back to Student Portal
-          </Link>
-        </div>
-      </div>
-    );
-  }
-
-  const q = questions[currentIdx] || questions[0];
-  const answeredCount = questions.filter((item) => {
-    const v = answers[String(item.local_id)];
-    return v !== undefined && String(v).trim() !== "";
-  }).length;
-  const unansweredCount = questions.length - answeredCount;
-  const pctDone = questions.length > 0 ? Math.round((answeredCount / questions.length) * 100) : 0;
-  const calcAllowed = attempt.calculator_type === "basic" || attempt.calculator_type === "scientific";
-  const selectedVal = answers[String(q.local_id)] || "";
-
-  return (
-    <div className="pt-exam-shell">
-      {/* Top Exam Header (Matches Offline exam_page_new.html) */}
-      <header className="pt-exam-header">
-        <div className="pt-exam-header__left">
-          <CogniTaraMark size={22} />
-          <span className="pt-exam-header__title">{attempt.exam_name}</span>
-        </div>
-
-        <div className="pt-exam-header__right">
-          <PortalThemeToggle />
-
-          {calcAllowed ? (
-            <button
-              type="button"
-              className={`pt-btn pt-btn--sm ${showCalc ? "pt-btn--primary" : ""}`}
-              onClick={() => setShowCalc((v) => !v)}
-            >
-              <PIconCalculator size={14} />
-              <span>Calculator</span>
-            </button>
-          ) : null}
-
-          {studentInfo?.full_name ? (
-            <div className="pt-hide-sm" style={{ display: "inline-flex", alignItems: "center", gap: 8, fontSize: 13 }}>
-              <span className="pt-crest pt-crest--solid pt-crest--xs">
-                {getMonogram(studentInfo.full_name, "ST")}
-              </span>
-              <span style={{ fontWeight: 500 }}>{studentInfo.full_name}</span>
-              {studentInfo.student_class ? (
-                <span style={{ color: "var(--pt-ink-3)" }}>· {studentInfo.student_class}</span>
-              ) : null}
-            </div>
-          ) : null}
-
-          <div className={`pt-exam-timer ${remainingSec <= 120 ? "is-low" : ""}`} aria-live="off">
-            <span className="pt-exam-timer__lbl pt-hide-sm">Time left</span>
-            <span className="pt-exam-timer__val">{fmtClock(remainingSec)}</span>
-          </div>
-        </div>
-      </header>
-
-      {/* Section + Progress Sub-bar */}
-      <div className="pt-exam-subbar">
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <span className="pt-tag pt-tag--solid">
-            {q.section_name || "Section 1"} · {answeredCount}/{questions.length}
-          </span>
-          {warningFlash ? (
-            <span className="pt-tag">
-              Focus warning recorded ({warningsCount}/{attempt.max_warnings})
-            </span>
-          ) : null}
-        </div>
-        <div className="pt-exam-progress">
-          <span className="pt-exam-progress__track">
-            <i style={{ width: `${pctDone}%` }} />
-          </span>
-          <span>
-            {answeredCount}/{questions.length}
-          </span>
-        </div>
-      </div>
-
-      {/* Main Split Exam Workspace */}
-      <main id="main-content" className="pt-exam-grid-room">
-        <section className="pt-question-card" aria-label="Current question">
-          <div>
-            <span className="pt-tag">
-              Question {currentIdx + 1} of {questions.length}
-            </span>
-          </div>
-
-          {q.passage ? (
-            <div className="pt-passage-box" style={{ marginTop: 16 }}>
-              {q.passage.name ? (
-                <div style={{ fontWeight: 600, fontSize: 13.5, marginBottom: 4 }}>{q.passage.name}</div>
-              ) : null}
-              {q.passage.instruction ? (
-                <div style={{ fontSize: 12.5, color: "var(--pt-ink-2)", marginBottom: 8 }}>
-                  {q.passage.instruction}
-                </div>
-              ) : null}
-              <MathText text={q.passage.content} />
-            </div>
-          ) : null}
-
-          <div className="pt-question-body">
-            <MathText text={q.question} />
-          </div>
-
-          <div className="pt-options-list" role="radiogroup" aria-label="Answer choices">
-            {q.options.map((opt, oi) => {
-              const letter = OPTION_LETTERS[oi] || String(oi + 1);
-              const isSelected = selectedVal === opt;
-              return (
-                <button
-                  key={`${q.local_id}-${oi}`}
-                  type="button"
-                  role="radio"
-                  aria-checked={isSelected}
-                  className={`pt-option-btn ${isSelected ? "is-selected" : ""}`}
-                  onClick={() => selectAnswer(q.local_id, opt)}
+          <div className="ex-result-foot">
+            <div style={{ display: "flex", gap: 8, width: "100%" }}>
+              {result?.attempt_id && (
+                <Link
+                  href={`/result/${result.attempt_id}`}
+                  className="ex-result-cta"
+                  style={{ flex: 1, justifyContent: "center", background: "var(--ex-surface-2)", color: "var(--ex-ink)", border: "1px solid var(--ex-border-2)" }}
                 >
-                  <span className="pt-option-letter">{letter}</span>
-                  <span style={{ flex: 1 }}>
-                    <MathText text={opt} />
-                  </span>
-                  <span className="pt-option-radio" aria-hidden="true" />
-                </button>
-              );
-            })}
-          </div>
-        </section>
-
-        {/* Right-Hand Rail: Question Controls ABOVE Question Navigator + Submit Exam */}
-        <aside className="pt-right-rail" aria-label="Question navigation">
-          <div className="pt-rail-card">
-            <div className="pt-rail-head">
-              <strong>Question controls</strong>
-              <span className="pt-mono" style={{ fontSize: 12, color: "var(--pt-ink-3)" }}>
-                Q {currentIdx + 1} / {questions.length}
-              </span>
+                  <span>Full Slip</span>
+                </Link>
+              )}
+              <Link href="/student" className="ex-result-cta" style={{ flex: 1, justifyContent: "center" }}>
+                <span>Dashboard</span>
+                <CtIco name="i-arrow-right" className="ct-ico--xs" />
+              </Link>
             </div>
-            <div className="pt-rail-nav">
+            <div className="ex-result-countdown">
+              <span>
+                {countdownPaused ? (
+                  "Auto-return paused"
+                ) : (
+                  <>
+                    Returning in <strong>{countdown}</strong>s
+                  </>
+                )}
+              </span>
               <button
                 type="button"
-                className="pt-btn"
-                disabled={currentIdx <= 0}
-                onClick={() => setCurrentIdx((i) => Math.max(0, i - 1))}
+                className="ex-stay-btn"
+                onClick={() => setCountdownPaused((v) => !v)}
               >
-                <PIconArrowLeft size={14} />
-                <span>Previous</span>
-              </button>
-              <button
-                type="button"
-                className="pt-btn pt-btn--primary"
-                disabled={currentIdx >= questions.length - 1}
-                onClick={() => setCurrentIdx((i) => Math.min(questions.length - 1, i + 1))}
-              >
-                <span>Next</span>
-                <PIconArrowRight size={14} />
-              </button>
-            </div>
-            <div className="pt-rail-hints">
-              <kbd className="pt-kbd">←</kbd>
-              <kbd className="pt-kbd">→</kbd>
-              <span>navigate</span>
-              <span>·</span>
-              <kbd className="pt-kbd">A</kbd>
-              <span>-</span>
-              <kbd className="pt-kbd">D</kbd>
-              <span>answer</span>
-            </div>
-          </div>
-
-          <div className="pt-rail-card">
-            <div className="pt-rail-head">
-              <strong>Question Navigator</strong>
-              <span className="pt-mono" style={{ fontSize: 12, color: "var(--pt-ink-3)" }}>
-                {answeredCount} / {questions.length}
-              </span>
-            </div>
-            <div className="pt-pal-legend">
-              <span>
-                <i className="pt-pal-swatch pt-pal-swatch--cur" />
-                Current
-              </span>
-              <span>
-                <i className="pt-pal-swatch pt-pal-swatch--ans" />
-                Answered
-              </span>
-              <span>
-                <i className="pt-pal-swatch" />
-                Blank
-              </span>
-            </div>
-            <div className="pt-palette-grid">
-              {questions.map((item, idx) => {
-                const isAns = Boolean(answers[String(item.local_id)]?.trim());
-                const isCur = idx === currentIdx;
-                return (
-                  <button
-                    key={item.local_id}
-                    type="button"
-                    className={`pt-pal-btn ${isCur ? "is-current" : isAns ? "is-answered" : ""}`}
-                    onClick={() => setCurrentIdx(idx)}
-                    aria-label={`Question ${idx + 1}${isAns ? ", answered" : ""}`}
-                  >
-                    {idx + 1}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          <button
-            type="button"
-            className="pt-btn pt-btn--lg"
-            style={{ borderColor: "var(--pt-ink)" }}
-            disabled={submitting}
-            onClick={() => setShowSubmitModal(true)}
-          >
-            <span>Submit Exam</span>
-            <PIconArrowRight size={15} />
-          </button>
-        </aside>
-      </main>
-
-      {/* Bottom Integrity & Sync Footer Bar (Matches Offline exam_page_new.html) */}
-      <footer className="pt-exam-footer">
-        <span>
-          {warningsCount === 0
-            ? `Clean Record: 0 / ${attempt.max_warnings}`
-            : `Warnings: ${warningsCount} / ${attempt.max_warnings}`}
-        </span>
-        <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
-          <PIconCloud size={13} />
-          <span>{syncState === "saving" ? "Saving..." : syncState === "local" ? "Saved locally" : "Ready"}</span>
-        </span>
-      </footer>
-
-      {showCalc && calcAllowed ? (
-        <ScientificCalculator
-          mode={attempt.calculator_type === "scientific" ? "scientific" : "basic"}
-          onClose={() => setShowCalc(false)}
-        />
-      ) : null}
-
-      {isPaused ? (
-        <div className="pt-modal-backdrop" role="dialog" aria-modal="true" aria-label="Exam Paused">
-          <div className="pt-modal">
-            <div className="pt-modal-icon">
-              <PIconPause size={20} />
-            </div>
-            <h2>Exam Paused</h2>
-            <button
-              type="button"
-              className="pt-btn pt-btn--primary pt-btn--lg"
-              style={{ marginTop: 18 }}
-              onClick={() => void flushSync(true, false)}
-            >
-              Check Status
-            </button>
-          </div>
-        </div>
-      ) : null}
-
-      {showSubmitModal ? (
-        <div className="pt-modal-backdrop" role="dialog" aria-modal="true" aria-label="Submit Exam">
-          <div className="pt-modal">
-            <div className="pt-modal-icon">
-              <PIconCheck size={20} />
-            </div>
-            <h2>Submit Exam</h2>
-            <div className="pt-mono" style={{ fontSize: 13.5, color: "var(--pt-ink-2)", marginBottom: 20 }}>
-              {answeredCount} of {questions.length} answered
-              {unansweredCount > 0 ? ` · ${unansweredCount} unanswered` : ""}
-            </div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-              <button type="button" className="pt-btn" onClick={() => setShowSubmitModal(false)}>
-                Review
-              </button>
-              <button
-                type="button"
-                className="pt-btn pt-btn--primary"
-                disabled={submitting}
-                onClick={() => void submitExam(false)}
-              >
-                {submitting ? "Submitting..." : "Submit Now"}
+                {countdownPaused ? "Resume" : "Stay"}
               </button>
             </div>
           </div>
         </div>
-      ) : null}
+      </div>
+
+      {/* Full Reading Passage Modal */}
+      {passageModal && (
+        <div
+          id="passageModal"
+          className="passage-modal-overlay active"
+          onClick={() => setPassageModal(null)}
+        >
+          <div className="passage-modal-dialog" onClick={(e) => e.stopPropagation()}>
+            <div className="passage-modal-header">
+              <h4 className="passage-modal-title">{passageModal.name}</h4>
+              <button
+                type="button"
+                className="passage-modal-close"
+                onClick={() => setPassageModal(null)}
+                aria-label="Close Passage"
+              >
+                &times;
+              </button>
+            </div>
+            <div className="passage-modal-body">
+              <MathText text={passageModal.content} />
+            </div>
+            <div className="passage-modal-footer">
+              <button
+                type="button"
+                className="ct-btn ct-btn--soft"
+                onClick={() => setPassageModal(null)}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

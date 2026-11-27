@@ -3,18 +3,7 @@
 import React, { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { CogniTaraMark } from "@/components/CogniTaraLogo";
-import {
-  getMonogram,
-  PIconArrowLeft,
-  PIconArrowRight,
-  PIconEye,
-  PIconEyeOff,
-  PIconLock,
-  PIconMail,
-  PIconUser,
-  PortalThemeToggle,
-} from "@/components/portal/PortalIcons";
+import { CT_ICONS_URL, CtIco, CtThemeToggle, getInitials } from "@/components/portal/CtIco";
 
 interface ResolvedSchool {
   school_code: string;
@@ -86,19 +75,19 @@ function PortalGatewayInner() {
       setCodeInput(s.school_code);
       try {
         localStorage.setItem(LAST_SCHOOL_KEY, s.school_code);
-      } catch {}
-
-      if (!s.online_portal_enabled) {
-        setRole("admin");
-      } else if (!s.online_students_enabled && s.online_teachers_enabled) {
-        setRole("teacher");
-      } else if (!s.online_students_enabled && !s.online_teachers_enabled) {
-        setRole("admin");
-      } else {
-        setRole("student");
+      } catch {
+        // ignore
       }
+
+      const qRole = (searchParams.get("role") || "").toLowerCase();
+      if (qRole === "admin") setRole("admin");
+      else if (qRole === "teacher") setRole("teacher");
+      else if (!s.online_portal_enabled) setRole("admin");
+      else if (!s.online_students_enabled && s.online_teachers_enabled) setRole("teacher");
+      else if (!s.online_students_enabled && !s.online_teachers_enabled) setRole("admin");
+      else setRole("student");
     } catch {
-      if (!silent) setResolveErr("Could not connect to CogniTara right now. Try again shortly.");
+      if (!silent) setResolveErr("Could not connect right now. Try again shortly.");
     } finally {
       setResolving(false);
     }
@@ -138,7 +127,9 @@ function PortalGatewayInner() {
     try {
       const saved = localStorage.getItem(LAST_SCHOOL_KEY);
       if (saved) setCodeInput(saved);
-    } catch {}
+    } catch {
+      // ignore
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
 
@@ -152,30 +143,37 @@ function PortalGatewayInner() {
     setPassword("");
     try {
       localStorage.removeItem(LAST_SCHOOL_KEY);
-    } catch {}
+    } catch {
+      // ignore
+    }
   }
 
   async function handleRecoverSchoolId(e: React.FormEvent) {
     e.preventDefault();
+    const em = recoverEmail.trim().toLowerCase();
+    if (!em || !em.includes("@")) {
+      setRecoverMsg({ kind: "err", text: "Enter the Super Admin email address registered with your school." });
+      return;
+    }
     setRecoverBusy(true);
     setRecoverMsg(null);
     try {
       const res = await fetch("/api/v1/portal/recover-school-id", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: recoverEmail.trim() }),
+        body: JSON.stringify({ email: em }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok || !data.ok) {
-        setRecoverMsg({ kind: "err", text: data.message || "Could not send School ID email." });
-      } else {
-        setRecoverMsg({
-          kind: "ok",
-          text: data.message || "If that email matches a registered school super admin account, your School ID has been sent.",
-        });
+        setRecoverMsg({ kind: "err", text: data.message || "Could not process request right now." });
+        return;
       }
+      setRecoverMsg({
+        kind: "ok",
+        text: data.message || "If that email matches a registered school Super Admin, the School ID has been sent.",
+      });
     } catch {
-      setRecoverMsg({ kind: "err", text: "Network error while requesting your School ID." });
+      setRecoverMsg({ kind: "err", text: "Connection interrupted. Try again." });
     } finally {
       setRecoverBusy(false);
     }
@@ -184,13 +182,13 @@ function PortalGatewayInner() {
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
     if (!school) return;
-    setLoginErr("");
     setLoginBusy(true);
+    setLoginErr("");
     try {
       const res = await fetch("/api/v1/portal/auth/login", {
         method: "POST",
-        credentials: "include",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({
           school_code: school.school_code,
           role,
@@ -200,410 +198,467 @@ function PortalGatewayInner() {
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok || !data.ok) {
-        setLoginErr(data.message || "Invalid credentials. Check your username and password.");
-        setLoginBusy(false);
+        setLoginErr(data.message || "Invalid username or password.");
         return;
       }
-      router.push(data.redirect || `/${role}`);
+      const target = role === "admin" ? "/admin" : role === "teacher" ? "/teacher" : "/student";
+      router.push(target);
     } catch {
-      setLoginErr("Network error while signing in. Try again.");
+      setLoginErr("Could not reach the portal right now. Check your internet connection.");
+    } finally {
       setLoginBusy(false);
     }
   }
 
-  const roleBlockedReason = (() => {
-    if (!school || role === "admin") return "";
-    if (!school.online_portal_enabled) {
-      return "Online Exam Portal is currently switched off by your school administrator.";
-    }
-    if (role === "student" && !school.online_students_enabled) {
-      return "Student online access is currently switched off by your school administrator.";
-    }
-    if (role === "teacher" && !school.online_teachers_enabled) {
-      return "Teacher online access is currently switched off by your school administrator.";
-    }
-    if (!school.synced) {
-      return "Your school has not synced its exam database to the online portal yet.";
-    }
-    return "";
-  })();
+  const roleIdx = role === "student" ? 0 : role === "teacher" ? 1 : 2;
+  const userLabel =
+    role === "student"
+      ? "Admission number or username"
+      : role === "teacher"
+        ? "Teacher username"
+        : "Admin username or email";
+  const userPlaceholder =
+    role === "student"
+      ? "Enter your username"
+      : role === "teacher"
+        ? "e.g. teacher1"
+        : "Administrator username or email";
 
-  const continueHref = activeSession
-    ? activeSession.role === "admin"
+  const roleBlockedMsg =
+    school && role === "student" && (!school.online_portal_enabled || !school.online_students_enabled)
+      ? !school.online_portal_enabled
+        ? "The Online Exam Portal is currently switched off by your administrator."
+        : "Student online access is currently switched off by your administrator."
+      : school && role === "teacher" && (!school.online_portal_enabled || !school.online_teachers_enabled)
+        ? !school.online_portal_enabled
+          ? "The Online Exam Portal is currently switched off by your administrator."
+          : "Teacher online access is currently switched off by your administrator."
+        : "";
+
+  const continuePath =
+    activeSession?.role === "admin"
       ? "/admin"
-      : activeSession.role === "teacher"
+      : activeSession?.role === "teacher"
         ? "/teacher"
-        : "/student"
-    : "/";
+        : "/student";
 
   return (
-    <div className="pt-auth-split">
-      {/* Left Architectural Editorial Pane (Matches Offline login.html) */}
-      <section className="pt-auth-media" aria-label="Examination portal overview">
-        <img
-          src="/images/auth-editorial-portal.jpg"
-          alt=""
-          className="pt-auth-media__img"
-          loading="eager"
-        />
-        <div className="pt-auth-media__scrim" aria-hidden="true" />
+    <div className="ed-body">
+      <div className="ed-grain" aria-hidden="true" />
 
-        <div className="pt-auth-media__top">
-          <div className="pt-auth-brand-chip">
-            <CogniTaraMark size={18} />
-            <span>CogniTara</span>
-          </div>
-          <div className="pt-auth-term">
-            {school
-              ? `${school.current_term} · ${school.academic_session}`
-              : "Online Examination Portal"}
-          </div>
-        </div>
+      <div className="ed-auth">
+        {/* Exact Offline Framed Architectural Gallery Stage */}
+        <aside className="ed-gallery" aria-label="CogniTara Examination Hall">
+          <img className="ed-gallery__img" src="/images/auth-editorial-portal.jpg" alt="" />
+          <div className="ed-gallery__scrim" aria-hidden="true" />
 
-        <div className="pt-auth-media__bot">
-          <div className="pt-auth-media__kicker">
-            {school ? school.school_name : "CogniTara Examination Suite"}
+          <div className="ed-gallery__top">
+            <Link className="ed-gallery__brand" href="/" aria-label="CogniTara Online Portal">
+              <span className="ed-brand__mark" style={{ width: 26, height: 26, borderRadius: 7 }}>
+                <svg viewBox="0 0 200 200">
+                  <use href={`${CT_ICONS_URL}#ct-mark`} />
+                </svg>
+              </span>
+              <strong>CogniTara</strong>
+            </Link>
+            <span className="ed-gallery__tag">
+              {school ? `${school.current_term} · ${school.academic_session}` : "Online Exam Portal"}
+            </span>
           </div>
-          <h2>Calm, focused examinations from anywhere</h2>
-          <p>
-            Instant answer persistence, built-in scientific tools, and verified integrity, synced cleanly with your school database.
-          </p>
-        </div>
-      </section>
 
-      {/* Right Auth Stage */}
-      <section className="pt-auth-stage" id="main-content">
-        <div className="pt-auth-stage__top">
-          <div>
+          <div className="ed-gallery__caption">
+            <span className="ed-gallery__caption-eyebrow">
+              {school ? school.school_name : "CogniTara Schools"}
+            </span>
+            <h2>
+              {school
+                ? "Calm, focused examinations synced directly with your school."
+                : "One examination portal for classroom, lab, and home sittings."}
+            </h2>
+            <p>
+              Instant answer persistence, built-in scientific tools, and verified integrity, using the exact same accounts and grading scale as your offline school server.
+            </p>
+          </div>
+        </aside>
+
+        {/* Exact Offline Elevated Architectural Sign-In Surface */}
+        <main className="ed-pane">
+          <div className="ed-pane__top">
             {school ? (
-              <button type="button" className="pt-text-btn" onClick={handleSwitchSchool}>
-                <PIconArrowLeft size={14} />
-                <span>Switch school</span>
+              <button
+                type="button"
+                className="ed-back"
+                onClick={handleSwitchSchool}
+                style={{ background: "none", border: "none", cursor: "pointer", padding: 0 }}
+              >
+                <CtIco name="i-arrow-left" className="ct-ico--sm" />
+                <span>Change School ID</span>
               </button>
             ) : recoverMode ? (
               <button
                 type="button"
-                className="pt-text-btn"
+                className="ed-back"
                 onClick={() => {
                   setRecoverMode(false);
                   setRecoverMsg(null);
                 }}
+                style={{ background: "none", border: "none", cursor: "pointer", padding: 0 }}
               >
-                <PIconArrowLeft size={14} />
+                <CtIco name="i-arrow-left" className="ct-ico--sm" />
                 <span>Back to School ID</span>
               </button>
             ) : (
-              <span style={{ display: "inline-flex", alignItems: "center", gap: 8, fontSize: 13.5, fontWeight: 600 }}>
-                <CogniTaraMark size={18} />
-                <span>CogniTara</span>
+              <span style={{ fontSize: 12.5, color: "var(--ed-ink-3)", fontWeight: 550 }}>
+                Online Examination Portal
               </span>
             )}
+            <CtThemeToggle variant="ed" />
           </div>
 
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            {activeSession ? (
-              <Link href={continueHref} className="pt-btn pt-btn--sm">
-                Continue as {activeSession.fullName}
-              </Link>
-            ) : null}
-            <PortalThemeToggle />
-          </div>
-        </div>
-
-        <div className="pt-auth-stage__center">
-          <div className="pt-auth-card">
-            {!school && !recoverMode ? (
-              <>
-                <div className="pt-auth-card__head">
-                  <span className="pt-crest">CT</span>
-                  <div className="pt-auth-card__title">
-                    <h1>Enter your School ID</h1>
-                    <p>Connect to your school portal using the ID provided by your administrator</p>
-                  </div>
-                </div>
-
-                {resolveErr ? (
-                  <div className="pt-alert pt-alert--dark" role="alert" style={{ marginBottom: 16 }}>
-                    {resolveErr}
-                  </div>
-                ) : null}
-
-                <form
-                  className="pt-form"
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    void resolveSchool(codeInput);
+          <div className="ed-pane__center">
+            <section className="ed-form-card" aria-label="Portal sign in">
+              {activeSession && !school && !recoverMode && (
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    gap: 10,
+                    padding: "10px 12px",
+                    borderRadius: 10,
+                    border: "1px solid var(--ed-border-2)",
+                    background: "var(--ed-surface-2)",
+                    marginBottom: 14,
+                    fontSize: 12.5,
                   }}
                 >
-                  <div className="pt-field">
-                    <label htmlFor="schoolIdInput">School ID</label>
-                    <input
-                      id="schoolIdInput"
-                      type="text"
-                      className="pt-school-id-input"
-                      placeholder="CT-4829A"
-                      autoComplete="off"
-                      autoCapitalize="characters"
-                      spellCheck={false}
-                      maxLength={16}
-                      value={codeInput}
-                      onChange={(e) => setCodeInput(e.target.value.toUpperCase())}
-                      required
-                    />
+                  <div style={{ minWidth: 0 }}>
+                    <strong style={{ display: "block", color: "var(--ed-ink)" }}>{activeSession.fullName}</strong>
+                    <span style={{ color: "var(--ed-ink-2)" }}>
+                      Signed in · {activeSession.schoolName || activeSession.schoolCode}
+                    </span>
                   </div>
-
-                  <button
-                    type="submit"
-                    className="pt-btn pt-btn--primary pt-btn--lg"
-                    disabled={resolving || codeInput.trim().length < 4}
+                  <Link
+                    href={continuePath}
+                    className="ct-btn ct-btn--primary ct-btn--sm"
+                    style={{ flex: "none" }}
                   >
-                    <span>{resolving ? "Finding school..." : "Continue"}</span>
-                    <PIconArrowRight size={15} />
-                  </button>
-                </form>
-
-                <div className="pt-link-row">
-                  <button
-                    type="button"
-                    className="pt-text-btn"
-                    onClick={() => {
-                      setRecoverMode(true);
-                      setResolveErr("");
-                      setRecoverMsg(null);
-                    }}
-                  >
-                    <PIconMail size={14} />
-                    <span>Forgot School ID</span>
-                  </button>
-                  <a
-                    href="https://cognitara.net/signup"
-                    className="pt-text-btn"
-                  >
-                    New school account
-                  </a>
+                    Continue
+                  </Link>
                 </div>
-              </>
-            ) : !school && recoverMode ? (
-              <>
-                <div className="pt-auth-card__head">
-                  <span className="pt-crest">ID</span>
-                  <div className="pt-auth-card__title">
-                    <h1>Find your School ID</h1>
-                    <p>Enter your registered school super admin email and we will email your School ID</p>
-                  </div>
-                </div>
+              )}
 
-                {recoverMsg ? (
-                  <div
-                    className={`pt-alert ${recoverMsg.kind === "err" ? "pt-alert--dark" : ""}`}
-                    role={recoverMsg.kind === "err" ? "alert" : "status"}
-                    style={{ marginBottom: 16 }}
-                  >
-                    {recoverMsg.text}
-                  </div>
-                ) : null}
-
-                <form className="pt-form" onSubmit={handleRecoverSchoolId}>
-                  <div className="pt-field">
-                    <label htmlFor="superAdminEmail">Super admin email</label>
-                    <div className="pt-input-wrap">
-                      <span className="pt-input-wrap__ico">
-                        <PIconMail size={15} />
-                      </span>
-                      <input
-                        id="superAdminEmail"
-                        type="email"
-                        className="pt-input"
-                        placeholder="principal@school.edu.ng"
-                        autoComplete="email"
-                        value={recoverEmail}
-                        onChange={(e) => setRecoverEmail(e.target.value)}
-                        required
-                      />
+              {!school && !recoverMode && (
+                <>
+                  <div className="ed-school-row">
+                    <div className="ed-crest">
+                      <svg viewBox="0 0 200 200" style={{ width: 22, height: 22 }}>
+                        <use href={`${CT_ICONS_URL}#ct-mark`} />
+                      </svg>
+                    </div>
+                    <div style={{ minWidth: 0 }}>
+                      <h1>Enter your School ID</h1>
+                      <p>Connect to your school&apos;s examination portal</p>
                     </div>
                   </div>
 
-                  <button
-                    type="submit"
-                    className="pt-btn pt-btn--primary pt-btn--lg"
-                    disabled={recoverBusy || !recoverEmail.trim()}
-                  >
-                    <span>{recoverBusy ? "Sending School ID..." : "Send School ID to email"}</span>
-                    <PIconArrowRight size={15} />
-                  </button>
-                </form>
+                  {resolveErr && (
+                    <div className="ed-alert" role="alert">
+                      <CtIco name="i-alert" className="ct-ico--sm" />
+                      <span>{resolveErr}</span>
+                    </div>
+                  )}
 
-                <div className="pt-link-row">
-                  <button
-                    type="button"
-                    className="pt-text-btn"
-                    onClick={() => {
-                      setRecoverMode(false);
-                      setRecoverMsg(null);
+                  <form
+                    className="ed-fields"
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      void resolveSchool(codeInput);
                     }}
                   >
-                    <PIconArrowLeft size={14} />
-                    <span>I have my School ID</span>
-                  </button>
-                </div>
-              </>
-            ) : school ? (
-              <>
-                <div className="pt-auth-card__head">
-                  <span className="pt-crest">{getMonogram(school.school_name, "CT")}</span>
-                  <div className="pt-auth-card__title" style={{ minWidth: 0 }}>
-                    <h1>Sign in to your portal</h1>
-                    <p>
-                      {school.school_name}
-                      {school.school_motto ? ` · ${school.school_motto}` : ` · ${school.school_code}`}
-                    </p>
-                  </div>
-                </div>
+                    <div className="ed-field">
+                      <label className="ed-label" htmlFor="schoolCodeInput">
+                        School ID
+                      </label>
+                      <div className="ed-input-box">
+                        <CtIco name="i-key" />
+                        <input
+                          className="ed-input"
+                          id="schoolCodeInput"
+                          type="text"
+                          value={codeInput}
+                          onChange={(e) => setCodeInput(e.target.value.toUpperCase())}
+                          placeholder="e.g. CT-4829K"
+                          autoComplete="off"
+                          spellCheck={false}
+                          required
+                          autoFocus
+                          style={{ fontFamily: "var(--ct-mono)", letterSpacing: "0.06em" }}
+                        />
+                      </div>
+                    </div>
 
-                {school.online_portal_notice ? (
-                  <div className="pt-alert" style={{ marginBottom: 16 }}>
-                    {school.online_portal_notice}
-                  </div>
-                ) : null}
+                    <button type="submit" className="ed-submit" disabled={resolving}>
+                      <span>{resolving ? "Finding school..." : "Continue"}</span>
+                      <CtIco name="i-arrow-right" className="ct-ico--sm" />
+                    </button>
+                  </form>
 
-                <div className="pt-seg" role="tablist" aria-label="Portal role">
-                  {(["student", "teacher", "admin"] as const).map((r) => (
+                  <div className="ed-card-links" style={{ justifyContent: "center" }}>
                     <button
-                      key={r}
                       type="button"
-                      role="tab"
-                      aria-selected={role === r}
-                      className={`pt-seg__btn ${role === r ? "is-active" : ""}`}
                       onClick={() => {
-                        setRole(r);
+                        setRecoverMode(true);
+                        setRecoverMsg(null);
+                      }}
+                      style={{
+                        background: "none",
+                        border: "none",
+                        cursor: "pointer",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: 6,
+                        font: "inherit",
+                        fontSize: 13,
+                        color: "var(--ed-ink-2)",
+                      }}
+                    >
+                      <CtIco name="i-mail" className="ct-ico--sm" />
+                      <span>Admin forgot School ID? Email it to me</span>
+                    </button>
+                  </div>
+                </>
+              )}
+
+              {!school && recoverMode && (
+                <>
+                  <div className="ed-school-row">
+                    <div className="ed-crest">
+                      <CtIco name="i-mail" />
+                    </div>
+                    <div style={{ minWidth: 0 }}>
+                      <h1>Find your School ID</h1>
+                      <p>Enter your Super Admin email address and we will email your School ID</p>
+                    </div>
+                  </div>
+
+                  {recoverMsg && (
+                    <div
+                      className="ed-alert"
+                      role={recoverMsg.kind === "err" ? "alert" : "status"}
+                      style={
+                        recoverMsg.kind === "ok"
+                          ? {
+                              background: "var(--ed-surface-2)",
+                              borderColor: "var(--ed-border-2)",
+                              color: "var(--ed-ink)",
+                            }
+                          : undefined
+                      }
+                    >
+                      <CtIco name={recoverMsg.kind === "ok" ? "i-check-circle" : "i-alert"} className="ct-ico--sm" />
+                      <span>{recoverMsg.text}</span>
+                    </div>
+                  )}
+
+                  <form className="ed-fields" onSubmit={handleRecoverSchoolId}>
+                    <div className="ed-field">
+                      <label className="ed-label" htmlFor="recoverEmail">
+                        Super Admin email address
+                      </label>
+                      <div className="ed-input-box">
+                        <CtIco name="i-mail" />
+                        <input
+                          className="ed-input"
+                          id="recoverEmail"
+                          type="email"
+                          value={recoverEmail}
+                          onChange={(e) => setRecoverEmail(e.target.value)}
+                          placeholder="principal@school.edu"
+                          required
+                          autoFocus
+                        />
+                      </div>
+                    </div>
+
+                    <button type="submit" className="ed-submit" disabled={recoverBusy}>
+                      <span>{recoverBusy ? "Sending School ID..." : "Send School ID to Email"}</span>
+                      <CtIco name="i-arrow-right" className="ct-ico--sm" />
+                    </button>
+                  </form>
+                </>
+              )}
+
+              {school && (
+                <>
+                  <div className="ed-school-row">
+                    <div className="ed-crest">{getInitials(school.school_name, "CT")}</div>
+                    <div style={{ minWidth: 0 }}>
+                      <h1>Sign in to your portal</h1>
+                      <p>
+                        {school.school_name}
+                        {school.school_motto ? ` · ${school.school_motto}` : ` · ${school.school_code}`}
+                      </p>
+                    </div>
+                  </div>
+
+                  {school.online_portal_notice && (
+                    <div
+                      className="ed-alert"
+                      style={{
+                        background: "var(--ed-surface-2)",
+                        borderColor: "var(--ed-border-2)",
+                        color: "var(--ed-ink)",
+                      }}
+                    >
+                      <CtIco name="i-info" className="ct-ico--sm" />
+                      <span>{school.online_portal_notice}</span>
+                    </div>
+                  )}
+
+                  {(loginErr || roleBlockedMsg) && (
+                    <div className="ed-alert login-error" role="alert">
+                      <CtIco name="i-alert" className="ct-ico--sm" />
+                      <span>{loginErr || roleBlockedMsg}</span>
+                    </div>
+                  )}
+
+                  <div
+                    className="ed-seg role-seg"
+                    id="roleSeg"
+                    role="tablist"
+                    aria-label="Account role"
+                    style={
+                      {
+                        "--seg-n": "3",
+                        "--seg-i": String(roleIdx),
+                      } as React.CSSProperties
+                    }
+                  >
+                    <span className="ed-seg__thumb" aria-hidden="true" />
+                    <button
+                      type="button"
+                      className={role === "student" ? "is-active" : ""}
+                      role="tab"
+                      aria-selected={role === "student"}
+                      onClick={() => {
+                        setRole("student");
                         setLoginErr("");
                       }}
                     >
-                      {r === "student" ? "Student" : r === "teacher" ? "Teacher" : "Admin"}
+                      Student
                     </button>
-                  ))}
-                </div>
-
-                {roleBlockedReason ? (
-                  <div className="pt-alert pt-alert--dark" role="status" style={{ marginBottom: 16 }}>
-                    {roleBlockedReason}
+                    <button
+                      type="button"
+                      className={role === "teacher" ? "is-active" : ""}
+                      role="tab"
+                      aria-selected={role === "teacher"}
+                      onClick={() => {
+                        setRole("teacher");
+                        setLoginErr("");
+                      }}
+                    >
+                      Teacher
+                    </button>
+                    <button
+                      type="button"
+                      className={role === "admin" ? "is-active" : ""}
+                      role="tab"
+                      aria-selected={role === "admin"}
+                      onClick={() => {
+                        setRole("admin");
+                        setLoginErr("");
+                      }}
+                    >
+                      Admin
+                    </button>
                   </div>
-                ) : null}
 
-                {loginErr ? (
-                  <div className="pt-alert pt-alert--dark" role="alert" style={{ marginBottom: 16 }}>
-                    {loginErr}
-                  </div>
-                ) : null}
-
-                <form className="pt-form" onSubmit={handleLogin}>
-                  <div className="pt-field">
-                    <label htmlFor="portalUsername">
-                      {role === "student"
-                        ? "Admission number or username"
-                        : role === "teacher"
-                          ? "Teacher username"
-                          : "Admin username or super admin email"}
-                    </label>
-                    <div className="pt-input-wrap">
-                      <span className="pt-input-wrap__ico">
-                        <PIconUser size={15} />
-                      </span>
-                      <input
-                        id="portalUsername"
-                        type="text"
-                        className="pt-input"
-                        value={username}
-                        onChange={(e) => setUsername(e.target.value)}
-                        placeholder={
-                          role === "admin"
-                            ? "Enter admin username or email"
-                            : "Enter your username"
-                        }
-                        autoComplete="username"
-                        required
-                        disabled={Boolean(roleBlockedReason)}
-                      />
+                  <form className="ed-fields login-form" onSubmit={handleLogin}>
+                    <div className="ed-field">
+                      <label className="ed-label" htmlFor="username">
+                        {userLabel}
+                      </label>
+                      <div className="ed-input-box">
+                        <CtIco name="i-user" />
+                        <input
+                          className="ed-input"
+                          type="text"
+                          id="username"
+                          value={username}
+                          onChange={(e) => setUsername(e.target.value)}
+                          placeholder={userPlaceholder}
+                          autoComplete="username"
+                          required
+                          autoFocus
+                        />
+                      </div>
                     </div>
-                  </div>
 
-                  <div className="pt-field">
-                    <label htmlFor="portalPassword">Password</label>
-                    <div className="pt-input-wrap">
-                      <span className="pt-input-wrap__ico">
-                        <PIconLock size={15} />
-                      </span>
-                      <input
-                        id="portalPassword"
-                        type={showPw ? "text" : "password"}
-                        className="pt-input"
-                        style={{ paddingRight: 42 }}
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        placeholder="Enter your password"
-                        autoComplete="current-password"
-                        required
-                        disabled={Boolean(roleBlockedReason)}
-                      />
-                      <button
-                        type="button"
-                        className="pt-input-wrap__tail"
-                        onClick={() => setShowPw((v) => !v)}
-                        aria-label={showPw ? "Hide password" : "Show password"}
-                      >
-                        {showPw ? <PIconEyeOff size={15} /> : <PIconEye size={15} />}
-                      </button>
+                    <div className="ed-field">
+                      <label className="ed-label" htmlFor="password">
+                        Password
+                      </label>
+                      <div className="ed-input-box">
+                        <CtIco name="i-lock" />
+                        <input
+                          className="ed-input ed-input--trail"
+                          type={showPw ? "text" : "password"}
+                          id="password"
+                          value={password}
+                          onChange={(e) => setPassword(e.target.value)}
+                          placeholder="Enter your password"
+                          autoComplete="current-password"
+                          required
+                        />
+                        <button
+                          className="ed-eye"
+                          type="button"
+                          onClick={() => setShowPw((v) => !v)}
+                          aria-label={showPw ? "Hide password" : "Show password"}
+                        >
+                          <CtIco name={showPw ? "i-eye-off" : "i-eye"} className="ct-ico--sm" />
+                        </button>
+                      </div>
                     </div>
+
+                    <button
+                      type="submit"
+                      className="ed-submit"
+                      disabled={loginBusy || Boolean(roleBlockedMsg)}
+                    >
+                      <span>{loginBusy ? "Signing in..." : "Sign in"}</span>
+                      <CtIco name="i-arrow-right" className="ct-ico--sm" />
+                    </button>
+                  </form>
+
+                  <div className="ed-card-links">
+                    <Link href={`/register?code=${encodeURIComponent(school.school_code)}`}>
+                      <CtIco name="i-plus" className="ct-ico--sm" />
+                      <span>New student registration</span>
+                    </Link>
+                    <span style={{ fontFamily: "var(--ct-mono)", fontSize: 11.5, color: "var(--ed-ink-3)" }}>
+                      ID: {school.school_code}
+                    </span>
                   </div>
-
-                  <button
-                    type="submit"
-                    className="pt-btn pt-btn--primary pt-btn--lg"
-                    disabled={loginBusy || Boolean(roleBlockedReason)}
-                  >
-                    <span>{loginBusy ? "Signing in..." : "Sign in"}</span>
-                    <PIconArrowRight size={15} />
-                  </button>
-                </form>
-
-                <div className="pt-link-row">
-                  <span className="pt-mono" style={{ fontSize: 12, color: "var(--pt-ink-3)" }}>
-                    {school.school_code}
-                  </span>
-                  <span className={`pt-status ${school.online_portal_enabled ? "is-live" : ""}`}>
-                    <span className="pt-dot" />
-                    {school.online_portal_enabled ? "Portal live" : "Portal off"}
-                  </span>
-                </div>
-              </>
-            ) : null}
+                </>
+              )}
+            </section>
           </div>
-        </div>
 
-        <div className="pt-auth-stage__foot">
-          <span>CogniTara Examination Portal</span>
-          <span>Synced with school database</span>
-        </div>
-      </section>
+          <footer className="ed-pane__foot">
+            <span>CogniTara Online Examination Server</span>
+            <span>{school ? school.school_name : "Synced School Portal"}</span>
+          </footer>
+        </main>
+      </div>
     </div>
   );
 }
 
 export default function PortalGatewayPage() {
   return (
-    <Suspense
-      fallback={
-        <div className="pt-auth-split">
-          <div className="pt-auth-stage" style={{ gridColumn: "1 / -1" }}>
-            <div className="pt-auth-stage__center">
-              <div className="pt-auth-card" style={{ textAlign: "center", color: "var(--pt-ink-2)" }}>
-                Loading school portal...
-              </div>
-            </div>
-          </div>
-        </div>
-      }
-    >
+    <Suspense fallback={<div className="ed-body" style={{ minHeight: "100vh" }} />}>
       <PortalGatewayInner />
     </Suspense>
   );

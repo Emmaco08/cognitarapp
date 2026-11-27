@@ -1,23 +1,36 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { CogniTaraLockup } from "@/components/CogniTaraLogo";
-import {
-  getMonogram,
-  PIconAlert,
-  PIconArrowRight,
-  PIconCheck,
-  PIconChevronDown,
-  PIconClock,
-  PIconDoc,
-  PIconLock,
-  PIconLogOut,
-  PIconPlay,
-  PIconShield,
-  PortalThemeToggle,
-} from "@/components/portal/PortalIcons";
+import { CT_ICONS_URL, CtIco, CtThemeToggle, getInitials } from "@/components/portal/CtIco";
+
+interface AvailableExam {
+  local_id: number;
+  name: string;
+  exam_class: string;
+  duration: number;
+  question_count: number;
+  calculator_type: string;
+  max_warnings: number;
+  is_paused: boolean;
+  attempt_status: "not_started" | "in_progress" | "completed";
+  attempt_id: string | null;
+}
+
+interface CompletedResult {
+  attempt_id: string;
+  exam_local_id: number;
+  exam_name: string;
+  completed_at: string | null;
+  results_released: boolean;
+  score: number | null;
+  total: number | null;
+  percentage: number | null;
+  grade_label: string | null;
+  grade_remark: string | null;
+  origin: string;
+}
 
 interface StudentDashboardData {
   school: {
@@ -34,502 +47,561 @@ interface StudentDashboardData {
     full_name: string;
     student_class: string;
     specialisation: string;
-    warnings_count?: number;
+    warnings_count: number;
   };
-  available_exams: Array<{
-    local_id: number;
-    name: string;
-    exam_class: string;
-    duration: number;
-    question_count: number;
-    calculator_type: string;
-    max_warnings: number;
-    is_paused: boolean;
-    attempt_status: "not_started" | "in_progress" | "completed";
-    attempt_id: string | null;
-  }>;
-  completed_results: Array<{
-    attempt_id: string;
-    exam_local_id: number;
-    exam_name: string;
-    completed_at: string | null;
-    results_released: boolean;
-    score: number | null;
-    total: number | null;
-    percentage: number | null;
-    grade_label: string | null;
-    grade_remark: string | null;
-    origin: string;
-  }>;
+  available_exams: AvailableExam[];
+  completed_results: CompletedResult[];
 }
 
-export default function StudentPortalDashboard() {
+export default function PortalStudentDashboardPage() {
   const router = useRouter();
   const [data, setData] = useState<StudentDashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState("");
   const [menuOpen, setMenuOpen] = useState(false);
-  const [confirmExam, setConfirmExam] = useState<StudentDashboardData["available_exams"][number] | null>(null);
+  const [launchingExam, setLaunchingExam] = useState<{ id: number; name: string } | null>(null);
   const menuRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
+    let alive = true;
     fetch("/api/v1/portal/student/dashboard", { credentials: "include" })
       .then(async (res) => {
-        const json = await res.json().catch(() => ({}));
         if (res.status === 401 || res.status === 403) {
-          setErr(json.message || "Sign in to access your student portal.");
-          if (res.status === 401) router.replace("/");
-          return;
+          router.replace("/");
+          return null;
         }
-        if (res.ok && json.ok) {
-          setData(json);
-        } else {
-          setErr(json.message || "Could not load your examinations.");
-        }
+        return res.json();
       })
-      .catch(() => setErr("Network error while loading student portal."))
-      .finally(() => setLoading(false));
+      .then((json) => {
+        if (!alive || !json) return;
+        if (!json.ok) setErr(json.message || "Could not load student portal.");
+        else setData(json);
+      })
+      .catch(() => {
+        if (alive) setErr("Connection error while loading your dashboard.");
+      })
+      .finally(() => {
+        if (alive) setLoading(false);
+      });
+    return () => {
+      alive = false;
+    };
   }, [router]);
 
   useEffect(() => {
     const onDocClick = (e: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-        setMenuOpen(false);
-      }
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(false);
     };
     document.addEventListener("mousedown", onDocClick);
     return () => document.removeEventListener("mousedown", onDocClick);
   }, []);
 
-  async function handleSignOut() {
-    await fetch("/api/v1/portal/auth/logout", { method: "POST", credentials: "include" });
-    router.replace(data?.school?.school_code ? `/?school=${encodeURIComponent(data.school.school_code)}` : "/");
+  const handleLogout = async () => {
+    try {
+      await fetch("/api/v1/portal/auth/logout", { method: "POST" });
+    } catch {
+      // ignore
+    }
+    window.location.href = "/";
+  };
+
+  const launchExamBriefing = (examId: number, examName: string) => {
+    setLaunchingExam({ id: examId, name: examName });
+    setTimeout(() => {
+      router.push(`/student/exam/${examId}/start`);
+    }, 450);
+  };
+
+  const inProgress = useMemo(
+    () => (data?.available_exams || []).filter((e) => e.attempt_status === "in_progress"),
+    [data]
+  );
+  const scheduled = useMemo(
+    () => (data?.available_exams || []).filter((e) => e.attempt_status === "not_started"),
+    [data]
+  );
+  const completed = useMemo(() => data?.completed_results || [], [data]);
+
+  const stats = useMemo(() => {
+    const released = completed.filter((c) => c.results_released && c.total && c.total > 0);
+    const avg = released.length
+      ? Math.round((released.reduce((s, r) => s + Number(r.percentage || 0), 0) / released.length) * 10) / 10
+      : 0;
+    const best = released.length
+      ? Math.max(...released.map((r) => Math.round(Number(r.percentage || 0))))
+      : 0;
+    return { avg, best };
+  }, [completed]);
+
+  if (loading) {
+    return (
+      <div className="st-body" style={{ minHeight: "100vh", display: "grid", placeItems: "center" }}>
+        <div className="sc-min-card sc-min-card--compact">
+          <div className="sc-min-card__emblem" aria-hidden="true">
+            <div className="sc-min-card__core">
+              <svg viewBox="0 0 24 24">
+                <path d="M12 3l7.5 3.2v5.4c0 4.6-3.1 8.1-7.5 9.6-4.4-1.5-7.5-5-7.5-9.6V6.2L12 3z" />
+                <path d="M9.2 12.2l2 2 3.8-4" />
+              </svg>
+            </div>
+          </div>
+          <h3 className="sc-min-card__title">Loading Student Portal</h3>
+          <div className="sc-sweep-track" aria-hidden="true">
+            <i />
+          </div>
+        </div>
+      </div>
+    );
   }
 
-  const inProgressExams = data ? data.available_exams.filter((e) => e.attempt_status === "in_progress") : [];
-  const scheduledExams = data ? data.available_exams.filter((e) => e.attempt_status === "not_started") : [];
-  const releasedResults = data
-    ? data.completed_results.filter((r) => r.results_released && r.percentage !== null)
-    : [];
-  const avgScore = releasedResults.length
-    ? (
-        releasedResults.reduce((sum, r) => sum + Number(r.percentage || 0), 0) / releasedResults.length
-      ).toFixed(1)
-    : "0";
-  const bestScore = releasedResults.length
-    ? Math.round(Math.max(...releasedResults.map((r) => Number(r.percentage || 0))))
-    : 0;
-  const warningsCount = Number(data?.student.warnings_count || 0);
-  const initials = data ? getMonogram(data.student.full_name, "ST") : "ST";
-
-  return (
-    <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
-      {/* Editorial Top Bar (Matches Offline dashboard.html) */}
-      <header className="pt-st-nav">
-        <div className="pt-st-brand">
-          <CogniTaraLockup markSize={22} wordmarkHeight={14} />
-          {data ? (
-            <>
-              <span className="pt-st-brand__sep" aria-hidden="true" />
-              <span className="pt-st-brand__school">{data.school.school_name}</span>
-            </>
-          ) : null}
-        </div>
-
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          {data ? (
-            <span className="pt-mono pt-hide-sm" style={{ fontSize: 11.5, color: "var(--pt-ink-3)" }}>
-              {data.school.current_term} · {data.school.academic_session}
-            </span>
-          ) : null}
-
-          <PortalThemeToggle />
-
-          {data ? (
-            <div className="pt-user-menu-wrap" ref={menuRef}>
-              <button
-                type="button"
-                className="pt-user-trigger"
-                onClick={() => setMenuOpen((v) => !v)}
-                aria-expanded={menuOpen}
-                aria-haspopup="menu"
-              >
-                <span className="pt-crest pt-crest--solid pt-crest--xs">{initials}</span>
-                <span className="pt-hide-sm">{data.student.full_name}</span>
-                <PIconChevronDown size={13} />
-              </button>
-
-              {menuOpen ? (
-                <div className="pt-dropdown-menu" role="menu">
-                  <div className="pt-dropdown-menu__head">
-                    <strong>{data.student.full_name}</strong>
-                    <span>
-                      {data.student.student_class || "Student"} · @{data.student.username}
-                    </span>
-                  </div>
-                  <button
-                    type="button"
-                    className="pt-dropdown-item"
-                    role="menuitem"
-                    onClick={() => {
-                      setMenuOpen(false);
-                      void handleSignOut();
-                    }}
-                  >
-                    <PIconLogOut size={14} />
-                    <span>Sign out</span>
-                  </button>
-                </div>
-              ) : null}
-            </div>
-          ) : null}
-        </div>
-      </header>
-
-      <main id="main-content" className="pt-st-main">
-        {loading ? (
-          <div className="pt-card pt-card--pad" style={{ textAlign: "center", padding: 40, color: "var(--pt-ink-2)" }}>
-            Loading your examinations...
-          </div>
-        ) : err ? (
-          <div className="pt-card pt-card--pad" style={{ maxWidth: 440, margin: "40px auto", textAlign: "center" }}>
-            <div className="pt-alert pt-alert--dark" style={{ marginBottom: 16 }}>
-              {err}
-            </div>
-            <Link href="/" className="pt-btn pt-btn--primary">
-              Back to School Portal
+  if (err || !data) {
+    return (
+      <div className="st-body" style={{ minHeight: "100vh", display: "grid", placeItems: "center", padding: 20 }}>
+        <section className="sc-min-card sc-min-card--compact">
+          <h1 className="sc-min-card__title">Session Unavailable</h1>
+          <p style={{ margin: 0, fontSize: 13.5, color: "var(--st-ink-2)" }}>{err || "Please sign in again."}</p>
+          <div className="sc-min-card__stack">
+            <Link href="/" className="st-btn st-btn--primary st-btn--lg st-btn--block">
+              Return to Sign In
             </Link>
           </div>
-        ) : data ? (
-          <>
-            {/* Editorial Student Identity + Unified 4-Cell KPI Rail */}
-            <section className="pt-st-header" aria-label="Student overview">
-              <div className="pt-page-head__left">
-                <span className="pt-crest pt-crest--solid pt-crest--lg">{initials}</span>
-                <div>
-                  <h1 style={{ margin: 0, fontSize: 26, fontWeight: 600, letterSpacing: "-0.025em", lineHeight: 1.2 }}>
-                    {data.student.full_name}
-                  </h1>
-                  <div className="pt-meta-line">
-                    {data.student.student_class ? <span>{data.student.student_class}</span> : null}
-                    {data.student.student_class ? <span className="pt-meta-sep" /> : null}
-                    <span className="pt-mono">@{data.student.username}</span>
-                    <span className="pt-meta-sep" />
-                    <span className="pt-status is-live">
-                      <span className="pt-dot" />
-                      Ready for examinations
-                    </span>
+        </section>
+      </div>
+    );
+  }
+
+  const displayName = data.student.full_name || data.student.username;
+  const initials = getInitials(displayName, "ST");
+  const warnings = Number(data.student.warnings_count || 0);
+
+  return (
+    <div className="st-body">
+      <div className="st-grain" aria-hidden="true" />
+
+      <div className="st-shell">
+        {/* Exact Offline Editorial Top Bar */}
+        <header className="st-nav">
+          <Link className="st-brand" href="/student" aria-label="CogniTara Student Portal">
+            <span className="st-brand__mark">
+              <svg viewBox="0 0 200 200">
+                <use href={`${CT_ICONS_URL}#ct-mark`} />
+              </svg>
+            </span>
+            <span className="st-brand__name">CogniTara</span>
+            <span className="st-brand__sep" aria-hidden="true" />
+            <span className="st-brand__meta">{data.school.school_name}</span>
+          </Link>
+
+          <div className="st-nav__right">
+            <span className="st-term-pill">
+              {data.school.current_term} · {data.school.academic_session}
+            </span>
+            <CtThemeToggle variant="st" />
+
+            <div className={`ct-dropdown${menuOpen ? " is-open" : ""}`} ref={menuRef}>
+              <button
+                type="button"
+                className="st-user-btn"
+                onClick={() => setMenuOpen((v) => !v)}
+                aria-haspopup="menu"
+                aria-expanded={menuOpen}
+              >
+                <span
+                  className="st-user-btn__img"
+                  style={{
+                    display: "grid",
+                    placeItems: "center",
+                    background: "var(--st-cta-bg)",
+                    color: "var(--st-cta-ink)",
+                    fontFamily: "var(--ct-mono)",
+                    fontSize: 10,
+                    fontWeight: 700,
+                  }}
+                >
+                  {initials}
+                </span>
+                <span>{displayName}</span>
+                <CtIco name="i-chevron-down" className="ct-ico--xs" />
+              </button>
+              <div className="ct-menu" role="menu">
+                <div className="ct-menu__head">
+                  <strong>{displayName}</strong>
+                  <span>
+                    {data.student.student_class} · @{data.student.username}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  className="ct-menu__item ct-menu__item--danger"
+                  role="menuitem"
+                  onClick={handleLogout}
+                  style={{ width: "100%", border: "none", background: "transparent", cursor: "pointer", textAlign: "left" }}
+                >
+                  <CtIco name="i-logout" />
+                  Sign out
+                </button>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        <main className="st-main" id="main">
+          {/* Exact Offline Editorial Greeting + Typographic KPI Strip */}
+          <section className="st-header" aria-label="Student overview">
+            <div className="st-identity">
+              <div className="st-avatar" aria-hidden="true">
+                <span
+                  style={{
+                    display: "grid",
+                    width: "100%",
+                    height: "100%",
+                    placeItems: "center",
+                    background: "var(--st-cta-bg)",
+                    color: "var(--st-cta-ink)",
+                    fontFamily: "var(--ct-mono)",
+                    fontSize: 18,
+                    fontWeight: 740,
+                    letterSpacing: "0.04em",
+                  }}
+                >
+                  {initials}
+                </span>
+              </div>
+              <div className="st-greeting">
+                <h1>Welcome back, {displayName}</h1>
+                <div className="st-meta-row">
+                  <span>{data.student.student_class || "Student"}</span>
+                  <span className="st-meta-dot" aria-hidden="true" />
+                  <span className="st-mono">@{data.student.username}</span>
+                  <span className="st-meta-dot" aria-hidden="true" />
+                  <span className="st-status-live">
+                    <i />
+                    Ready for examinations
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div className="st-kpi-rail" aria-label="Performance summary">
+              <div className="st-kpi">
+                <span className="st-kpi__label">Available</span>
+                <strong className="st-kpi__val">{scheduled.length + inProgress.length}</strong>
+              </div>
+              <div className="st-kpi">
+                <span className="st-kpi__label">Completed</span>
+                <strong className="st-kpi__val">{completed.length}</strong>
+              </div>
+              <div className="st-kpi">
+                <span className="st-kpi__label">Average</span>
+                <strong className="st-kpi__val">{stats.avg}%</strong>
+              </div>
+              <div className="st-kpi">
+                <span className="st-kpi__label">Best Score</span>
+                <strong className="st-kpi__val">{stats.best}%</strong>
+              </div>
+            </div>
+          </section>
+
+          {/* Exact Offline Asymmetric Two-Column Editorial Workspace */}
+          <div className="st-workspace">
+            <div className="st-col">
+              {inProgress.length > 0 && (
+                <section className="st-card st-card--spotlight" aria-label="In-progress examinations">
+                  <div className="st-card__head">
+                    <div>
+                      <h2>Resume In-Progress Examination</h2>
+                      <p>Answers and remaining time are auto-saved securely to your school portal.</p>
+                    </div>
+                    <span className="st-pill st-pill--warn">{inProgress.length} active</span>
                   </div>
-                </div>
-              </div>
-
-              <div className="pt-kpi-rail" aria-label="Performance summary">
-                <div className="pt-kpi-cell">
-                  <span className="pt-kpi-cell__label">Available</span>
-                  <strong className="pt-kpi-cell__val">{scheduledExams.length + inProgressExams.length}</strong>
-                </div>
-                <div className="pt-kpi-cell">
-                  <span className="pt-kpi-cell__label">Completed</span>
-                  <strong className="pt-kpi-cell__val">{data.completed_results.length}</strong>
-                </div>
-                <div className="pt-kpi-cell">
-                  <span className="pt-kpi-cell__label">Average</span>
-                  <strong className="pt-kpi-cell__val">{avgScore}%</strong>
-                </div>
-                <div className="pt-kpi-cell">
-                  <span className="pt-kpi-cell__label">Best score</span>
-                  <strong className="pt-kpi-cell__val">{bestScore}%</strong>
-                </div>
-              </div>
-            </section>
-
-            {data.school.online_portal_notice ? (
-              <div className="pt-alert">{data.school.online_portal_notice}</div>
-            ) : null}
-
-            {/* Asymmetric Two-Column Editorial Workspace */}
-            <div className="pt-st-workspace">
-              {/* Left Primary Column */}
-              <div className="pt-st-col">
-                {inProgressExams.length > 0 ? (
-                  <section className="pt-card" aria-label="In-progress examinations">
-                    <div className="pt-card__head">
-                      <div className="pt-card__title">
-                        <h2>Resume in-progress examination</h2>
-                        <p>Answers and remaining time are saved automatically</p>
+                  <div className="st-exam-list">
+                    {inProgress.map((exam) => (
+                      <div className="st-exam-row" key={exam.local_id}>
+                        <div className="st-exam-row__info">
+                          <span className="st-exam-row__title">{exam.name}</span>
+                          <div className="st-exam-row__meta">
+                            <span className="st-mono">
+                              <CtIco name="i-clock" className="ct-ico--xs" />
+                              {exam.duration} min
+                            </span>
+                            <span className="st-pill st-pill--warn">
+                              {exam.is_paused ? "Paused by invigilator" : "In progress"}
+                            </span>
+                          </div>
+                        </div>
+                        <Link href={`/exam/${exam.local_id}`} className="st-btn st-btn--primary">
+                          <span>Resume Exam</span>
+                          <CtIco name="i-arrow-right" className="ct-ico--sm st-arrow" />
+                        </Link>
                       </div>
-                      <span className="pt-mono" style={{ fontSize: 12, color: "var(--pt-ink-3)" }}>
-                        {inProgressExams.length} active
-                      </span>
-                    </div>
-                    <div>
-                      {inProgressExams.map((ex) => (
-                        <div key={ex.local_id} className="pt-exam-row">
-                          <div>
-                            <span className="pt-exam-row__title">{ex.name}</span>
-                            <div className="pt-exam-row__meta">
-                              <span className="pt-mono">
-                                <PIconClock size={13} />
-                                {ex.duration} minutes
-                              </span>
-                              <span className="pt-status is-live">
-                                <span className="pt-dot" />
-                                In progress
-                              </span>
-                            </div>
-                          </div>
-                          {ex.is_paused ? (
-                            <button type="button" className="pt-btn" disabled>
-                              Paused
-                            </button>
-                          ) : (
-                            <Link href={`/exam/${ex.local_id}`} className="pt-btn pt-btn--primary">
-                              <span>Resume Exam</span>
-                              <PIconArrowRight size={14} />
-                            </Link>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </section>
-                ) : null}
-
-                <section className="pt-card" aria-label="Scheduled examinations">
-                  <div className="pt-card__head">
-                    <div className="pt-card__title">
-                      <h2>Scheduled Examinations</h2>
-                      <p>Active papers assigned to {data.student.student_class || "your class"}</p>
-                    </div>
-                    <span className="pt-mono" style={{ fontSize: 12, color: "var(--pt-ink-3)" }}>
-                      {scheduledExams.length} ready
-                    </span>
+                    ))}
                   </div>
-
-                  {scheduledExams.length > 0 ? (
-                    <div>
-                      {scheduledExams.map((ex, idx) => (
-                        <div key={ex.local_id} className="pt-exam-row">
-                          <div>
-                            <span className="pt-exam-row__title">{ex.name}</span>
-                            <div className="pt-exam-row__meta">
-                              <span className="pt-mono">
-                                <PIconClock size={13} />
-                                {ex.duration} minutes · {ex.question_count} questions
-                              </span>
-                              <span>
-                                <PIconShield size={13} />
-                                Auto-save &amp; integrity monitoring
-                              </span>
-                            </div>
-                          </div>
-                          {ex.is_paused ? (
-                            <button type="button" className="pt-btn" disabled>
-                              Paused
-                            </button>
-                          ) : (
-                            <button
-                              type="button"
-                              className={`pt-btn ${inProgressExams.length === 0 && idx === 0 ? "pt-btn--primary" : ""}`}
-                              onClick={() => setConfirmExam(ex)}
-                            >
-                              <span>Start Exam</span>
-                              <PIconArrowRight size={14} />
-                            </button>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="pt-empty">
-                      <span className="pt-empty__ico">
-                        <PIconCheck size={18} />
-                      </span>
-                      <strong>No active examinations right now</strong>
-                      <p>When your teacher or administrator activates an exam for your class, it will appear here.</p>
-                    </div>
-                  )}
                 </section>
+              )}
 
-                <section className="pt-card" aria-label="Academic transcript">
-                  <div className="pt-card__head">
-                    <div className="pt-card__title">
-                      <h2>Academic Transcript</h2>
-                      <p>Completed papers and released grades for this session</p>
-                    </div>
-                    <span className="pt-mono" style={{ fontSize: 12, color: "var(--pt-ink-3)" }}>
-                      {data.completed_results.length} recorded
-                    </span>
+              {/* Scheduled Examinations */}
+              <section className="st-card" aria-label="Available examinations">
+                <div className="st-card__head">
+                  <div>
+                    <h2>Scheduled Examinations</h2>
+                    <p>Active papers assigned to {data.student.student_class || "your class"}</p>
                   </div>
+                  <span className="st-pill">{scheduled.length} ready</span>
+                </div>
 
-                  {data.completed_results.length > 0 ? (
-                    <div className="pt-table-wrap">
-                      <table className="pt-table">
-                        <thead>
-                          <tr>
-                            <th>Examination</th>
-                            <th>Score</th>
-                            <th>Accuracy</th>
-                            <th style={{ textAlign: "right" }}>Grade</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {data.completed_results.map((r) => {
-                            const pct = r.percentage !== null ? Math.round(r.percentage) : 0;
+                {scheduled.length > 0 ? (
+                  <div className="st-exam-list">
+                    {scheduled.map((exam, idx) => (
+                      <div className="st-exam-row" key={exam.local_id}>
+                        <div className="st-exam-row__info">
+                          <span className="st-exam-row__title">{exam.name}</span>
+                          <div className="st-exam-row__meta">
+                            <span className="st-mono">
+                              <CtIco name="i-clock" className="ct-ico--xs" />
+                              {exam.duration} minutes
+                            </span>
+                            <span>
+                              <CtIco name="i-shield" className="ct-ico--xs" />
+                              Auto-save &amp; integrity monitoring
+                            </span>
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          className={`st-btn ${inProgress.length === 0 && idx === 0 ? "st-btn--primary" : "st-btn--secondary"}`}
+                          onClick={() => launchExamBriefing(exam.local_id, exam.name)}
+                        >
+                          <span>Start Exam</span>
+                          <CtIco name="i-arrow-right" className="ct-ico--sm st-arrow" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="st-empty">
+                    <span className="st-empty__ico">
+                      <CtIco name="i-check-circle" />
+                    </span>
+                    <strong>No active examinations right now</strong>
+                    <p>
+                      When your teacher or administrator activates an exam for {data.student.student_class || "your class"}, it will appear here automatically.
+                    </p>
+                  </div>
+                )}
+              </section>
+
+              {/* Academic Transcript */}
+              <section className="st-card" aria-label="Completed examinations">
+                <div className="st-card__head">
+                  <div>
+                    <h2>Academic Transcript</h2>
+                    <p>Completed papers and released grades for this session</p>
+                  </div>
+                  <span className="st-pill">{completed.length} recorded</span>
+                </div>
+
+                {completed.length > 0 ? (
+                  <div className="st-table-wrap">
+                    <table className="st-table">
+                      <thead>
+                        <tr>
+                          <th>Examination</th>
+                          <th>Score</th>
+                          <th>Accuracy</th>
+                          <th style={{ textAlign: "right" }}>Grade</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {completed.map((exam) => {
+                          if (!exam.results_released) {
                             return (
-                              <tr key={r.attempt_id}>
-                                <td style={{ fontWeight: 500 }}>{r.exam_name}</td>
-                                <td className="pt-mono">
-                                  {r.results_released && r.score !== null && r.total !== null ? (
-                                    `${r.score} / ${r.total}`
-                                  ) : (
-                                    <span style={{ display: "inline-flex", alignItems: "center", gap: 5, color: "var(--pt-ink-3)" }}>
-                                      <PIconLock size={13} />
-                                      Withheld
-                                    </span>
-                                  )}
+                              <tr key={exam.attempt_id}>
+                                <td className="st-table__name">
+                                  <Link href={`/result/${exam.attempt_id}`} style={{ color: "inherit" }}>
+                                    {exam.exam_name}
+                                  </Link>
                                 </td>
                                 <td>
-                                  {r.results_released && r.percentage !== null ? (
-                                    <div className="pt-bar-cell">
-                                      <span className="pt-mini-bar">
-                                        <i style={{ width: `${Math.min(100, Math.max(0, pct))}%` }} />
-                                      </span>
-                                      <span className="pt-mono" style={{ fontSize: 12.5 }}>
-                                        {pct}%
-                                      </span>
-                                    </div>
-                                  ) : (
-                                    <span className="pt-mono" style={{ color: "var(--pt-ink-3)" }}>
-                                      -
-                                    </span>
-                                  )}
+                                  <span className="st-pill">
+                                    <CtIco name="i-lock" className="ct-ico--xs" />
+                                    Withheld
+                                  </span>
                                 </td>
-                                <td style={{ textAlign: "right", fontWeight: 600 }}>
-                                  {r.results_released && r.grade_label ? (
-                                    <span className="pt-mono">{r.grade_label}</span>
-                                  ) : (
-                                    <span style={{ color: "var(--pt-ink-3)", fontWeight: 500 }}>Pending</span>
-                                  )}
+                                <td className="st-mono" style={{ color: "var(--st-ink-3)" }}>
+                                  -
+                                </td>
+                                <td style={{ textAlign: "right" }}>
+                                  <span className="st-pill">Pending</span>
                                 </td>
                               </tr>
                             );
-                          })}
-                        </tbody>
-                      </table>
-                    </div>
-                  ) : (
-                    <div className="pt-empty">
-                      <span className="pt-empty__ico">
-                        <PIconDoc size={18} />
-                      </span>
-                      <strong>No completed papers yet</strong>
-                      <p>Submitted exams and released grades will appear on your transcript here.</p>
-                    </div>
-                  )}
-                </section>
-              </div>
+                          }
+                          const pct = Math.round(Number(exam.percentage || 0));
+                          const grade =
+                            exam.grade_label ||
+                            (pct >= 85 ? "A" : pct >= 70 ? "B" : pct >= 60 ? "C" : pct >= 50 ? "D" : "F");
+                          const g0 = grade[0] || "F";
+                          const gradeTone =
+                            g0 === "A" || g0 === "B"
+                              ? "st-grade--ok"
+                              : g0 === "C"
+                                ? "st-grade--accent"
+                                : g0 === "D"
+                                  ? "st-grade--warn"
+                                  : "st-grade--bad";
+                          const barTone = pct < 50 ? "st-mini-bar--bad" : pct < 65 ? "st-mini-bar--warn" : "";
 
-              {/* Right Contextual Rail (Matches Offline dashboard.html) */}
-              <aside className="pt-st-col" aria-label="Exam integrity and guidelines">
-                <section className="pt-card pt-card--pad">
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 8 }}>
-                    <strong style={{ display: "inline-flex", alignItems: "center", gap: 7, fontSize: 14, fontWeight: 600 }}>
-                      <PIconShield size={15} />
-                      <span>Integrity Standing</span>
-                    </strong>
-                    <span className="pt-mono" style={{ fontSize: 12.5, fontWeight: 600 }}>
-                      {warningsCount} warning{warningsCount === 1 ? "" : "s"}
+                          return (
+                            <tr key={exam.attempt_id}>
+                              <td className="st-table__name">
+                                <Link href={`/result/${exam.attempt_id}`} style={{ color: "inherit" }}>
+                                  {exam.exam_name}
+                                </Link>
+                              </td>
+                              <td className="st-mono">
+                                {exam.score} / {exam.total}
+                              </td>
+                              <td>
+                                <div className="st-table__bar">
+                                  <span className={`st-mini-bar ${barTone}`}>
+                                    <i style={{ width: `${pct}%` }} />
+                                  </span>
+                                  <span className="st-mono" style={{ fontSize: 13 }}>
+                                    {pct}%
+                                  </span>
+                                </div>
+                              </td>
+                              <td style={{ textAlign: "right" }}>
+                                <span className={`st-grade ${gradeTone}`}>{grade}</span>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <div className="st-empty">
+                    <span className="st-empty__ico">
+                      <CtIco name="i-folder" />
                     </span>
+                    <strong>No completed papers yet</strong>
+                    <p>Submitted exams and released grades will appear on your transcript here.</p>
                   </div>
-                  <p style={{ margin: 0, fontSize: 13, color: "var(--pt-ink-2)", lineHeight: 1.55 }}>
-                    {warningsCount > 0
-                      ? `Previous sessions recorded ${warningsCount} focus warning${warningsCount === 1 ? "" : "s"}. Stay inside your exam window and avoid switching tabs during papers.`
-                      : "Clean integrity standing. Stay inside your exam window and avoid switching tabs during active papers."}
-                  </p>
-                </section>
+                )}
+              </section>
+            </div>
 
-                <section className="pt-card">
-                  <div className="pt-card__head" style={{ padding: "16px 20px" }}>
-                    <div className="pt-card__title">
-                      <h2>Before You Begin</h2>
-                      <p>How examinations operate on this portal</p>
-                    </div>
+            {/* Exact Offline Right Contextual Rail */}
+            <aside className="st-col" aria-label="Exam integrity and guidelines">
+              <section className="st-card">
+                <div className="st-standing">
+                  <div className="st-standing__top">
+                    <span className="st-standing__title">
+                      <CtIco name="i-shield" className="ct-ico--sm" />
+                      <span>Integrity Standing</span>
+                    </span>
+                    {warnings > 0 ? (
+                      <span className="st-pill st-pill--warn">
+                        {warnings} warning{warnings !== 1 ? "s" : ""}
+                      </span>
+                    ) : (
+                      <span className="st-pill st-pill--ok">Clean</span>
+                    )}
                   </div>
-                  <div className="pt-guide-list">
-                    <div className="pt-guide-row">
-                      <span className="pt-guide-num">01</span>
-                      <div>
-                        <strong>Authoritative Timer</strong>
-                        <p>Each paper runs on a server-verified countdown starting when you begin.</p>
-                      </div>
-                    </div>
-                    <div className="pt-guide-row">
-                      <span className="pt-guide-num">02</span>
-                      <div>
-                        <strong>Instant Auto-Save</strong>
-                        <p>Every selected option is stored immediately on your device and synced safely.</p>
-                      </div>
-                    </div>
-                    <div className="pt-guide-row">
-                      <span className="pt-guide-num">03</span>
-                      <div>
-                        <strong>Power-Safe Resume</strong>
-                        <p>If your connection drops or your device restarts, sign back in to continue.</p>
-                      </div>
-                    </div>
-                    <div className="pt-guide-row">
-                      <span className="pt-guide-num">04</span>
-                      <div>
-                        <strong>Verified Grading</strong>
-                        <p>Scores appear upon submission when instant release is enabled by your school.</p>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="pt-guide-foot">
-                    <div style={{ display: "flex", alignItems: "center", gap: 6, fontWeight: 500, color: "var(--pt-ink)" }}>
-                      <PIconAlert size={14} />
-                      <span>5 warnings auto-submit your paper</span>
-                    </div>
-                    <div className="pt-guide-rules">
-                      <span>No tab switching</span>
-                      <span>No right-click</span>
-                      <span>No copy / paste</span>
-                      <span>No DevTools</span>
-                    </div>
-                  </div>
-                </section>
-              </aside>
-            </div>
-          </>
-        ) : null}
-      </main>
+                  {warnings > 0 ? (
+                    <p>
+                      Previous sessions recorded {warnings} focus warning{warnings !== 1 ? "s" : ""}. Stay inside your exam window and avoid switching tabs during papers.
+                    </p>
+                  ) : (
+                    <p>
+                      No rule violations recorded. Keep your browser focused inside the examination window for an uninterrupted sitting.
+                    </p>
+                  )}
+                </div>
+              </section>
 
-      {/* Minimalist Start Exam Confirmation Modal */}
-      {confirmExam ? (
-        <div className="pt-modal-backdrop" role="dialog" aria-modal="true" aria-label="Start examination">
-          <div className="pt-modal">
-            <div className="pt-modal-icon">
-              <PIconPlay size={20} />
-            </div>
-            <h2>{confirmExam.name}</h2>
-            <div className="pt-mono" style={{ fontSize: 13, color: "var(--pt-ink-2)", marginBottom: 22 }}>
-              {confirmExam.duration} minutes · {confirmExam.question_count} questions
-            </div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-              <button type="button" className="pt-btn" onClick={() => setConfirmExam(null)}>
-                Cancel
-              </button>
-              <button
-                type="button"
-                className="pt-btn pt-btn--primary"
-                onClick={() => router.push(`/exam/${confirmExam.local_id}`)}
-              >
-                Begin Now
-              </button>
+              <section className="st-card">
+                <div className="st-card__head">
+                  <div>
+                    <h2>Before You Begin</h2>
+                    <p>How examinations operate on this portal</p>
+                  </div>
+                </div>
+                <div className="st-checklist">
+                  <div className="st-check-item">
+                    <span className="st-check-num">01</span>
+                    <div className="st-check-body">
+                      <strong>Authoritative Timer</strong>
+                      <span>Each paper has a server-synced countdown starting when you begin.</span>
+                    </div>
+                  </div>
+                  <div className="st-check-item">
+                    <span className="st-check-num">02</span>
+                    <div className="st-check-body">
+                      <strong>Instant Auto-Save</strong>
+                      <span>Every selected option is saved securely as you work through each question.</span>
+                    </div>
+                  </div>
+                  <div className="st-check-item">
+                    <span className="st-check-num">03</span>
+                    <div className="st-check-body">
+                      <strong>Reconnect-Safe Resume</strong>
+                      <span>If your connection drops or device restarts, sign back in to continue.</span>
+                    </div>
+                  </div>
+                  <div className="st-check-item">
+                    <span className="st-check-num">04</span>
+                    <div className="st-check-body">
+                      <strong>Verified Grading</strong>
+                      <span>Scores appear upon submission when instant release is enabled.</span>
+                    </div>
+                  </div>
+                </div>
+                <div className="st-policy-foot">
+                  <span className="st-policy-foot__title">
+                    <CtIco name="i-alert" className="ct-ico--xs" />
+                    <span>5 warnings auto-submit your paper</span>
+                  </span>
+                  <div className="st-policy-foot__rules">
+                    <span className="st-rule-chip">No tab switching</span>
+                    <span className="st-rule-chip">No right-click</span>
+                    <span className="st-rule-chip">No copy / paste</span>
+                    <span className="st-rule-chip">No DevTools</span>
+                  </div>
+                </div>
+              </section>
+            </aside>
+          </div>
+        </main>
+
+        <footer className="st-foot">
+          <span>{data.school.school_name} · Online Examination Server</span>
+          <span className="st-mono" style={{ fontSize: 11, letterSpacing: "0.06em" }}>
+            SCHOOL ID {data.school.school_code}
+          </span>
+        </footer>
+      </div>
+
+      {/* Exact Offline Minimalist Exam Launch Overlay */}
+      <div className={`st-overlay${launchingExam ? " is-open" : ""}`} id="loadingOverlay" aria-hidden={!launchingExam}>
+        <div className="sc-min-card sc-min-card--compact" role="status" aria-live="polite">
+          <div className="sc-min-card__emblem" aria-hidden="true">
+            <div className="sc-min-card__core">
+              <svg viewBox="0 0 24 24">
+                <path d="M12 3l7.5 3.2v5.4c0 4.6-3.1 8.1-7.5 9.6-4.4-1.5-7.5-5-7.5-9.6V6.2L12 3z" />
+                <path d="M9.2 12.2l2 2 3.8-4" />
+              </svg>
             </div>
           </div>
+          <h3 id="loadingLabel" className="sc-min-card__title">
+            {launchingExam?.name || "Opening Exam"}
+          </h3>
+          <div className="sc-sweep-track" aria-hidden="true">
+            <i />
+          </div>
         </div>
-      ) : null}
+      </div>
     </div>
   );
 }

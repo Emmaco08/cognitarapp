@@ -29,10 +29,16 @@ export async function POST(
       typeof body.warnings_count === "number" && Number.isFinite(body.warnings_count)
         ? Math.max(0, Math.floor(body.warnings_count))
         : null;
+    const warningEvent =
+      body.warning_event && typeof body.warning_event === "object"
+        ? (body.warning_event as { type?: string; message?: string })
+        : null;
+    const requestResume = Boolean(body.request_resume);
+    const resumeReason = String(body.resume_reason || "").trim().slice(0, 240);
 
     const sql = getSql();
     const rows = await sql`
-      SELECT a.*, e.is_paused_all, e.max_warnings
+      SELECT a.*, e.is_paused_all, e.max_warnings, e.name AS exam_name
       FROM portal_attempts a
       JOIN portal_exams e ON e.school_id = a.school_id AND e.local_id = a.exam_local_id
       WHERE a.id = ${attemptId}::uuid
@@ -73,10 +79,25 @@ export async function POST(
     const maxWarnings = Math.max(1, Number(att.max_warnings || 5));
     const isPaused = Boolean(att.is_paused_all || att.is_paused);
     const nowMs = Date.now();
+    const startedMs = att.started_at ? new Date(att.started_at).getTime() : nowMs;
+    const elapsedSec = Math.max(0, Math.floor((nowMs - startedMs) / 1000));
     const deadlineMs = att.authoritative_deadline ? new Date(att.authoritative_deadline).getTime() : nowMs + 60_000;
     const remainingSec = isPaused
       ? Math.max(0, Number(att.remaining_time || 0))
       : Math.max(0, Math.floor((deadlineMs - nowMs) / 1000));
+
+    if (warningEvent && warningEvent.message) {
+      const { logPortalWarning } = await import("@/lib/portal-audit");
+      await logPortalWarning({
+        schoolId: session.schoolId,
+        studentLocalId: session.localId,
+        studentName: session.fullName || session.username,
+        examLocalId: Number(att.exam_local_id),
+        examName: String(att.exam_name || "Examination"),
+        warningType: warningEvent.type || "focus_loss",
+        message: warningEvent.message,
+      });
+    }
 
     // Auto-submit if force_submit, max warnings hit, or deadline passed
     if (Boolean(att.force_submit) || (!isPaused && remainingSec <= 0) || nextWarnings >= maxWarnings) {
@@ -109,6 +130,10 @@ export async function POST(
       SET answers_json = ${JSON.stringify(mergedAnswers)}::jsonb,
           warnings_count = ${nextWarnings},
           remaining_time = ${remainingSec},
+          time_spent_seconds = ${elapsedSec},
+          last_heartbeat_at = NOW(),
+          resume_requested = CASE WHEN ${requestResume} THEN TRUE ELSE resume_requested END,
+          resume_reason = CASE WHEN ${requestResume && resumeReason !== ""} THEN ${resumeReason} ELSE resume_reason END,
           updated_at = NOW()
       WHERE id = ${attemptId}::uuid AND school_id = ${session.schoolId}::uuid
     `;
@@ -117,6 +142,7 @@ export async function POST(
       ok: true,
       submitted: false,
       is_paused: isPaused,
+      resume_requested: requestResume ? true : Boolean(att.resume_requested),
       remaining_seconds: remainingSec,
       warnings_count: nextWarnings,
       saved_count: Object.keys(mergedAnswers).length,

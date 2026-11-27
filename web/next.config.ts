@@ -48,9 +48,19 @@ const nextConfig: NextConfig = {
           destination: "/p-host",
         },
         {
+          source: "/register",
+          has: [{ type: "host", value: "portal\\..*" }],
+          destination: "/p-host/register",
+        },
+        {
           source: "/student",
           has: [{ type: "host", value: "portal\\..*" }],
           destination: "/p-host/student",
+        },
+        {
+          source: "/student/:path*",
+          has: [{ type: "host", value: "portal\\..*" }],
+          destination: "/p-host/student/:path*",
         },
         {
           source: "/teacher",
@@ -58,14 +68,29 @@ const nextConfig: NextConfig = {
           destination: "/p-host/teacher",
         },
         {
+          source: "/teacher/:path*",
+          has: [{ type: "host", value: "portal\\..*" }],
+          destination: "/p-host/teacher/:path*",
+        },
+        {
           source: "/admin",
           has: [{ type: "host", value: "portal\\..*" }],
           destination: "/p-host/admin",
         },
         {
+          source: "/admin/:path*",
+          has: [{ type: "host", value: "portal\\..*" }],
+          destination: "/p-host/admin/:path*",
+        },
+        {
           source: "/exam/:examId",
           has: [{ type: "host", value: "portal\\..*" }],
           destination: "/p-host/exam/:examId",
+        },
+        {
+          source: "/result/:attemptId",
+          has: [{ type: "host", value: "portal\\..*" }],
+          destination: "/p-host/result/:attemptId",
         },
         // Block direct access to internal /p-host on non-portal hosts
         {
@@ -105,6 +130,12 @@ const nextConfig: NextConfig = {
           { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
           { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
           { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains; preload" },
+        ],
+      },
+      {
+        source: "/static/:path*",
+        headers: [
+          { key: "Cache-Control", value: "public, max-age=31536000, immutable" },
         ],
       },
       {

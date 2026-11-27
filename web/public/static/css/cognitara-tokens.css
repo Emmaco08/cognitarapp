@@ -1,0 +1,249 @@
+/* ==========================================================================
+   CogniTara Design System v3.0 (Carbon Studio Edition)
+   100% Offline Self-Hosted Fonts | Native CSS light-dark() + color-scheme
+   Obsidian Mica (Dark) & Daylight Ceramic (Light)
+   ========================================================================== */
+
+@font-face {
+  font-family: "Onest";
+  src: url("/static/fonts/ui/Onest-400.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Onest";
+  src: url("/static/fonts/ui/Onest-500.woff2") format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Onest";
+  src: url("/static/fonts/ui/Onest-600.woff2") format("woff2");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Onest";
+  src: url("/static/fonts/ui/Onest-700.woff2") format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "JetBrains Mono";
+  src: url("/static/fonts/ui/JetBrainsMono-400.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "JetBrains Mono";
+  src: url("/static/fonts/ui/JetBrainsMono-500.woff2") format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "JetBrains Mono";
+  src: url("/static/fonts/ui/JetBrainsMono-600.woff2") format("woff2");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@layer tokens, base;
+
+@layer tokens {
+  :root {
+    /* Baseline color-scheme syncs with <meta name="color-scheme"> without JS dependency */
+    color-scheme: light dark;
+
+    &:has(> head > meta[name="color-scheme"][content="dark"]),
+    &[data-theme="dark"] {
+      color-scheme: dark;
+    }
+
+    &:has(> head > meta[name="color-scheme"][content="light"]),
+    &[data-theme="light"] {
+      color-scheme: light;
+    }
+
+    /* Typography Families - Vector SVG handles CogniTara wordmark; Onest + JetBrains Mono handle UI & telemetry */
+    --ct-font-sans: "Onest", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --ct-font-mono: "JetBrains Mono", ui-monospace, "Cascadia Code", Consolas, monospace;
+
+    /* Fixed Product UI Type Scale (Aligned 1:1 with DESIGN.md) */
+    --ct-text-2xs: 0.75rem;     /* 12px caption floor */
+    --ct-text-xs: 0.75rem;      /* 12px */
+    --ct-text-sm: 0.8125rem;    /* 13px */
+    --ct-text-base: 0.875rem;   /* 14px */
+    --ct-text-md: 1rem;         /* 16px */
+    --ct-text-lg: 1.125rem;     /* 18px */
+    --ct-text-xl: 1.375rem;     /* 22px */
+    --ct-text-2xl: 1.75rem;     /* 28px */
+    --ct-text-3xl: 2.25rem;     /* 36px */
+
+    /* 4px / 8px Spatial Rhythm */
+    --ct-space-1: 4px;
+    --ct-space-2: 8px;
+    --ct-space-3: 12px;
+    --ct-space-4: 16px;
+    --ct-space-5: 20px;
+    --ct-space-6: 24px;
+    --ct-space-8: 32px;
+    --ct-space-10: 40px;
+    --ct-space-12: 48px;
+
+    /* Machined Architectural Radii (Aligned 1:1 with DESIGN.md) */
+    --ct-radius-xs: 4px;
+    --ct-radius-sm: 6px;
+    --ct-radius-md: 10px;
+    --ct-radius-lg: 14px;
+    --ct-radius-window: 14px;
+    --ct-radius-pill: 9999px;
+
+    /* Exponential Deceleration Motion Grammar (Zero Bounce / Zero Overshoot) */
+    --ct-ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+    --ct-ease-quart: cubic-bezier(0.25, 1, 0.5, 1);
+    --ct-ease-io: cubic-bezier(0.65, 0, 0.35, 1);
+    --ct-dur-press: 90ms;
+    --ct-dur-fast: 150ms;
+    --ct-dur-base: 220ms;
+    --ct-dur-panel: 340ms;
+    --ct-dur-focal: 680ms;
+
+    /* ======================================================================
+       Adaptive Dual-Theme Surface & Ink System via CSS light-dark(light, dark)
+       Light = Daylight Ceramic  |  Dark = Obsidian Mica
+       ====================================================================== */
+
+    /* Outer Desktop Stage & Taskbar */
+    --ct-desktop-bg: light-dark(#EAEAE8, #09090A);
+    --ct-desktop-glow-a: light-dark(rgba(23, 22, 20, 0.05), rgba(255, 255, 255, 0.06));
+    --ct-desktop-glow-b: light-dark(rgba(23, 22, 20, 0.03), rgba(255, 255, 255, 0.04));
+    --ct-taskbar-bg: light-dark(rgba(248, 248, 248, 0.88), rgba(17, 17, 18, 0.88));
+    --ct-taskbar-border: light-dark(rgba(23, 22, 20, 0.09), rgba(255, 255, 255, 0.09));
+
+    /* Native Frameless Application Surfaces */
+    --ct-window: light-dark(#F8F8F8, #111112);
+    --ct-titlebar: light-dark(#EFEFEF, #111112);
+    --ct-rail: light-dark(#EFEFEF, #111112);
+    --ct-canvas: light-dark(#F8F8F8, #151517);
+    --ct-surface: light-dark(#FFFFFF, #1B1B1E);
+    --ct-surface-raised: light-dark(#FFFFFF, #222226);
+    --ct-surface-hover: light-dark(#F3F2F0, #252529);
+    --ct-well: light-dark(#F3F2F0, #131315);
+
+    /* Calibrated Ink Hierarchy (WCAG AA >= 4.8:1 across both modes) */
+    --ct-ink: light-dark(#171614, #F5F5F4);
+    --ct-ink-secondary: light-dark(#575551, #A8A6A1);
+    --ct-ink-muted: light-dark(#83807B, #76746F);
+
+    /* Hairline Structural Borders & Specular Rim */
+    --ct-line: light-dark(rgba(23, 22, 20, 0.08), rgba(255, 255, 255, 0.08));
+    --ct-line-strong: light-dark(rgba(23, 22, 20, 0.16), rgba(255, 255, 255, 0.16));
+    --ct-rim-top: light-dark(inset 0 1px 0 rgba(255, 255, 255, 0.9), inset 0 1px 0 rgba(255, 255, 255, 0.05));
+
+    /* Brand Identity Accents (Pure Black & Cream-White Monochrome) */
+    --ct-logo-ink: light-dark(#171614, #FFFFFF);
+    --ct-logo-accent: light-dark(#171614, #FFFFFF);
+    --ct-accent: light-dark(#171614, #F5F5F4);
+    --ct-accent-text: light-dark(#171614, #F5F5F4);
+    --ct-accent-hover: light-dark(#2B2926, #FFFFFF);
+    --ct-accent-ink: light-dark(#FFFFFF, #171614);
+    --ct-accent-tint: light-dark(rgba(23, 22, 20, 0.07), rgba(255, 255, 255, 0.09));
+    --ct-accent-border: light-dark(rgba(23, 22, 20, 0.18), rgba(255, 255, 255, 0.20));
+    --ct-cobalt: #171614;
+    --ct-cyan: #171614;
+
+    /* Operational States (Pure Monochrome) */
+    --ct-ok: light-dark(#171614, #F5F5F4);
+    --ct-ok-tint: light-dark(#F3F2F0, rgba(255, 255, 255, 0.08));
+    --ct-ok-border: light-dark(rgba(23, 22, 20, 0.16), rgba(255, 255, 255, 0.18));
+
+    --ct-warn: light-dark(#171614, #E7E5E0);
+    --ct-warn-tint: light-dark(#F3F2F0, rgba(255, 255, 255, 0.07));
+    --ct-warn-border: light-dark(rgba(23, 22, 20, 0.16), rgba(255, 255, 255, 0.18));
+
+    --ct-danger: light-dark(#171614, #F5F5F4);
+    --ct-danger-solid: #171614;
+    --ct-danger-tint: light-dark(rgba(23, 22, 20, 0.08), rgba(255, 255, 255, 0.10));
+    --ct-danger-border: light-dark(rgba(23, 22, 20, 0.22), rgba(255, 255, 255, 0.22));
+
+    /* Offset Physical Elevation */
+    --ct-shadow-sm: light-dark(
+      0 1px 2px rgba(23, 22, 20, 0.05),
+      0 2px 6px rgba(0, 0, 0, 0.35)
+    );
+    --ct-shadow-float: light-dark(
+      0 16px 40px -8px rgba(23, 22, 20, 0.12),
+      0 20px 48px -8px rgba(0, 0, 0, 0.68)
+    );
+    --ct-shadow-window: light-dark(
+      0 32px 80px -12px rgba(23, 22, 20, 0.18), 0 8px 24px -4px rgba(23, 22, 20, 0.07), 0 0 0 1px rgba(23, 22, 20, 0.09),
+      0 36px 96px -12px rgba(0, 0, 0, 0.85), 0 12px 32px -6px rgba(0, 0, 0, 0.62), 0 0 0 1px rgba(255, 255, 255, 0.10)
+    );
+  }
+}
+
+@layer base {
+  *, *::before, *::after {
+    box-sizing: border-box;
+  }
+
+  ::selection {
+    background: var(--ct-accent-tint);
+    color: var(--ct-ink);
+  }
+
+  input, textarea, select {
+    caret-color: var(--ct-accent);
+    font-family: inherit;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--ct-accent);
+    outline-offset: 2px;
+  }
+
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--ct-line-strong) transparent;
+  }
+
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: var(--ct-line-strong);
+    border-radius: 9999px;
+  }
+
+  .ct-tabular,
+  [data-tabular] {
+    font-variant-numeric: tabular-nums;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    ::view-transition-group(*),
+    ::view-transition-old(*),
+    ::view-transition-new(*) {
+      animation: none !important;
+    }
+  }
+}

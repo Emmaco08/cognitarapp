@@ -95,6 +95,9 @@ export async function POST(
         option4: o4,
         answer: ans || o1,
         explanation: String(item.explanation || "").trim(),
+        section_local_id: item.section_local_id ? Number(item.section_local_id) : null,
+        group_local_id: item.group_local_id ? Number(item.group_local_id) : null,
+        mandatory: Boolean(item.mandatory),
       };
     })
     .filter((item) => item.question && item.option1 && item.option2);
@@ -124,16 +127,19 @@ export async function POST(
 
   await sql`
     INSERT INTO portal_questions (
-      school_id, local_id, exam_local_id, question, option1, option2, option3, option4,
+      school_id, local_id, exam_local_id, section_local_id, group_local_id,
+      question, option1, option2, option3, option4,
       answer, explanation, display_order, mandatory, created_online, updated_at
     )
     SELECT
-      ${session.schoolId}::uuid, x.local_id, ${examLocalId}, x.question, x.option1, x.option2,
-      x.option3, x.option4, x.answer, x.explanation, x.display_order, FALSE, TRUE, NOW()
+      ${session.schoolId}::uuid, x.local_id, ${examLocalId}, x.section_local_id, x.group_local_id,
+      x.question, x.option1, x.option2,
+      x.option3, x.option4, x.answer, x.explanation, x.display_order, x.mandatory, TRUE, NOW()
     FROM jsonb_to_recordset(${JSON.stringify(prepared)}::jsonb)
       AS x(
-        local_id int, question text, option1 text, option2 text, option3 text, option4 text,
-        answer text, explanation text, display_order int
+        local_id int, section_local_id int, group_local_id int,
+        question text, option1 text, option2 text, option3 text, option4 text,
+        answer text, explanation text, display_order int, mandatory boolean
       )
   `;
 
@@ -184,6 +190,9 @@ export async function PATCH(
   else if (up === "C" && o3) ans = o3;
   else if (up === "D" && o4) ans = o4;
   const explanation = String(body?.explanation || "").trim();
+  const sectionLocalId = body?.section_local_id ? Number(body.section_local_id) : null;
+  const groupLocalId = body?.group_local_id ? Number(body.group_local_id) : null;
+  const mandatory = Boolean(body?.mandatory);
 
   if (!question || !o1 || !o2) {
     return NextResponse.json({ ok: false, message: "Question text and Options A & B are required." }, { status: 400 });
@@ -193,7 +202,9 @@ export async function PATCH(
   await sql`
     UPDATE portal_questions
     SET question = ${question}, option1 = ${o1}, option2 = ${o2}, option3 = ${o3}, option4 = ${o4},
-        answer = ${ans || o1}, explanation = ${explanation}, created_online = TRUE, updated_at = NOW()
+        answer = ${ans || o1}, explanation = ${explanation},
+        section_local_id = ${sectionLocalId}, group_local_id = ${groupLocalId},
+        mandatory = ${mandatory}, created_online = TRUE, updated_at = NOW()
     WHERE school_id = ${session.schoolId}::uuid AND exam_local_id = ${examLocalId} AND local_id = ${qLocalId}
   `;
 
