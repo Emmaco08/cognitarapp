@@ -674,6 +674,51 @@ function registerIpcHandlers(): void {
     return cloudAuth.deleteCloudBackup(String(backupId || "").trim());
   });
 
+  // ---- Online Exam Portal (portal.cognitara.net) Controls & Two-Way Sync ----
+  ipcMain.handle("portal:getStatus", async () => {
+    if (!cloudAuth) return { ok: false, message: "Cloud service unavailable." };
+    return cloudAuth.getOnlinePortalStatus();
+  });
+
+  ipcMain.handle("portal:setToggles", async (_evt, patch: Record<string, unknown>) => {
+    if (!cloudAuth) return { ok: false, message: "Cloud service unavailable." };
+    const res = await cloudAuth.updateOnlinePortalToggles(patch || {});
+    if (res.ok && mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send("cloud:sessionChanged", cloudAuth.getSession());
+    }
+    return res;
+  });
+
+  ipcMain.handle("portal:syncNow", async () => {
+    if (!cloudAuth) return { ok: false, message: "Cloud service unavailable." };
+    return cloudAuth.syncOnlinePortalNow();
+  });
+
+  ipcMain.handle("portal:pullOnlineToDesktop", async () => {
+    if (!cloudAuth) return { ok: false, message: "Cloud service unavailable." };
+    const sess = cloudAuth.getSession();
+    if (!sess.signedIn) {
+      return { ok: false, error: "unauthorized", message: "Sign in to CogniTara Cloud first." };
+    }
+    const deltaRes = await cloudAuth.fetchOnlinePortalDelta();
+    if (!deltaRes?.ok || !deltaRes?.delta) {
+      return { ok: false, message: deltaRes?.message || "Could not download online portal changes." };
+    }
+    const mergeRes = await engine!.callInternal<any>("POST", "/portal/merge-online", {
+      delta: deltaRes.delta,
+    });
+    if (!mergeRes.data?.ok) {
+      return { ok: false, message: mergeRes.data?.message || "Could not merge online data into this PC's exam database." };
+    }
+    const ackIds: string[] = Array.isArray(mergeRes.data.acknowledged_attempt_ids)
+      ? mergeRes.data.acknowledged_attempt_ids
+      : [];
+    if (ackIds.length > 0) {
+      await cloudAuth.acknowledgeOnlinePortalDelta(ackIds).catch(() => {});
+    }
+    return mergeRes.data;
+  });
+
   // ---- Legacy School Database (exam.db) Inspection & Atomic Migration ----
   ipcMain.handle("legacyDb:pickAndInspect", async () => {
     if (!mainWindow) return { ok: false, message: "Window not ready." };

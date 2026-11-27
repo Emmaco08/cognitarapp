@@ -20,6 +20,7 @@ export async function GET(req: NextRequest) {
     const rows = await sql`
       SELECT
         s.id AS school_id,
+        s.school_code,
         s.school_name,
         s.school_motto,
         s.academic_session,
@@ -36,6 +37,10 @@ export async function GET(req: NextRequest) {
         s.contact_email,
         s.contact_phone,
         s.status AS school_status,
+        s.online_portal_enabled,
+        s.online_teachers_enabled,
+        s.online_students_enabled,
+        s.online_synced_at,
         s.ban_reason,
         s.custom_notice,
         s.custom_notice_level,
@@ -94,6 +99,7 @@ export async function GET(req: NextRequest) {
       if (statusFilter !== "all" && r.school_status !== statusFilter) return false;
       if (!q) return true;
       return (
+        String(r.school_code || "").toLowerCase().includes(q) ||
         String(r.school_name || "").toLowerCase().includes(q) ||
         String(r.school_motto || "").toLowerCase().includes(q) ||
         String(r.full_name || "").toLowerCase().includes(q) ||

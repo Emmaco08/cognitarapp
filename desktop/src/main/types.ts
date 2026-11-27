@@ -136,6 +136,7 @@ export interface CloudAccountSession {
   } | null;
   school: {
     id: string;
+    school_code?: string;
     school_name: string;
     country_code?: string;
     state_region?: string;
@@ -143,6 +144,10 @@ export interface CloudAccountSession {
     status: string;
     ban_reason?: string | null;
     last_cloud_backup_at?: string | null;
+    online_portal_enabled?: boolean;
+    online_teachers_enabled?: boolean;
+    online_students_enabled?: boolean;
+    online_synced_at?: string | null;
   } | null;
   referralCode: string | null;
   licenses: Array<{

@@ -24,6 +24,7 @@ export default function LandingFooter() {
             <h3>Product</h3>
             <ul>
               <li><Link href="/download">Download for Windows</Link></li>
+              <li><Link href="/portal">Online Exam Portal</Link></li>
               <li><Link href="/#features">Features</Link></li>
               <li><Link href="/license">Pricing &amp; Licensing</Link></li>
               <li><Link href="/dashboard">Manage License</Link></li>

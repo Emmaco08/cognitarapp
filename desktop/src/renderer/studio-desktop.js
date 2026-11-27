@@ -2035,6 +2035,62 @@
     }
   }
 
+  async function refreshOnlinePortalStatus() {
+    var codeEl = $("#opSchoolCode"), metaEl = $("#opSyncMeta");
+    var mTog = $("#opMasterToggle"), tTog = $("#opTeachersToggle"), sTog = $("#opStudentsToggle");
+    var mSt = $("#opMasterState"), tSt = $("#opTeachersState"), sSt = $("#opStudentsState");
+    var pullBtn = $("#opPullBtn"), syncBtn = $("#opSyncBtn");
+    if (!codeEl) return;
+    if (!bridge || !bridge.getOnlinePortalStatus || !state.cloudAccount || !state.cloudAccount.signedIn) {
+      codeEl.textContent = "Sign in";
+      if (metaEl) metaEl.textContent = "Sign in to CogniTara Cloud to view your School ID and control Online Exam Portal.";
+      if (mTog) mTog.disabled = true;
+      if (tTog) tTog.disabled = true;
+      if (sTog) sTog.disabled = true;
+      if (pullBtn) pullBtn.disabled = true;
+      if (syncBtn) syncBtn.disabled = true;
+      return;
+    }
+    var res = await bridge.getOnlinePortalStatus().catch(function () { return null; });
+    if (!res || !res.ok || !res.school) {
+      if (metaEl) metaEl.textContent = (res && res.message) || "Offline. Connect to internet to update Online Portal.";
+      return;
+    }
+    var sc = res.school, ct = res.counts || {};
+    state.onlinePortal = res;
+    codeEl.textContent = sc.school_code || "CT-XXXXX";
+    if (mTog) { mTog.disabled = false; mTog.checked = Boolean(sc.online_portal_enabled); }
+    if (tTog) { tTog.disabled = false; tTog.checked = Boolean(sc.online_teachers_enabled); }
+    if (sTog) { sTog.disabled = false; sTog.checked = Boolean(sc.online_students_enabled); }
+    if (mSt) mSt.textContent = sc.online_portal_enabled ? "Live" : "Off";
+    if (tSt) tSt.textContent = sc.online_teachers_enabled ? "Enabled" : "Blocked";
+    if (sSt) sSt.textContent = sc.online_students_enabled ? "Enabled" : "Blocked";
+    if (pullBtn) {
+      pullBtn.disabled = false;
+      pullBtn.textContent = ct.unsynced_submissions > 0
+        ? "Pull " + ct.unsynced_submissions + " New Online Result" + (ct.unsynced_submissions === 1 ? "" : "s") + " to PC"
+        : "Pull Online Results to PC";
+    }
+    if (syncBtn) syncBtn.disabled = false;
+    if (metaEl) {
+      metaEl.textContent = sc.online_synced_at
+        ? "Synced: " + ct.students + " students, " + ct.exams + " exams, " + ct.online_submissions + " online submissions."
+        : "Back up to Cloud once to populate your Online Exam Portal.";
+    }
+  }
+
+  async function patchOnlinePortalSwitch(patch) {
+    if (!bridge || !bridge.setOnlinePortalToggles) return;
+    var res = await bridge.setOnlinePortalToggles(patch).catch(function (err) { return { ok: false, message: String(err) }; });
+    if (res && res.ok) {
+      toast(res.message || "Online Exam Portal updated.");
+      await refreshOnlinePortalStatus();
+    } else {
+      toast((res && res.message) || "Could not update Online Portal switch.");
+      await refreshOnlinePortalStatus();
+    }
+  }
+
   async function refreshBackups() {
     if (!bridge) return;
     var res = await bridge.listBackups().catch(function () { return null; });
@@ -2044,6 +2100,72 @@
       renderBackups();
     }
     refreshCloudBackups();
+    refreshOnlinePortalStatus();
+  }
+
+  if ($("#opMasterToggle")) {
+    $("#opMasterToggle").addEventListener("change", function () {
+      patchOnlinePortalSwitch({ online_portal_enabled: Boolean(this.checked) });
+    });
+  }
+  if ($("#opTeachersToggle")) {
+    $("#opTeachersToggle").addEventListener("change", function () {
+      patchOnlinePortalSwitch({ online_teachers_enabled: Boolean(this.checked) });
+    });
+  }
+  if ($("#opStudentsToggle")) {
+    $("#opStudentsToggle").addEventListener("change", function () {
+      patchOnlinePortalSwitch({ online_students_enabled: Boolean(this.checked) });
+    });
+  }
+  if ($("#opCopyCodeBtn")) {
+    $("#opCopyCodeBtn").addEventListener("click", function () {
+      var code = $("#opSchoolCode") ? $("#opSchoolCode").textContent.trim() : "";
+      if (code && code !== "Sign in") {
+        navigator.clipboard && navigator.clipboard.writeText(code).catch(function () {});
+        toast("School ID " + code + " copied.");
+      }
+    });
+  }
+  if ($("#opOpenPortalBtn")) {
+    $("#opOpenPortalBtn").addEventListener("click", function () {
+      var code = $("#opSchoolCode") ? $("#opSchoolCode").textContent.trim() : "";
+      var url = code && code !== "Sign in"
+        ? "https://portal.cognitara.net/s/" + encodeURIComponent(code)
+        : "https://portal.cognitara.net";
+      if (bridge && bridge.openExternal) bridge.openExternal(url);
+    });
+  }
+  if ($("#opSyncBtn")) {
+    $("#opSyncBtn").addEventListener("click", async function () {
+      if (!bridge || !bridge.syncOnlinePortalNow) return;
+      var btn = this, orig = btn.textContent;
+      btn.disabled = true; btn.textContent = "Syncing...";
+      try {
+        var res = await bridge.syncOnlinePortalNow().catch(function (err) { return { ok: false, message: String(err) }; });
+        toast((res && res.message) || (res && res.ok ? "Online Portal synced." : "Could not sync Online Portal."));
+        await refreshOnlinePortalStatus();
+      } finally {
+        btn.disabled = false; btn.textContent = orig;
+      }
+    });
+  }
+  if ($("#opPullBtn")) {
+    $("#opPullBtn").addEventListener("click", async function () {
+      if (!bridge || !bridge.pullOnlinePortalToDesktop) return;
+      var btn = this, orig = btn.textContent;
+      btn.disabled = true; btn.textContent = "Pulling...";
+      try {
+        var res = await bridge.pullOnlinePortalToDesktop().catch(function (err) { return { ok: false, message: String(err) }; });
+        toast((res && res.message) || (res && res.ok ? "Pulled online exams and results into this PC." : "Could not pull online results."));
+        if (res && res.ok) {
+          logEvent("backup", "ok", "i-backup", "<b>Online Portal sync</b> pulled online results and exams to this PC");
+        }
+        await refreshOnlinePortalStatus();
+      } finally {
+        btn.disabled = false; btn.textContent = orig;
+      }
+    });
   }
 
   if ($("#cloudBackupBtn")) {

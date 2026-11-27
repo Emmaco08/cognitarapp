@@ -26,6 +26,16 @@ export interface CogniTaraDesktopBridge {
   backupToCloudNow: (label?: string) => Promise<any>;
   restoreCloudBackup: (backupId: string) => Promise<any>;
   deleteCloudBackup: (backupId: string) => Promise<any>;
+  // Online Exam Portal (portal.cognitara.net) Controls & Two-Way Sync
+  getOnlinePortalStatus: () => Promise<any>;
+  setOnlinePortalToggles: (patch: {
+    online_portal_enabled?: boolean;
+    online_teachers_enabled?: boolean;
+    online_students_enabled?: boolean;
+    online_portal_notice?: string;
+  }) => Promise<any>;
+  syncOnlinePortalNow: () => Promise<any>;
+  pullOnlinePortalToDesktop: () => Promise<any>;
   // Legacy School Database (exam.db) Migration Import
   pickAndInspectLegacyDb: () => Promise<any>;
   importLegacyDb: (payload: { file_path: string; preserve_current_admin?: boolean; force?: boolean }) => Promise<any>;
@@ -116,6 +126,10 @@ const api: CogniTaraDesktopBridge = {
   backupToCloudNow: (label) => ipcRenderer.invoke("cloudBackups:uploadNow", label),
   restoreCloudBackup: (backupId) => ipcRenderer.invoke("cloudBackups:restore", backupId),
   deleteCloudBackup: (backupId) => ipcRenderer.invoke("cloudBackups:delete", backupId),
+  getOnlinePortalStatus: () => ipcRenderer.invoke("portal:getStatus"),
+  setOnlinePortalToggles: (patch) => ipcRenderer.invoke("portal:setToggles", patch),
+  syncOnlinePortalNow: () => ipcRenderer.invoke("portal:syncNow"),
+  pullOnlinePortalToDesktop: () => ipcRenderer.invoke("portal:pullOnlineToDesktop"),
   pickAndInspectLegacyDb: () => ipcRenderer.invoke("legacyDb:pickAndInspect"),
   importLegacyDb: (payload) => ipcRenderer.invoke("legacyDb:import", payload),
   saveSchoolProfile: (payload) => ipcRenderer.invoke("setup:school", payload),

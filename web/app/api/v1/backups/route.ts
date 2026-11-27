@@ -142,11 +142,33 @@ export async function POST(req: NextRequest) {
         )
     `;
 
+    // Auto-sync into Online Exam Portal if requested or if this school already has Online Portal enabled (or first sync)
+    let onlineSyncSummary: Record<string, unknown> | null = null;
+    try {
+      const shouldSyncOnline =
+        body.sync_online_portal !== false &&
+        (Boolean(account.school.online_portal_enabled) || !account.school.online_synced_at || body.sync_online_portal === true);
+      if (shouldSyncOnline) {
+        const { syncSqliteBufferToOnlinePortal } = await import("@/lib/portal-sync");
+        onlineSyncSummary = (await syncSqliteBufferToOnlinePortal({
+          schoolId: String(account.school.id),
+          rawOrGzipBuffer: buf,
+          sourceBackupId: String(inserted[0].id),
+        })) as unknown as Record<string, unknown>;
+      }
+    } catch (syncErr) {
+      console.warn("Non-fatal online portal sync after backup upload:", syncErr);
+    }
+
     return NextResponse.json(
       {
         ok: true,
         backup: inserted[0],
-        message: "Exam database safely backed up to CogniTara Cloud.",
+        online_portal_synced: Boolean(onlineSyncSummary),
+        online_sync_summary: onlineSyncSummary,
+        message: onlineSyncSummary
+          ? "Exam database backed up to Cloud and synced to your Online Exam Portal."
+          : "Exam database safely backed up to CogniTara Cloud.",
       },
       { status: 201 }
     );

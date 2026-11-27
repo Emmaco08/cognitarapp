@@ -147,7 +147,7 @@ export class CloudAuthManager {
 
   private async requestJson(
     urlPath: string,
-    method: "GET" | "POST" | "DELETE",
+    method: "GET" | "POST" | "PATCH" | "DELETE",
     body?: Record<string, unknown>,
     token?: string | null,
     timeoutMs = 20_000
@@ -576,5 +576,84 @@ export class CloudAuthManager {
       token
     );
     return res.ok ? res.data : { ok: false, error: res.data?.error, message: res.data?.message || "Could not submit your review." };
+  }
+
+  // ---- Online Exam Portal (portal.cognitara.net) Control & Two-Way Sync ----
+
+  public async getOnlinePortalStatus(): Promise<any> {
+    const token = this.getAccessToken();
+    if (!token) {
+      return { ok: false, error: "unauthorized", message: "Sign in to CogniTara Cloud to manage your Online Exam Portal." };
+    }
+    const res = await this.requestJson("/api/v1/portal/control", "GET", undefined, token);
+    if (res.ok && res.data?.school && this.cached && this.cached.school) {
+      this.writeCacheFile({
+        ...this.cached,
+        school: {
+          ...this.cached.school,
+          school_code: res.data.school.school_code || this.cached.school.school_code,
+          online_portal_enabled: Boolean(res.data.school.online_portal_enabled),
+          online_teachers_enabled: Boolean(res.data.school.online_teachers_enabled),
+          online_students_enabled: Boolean(res.data.school.online_students_enabled),
+          online_synced_at: res.data.school.online_synced_at || null,
+        },
+      });
+    }
+    return res.ok ? res.data : { ok: false, error: res.data?.error, message: res.data?.message || "Could not load Online Portal status." };
+  }
+
+  public async updateOnlinePortalToggles(patch: {
+    online_portal_enabled?: boolean;
+    online_teachers_enabled?: boolean;
+    online_students_enabled?: boolean;
+    online_portal_notice?: string;
+  }): Promise<any> {
+    const token = this.getAccessToken();
+    if (!token) {
+      return { ok: false, error: "unauthorized", message: "Sign in to CogniTara Cloud first." };
+    }
+    const res = await this.requestJson("/api/v1/portal/control", "PATCH", patch, token);
+    if (res.ok && res.data?.school && this.cached && this.cached.school) {
+      this.writeCacheFile({
+        ...this.cached,
+        school: {
+          ...this.cached.school,
+          online_portal_enabled: Boolean(res.data.school.online_portal_enabled),
+          online_teachers_enabled: Boolean(res.data.school.online_teachers_enabled),
+          online_students_enabled: Boolean(res.data.school.online_students_enabled),
+        },
+      });
+    }
+    return res.ok ? res.data : { ok: false, error: res.data?.error, message: res.data?.message || "Could not update Online Portal settings." };
+  }
+
+  public async syncOnlinePortalNow(): Promise<any> {
+    const token = this.getAccessToken();
+    if (!token) {
+      return { ok: false, error: "unauthorized", message: "Sign in to CogniTara Cloud first." };
+    }
+    const res = await this.requestJson("/api/v1/portal/sync", "POST", {}, token, 60_000);
+    return res.ok ? res.data : { ok: false, error: res.data?.error, message: res.data?.message || "Could not sync database to Online Portal." };
+  }
+
+  public async fetchOnlinePortalDelta(): Promise<any> {
+    const token = this.getAccessToken();
+    if (!token) {
+      return { ok: false, error: "unauthorized", message: "Sign in to CogniTara Cloud first." };
+    }
+    const res = await this.requestJson("/api/v1/portal/sync/delta", "GET", undefined, token, 45_000);
+    return res.ok ? res.data : { ok: false, error: res.data?.error, message: res.data?.message || "Could not fetch online results." };
+  }
+
+  public async acknowledgeOnlinePortalDelta(attemptIds: string[]): Promise<any> {
+    const token = this.getAccessToken();
+    if (!token) return { ok: false };
+    const res = await this.requestJson(
+      "/api/v1/portal/sync/delta",
+      "POST",
+      attemptIds.length ? { attempt_ids: attemptIds } : { mark_all: true },
+      token
+    );
+    return res.ok ? res.data : { ok: false };
   }
 }

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { BrandHeader } from "@/components/BrandHeader";
 import { PlanEmblem } from "@/components/PlanEmblem";
+import { PortalPowerDial } from "@/components/portal/PortalPowerDial";
 import {
   IconCloud,
   IconCopy,
@@ -17,7 +18,18 @@ import {
 interface AccountPayload {
   ok: boolean;
   user: { id: string; email: string; full_name: string; phone: string; role: string; status: string };
-  school: { id: string; school_name: string; country_code: string; status: string; last_cloud_backup_at?: string | null } | null;
+  school: {
+    id: string;
+    school_code?: string;
+    school_name: string;
+    country_code: string;
+    status: string;
+    last_cloud_backup_at?: string | null;
+    online_portal_enabled?: boolean;
+    online_teachers_enabled?: boolean;
+    online_students_enabled?: boolean;
+    online_synced_at?: string | null;
+  } | null;
   referral_code: string | null;
   licenses: Array<{
     id: string;
@@ -164,7 +176,7 @@ function estimateAddedFee(
 
 export default function DashboardPage() {
   const router = useRouter();
-  const [tab, setTab] = useState<"overview" | "billing" | "referrals" | "backups">("overview");
+  const [tab, setTab] = useState<"overview" | "portal" | "billing" | "referrals" | "backups">("overview");
   const [account, setAccount] = useState<AccountPayload | null>(null);
   const [plans, setPlans] = useState<PlanItem[]>([]);
   const [payments, setPayments] = useState<PaymentRecord[]>([]);
@@ -212,6 +224,10 @@ export default function DashboardPage() {
     if (ref) {
       router.replace(`/pay/done?reference=${encodeURIComponent(ref)}`);
       return;
+    }
+    const qTab = params.get("tab");
+    if (qTab === "portal" || qTab === "billing" || qTab === "referrals" || qTab === "backups") {
+      setTab(qTab);
     }
     void loadAll();
   }, [router]);
@@ -444,6 +460,10 @@ export default function DashboardPage() {
               <IconKey size={15} />
               <span>Overview &amp; Licence</span>
             </button>
+            <button type="button" role="tab" aria-selected={tab === "portal"} className={`tab-btn ${tab === "portal" ? "is-active" : ""}`} onClick={() => setTab("portal")}>
+              <IconCloud size={15} />
+              <span>Online Portal</span>
+            </button>
             <button type="button" role="tab" aria-selected={tab === "billing"} className={`tab-btn ${tab === "billing" ? "is-active" : ""}`} onClick={() => setTab("billing")}>
               <IconCreditCard size={15} />
               <span>Plans &amp; Billing</span>
@@ -531,6 +551,22 @@ export default function DashboardPage() {
                 <h2 style={{ margin: "0 0 12px", fontSize: 16 }}>School Profile</h2>
                 <dl className="dl">
                   <div><dt>School</dt><dd>{account.school?.school_name || "-"}</dd></div>
+                  <div>
+                    <dt>Online Portal School ID</dt>
+                    <dd style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                      <code className="mono" style={{ fontWeight: 700, fontSize: 14 }}>
+                        {account.school?.school_code || "-"}
+                      </code>
+                      {account.school?.school_code ? (
+                        <button type="button" className="btn btn--ghost btn--xs" onClick={() => copyText(account.school!.school_code!, "school-code")}>
+                          {copiedId === "school-code" ? "Copied" : "Copy"}
+                        </button>
+                      ) : null}
+                      <button type="button" className="btn btn--primary btn--xs" onClick={() => setTab("portal")}>
+                        {account.school?.online_portal_enabled ? "Portal Live" : "Turn On Portal"}
+                      </button>
+                    </dd>
+                  </div>
                   <div><dt>Account email</dt><dd className="mono" style={{ fontSize: 12.5 }}>{account.user.email}</dd></div>
                   <div><dt>Account status</dt><dd><span className="status-txt status-txt--ok">{account.school?.status || account.user.status}</span></dd></div>
                   <div>
@@ -551,6 +587,30 @@ export default function DashboardPage() {
                     </dd>
                   </div>
                 </dl>
+              </section>
+            </div>
+          ) : null}
+
+          {tab === "portal" ? (
+            <div style={{ display: "grid", gap: 18 }}>
+              <PortalPowerDial onSynced={() => void loadAll()} />
+              <section className="card" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 14, flexWrap: "wrap" }}>
+                <div>
+                  <h2 style={{ margin: 0, fontSize: 16 }}>Online Exam Administration</h2>
+                  <p style={{ margin: "4px 0 0", fontSize: 13, color: "var(--ink-2)" }}>
+                    Teachers and students sign in at <strong>portal.cognitara.net</strong> with School ID{" "}
+                    <code className="mono">{account.school?.school_code || "-"}</code> using their exact offline passwords.
+                  </p>
+                </div>
+                <div className="hq-btn-row">
+                  <Link
+                    href={account.school?.school_code ? `/portal?school=${encodeURIComponent(account.school.school_code)}` : "/portal"}
+                    className="btn btn--primary btn--sm"
+                    target="_blank"
+                  >
+                    Open Online Exam Portal
+                  </Link>
+                </div>
               </section>
             </div>
           ) : null}

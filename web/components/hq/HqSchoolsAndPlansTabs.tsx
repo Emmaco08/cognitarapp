@@ -5,7 +5,12 @@ import { IconCopy } from "@/components/Icons";
 
 export interface HqSchoolRow {
   school_id: string;
+  school_code?: string | null;
   school_name: string;
+  online_portal_enabled?: boolean | null;
+  online_teachers_enabled?: boolean | null;
+  online_students_enabled?: boolean | null;
+  online_synced_at?: string | null;
   school_motto?: string | null;
   academic_session?: string | null;
   current_term?: string | null;
@@ -334,6 +339,35 @@ export function HqSchoolsTab({
                       <div style={{ minWidth: 0 }}>
                         <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
                           <span style={{ fontWeight: 620 }}>{s.school_name}</span>
+                          {s.school_code ? (
+                            <code
+                              className="mono"
+                              style={{
+                                fontSize: 10.5,
+                                fontWeight: 700,
+                                padding: "1px 6px",
+                                borderRadius: 6,
+                                background: "var(--surface-2)",
+                                border: "1px solid var(--border-2)",
+                              }}
+                            >
+                              {s.school_code}
+                            </code>
+                          ) : null}
+                          {s.online_portal_enabled ? (
+                            <span
+                              style={{
+                                fontSize: 10.5,
+                                fontWeight: 650,
+                                padding: "1px 7px",
+                                borderRadius: 999,
+                                background: "var(--ink)",
+                                color: "var(--surface)",
+                              }}
+                            >
+                              Portal Live
+                            </span>
+                          ) : null}
                           {s.onboarding_completed_at ? (
                             <span
                               style={{

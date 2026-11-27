@@ -141,15 +141,21 @@ export async function resolveAuthenticatedAccount(rawToken: string) {
   if (row.user_status !== "active") return null;
 
   const schools = await sql`
-    SELECT id, school_name, country_code, state_region, contact_email, contact_phone, status,
+    SELECT id, school_code, school_name, country_code, state_region, contact_email, contact_phone, status,
            ban_reason, custom_notice, custom_notice_level, feature_overrides_json,
-           force_signout_before, last_cloud_backup_at, referral_code_used, created_at
+           force_signout_before, last_cloud_backup_at, referral_code_used,
+           online_portal_enabled, online_teachers_enabled, online_students_enabled,
+           online_portal_notice, online_synced_at, created_at
     FROM schools
     WHERE owner_user_id = ${row.user_id}::uuid
     ORDER BY created_at ASC
     LIMIT 1
   `;
   const school = (schools[0] as Record<string, any>) || null;
+  if (school && !school.school_code) {
+    const { ensureSchoolCode } = await import("./portal-auth");
+    school.school_code = await ensureSchoolCode(String(school.id));
+  }
 
   // Enforce Developer HQ "Force Sign-Out" timestamp
   if (school?.force_signout_before) {
@@ -215,6 +221,7 @@ export async function resolveAuthenticatedAccount(rawToken: string) {
     school: school
       ? {
           id: school.id as string,
+          school_code: String(school.school_code || ""),
           school_name: school.school_name as string,
           country_code: String(school.country_code || "NG").trim(),
           state_region: school.state_region || "",
@@ -223,6 +230,11 @@ export async function resolveAuthenticatedAccount(rawToken: string) {
           status: school.status as string,
           ban_reason: school.ban_reason || null,
           last_cloud_backup_at: school.last_cloud_backup_at ? new Date(school.last_cloud_backup_at).toISOString() : null,
+          online_portal_enabled: Boolean(school.online_portal_enabled),
+          online_teachers_enabled: Boolean(school.online_teachers_enabled),
+          online_students_enabled: Boolean(school.online_students_enabled),
+          online_portal_notice: String(school.online_portal_notice || ""),
+          online_synced_at: school.online_synced_at ? new Date(school.online_synced_at).toISOString() : null,
         }
       : null,
     referral_code: (referral as any)?.referral_code || null,

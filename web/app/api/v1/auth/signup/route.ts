@@ -173,13 +173,17 @@ export async function POST(req: NextRequest) {
     `;
     const user = createdUsers[0] as Record<string, any>;
 
+    const { generateUniqueSchoolCode } = await import("@/lib/portal-auth");
+    const schoolCode = await generateUniqueSchoolCode();
+
     const createdSchools = await sql`
       INSERT INTO schools (
-        owner_user_id, school_name, country_code, state_region, contact_email, contact_phone,
+        owner_user_id, school_code, school_name, country_code, state_region, contact_email, contact_phone,
         referral_code_used, status, last_seen_at, last_hwid, last_app_version
       )
       VALUES (
         ${user.id}::uuid,
+        ${schoolCode},
         ${schoolName},
         ${countryCode},
         ${stateRegion || null},
@@ -191,7 +195,7 @@ export async function POST(req: NextRequest) {
         ${displayHwid},
         ${appVersion}
       )
-      RETURNING id, school_name, country_code, state_region, contact_email, contact_phone, status, created_at
+      RETURNING id, school_code, school_name, country_code, state_region, contact_email, contact_phone, status, created_at
     `;
     const school = createdSchools[0] as Record<string, any>;
 

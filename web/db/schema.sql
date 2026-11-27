@@ -514,3 +514,184 @@ CREATE INDEX IF NOT EXISTS idx_promo_redemptions_email ON promo_redemptions(prom
 
 ALTER TABLE subscriptions_payments ADD COLUMN IF NOT EXISTS buyer_school_name TEXT;
 ALTER TABLE subscriptions_payments ADD COLUMN IF NOT EXISTS buyer_email TEXT;
+
+-- 25. v2.5.0: Multi-Tenant Online Exam Portal (portal.cognitara.net) on Free Vercel + Neon Postgres
+ALTER TABLE schools ADD COLUMN IF NOT EXISTS school_code TEXT;
+ALTER TABLE schools ADD COLUMN IF NOT EXISTS online_portal_enabled BOOLEAN NOT NULL DEFAULT FALSE;
+ALTER TABLE schools ADD COLUMN IF NOT EXISTS online_teachers_enabled BOOLEAN NOT NULL DEFAULT FALSE;
+ALTER TABLE schools ADD COLUMN IF NOT EXISTS online_students_enabled BOOLEAN NOT NULL DEFAULT FALSE;
+ALTER TABLE schools ADD COLUMN IF NOT EXISTS online_portal_notice TEXT NOT NULL DEFAULT '';
+ALTER TABLE schools ADD COLUMN IF NOT EXISTS online_synced_at TIMESTAMPTZ;
+ALTER TABLE schools ADD COLUMN IF NOT EXISTS online_source_backup_id UUID;
+CREATE UNIQUE INDEX IF NOT EXISTS uq_schools_school_code ON schools(UPPER(school_code)) WHERE school_code IS NOT NULL;
+
+CREATE TABLE IF NOT EXISTS portal_school_settings (
+    school_id UUID PRIMARY KEY REFERENCES schools(id) ON DELETE CASCADE,
+    school_name TEXT NOT NULL DEFAULT 'CogniTara School',
+    school_motto TEXT NOT NULL DEFAULT '',
+    academic_session TEXT NOT NULL DEFAULT '2026/2027',
+    current_term TEXT NOT NULL DEFAULT 'First Term',
+    default_result_visibility TEXT NOT NULL DEFAULT 'immediate',
+    allow_teacher_release BOOLEAN NOT NULL DEFAULT TRUE,
+    allow_student_review BOOLEAN NOT NULL DEFAULT FALSE,
+    anti_cheating_profile TEXT NOT NULL DEFAULT 'medium',
+    max_warnings INTEGER NOT NULL DEFAULT 5,
+    classes_json JSONB NOT NULL DEFAULT '[]'::jsonb,
+    grading_rules_json JSONB NOT NULL DEFAULT '[]'::jsonb,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS portal_admins (
+    id BIGSERIAL PRIMARY KEY,
+    school_id UUID NOT NULL REFERENCES schools(id) ON DELETE CASCADE,
+    local_id INTEGER NOT NULL,
+    username TEXT NOT NULL,
+    password_hash TEXT NOT NULL,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    UNIQUE (school_id, local_id),
+    UNIQUE (school_id, username)
+);
+
+CREATE TABLE IF NOT EXISTS portal_teachers (
+    id BIGSERIAL PRIMARY KEY,
+    school_id UUID NOT NULL REFERENCES schools(id) ON DELETE CASCADE,
+    local_id INTEGER NOT NULL,
+    username TEXT NOT NULL,
+    password_hash TEXT NOT NULL,
+    full_name TEXT NOT NULL DEFAULT '',
+    primary_class TEXT NOT NULL DEFAULT '',
+    classes_json JSONB NOT NULL DEFAULT '[]'::jsonb,
+    specialisations_json JSONB NOT NULL DEFAULT '[]'::jsonb,
+    class_teacher_of TEXT NOT NULL DEFAULT '',
+    created_online BOOLEAN NOT NULL DEFAULT FALSE,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    UNIQUE (school_id, local_id),
+    UNIQUE (school_id, username)
+);
+CREATE INDEX IF NOT EXISTS idx_portal_teachers_school ON portal_teachers(school_id);
+
+CREATE TABLE IF NOT EXISTS portal_students (
+    id BIGSERIAL PRIMARY KEY,
+    school_id UUID NOT NULL REFERENCES schools(id) ON DELETE CASCADE,
+    local_id INTEGER NOT NULL,
+    username TEXT NOT NULL,
+    password_hash TEXT NOT NULL,
+    full_name TEXT NOT NULL DEFAULT '',
+    email TEXT NOT NULL DEFAULT '',
+    student_class TEXT NOT NULL DEFAULT '',
+    specialisation TEXT NOT NULL DEFAULT '',
+    status TEXT NOT NULL DEFAULT 'approved',
+    created_online BOOLEAN NOT NULL DEFAULT FALSE,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    UNIQUE (school_id, local_id),
+    UNIQUE (school_id, username)
+);
+CREATE INDEX IF NOT EXISTS idx_portal_students_school_class ON portal_students(school_id, student_class, status);
+
+CREATE TABLE IF NOT EXISTS portal_exams (
+    id BIGSERIAL PRIMARY KEY,
+    school_id UUID NOT NULL REFERENCES schools(id) ON DELETE CASCADE,
+    local_id INTEGER NOT NULL,
+    name TEXT NOT NULL,
+    exam_class TEXT NOT NULL DEFAULT '',
+    duration INTEGER NOT NULL DEFAULT 30,
+    active BOOLEAN NOT NULL DEFAULT FALSE,
+    teacher_local_id INTEGER,
+    specialisation TEXT NOT NULL DEFAULT '',
+    subject_tag TEXT NOT NULL DEFAULT '',
+    max_warnings INTEGER NOT NULL DEFAULT 5,
+    calculator_type TEXT NOT NULL DEFAULT 'none',
+    deactivated BOOLEAN NOT NULL DEFAULT FALSE,
+    result_release_policy TEXT NOT NULL DEFAULT 'immediate',
+    results_released BOOLEAN NOT NULL DEFAULT TRUE,
+    anti_cheating_profile TEXT NOT NULL DEFAULT 'medium',
+    is_paused_all BOOLEAN NOT NULL DEFAULT FALSE,
+    created_online BOOLEAN NOT NULL DEFAULT FALSE,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    UNIQUE (school_id, local_id)
+);
+CREATE INDEX IF NOT EXISTS idx_portal_exams_school ON portal_exams(school_id, exam_class, active);
+
+CREATE TABLE IF NOT EXISTS portal_exam_sections (
+    id BIGSERIAL PRIMARY KEY,
+    school_id UUID NOT NULL REFERENCES schools(id) ON DELETE CASCADE,
+    local_id INTEGER NOT NULL,
+    exam_local_id INTEGER NOT NULL,
+    section_name TEXT NOT NULL DEFAULT 'Section A',
+    questions_to_show INTEGER NOT NULL DEFAULT 0,
+    randomize BOOLEAN NOT NULL DEFAULT FALSE,
+    section_order INTEGER NOT NULL DEFAULT 1,
+    active BOOLEAN NOT NULL DEFAULT TRUE,
+    UNIQUE (school_id, local_id)
+);
+CREATE INDEX IF NOT EXISTS idx_portal_sections_exam ON portal_exam_sections(school_id, exam_local_id, section_order);
+
+CREATE TABLE IF NOT EXISTS portal_exam_groups (
+    id BIGSERIAL PRIMARY KEY,
+    school_id UUID NOT NULL REFERENCES schools(id) ON DELETE CASCADE,
+    local_id INTEGER NOT NULL,
+    exam_local_id INTEGER NOT NULL,
+    section_local_id INTEGER,
+    group_name TEXT NOT NULL DEFAULT '',
+    group_type TEXT NOT NULL DEFAULT 'passage',
+    group_content TEXT NOT NULL DEFAULT '',
+    instruction_text TEXT NOT NULL DEFAULT '',
+    display_order INTEGER NOT NULL DEFAULT 0,
+    UNIQUE (school_id, local_id)
+);
+CREATE INDEX IF NOT EXISTS idx_portal_groups_exam ON portal_exam_groups(school_id, exam_local_id);
+
+CREATE TABLE IF NOT EXISTS portal_questions (
+    id BIGSERIAL PRIMARY KEY,
+    school_id UUID NOT NULL REFERENCES schools(id) ON DELETE CASCADE,
+    local_id INTEGER NOT NULL,
+    exam_local_id INTEGER NOT NULL,
+    section_local_id INTEGER,
+    group_local_id INTEGER,
+    question TEXT NOT NULL,
+    option1 TEXT NOT NULL DEFAULT '',
+    option2 TEXT NOT NULL DEFAULT '',
+    option3 TEXT NOT NULL DEFAULT '',
+    option4 TEXT NOT NULL DEFAULT '',
+    answer TEXT NOT NULL DEFAULT '',
+    explanation TEXT NOT NULL DEFAULT '',
+    display_order INTEGER NOT NULL DEFAULT 0,
+    mandatory BOOLEAN NOT NULL DEFAULT FALSE,
+    created_online BOOLEAN NOT NULL DEFAULT FALSE,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    UNIQUE (school_id, local_id)
+);
+CREATE INDEX IF NOT EXISTS idx_portal_questions_exam ON portal_questions(school_id, exam_local_id, display_order);
+
+CREATE TABLE IF NOT EXISTS portal_attempts (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    school_id UUID NOT NULL REFERENCES schools(id) ON DELETE CASCADE,
+    local_score_id INTEGER,
+    student_local_id INTEGER NOT NULL,
+    exam_local_id INTEGER NOT NULL,
+    score INTEGER NOT NULL DEFAULT 0,
+    total INTEGER NOT NULL DEFAULT 0,
+    percentage NUMERIC(6,2) NOT NULL DEFAULT 0,
+    grade_label TEXT NOT NULL DEFAULT '',
+    grade_remark TEXT NOT NULL DEFAULT '',
+    status TEXT NOT NULL DEFAULT 'in_progress' CHECK (status IN ('in_progress', 'completed', 'auto_submitted')),
+    submitted BOOLEAN NOT NULL DEFAULT FALSE,
+    started_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    completed_at TIMESTAMPTZ,
+    authoritative_deadline TIMESTAMPTZ,
+    remaining_time INTEGER NOT NULL DEFAULT 0,
+    warnings_count INTEGER NOT NULL DEFAULT 0,
+    is_paused BOOLEAN NOT NULL DEFAULT FALSE,
+    force_submit BOOLEAN NOT NULL DEFAULT FALSE,
+    results_released BOOLEAN NOT NULL DEFAULT TRUE,
+    answers_json JSONB NOT NULL DEFAULT '{}'::jsonb,
+    question_order_json JSONB NOT NULL DEFAULT '[]'::jsonb,
+    option_shuffle_json JSONB NOT NULL DEFAULT '{}'::jsonb,
+    origin TEXT NOT NULL DEFAULT 'online' CHECK (origin IN ('offline', 'online')),
+    synced_to_desktop BOOLEAN NOT NULL DEFAULT FALSE,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    UNIQUE (school_id, student_local_id, exam_local_id)
+);
+CREATE INDEX IF NOT EXISTS idx_portal_attempts_school_exam ON portal_attempts(school_id, exam_local_id, submitted);
+CREATE INDEX IF NOT EXISTS idx_portal_attempts_unsynced ON portal_attempts(school_id, synced_to_desktop) WHERE origin = 'online' AND synced_to_desktop = FALSE;
+

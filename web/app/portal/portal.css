@@ -1,0 +1,1175 @@
+/* ==========================================================================
+   CogniTara Online Exam Portal (portal.cognitara.net)
+   Pure Monochrome Editorial System (#171614 obsidian + #F6F5F2 warm paper)
+   Zero Tailwind, zero blue/purple accents, zero horizontal overflow.
+   ========================================================================== */
+
+:root {
+  --pt-bg: #f6f5f2;
+  --pt-surface: #ffffff;
+  --pt-surface-soft: #f0eee9;
+  --pt-surface-subtle: #faf9f7;
+  --pt-ink: #171614;
+  --pt-ink-2: #57544e;
+  --pt-ink-3: #8a867e;
+  --pt-line: #e4e1da;
+  --pt-line-strong: #cfc9be;
+  --pt-obsidian: #171614;
+  --pt-obsidian-2: #24221f;
+  --pt-obsidian-text: #f7f6f2;
+  --pt-radius-sm: 8px;
+  --pt-radius: 14px;
+  --pt-radius-lg: 20px;
+  --pt-shadow: 0 1px 2px rgba(23, 22, 20, 0.04), 0 8px 24px rgba(23, 22, 20, 0.05);
+  --pt-shadow-lg: 0 20px 56px rgba(23, 22, 20, 0.14);
+}
+
+.pt-root {
+  min-height: 100vh;
+  background: var(--pt-bg);
+  color: var(--pt-ink);
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+.pt-root *,
+.pt-root *::before,
+.pt-root *::after {
+  box-sizing: border-box;
+}
+
+/* ---------- Top Navigation Bar ---------- */
+.pt-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  background: rgba(246, 245, 242, 0.9);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--pt-line);
+}
+
+.pt-topbar-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 12px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.pt-brand-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--pt-ink);
+  text-decoration: none;
+}
+
+.pt-topbar-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+/* ---------- Containers & Layout ---------- */
+.pt-wrap {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 28px 20px 64px;
+}
+
+.pt-wrap--narrow {
+  max-width: 500px;
+  margin: 0 auto;
+  padding: 40px 20px 72px;
+}
+
+.pt-gateway-page {
+  min-height: calc(100vh - 61px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 36px 18px 64px;
+}
+
+.pt-gateway-card {
+  width: 100%;
+  max-width: 480px;
+  background: var(--pt-surface);
+  border: 1px solid var(--pt-line);
+  border-radius: var(--pt-radius-lg);
+  padding: 32px 28px;
+  box-shadow: var(--pt-shadow);
+}
+
+.pt-gateway-head {
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.pt-gateway-head h1 {
+  margin: 14px 0 6px;
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  line-height: 1.2;
+  color: var(--pt-ink);
+}
+
+.pt-gateway-head p {
+  margin: 0;
+  font-size: 14px;
+  color: var(--pt-ink-2);
+  line-height: 1.5;
+}
+
+/* ---------- School ID Input ---------- */
+.pt-school-id-input {
+  width: 100%;
+  height: 54px;
+  border: 1.5px solid var(--pt-line-strong);
+  border-radius: 12px;
+  background: var(--pt-surface-subtle);
+  color: var(--pt-ink);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 21px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  text-align: center;
+  padding: 0 16px;
+  outline: none;
+  transition: border-color 0.16s ease, box-shadow 0.16s ease, background 0.16s ease;
+}
+
+.pt-school-id-input:focus {
+  border-color: var(--pt-ink);
+  background: var(--pt-surface);
+  box-shadow: 0 0 0 3px rgba(23, 22, 20, 0.08);
+}
+
+/* ---------- Role Switcher Tabs ---------- */
+.pt-role-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  padding: 4px;
+  background: var(--pt-surface-soft);
+  border: 1px solid var(--pt-line);
+  border-radius: 12px;
+  margin-bottom: 18px;
+}
+
+.pt-role-tab {
+  border: none;
+  background: transparent;
+  color: var(--pt-ink-2);
+  font-size: 13px;
+  font-weight: 600;
+  padding: 9px 8px;
+  border-radius: 9px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.pt-role-tab.is-active {
+  background: var(--pt-obsidian);
+  color: var(--pt-obsidian-text);
+  box-shadow: 0 2px 6px rgba(23, 22, 20, 0.15);
+}
+
+.pt-role-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0.35;
+}
+
+.pt-role-dot.is-on {
+  opacity: 1;
+}
+
+/* ---------- Cards, Pills & Badges ---------- */
+.pt-card {
+  background: var(--pt-surface);
+  border: 1px solid var(--pt-line);
+  border-radius: var(--pt-radius);
+  padding: 22px;
+  box-shadow: var(--pt-shadow);
+}
+
+.pt-card--dark {
+  background: var(--pt-obsidian);
+  color: var(--pt-obsidian-text);
+  border-color: #2c2a26;
+}
+
+.pt-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  border: 1px solid var(--pt-line);
+  background: var(--pt-surface-soft);
+  color: var(--pt-ink);
+  white-space: nowrap;
+}
+
+.pt-pill--dark {
+  background: var(--pt-obsidian);
+  color: var(--pt-obsidian-text);
+  border-color: var(--pt-obsidian);
+}
+
+.pt-pill--muted {
+  background: transparent;
+  color: var(--pt-ink-2);
+}
+
+.pt-pill--mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  letter-spacing: 0.06em;
+}
+
+.pt-status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--pt-ink-3);
+  flex-shrink: 0;
+}
+
+.pt-status-dot--live {
+  background: var(--pt-ink);
+  box-shadow: 0 0 0 3px rgba(23, 22, 20, 0.14);
+}
+
+.pt-card--dark .pt-status-dot--live {
+  background: #ffffff;
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.22);
+}
+
+/* ---------- Buttons ---------- */
+.pt-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 16px;
+  border-radius: 10px;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid var(--pt-line-strong);
+  background: var(--pt-surface);
+  color: var(--pt-ink);
+  text-decoration: none;
+  transition: transform 0.12s ease, background 0.14s ease, color 0.14s ease, border-color 0.14s ease, opacity 0.14s ease;
+  white-space: nowrap;
+}
+
+.pt-btn:hover:not(:disabled) {
+  background: var(--pt-surface-soft);
+  border-color: var(--pt-ink);
+}
+
+.pt-btn:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.pt-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.pt-btn.pt-btn--primary {
+  background: var(--pt-obsidian);
+  color: var(--pt-obsidian-text);
+  border-color: var(--pt-obsidian);
+}
+
+.pt-btn.pt-btn--primary:hover:not(:disabled) {
+  background: #2d2b27;
+  color: var(--pt-obsidian-text);
+  border-color: #2d2b27;
+}
+
+.pt-btn--ghost {
+  background: transparent;
+  border-color: transparent;
+  color: var(--pt-ink-2);
+}
+
+.pt-btn--ghost:hover:not(:disabled) {
+  background: var(--pt-surface-soft);
+  color: var(--pt-ink);
+  border-color: transparent;
+}
+
+.pt-btn--sm {
+  height: 32px;
+  padding: 0 12px;
+  font-size: 12.5px;
+  border-radius: 8px;
+}
+
+.pt-btn--lg {
+  height: 46px;
+  padding: 0 20px;
+  font-size: 14.5px;
+  width: 100%;
+}
+
+/* ---------- Form Controls ---------- */
+.pt-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.pt-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.pt-field label {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--pt-ink-2);
+}
+
+.pt-input,
+.pt-select,
+.pt-textarea {
+  width: 100%;
+  border: 1px solid var(--pt-line-strong);
+  border-radius: 10px;
+  background: var(--pt-surface);
+  color: var(--pt-ink);
+  font-size: 14px;
+  padding: 10px 12px;
+  outline: none;
+  font-family: inherit;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.pt-textarea {
+  min-height: 88px;
+  resize: vertical;
+  line-height: 1.5;
+}
+
+.pt-input:focus,
+.pt-select:focus,
+.pt-textarea:focus {
+  border-color: var(--pt-ink);
+  box-shadow: 0 0 0 3px rgba(23, 22, 20, 0.08);
+}
+
+.pt-form-grid-2 {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+/* ---------- Alerts ---------- */
+.pt-alert {
+  padding: 11px 14px;
+  border-radius: 10px;
+  font-size: 13px;
+  line-height: 1.45;
+  border: 1px solid var(--pt-line-strong);
+  background: var(--pt-surface-soft);
+  color: var(--pt-ink);
+}
+
+.pt-alert--dark {
+  background: var(--pt-obsidian);
+  color: var(--pt-obsidian-text);
+  border-color: var(--pt-obsidian);
+}
+
+/* ---------- Power Dial Control Panel (Admin & Cloud Dashboard) ---------- */
+.pt-power-shell {
+  background: var(--pt-surface);
+  border: 1px solid var(--pt-line);
+  border-radius: var(--pt-radius-lg);
+  padding: 24px;
+  box-shadow: var(--pt-shadow);
+  display: grid;
+  grid-template-columns: 230px minmax(0, 1fr);
+  gap: 28px;
+  align-items: center;
+}
+
+.pt-dial-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  text-align: center;
+}
+
+.pt-dial-btn {
+  position: relative;
+  width: 152px;
+  height: 152px;
+  border-radius: 50%;
+  border: 1.5px solid var(--pt-line-strong);
+  background: var(--pt-surface-soft);
+  color: var(--pt-ink);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: transform 0.18s cubic-bezier(0.22, 1, 0.36, 1), background 0.22s ease, border-color 0.22s ease, box-shadow 0.22s ease;
+}
+
+.pt-dial-btn:hover:not(:disabled) {
+  transform: scale(1.025);
+}
+
+.pt-dial-btn:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+.pt-dial-btn.is-on {
+  background: var(--pt-obsidian);
+  color: var(--pt-obsidian-text);
+  border-color: var(--pt-obsidian);
+  box-shadow: 0 0 0 8px rgba(23, 22, 20, 0.07), 0 18px 34px rgba(23, 22, 20, 0.2);
+}
+
+.pt-dial-ring {
+  position: absolute;
+  inset: -8px;
+  border-radius: 50%;
+  border: 1px dashed rgba(23, 22, 20, 0.22);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+
+.pt-dial-btn.is-on .pt-dial-ring {
+  opacity: 1;
+  animation: ptSpinSlow 24s linear infinite;
+}
+
+@keyframes ptSpinSlow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.pt-dial-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  opacity: 0.72;
+}
+
+.pt-dial-state {
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.pt-power-body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
+.pt-school-id-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: var(--pt-surface-subtle);
+  border: 1px solid var(--pt-line);
+}
+
+.pt-school-id-code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  color: var(--pt-ink);
+}
+
+.pt-toggles-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.pt-toggle-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  border: 1px solid var(--pt-line);
+  background: var(--pt-surface-subtle);
+}
+
+.pt-toggle-card strong {
+  display: block;
+  font-size: 14px;
+  font-weight: 650;
+  color: var(--pt-ink);
+}
+
+.pt-toggle-card span {
+  display: block;
+  font-size: 12px;
+  color: var(--pt-ink-2);
+  margin-top: 2px;
+}
+
+.pt-switch {
+  position: relative;
+  width: 46px;
+  height: 26px;
+  border-radius: 999px;
+  border: 1px solid var(--pt-line-strong);
+  background: #dfddd6;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.18s ease, border-color 0.18s ease;
+  padding: 0;
+}
+
+.pt-switch::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow: 0 1px 3px rgba(23, 22, 20, 0.25);
+  transition: transform 0.18s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.pt-switch.is-on {
+  background: var(--pt-obsidian);
+  border-color: var(--pt-obsidian);
+}
+
+.pt-switch.is-on::after {
+  transform: translateX(20px);
+}
+
+.pt-switch:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.pt-stats-strip {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.pt-stat-tile {
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--pt-line);
+  background: var(--pt-surface-subtle);
+}
+
+.pt-stat-tile .pt-stat-num {
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--pt-ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.pt-stat-tile .pt-stat-lbl {
+  font-size: 11.5px;
+  color: var(--pt-ink-2);
+  margin-top: 2px;
+}
+
+/* ---------- Section Navigation Tabs ---------- */
+.pt-tabs {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border-bottom: 1px solid var(--pt-line);
+  margin-bottom: 20px;
+  overflow-x: auto;
+  padding-bottom: 1px;
+}
+
+.pt-tab {
+  border: none;
+  background: transparent;
+  color: var(--pt-ink-2);
+  font-size: 13.5px;
+  font-weight: 600;
+  padding: 10px 14px;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color 0.14s ease, border-color 0.14s ease;
+}
+
+.pt-tab:hover {
+  color: var(--pt-ink);
+}
+
+.pt-tab.is-active {
+  color: var(--pt-ink);
+  border-bottom-color: var(--pt-ink);
+}
+
+/* ---------- Student Dashboard Cards ---------- */
+.pt-exam-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+  gap: 14px;
+}
+
+.pt-exam-card {
+  background: var(--pt-surface);
+  border: 1px solid var(--pt-line);
+  border-radius: var(--pt-radius);
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 14px;
+  box-shadow: var(--pt-shadow);
+  transition: border-color 0.15s ease, transform 0.15s ease;
+}
+
+.pt-exam-card:hover {
+  border-color: var(--pt-ink);
+  transform: translateY(-1px);
+}
+
+.pt-exam-card h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  color: var(--pt-ink);
+}
+
+.pt-exam-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 12.5px;
+  color: var(--pt-ink-2);
+}
+
+/* ---------- Live Online Exam Room (Matches v2.3.8 Offline Layout) ---------- */
+.pt-exam-shell {
+  min-height: 100vh;
+  background: var(--pt-bg);
+  display: flex;
+  flex-direction: column;
+}
+
+.pt-exam-header {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  background: var(--pt-surface);
+  border-bottom: 1px solid var(--pt-line);
+  padding: 12px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.pt-exam-timer {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 17px;
+  font-weight: 700;
+  padding: 6px 14px;
+  border-radius: 10px;
+  background: var(--pt-obsidian);
+  color: var(--pt-obsidian-text);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.04em;
+}
+
+.pt-exam-timer.is-low {
+  background: #171614;
+  box-shadow: 0 0 0 3px rgba(23, 22, 20, 0.25);
+  animation: ptPulseLow 1.1s ease-in-out infinite;
+}
+
+@keyframes ptPulseLow {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+.pt-exam-grid-room {
+  max-width: 1220px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 24px 20px 56px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 292px;
+  gap: 20px;
+  align-items: start;
+}
+
+.pt-question-card {
+  background: var(--pt-surface);
+  border: 1px solid var(--pt-line);
+  border-radius: var(--pt-radius-lg);
+  padding: 26px;
+  box-shadow: var(--pt-shadow);
+}
+
+.pt-passage-box {
+  background: var(--pt-surface-subtle);
+  border: 1px solid var(--pt-line);
+  border-left: 3px solid var(--pt-obsidian);
+  border-radius: 10px;
+  padding: 14px 16px;
+  margin-bottom: 18px;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.pt-question-body {
+  font-size: 17px;
+  line-height: 1.62;
+  font-weight: 500;
+  color: var(--pt-ink);
+  margin: 14px 0 22px;
+  word-break: break-word;
+}
+
+.pt-options-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.pt-option-btn {
+  width: 100%;
+  text-align: left;
+  border: 1.5px solid var(--pt-line);
+  background: var(--pt-surface);
+  color: var(--pt-ink);
+  border-radius: 12px;
+  padding: 14px 16px;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  cursor: pointer;
+  font-size: 15px;
+  line-height: 1.5;
+  transition: border-color 0.14s ease, background 0.14s ease, transform 0.1s ease;
+}
+
+.pt-option-btn:hover {
+  border-color: var(--pt-ink);
+  background: var(--pt-surface-subtle);
+}
+
+.pt-option-btn.is-selected {
+  border-color: var(--pt-obsidian);
+  background: var(--pt-obsidian);
+  color: var(--pt-obsidian-text);
+}
+
+.pt-option-letter {
+  width: 26px;
+  height: 26px;
+  border-radius: 7px;
+  border: 1px solid var(--pt-line-strong);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.pt-option-btn.is-selected .pt-option-letter {
+  background: #ffffff;
+  color: #171614;
+  border-color: #ffffff;
+}
+
+/* Right-hand rail: Prev/Next ABOVE Question Palette */
+.pt-rail {
+  position: sticky;
+  top: 76px;
+  background: var(--pt-surface);
+  border: 1px solid var(--pt-line);
+  border-radius: var(--pt-radius-lg);
+  padding: 18px;
+  box-shadow: var(--pt-shadow);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.pt-rail-nav {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.pt-palette-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 6px;
+  max-height: 320px;
+  overflow-y: auto;
+  padding-right: 2px;
+}
+
+.pt-pal-btn {
+  height: 36px;
+  border-radius: 8px;
+  border: 1px solid var(--pt-line);
+  background: var(--pt-surface-subtle);
+  color: var(--pt-ink-2);
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+
+.pt-pal-btn:hover {
+  border-color: var(--pt-ink);
+  color: var(--pt-ink);
+}
+
+.pt-pal-btn.is-answered {
+  background: var(--pt-obsidian);
+  border-color: var(--pt-obsidian);
+  color: var(--pt-obsidian-text);
+}
+
+.pt-pal-btn.is-current {
+  box-shadow: 0 0 0 2px var(--pt-surface), 0 0 0 3.5px var(--pt-obsidian);
+  border-color: var(--pt-obsidian);
+  font-weight: 800;
+}
+
+.pt-pal-btn:focus {
+  outline: none;
+}
+
+.pt-palette-grid {
+  padding: 4px;
+}
+
+/* ---------- Minimalist Student Modals (Zero Verbose Clutter) ---------- */
+.pt-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  background: rgba(23, 22, 20, 0.52);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.pt-modal {
+  width: 100%;
+  max-width: 360px;
+  background: var(--pt-surface);
+  border: 1px solid var(--pt-line);
+  border-radius: 20px;
+  padding: 28px 24px;
+  text-align: center;
+  box-shadow: var(--pt-shadow-lg);
+}
+
+.pt-modal--wide {
+  max-width: 560px;
+  text-align: left;
+}
+
+.pt-modal-icon {
+  width: 52px;
+  height: 52px;
+  margin: 0 auto 14px;
+  border-radius: 14px;
+  background: var(--pt-obsidian);
+  color: var(--pt-obsidian-text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pt-modal h2 {
+  margin: 0 0 8px;
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.pt-score-big {
+  font-size: 46px;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  line-height: 1.05;
+  margin: 10px 0 4px;
+  font-variant-numeric: tabular-nums;
+}
+
+.pt-score-sub {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--pt-ink-2);
+  margin-bottom: 18px;
+}
+
+/* ---------- Floating Scientific Calculator ---------- */
+.pt-calc-wrap {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 60;
+  width: 296px;
+  background: var(--pt-obsidian);
+  color: var(--pt-obsidian-text);
+  border: 1px solid #302d28;
+  border-radius: 18px;
+  padding: 14px;
+  box-shadow: var(--pt-shadow-lg);
+}
+
+.pt-calc-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #b8b4ac;
+}
+
+.pt-calc-screen {
+  background: #100f0e;
+  border: 1px solid #2c2a26;
+  border-radius: 10px;
+  padding: 10px 12px;
+  text-align: right;
+  margin-bottom: 10px;
+  min-height: 56px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.pt-calc-expr {
+  font-size: 11.5px;
+  color: #8f8a82;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pt-calc-val {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 22px;
+  font-weight: 700;
+  color: #ffffff;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pt-calc-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+}
+
+.pt-calc-key {
+  height: 36px;
+  border-radius: 8px;
+  border: 1px solid #2e2c28;
+  background: #22201d;
+  color: #f7f6f2;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.pt-calc-key:hover {
+  background: #302d29;
+}
+
+.pt-calc-key--eq {
+  background: #f7f6f2;
+  color: #171614;
+  border-color: #f7f6f2;
+}
+
+.pt-calc-key--eq:hover {
+  background: #e5e2db;
+}
+
+/* ---------- Tables (Admin & Teacher) ---------- */
+.pt-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+  border: 1px solid var(--pt-line);
+  border-radius: var(--pt-radius);
+  background: var(--pt-surface);
+}
+
+.pt-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13.5px;
+}
+
+.pt-table th {
+  text-align: left;
+  padding: 11px 14px;
+  font-size: 11.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--pt-ink-2);
+  background: var(--pt-surface-subtle);
+  border-bottom: 1px solid var(--pt-line);
+  white-space: nowrap;
+}
+
+.pt-table td {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--pt-line);
+  vertical-align: middle;
+}
+
+.pt-table tr:last-child td {
+  border-bottom: none;
+}
+
+/* ---------- Teacher Formula Toolbar ---------- */
+.pt-formula-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+.pt-formula-chip {
+  border: 1px solid var(--pt-line-strong);
+  background: var(--pt-surface-subtle);
+  color: var(--pt-ink);
+  border-radius: 7px;
+  padding: 4px 8px;
+  font-size: 12px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  cursor: pointer;
+}
+
+.pt-formula-chip:hover {
+  background: var(--pt-obsidian);
+  color: var(--pt-obsidian-text);
+  border-color: var(--pt-obsidian);
+}
+
+/* ---------- Responsive Mobile (390px) ---------- */
+@media (max-width: 900px) {
+  .pt-power-shell {
+    grid-template-columns: 1fr;
+    gap: 20px;
+    padding: 20px 16px;
+  }
+
+  .pt-exam-grid-room {
+    grid-template-columns: 1fr;
+    padding: 16px 14px 48px;
+  }
+
+  .pt-rail {
+    position: static;
+  }
+
+  .pt-stats-strip {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 720px) {
+  .pt-topbar-inner {
+    padding: 10px 14px;
+    flex-wrap: wrap;
+    row-gap: 8px;
+  }
+
+  .pt-topbar-meta {
+    width: 100%;
+    justify-content: flex-end;
+  }
+
+  .pt-hide-sm {
+    display: none !important;
+  }
+}
+
+@media (max-width: 600px) {
+  .pt-wrap {
+    padding: 18px 14px 56px;
+  }
+
+  .pt-gateway-card {
+    padding: 24px 18px;
+  }
+
+  .pt-toggles-grid,
+  .pt-form-grid-2 {
+    grid-template-columns: 1fr;
+  }
+
+  .pt-question-card {
+    padding: 18px 16px;
+  }
+
+  .pt-calc-wrap {
+    right: 12px;
+    left: 12px;
+    width: auto;
+    bottom: 12px;
+  }
+}

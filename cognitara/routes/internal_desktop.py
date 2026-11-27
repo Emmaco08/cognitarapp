@@ -1029,3 +1029,385 @@ def api_internal_setup_superadmin():
         "username": username,
         "recovery_codes_saved": len(recovery_codes) if isinstance(recovery_codes, list) else 0,
     }), 200
+
+
+@internal_desktop_bp.route("/portal/merge-online", methods=["POST"])
+def api_internal_portal_merge_online():
+    """
+    Merges delta exported from CogniTara Online Exam Portal (portal.cognitara.net)
+    into this PC's local SQLite exam.db without duplicating or clobbering offline rows.
+    """
+    payload = request.get_json(silent=True) or {}
+    delta = payload.get("delta") if isinstance(payload.get("delta"), dict) else payload
+    if not isinstance(delta, dict):
+        return jsonify({"ok": False, "error": "invalid_payload", "message": "Invalid online delta payload."}), 400
+
+    teachers_in = delta.get("teachers") or []
+    students_in = delta.get("students") or []
+    exams_in = delta.get("exams") or []
+    questions_in = delta.get("questions") or []
+    attempts_in = delta.get("attempts") or []
+
+    conn = get_db_connection()
+    merged_teachers = 0
+    merged_students = 0
+    merged_exams = 0
+    merged_questions = 0
+    merged_scores = 0
+    ack_attempt_ids: List[str] = []
+
+    teacher_map: Dict[int, int] = {}
+    student_map: Dict[int, int] = {}
+    exam_map: Dict[int, int] = {}
+    question_map: Dict[int, int] = {}
+
+    try:
+        # 1. Merge online-created teachers by username
+        for tc in teachers_in:
+            if not isinstance(tc, dict):
+                continue
+            uname = str(tc.get("username") or "").strip()
+            if not uname:
+                continue
+            online_id = int(tc.get("local_id") or 0)
+            row = conn.execute("SELECT id FROM teachers WHERE LOWER(username) = LOWER(?)", (uname,)).fetchone()
+            if row:
+                if online_id:
+                    teacher_map[online_id] = int(row["id"])
+                continue
+            classes_list = tc.get("classes_json") if isinstance(tc.get("classes_json"), list) else []
+            classes_str = json.dumps(classes_list) if classes_list else ""
+            specs_list = tc.get("specialisations_json") if isinstance(tc.get("specialisations_json"), list) else []
+            specs_str = json.dumps(specs_list) if specs_list else ""
+            cur = conn.execute(
+                """
+                INSERT INTO teachers (username, password, class, classes, specialisations, class_teacher_of, full_name)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    uname,
+                    str(tc.get("password_hash") or ""),
+                    str(tc.get("primary_class") or ""),
+                    classes_str,
+                    specs_str,
+                    str(tc.get("class_teacher_of") or ""),
+                    str(tc.get("full_name") or uname),
+                ),
+            )
+            if online_id:
+                teacher_map[online_id] = int(cur.lastrowid)
+            merged_teachers += 1
+
+        # 2. Merge online-created students by username
+        for st in students_in:
+            if not isinstance(st, dict):
+                continue
+            uname = str(st.get("username") or "").strip()
+            if not uname:
+                continue
+            online_id = int(st.get("local_id") or 0)
+            row = conn.execute("SELECT id FROM students WHERE LOWER(username) = LOWER(?)", (uname,)).fetchone()
+            if row:
+                if online_id:
+                    student_map[online_id] = int(row["id"])
+                continue
+            cur = conn.execute(
+                """
+                INSERT INTO students (username, password, class, status, email, full_name, specialisation)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    uname,
+                    str(st.get("password_hash") or ""),
+                    str(st.get("student_class") or ""),
+                    str(st.get("status") or "approved"),
+                    str(st.get("email") or ""),
+                    str(st.get("full_name") or uname),
+                    str(st.get("specialisation") or ""),
+                ),
+            )
+            if online_id:
+                student_map[online_id] = int(cur.lastrowid)
+            merged_students += 1
+
+        # 3. Merge online-authored exams
+        for ex in exams_in:
+            if not isinstance(ex, dict):
+                continue
+            online_id = int(ex.get("local_id") or 0)
+            ex_name = str(ex.get("name") or "").strip()
+            ex_class = str(ex.get("exam_class") or "").strip()
+            if not ex_name:
+                continue
+
+            local_ex_id = None
+            if 0 < online_id < 100000:
+                existing = conn.execute("SELECT id FROM exams WHERE id = ?", (online_id,)).fetchone()
+                if existing:
+                    local_ex_id = int(existing["id"])
+            if local_ex_id is None:
+                existing_by_name = conn.execute(
+                    "SELECT id FROM exams WHERE LOWER(name) = LOWER(?) AND LOWER(COALESCE(class, '')) = LOWER(?)",
+                    (ex_name, ex_class),
+                ).fetchone()
+                if existing_by_name:
+                    local_ex_id = int(existing_by_name["id"])
+
+            raw_tid = ex.get("teacher_local_id")
+            mapped_tid = teacher_map.get(int(raw_tid), int(raw_tid)) if raw_tid is not None else None
+            if mapped_tid is not None:
+                has_t = conn.execute("SELECT id FROM teachers WHERE id = ?", (mapped_tid,)).fetchone()
+                if not has_t:
+                    mapped_tid = None
+
+            if local_ex_id is not None:
+                conn.execute(
+                    """
+                    UPDATE exams
+                    SET duration = ?, active = ?, calculator_type = ?, max_warnings = ?,
+                        result_release_policy = ?, results_released = ?
+                    WHERE id = ?
+                    """,
+                    (
+                        int(ex.get("duration") or 30),
+                        1 if ex.get("active") else 0,
+                        str(ex.get("calculator_type") or "none"),
+                        int(ex.get("max_warnings") or 5),
+                        str(ex.get("result_release_policy") or "immediate"),
+                        1 if ex.get("results_released", True) else 0,
+                        local_ex_id,
+                    ),
+                )
+            else:
+                cur = conn.execute(
+                    """
+                    INSERT INTO exams (
+                        name, class, duration, active, teacher_id, specialisation, subject_tag,
+                        max_warnings, calculator_type, deactivated, result_release_policy,
+                        results_released, anti_cheating_profile
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    """,
+                    (
+                        ex_name,
+                        ex_class,
+                        int(ex.get("duration") or 30),
+                        1 if ex.get("active") else 0,
+                        mapped_tid,
+                        str(ex.get("specialisation") or ""),
+                        str(ex.get("subject_tag") or ""),
+                        int(ex.get("max_warnings") or 5),
+                        str(ex.get("calculator_type") or "none"),
+                        1 if ex.get("deactivated") else 0,
+                        str(ex.get("result_release_policy") or "immediate"),
+                        1 if ex.get("results_released", True) else 0,
+                        str(ex.get("anti_cheating_profile") or "medium"),
+                    ),
+                )
+                local_ex_id = int(cur.lastrowid)
+                merged_exams += 1
+
+            if online_id:
+                exam_map[online_id] = local_ex_id
+
+        # 4. Merge online-authored questions
+        for q in questions_in:
+            if not isinstance(q, dict):
+                continue
+            online_qid = int(q.get("local_id") or 0)
+            online_ex_id = int(q.get("exam_local_id") or 0)
+            local_ex_id = exam_map.get(online_ex_id, online_ex_id)
+            has_ex = conn.execute("SELECT id FROM exams WHERE id = ?", (local_ex_id,)).fetchone()
+            if not has_ex:
+                continue
+
+            q_text = str(q.get("question") or "").strip()
+            if not q_text:
+                continue
+
+            existing_q = conn.execute(
+                "SELECT id FROM questions WHERE exam_id = ? AND question = ?",
+                (local_ex_id, q_text),
+            ).fetchone()
+            if existing_q:
+                local_qid = int(existing_q["id"])
+                conn.execute(
+                    """
+                    UPDATE questions
+                    SET option1 = ?, option2 = ?, option3 = ?, option4 = ?, answer = ?, explanation = ?
+                    WHERE id = ?
+                    """,
+                    (
+                        str(q.get("option1") or ""),
+                        str(q.get("option2") or ""),
+                        str(q.get("option3") or ""),
+                        str(q.get("option4") or ""),
+                        str(q.get("answer") or ""),
+                        str(q.get("explanation") or ""),
+                        local_qid,
+                    ),
+                )
+            else:
+                cur = conn.execute(
+                    """
+                    INSERT INTO questions (
+                        exam_id, question, option1, option2, option3, option4,
+                        answer, display_order, mandatory, explanation
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    """,
+                    (
+                        local_ex_id,
+                        q_text,
+                        str(q.get("option1") or ""),
+                        str(q.get("option2") or ""),
+                        str(q.get("option3") or ""),
+                        str(q.get("option4") or ""),
+                        str(q.get("answer") or ""),
+                        int(q.get("display_order") or 0),
+                        1 if q.get("mandatory") else 0,
+                        str(q.get("explanation") or ""),
+                    ),
+                )
+                local_qid = int(cur.lastrowid)
+                merged_questions += 1
+
+            if online_qid:
+                question_map[online_qid] = local_qid
+
+        # 5. Merge submitted online attempts -> scores & exam_question_responses
+        for att in attempts_in:
+            if not isinstance(att, dict):
+                continue
+            att_uuid = str(att.get("id") or "").strip()
+            online_sid = int(att.get("student_local_id") or 0)
+            online_ex_id = int(att.get("exam_local_id") or 0)
+            st_uname = str(att.get("student_username") or "").strip()
+            ex_name = str(att.get("exam_name") or "").strip()
+
+            local_sid = student_map.get(online_sid)
+            if local_sid is None and st_uname:
+                r = conn.execute("SELECT id FROM students WHERE LOWER(username) = LOWER(?)", (st_uname,)).fetchone()
+                if r:
+                    local_sid = int(r["id"])
+            if local_sid is None and online_sid:
+                r = conn.execute("SELECT id FROM students WHERE id = ?", (online_sid,)).fetchone()
+                if r:
+                    local_sid = int(r["id"])
+
+            local_ex_id = exam_map.get(online_ex_id)
+            if local_ex_id is None and online_ex_id:
+                r = conn.execute("SELECT id FROM exams WHERE id = ?", (online_ex_id,)).fetchone()
+                if r:
+                    local_ex_id = int(r["id"])
+            if local_ex_id is None and ex_name:
+                r = conn.execute("SELECT id FROM exams WHERE LOWER(name) = LOWER(?)", (ex_name,)).fetchone()
+                if r:
+                    local_ex_id = int(r["id"])
+
+            if local_sid is None or local_ex_id is None:
+                continue
+
+            existing_score = conn.execute(
+                "SELECT id, submitted FROM scores WHERE student_id = ? AND exam_id = ? LIMIT 1",
+                (local_sid, local_ex_id),
+            ).fetchone()
+            if existing_score and int(existing_score["submitted"] or 0) == 1:
+                if att_uuid:
+                    ack_attempt_ids.append(att_uuid)
+                continue
+
+            score_val = int(att.get("score") or 0)
+            total_val = int(att.get("total") or 0)
+            pct_val = float(att.get("percentage") or 0.0)
+            grade_lbl = str(att.get("grade_label") or "")
+            grade_rmk = str(att.get("grade_remark") or "")
+            start_ts = str(att.get("started_at") or datetime.now(timezone.utc).isoformat())
+            end_ts = str(att.get("completed_at") or datetime.now(timezone.utc).isoformat())
+            warnings = int(att.get("warnings_count") or 0)
+            released = 1 if att.get("results_released", True) else 0
+
+            if existing_score:
+                score_row_id = int(existing_score["id"])
+                conn.execute(
+                    """
+                    UPDATE scores
+                    SET score = ?, total = ?, percentage = ?, grade_label = ?, grade_remark = ?,
+                        submitted = 1, status = 'submitted', end_time = ?, warnings_count = ?,
+                        results_released = ?, updated_at = CURRENT_TIMESTAMP
+                    WHERE id = ?
+                    """,
+                    (score_val, total_val, pct_val, grade_lbl, grade_rmk, end_ts, warnings, released, score_row_id),
+                )
+            else:
+                cur = conn.execute(
+                    """
+                    INSERT INTO scores (
+                        student_id, exam_id, score, total, submitted, status,
+                        start_time, end_time, warnings_count, remaining_time,
+                        percentage, grade_label, grade_remark, results_released
+                    ) VALUES (?, ?, ?, ?, 1, 'submitted', ?, ?, ?, 0, ?, ?, ?, ?)
+                    """,
+                    (
+                        local_sid,
+                        local_ex_id,
+                        score_val,
+                        total_val,
+                        start_ts,
+                        end_ts,
+                        warnings,
+                        pct_val,
+                        grade_lbl,
+                        grade_rmk,
+                        released,
+                    ),
+                )
+                score_row_id = int(cur.lastrowid)
+
+            # Save individual question responses when provided
+            ans_dict = att.get("answers_json")
+            if isinstance(ans_dict, dict):
+                q_ans_rows = conn.execute(
+                    "SELECT id, answer FROM questions WHERE exam_id = ?",
+                    (local_ex_id,),
+                ).fetchall()
+                q_ans_lookup = {int(r["id"]): str(r["answer"] or "").strip().lower() for r in q_ans_rows}
+                for qk, user_ans in ans_dict.items():
+                    try:
+                        oqid = int(qk)
+                    except (TypeError, ValueError):
+                        continue
+                    lqid = question_map.get(oqid, oqid)
+                    if lqid not in q_ans_lookup:
+                        continue
+                    u_str = str(user_ans or "").strip()
+                    is_corr = 1 if u_str.lower() == q_ans_lookup[lqid] else 0
+                    conn.execute(
+                        """
+                        INSERT OR REPLACE INTO exam_question_responses (
+                            attempt_id, question_id, student_id, exam_id, user_answer, is_correct, answered_at
+                        ) VALUES (?, ?, ?, ?, ?, ?, ?)
+                        """,
+                        (score_row_id, lqid, local_sid, local_ex_id, u_str, is_corr, end_ts),
+                    )
+
+            merged_scores += 1
+            if att_uuid:
+                ack_attempt_ids.append(att_uuid)
+
+        conn.commit()
+    finally:
+        conn.close()
+
+    return jsonify({
+        "ok": True,
+        "merged_teachers": merged_teachers,
+        "merged_students": merged_students,
+        "merged_exams": merged_exams,
+        "merged_questions": merged_questions,
+        "merged_scores": merged_scores,
+        "acknowledged_attempt_ids": ack_attempt_ids,
+        "message": (
+            f"Pulled {merged_scores} score(s), {merged_exams} exam(s), "
+            f"{merged_questions} question(s), and {merged_students + merged_teachers} account(s) into this PC."
+        ),
+    }), 200
+
