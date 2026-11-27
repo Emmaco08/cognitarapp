@@ -1,84 +1,46 @@
-"use client";
-
-import Link from "next/link";
-import { useMemo, useState } from "react";
+import type { Metadata } from "next";
 import LandingNav from "@/components/landing/LandingNav";
 import LandingFooter from "@/components/landing/LandingFooter";
 import LenisGsapScope from "@/components/landing/LenisGsapScope";
-import { BLOG_POSTS, type BlogPost } from "@/lib/site-content";
+import BlogClient from "@/components/subpages/BlogClient";
+import { getPublishedBlogPosts } from "@/lib/cms";
 
-const CATEGORIES: Array<"All" | BlogPost["category"]> = [
-  "All",
-  "Exam Reliability",
-  "Engineering",
-  "Releases",
-  "Guides",
-];
+export const dynamic = "force-dynamic";
 
-export default function BlogPage() {
-  const [cat, setCat] = useState<"All" | BlogPost["category"]>("All");
+export const metadata: Metadata = {
+  title: "Blog — CogniTara",
+  description:
+    "Engineering notes, exam-hall reliability deep dives, migration guides, and release stories from CogniTara.",
+};
 
-  const visible = useMemo(() => {
-    if (cat === "All") return BLOG_POSTS;
-    return BLOG_POSTS.filter((p) => p.category === cat);
-  }, [cat]);
+export default async function BlogPage() {
+  const posts = await getPublishedBlogPosts();
 
   return (
     <LenisGsapScope>
       <LandingNav activePath="/blog" />
 
       <main id="main-content" className="rs-subpage">
-        <header className="rs-page-hero" data-rs-reveal>
-          <p className="rs-page-eyebrow">Blog</p>
-          <h1 className="rs-page-title">Notes from the build</h1>
-          <p className="rs-page-lead">
-            Engineering CogniTara, the reliability decisions behind our offline exam server, and lessons from real school exam halls.
+        <header className="rs-sub-hero">
+          <div className="rs-sub-pill rs-blur-in" style={{ ["--d" as string]: "0ms" }}>
+            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path
+                fillRule="evenodd"
+                clipRule="evenodd"
+                d="M19.3669 2.81386C19.9317 3.41733 20.1808 4.30379 19.856 5.20547C19.242 6.91 18.0633 8.3033 17.0908 9.24445C16.8252 9.50148 16.5702 9.72939 16.339 9.92542C17.2326 10.6946 17.684 12.0253 16.9913 13.2263C15.7713 15.3417 12.687 18.9424 6.0627 18.9823C6.02049 19.6499 6 20.3237 6 21C6 21.5523 5.55228 22 5 22C4.44772 22 4 21.5523 4 21C4 16.6714 4.7935 12.2517 6.83137 8.74116C8.89392 5.18809 12.2173 2.6016 17.1192 2.01951C17.9856 1.91663 18.8169 2.22623 19.3669 2.81386Z"
+              />
+            </svg>
+            <span>Blog</span>
+          </div>
+          <h1 className="rs-page-title rs-blur-in" style={{ ["--d" as string]: "80ms" }}>
+            Notes from the build
+          </h1>
+          <p className="rs-page-lead rs-blur-in" style={{ ["--d" as string]: "150ms" }}>
+            Building CogniTara, the reliability decisions behind it, and what we’re learning from real exam halls.
           </p>
         </header>
 
-        <div className="rs-filter-row" role="group" aria-label="Filter blog posts">
-          {CATEGORIES.map((c) => {
-            const cnt = c === "All" ? BLOG_POSTS.length : BLOG_POSTS.filter((p) => p.category === c).length;
-            return (
-              <button
-                key={c}
-                type="button"
-                className="rs-filter-pill"
-                aria-pressed={cat === c}
-                onClick={() => setCat(c)}
-              >
-                <span>{c === "All" ? "All posts" : c}</span>
-                <span className="rs-filter-count">{cnt}</span>
-              </button>
-            );
-          })}
-        </div>
-
-        <div className="rs-blog-list">
-          {visible.map((post) => (
-            <Link key={post.slug} href={`/blog/${post.slug}`} className="rs-blog-row">
-              <div className="rs-blog-meta">
-                <span className="rs-blog-avatar" aria-hidden="true">
-                  {post.authorInitials}
-                </span>
-                <span>{post.author}</span>
-                <span>·</span>
-                <time>{post.date}</time>
-                <span>/</span>
-                <strong style={{ color: "var(--rs-ink)", fontWeight: 500 }}>{post.category}</strong>
-                <span>·</span>
-                <span>{post.readTime}</span>
-              </div>
-              <h2 className="rs-blog-title">{post.title}</h2>
-              <p className="rs-blog-excerpt">{post.excerpt}</p>
-            </Link>
-          ))}
-        </div>
-
-        <p className="rs-subpage-note">
-          Looking for release notes? See <Link href="/changelogs">Updates</Link>. Want practical setup steps? Browse{" "}
-          <Link href="/guides">How-to Guides</Link>.
-        </p>
+        <BlogClient posts={posts} />
       </main>
 
       <LandingFooter />

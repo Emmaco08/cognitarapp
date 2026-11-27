@@ -47,16 +47,42 @@ export default function ResurfBentoGrid() {
         <article className="rs-bento-card">
           <div className="rs-bento-visual" aria-hidden="true" style={{ flexDirection: "column" }}>
             <div className="rs-timer-pill">
-              <span className="rs-wave-bars">
-                <span style={{ height: 5 }} />
-                <span style={{ height: 11 }} />
-                <span style={{ height: 8 }} />
-                <span style={{ height: 13 }} />
-                <span style={{ height: 6 }} />
-                <span style={{ height: 10 }} />
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                style={{ opacity: 0.92 }}
+              >
+                <path d="M10.41 10.41 5 14h6l-1 7 4.94-5.93" />
+                <path d="M13 3 11.2 6.6" />
+                <path d="m14.8 11 4.2-1h-6" />
+                <line x1="2" y1="2" x2="22" y2="22" />
+              </svg>
+              <span
+                style={{
+                  fontSize: 9.5,
+                  letterSpacing: "0.06em",
+                  fontWeight: 600,
+                  padding: "2px 6px",
+                  borderRadius: 99,
+                  background: "rgba(255,255,255,0.16)",
+                  color: "#FFFFFF",
+                }}
+              >
+                PAUSED
               </span>
-              <span style={{ width: 6, height: 6, borderRadius: 99, background: "#FFFFFF" }} />
-              <span>29:58</span>
+              <span style={{ display: "inline-flex", alignItems: "center", gap: 5, fontVariantNumeric: "tabular-nums" }}>
+                <svg width="10" height="10" viewBox="0 0 12 12" fill="currentColor">
+                  <rect x="2" y="1.5" width="2.6" height="9" rx="0.8" />
+                  <rect x="7.4" y="1.5" width="2.6" height="9" rx="0.8" />
+                </svg>
+                <span>29:58</span>
+              </span>
             </div>
             <div className="rs-quote-bubble rs-elevated">
               “Every click writes straight to SQLite WAL. When power flickers, clocks pause cleanly.”

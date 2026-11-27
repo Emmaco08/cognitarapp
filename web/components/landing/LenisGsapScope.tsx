@@ -63,45 +63,47 @@ export default function LenisGsapScope({ children }: { children: React.ReactNode
         };
         root.addEventListener("click", onAnchorClick);
 
-        // Subtle Resurf blur-fade-slide-in on scroll sections
+        // Signature Resurf blur-to-sharp entrance on scroll sections
         const reveals = gsap.utils.toArray<HTMLElement>("[data-rs-reveal]", root);
         reveals.forEach((el) => {
           gsap.fromTo(
             el,
-            { opacity: 0, y: 18 },
+            { opacity: 0, y: 14, filter: "blur(8px)" },
             {
               opacity: 1,
               y: 0,
-              duration: 0.62,
+              filter: "blur(0px)",
+              duration: 0.68,
               ease: "power3.out",
-              clearProps: "transform",
+              clearProps: "transform,filter",
               scrollTrigger: {
                 trigger: el,
-                start: "top 90%",
+                start: "top 92%",
                 once: true,
               },
             },
           );
         });
 
-        // Subtle staggered card entrances inside Bento & Pricing grids
+        // Subtle staggered blur-to-sharp card entrances inside grids
         const grids = gsap.utils.toArray<HTMLElement>("[data-rs-stagger]", root);
         grids.forEach((grid) => {
           const items = Array.from(grid.children) as HTMLElement[];
           if (!items.length) return;
           gsap.fromTo(
             items,
-            { opacity: 0, y: 16 },
+            { opacity: 0, y: 14, filter: "blur(6px)" },
             {
               opacity: 1,
               y: 0,
-              duration: 0.52,
+              filter: "blur(0px)",
+              duration: 0.56,
               stagger: 0.045,
               ease: "power3.out",
-              clearProps: "transform",
+              clearProps: "transform,filter",
               scrollTrigger: {
                 trigger: grid,
-                start: "top 88%",
+                start: "top 90%",
                 once: true,
               },
             },

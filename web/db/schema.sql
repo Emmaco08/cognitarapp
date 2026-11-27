@@ -482,3 +482,22 @@ CREATE INDEX IF NOT EXISTS idx_download_leads_created ON download_leads(created_
 -- 22. v2.3.5: HQ-authored physical / offline school reviews & ratings
 ALTER TABLE school_reviews ALTER COLUMN school_id DROP NOT NULL;
 ALTER TABLE school_reviews ADD COLUMN IF NOT EXISTS source TEXT NOT NULL DEFAULT 'studio';
+
+-- 23. v2.3.6: HQ Website Content CMS (Blog, Guides, FAQ, Roadmap, Changelogs, About & Support pages)
+CREATE TABLE IF NOT EXISTS cms_entries (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    section TEXT NOT NULL CHECK (section IN ('blog', 'guide', 'faq', 'roadmap', 'changelog', 'page')),
+    slug TEXT NOT NULL,
+    title TEXT NOT NULL,
+    category TEXT NOT NULL DEFAULT '',
+    status TEXT NOT NULL DEFAULT 'published',
+    summary TEXT NOT NULL DEFAULT '',
+    body_json JSONB NOT NULL DEFAULT '{}'::jsonb,
+    sort_order INTEGER NOT NULL DEFAULT 100,
+    published BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    UNIQUE (section, slug)
+);
+CREATE INDEX IF NOT EXISTS idx_cms_entries_section ON cms_entries(section, published, sort_order, created_at DESC);
+

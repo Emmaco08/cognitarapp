@@ -266,6 +266,19 @@ export const GUIDES_LIST: GuideItem[] = [
     tip: "Connect the host PC to your school Wi-Fi router via an Ethernet cable when hosting 100+ students for rock-solid local throughput.",
   },
   {
+    id: "onboard-teachers-students",
+    category: "Get started",
+    title: "Add teachers, approve student registrations, and assign classes",
+    readTime: "3 min",
+    summary: "Prepare your academic classes, subjects, teacher accounts, and candidate rosters ahead of exam week.",
+    steps: [
+      "Sign in to the Admin Control Center from your host PC browser and open School Settings to verify classes (JSS 1–SS 3) and grading scales.",
+      "Create teacher accounts with full names and assigned subjects, or import your entire student roster via CSV.",
+      "Enable self-registration during onboarding week so students create accounts on lab PCs, then bulk-approve them in Pending Approvals.",
+      "For external admission tests, open Common Entrance to generate standalone candidate PIN slips without mixing applicants into regular classes.",
+    ],
+  },
+  {
     id: "cross-device-recovery",
     category: "Exam day & recovery",
     title: "Continue an exam on another computer when a PC dies mid-test",
@@ -307,6 +320,19 @@ export const GUIDES_LIST: GuideItem[] = [
     tip: "For 100+ simultaneous students, use two or three access points wired to the same LAN switch on different Wi-Fi channels (1, 6, 11) so wireless airtime stays fast.",
   },
   {
+    id: "static-ip-firewall",
+    category: "Networking & Wi-Fi",
+    title: "Keep one permanent LAN URL and allow Windows Firewall cleanly",
+    readTime: "2 min",
+    summary: "Avoid typing a new IP address every morning by reserving your host PC IP on the school router.",
+    steps: [
+      "Open your school router admin panel (usually 192.168.0.1 or 192.168.1.1) and open DHCP Address Reservation.",
+      "Bind your Windows host PC's MAC address to a fixed local IP such as 192.168.1.50 so the exam URL never changes across reboots.",
+      "When Windows Firewall prompts on first launch of CogniTara Studio, allow Private Networks access on port 5000.",
+      "Bookmark http://192.168.1.50:5000 on every lab desktop so students open the exam portal in one click.",
+    ],
+  },
+  {
     id: "katex-formulas-csv",
     category: "Authoring & STEM",
     title: "Author Mathematics & Chemistry formulas offline (or bulk import CSV)",
@@ -344,6 +370,18 @@ export const GUIDES_LIST: GuideItem[] = [
     ],
   },
   {
+    id: "export-score-broadsheets",
+    category: "Data & backups",
+    title: "Export WAEC/NECO grade broadsheets and printable official score slips",
+    readTime: "2 min",
+    summary: "Download class spreadsheets and institutional result sheets the second students submit.",
+    steps: [
+      "Open Admin → Results & Exports or Teacher → Results for any completed examination.",
+      "Filter by class, term, or subject to review individual answers, accuracy breakdowns, and A1–F9 letter grades.",
+      "Click Export CSV Broadsheet for Excel/report-card import, or open any candidate row to print a clean official result slip.",
+    ],
+  },
+  {
     id: "activate-offline-license",
     category: "Licensing",
     title: "Buy a school licence via Paystack and activate offline Ed25519 keys",
@@ -354,6 +392,18 @@ export const GUIDES_LIST: GuideItem[] = [
       "Pay via Paystack online (Card, Bank Transfer, USSD, OPay) or instant Paystack-Titan virtual bank transfer inside Studio.",
       "As soon as payment confirms, your cryptographically signed Ed25519 licence key is issued immediately in your receipt and Cloud Dashboard.",
       "Paste the key inside CogniTara Studio → Licence (or let Studio sync automatically). Your server then runs completely offline for the full lease window (7 to 90 days per check-in).",
+    ],
+  },
+  {
+    id: "transfer-host-pc-license",
+    category: "Licensing",
+    title: "Start a free school trial or move your licence to a replacement host PC",
+    readTime: "2 min",
+    summary: "How hardware-bound licences work when you upgrade or replace your main exam server computer.",
+    steps: [
+      "New schools can activate a free trial directly on cognitara.net/license or inside CogniTara Studio whenever trial activation is enabled.",
+      "Each licence binds securely to your host Windows PC hardware fingerprint so offline leases cannot be tampered with.",
+      "If your school replaces its main server PC, email support@cognitara.net with your school email and licence key (or open your Cloud Dashboard) to reset the hardware slot and reactivate on the new PC in minutes.",
     ],
   },
 ];
@@ -443,7 +493,7 @@ export interface BlogPost {
   title: string;
   excerpt: string;
   date: string;
-  category: "Engineering" | "Exam Reliability" | "Guides" | "Releases";
+  category: string;
   author: string;
   authorInitials: string;
   readTime: string;
@@ -456,10 +506,10 @@ export const BLOG_POSTS: BlogPost[] = [
     title: "What happens when a student's computer dies 20 minutes into a final exam?",
     excerpt:
       "Why browser-only CBT platforms fail real school labs — and how CogniTara's write-through SQLite WAL state lets any student walk to a spare PC and resume on the exact second.",
-    date: "November 24, 2026",
+    date: "Nov 24, 2026",
     category: "Exam Reliability",
-    author: "Emmanuel · CogniTara Engineering",
-    authorInitials: "EC",
+    author: "Emmanuel",
+    authorInitials: "EM",
     readTime: "4 min read",
     sections: [
       {
@@ -489,10 +539,10 @@ export const BLOG_POSTS: BlogPost[] = [
     title: "Why one local Windows PC beats cloud CBT when 300 students click Start at 9:00 AM",
     excerpt:
       "School Wi-Fi bottlenecks aren't caused by hardware — they happen when 300 devices fight over a single mobile router to reach a remote internet server.",
-    date: "November 18, 2026",
+    date: "Nov 18, 2026",
     category: "Engineering",
-    author: "Emmanuel · CogniTara Engineering",
-    authorInitials: "EC",
+    author: "Emmanuel",
+    authorInitials: "EM",
     readTime: "5 min read",
     sections: [
       {
@@ -521,10 +571,10 @@ export const BLOG_POSTS: BlogPost[] = [
     title: "Why we removed every distracting color from CogniTara's exam room and dashboards",
     excerpt:
       "Examinations are high-focus moments. Here is why pure obsidian ink on warm cream-white paper reduces cognitive fatigue for students, teachers, and administrators.",
-    date: "November 26, 2026",
+    date: "Nov 26, 2026",
     category: "Releases",
-    author: "Emmanuel · CogniTara Engineering",
-    authorInitials: "EC",
+    author: "Emmanuel",
+    authorInitials: "EM",
     readTime: "3 min read",
     sections: [
       {
@@ -546,10 +596,10 @@ export const BLOG_POSTS: BlogPost[] = [
     title: "How to upgrade older school exam databases without losing a single student transcript",
     excerpt:
       "Inside CogniTara's vault-safe migration pipeline: automatic pre-import backups, dry-run inspection, and zero-loss schema reconciliation.",
-    date: "November 25, 2026",
-    category: "Guides",
-    author: "Emmanuel · CogniTara Engineering",
-    authorInitials: "EC",
+    date: "Nov 25, 2026",
+    category: "Migration",
+    author: "Emmanuel",
+    authorInitials: "EM",
     readTime: "3 min read",
     sections: [
       {
@@ -568,14 +618,54 @@ export const BLOG_POSTS: BlogPost[] = [
   },
 ];
 
+export interface AboutPageContent {
+  badge: string;
+  title: string;
+  lead: string;
+  paragraphs: string[];
+  signatureName: string;
+  signatureRole: string;
+  contactNote: string;
+}
+
+export const ABOUT_PAGE_DEFAULT: AboutPageContent = {
+  badge: "Story",
+  title: "The idea behind CogniTara",
+  lead: "Why we're building an examination tool that never makes you worry about exam day.",
+  paragraphs: [
+    "Every term, schools try to run computer-based exams on cloud websites designed for fiber-connected offices. Everything looks fine during a two-laptop test — until exam morning arrives and 200 students press Start at 9:00 AM over one shared router.",
+    "Pages stall, math equations fail to load, and when a lab computer shuts off in row three, a student watches their progress disappear while their countdown keeps burning.",
+    "That's why we started building CogniTara.",
+    "CogniTara is a local-first examination server built for real school labs. You install CogniTara Studio on one Windows PC, connect it to your school Wi-Fi, and immediately serve up to 300 student laptops, Chromebooks, tablets, and phones with zero internet required.",
+    "Every click writes straight to SQLite WAL on your own machine. If a computer dies mid-exam, the student walks to a spare desk, signs in, and continues on the exact question and remaining second. If NEPA cuts power during a generator switchover, an administrator pauses the entire hall in one click.",
+    "Our vision with CogniTara is simple: give every school calm, institutional examination infrastructure — owned locally on your hardware, without per-student fees, ready whenever exam week arrives.",
+  ],
+  signatureName: "Emmanuel",
+  signatureRole: "Founder & Lead Engineer",
+  contactNote: "Want to chat? Email support@cognitara.net or explore our guides.",
+};
+
+export interface SupportPageContent {
+  badge: string;
+  title: string;
+  lead: string;
+  email: string;
+  responseWindow: string;
+  bugChecklist: string[];
+}
+
 export const SUPPORT_CHANNELS = {
+  badge: "Get support",
+  title: "Get in touch",
+  lead: "CogniTara is built and supported directly by the team behind it. Every message gets a real reply.",
   email: "support@cognitara.net",
   whatsappLabel: "Direct Onboarding & Exam-Day Support",
-  responseWindow: "Typical response within 2–6 hours on school days (priority during exam weeks).",
+  responseWindow: "We typically reply within 2–6 hours on school days (priority during exam weeks).",
   bugChecklist: [
     "CogniTara Studio version (Settings → About / Updates)",
     "Windows version (Windows 10 or Windows 11, 64-bit)",
     "Approximate number of student devices connected on your LAN",
-    "What happened and the exact screen or error message shown",
+    "What happened vs. what you expected (and any message on screen)",
   ],
 };
+

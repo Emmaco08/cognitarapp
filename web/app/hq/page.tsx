@@ -8,6 +8,7 @@ import {
   IconCloud,
   IconCreditCard,
   IconDownload,
+  IconFileText,
   IconGift,
   IconLayout,
   IconList,
@@ -22,6 +23,7 @@ import {
   IconTag,
   IconUsers,
 } from "@/components/Icons";
+import { HqCmsTab } from "@/components/hq/HqCmsTab";
 import { HqLoginGate } from "@/components/hq/HqLoginGate";
 import { HqPaymentRow, HqPaymentsKpis, HqPaymentsTab } from "@/components/hq/HqPaymentsTab";
 import { HqPaymentSettingsTab, HqSettingsData } from "@/components/hq/HqPaymentSettingsTab";
@@ -38,6 +40,7 @@ import {
 
 type TabId =
   | "dashboard"
+  | "cms"
   | "schools"
   | "download_leads"
   | "reviews"
@@ -62,9 +65,11 @@ interface NavItem {
 
 const NAV_ITEMS: NavItem[] = [
   { id: "dashboard", group: "Overview", label: "Dashboard", icon: <IconLayout size={15} /> },
+  { id: "cms", group: "Website", label: "Website CMS", icon: <IconFileText size={15} /> },
+  { id: "reviews", group: "Website", label: "Reviews & ratings", icon: <IconStar size={15} /> },
+  { id: "broadcasts", group: "Website", label: "Banners, trials & flags", icon: <IconMegaphone size={15} /> },
   { id: "schools", group: "Schools", label: "Schools & accounts", icon: <IconUsers size={15} /> },
   { id: "download_leads", group: "Schools", label: "Download leads", icon: <IconDownload size={15} /> },
-  { id: "reviews", group: "Schools", label: "Reviews & ratings", icon: <IconStar size={15} /> },
   { id: "referrals", group: "Schools", label: "Referrals & payouts", icon: <IconGift size={15} /> },
   { id: "bans", group: "Schools", label: "Fraud & bans", icon: <IconBan size={15} /> },
   { id: "plans", group: "Money", label: "Plans & prices", icon: <IconTag size={15} /> },
@@ -72,13 +77,12 @@ const NAV_ITEMS: NavItem[] = [
   { id: "payment_settings", group: "Money", label: "Payment settings", icon: <IconSettings size={15} /> },
   { id: "codes", group: "Money", label: "Redeem & promo codes", icon: <IconGift size={15} /> },
   { id: "backups", group: "App control", label: "Cloud exam backups", icon: <IconCloud size={15} /> },
-  { id: "broadcasts", group: "App control", label: "Banners, trials & flags", icon: <IconMegaphone size={15} /> },
   { id: "emails", group: "System", label: "Emails & OTP", icon: <IconMail size={15} /> },
   { id: "security", group: "System", label: "Staff & 2FA security", icon: <IconShield size={15} /> },
   { id: "audit", group: "System", label: "Audit log", icon: <IconList size={15} /> },
 ];
 
-const NAV_GROUPS = ["Overview", "Schools", "Money", "App control", "System"];
+const NAV_GROUPS = ["Overview", "Website", "Schools", "Money", "App control", "System"];
 
 function fmtNgn(kobo: number) {
   return `₦${(Number(kobo || 0) / 100).toLocaleString("en-NG", { maximumFractionDigits: 0 })}`;
@@ -439,6 +443,8 @@ export default function DeveloperHqPage() {
               </div>
             </div>
           ) : null}
+
+          {tab === "cms" ? <HqCmsTab onToast={showToast} /> : null}
 
           {tab === "schools" ? (
             <HqSchoolsTab schools={schools} plans={plans} mode="all" onRefresh={loadAllData} onToast={showToast} />
