@@ -1,4 +1,4 @@
-# CogniTara v2 — End-to-End Systems Architecture & Master Plan
+# CogniTara v2 - End-to-End Systems Architecture & Master Plan
 
 **Document Status:** Stage 1 Architectural Baseline  
 **Workspace Root:** `c:\COGNITARA EXAM PORTAL`  
@@ -19,14 +19,14 @@ Every file path, schema count, and runtime version below was directly verified o
 | **Route Surface** | `scripts/routes_baseline.json`, `scripts/inspect_routes.py`, `scripts/validate_architecture.py` | **201** pre-modularization baseline routes (100% parity); **221** active `url_map` rules across **13** blueprints (`home`, `auth`, `student`, `exam_regular`, `exam_ce`, `teacher`, `admin_dashboard`, `admin_users`, `admin_support`, `admin_exams`, `admin_results`, `admin_ce`, `admin_settings`) prior to Stage 1 `preview` blueprint |
 | **Local Database** | `exam.db` (`cognitara/database/connection.py`, `cognitara/database/initialization.py`) | SQLite 3 (`PRAGMA journal_mode=WAL`, `synchronous=NORMAL`, `foreign_keys=ON`, `busy_timeout=30000`); **24** core tables in `docs/architecture/database.md` + **8** Phase 4.6 schema tables (`academic_sessions`, `ce_settings`, `classes`, `grading_scheme_rules`, `grading_schemes`, `school_settings`, `student_enrollment_history`, `student_promotions`) = **32 domain tables** (`33` `sqlite_master` entries incl. `sqlite_sequence`); `PRAGMA integrity_check` returns `ok` |
 | **Templates & Static** | `templates/` (**73** HTML files), `static/js/` (`cognitara-actions.js`, `cognitara-calc.js`, `cognitara-katex-editor.js`), `static/vendor/` | Offline Bootstrap, FontAwesome, Chart.js, SweetAlert2, KaTeX + `contrib/mhchem.min.js` + `contrib/auto-render.min.js` |
-| **Fonts & Brand Vectors** | `CogniTara-Brand-Identity/`, `static/fonts/`, `static/images/` | `CogniTaraType-{Bold,Regular}.{woff2,woff,ttf}`, `landing/InstrumentSans-{400,500,600}.woff2`, `cognitara-primary.svg`, `cognitara-primary-light.svg`, `cognitara-symbol.svg`, `cognitara-wordmark.svg`, `cognitara-app-icon.png`, `cognitara-favicon.ico`, `cognitara-identity.vectorcraft`, `cognitara_hero_video.mp4`, `static/images/screenshots/01_*.png`–`24_*.png` |
+| **Fonts & Brand Vectors** | `CogniTara-Brand-Identity/`, `static/fonts/`, `static/images/` | `CogniTaraType-{Bold,Regular}.{woff2,woff,ttf}`, `landing/InstrumentSans-{400,500,600}.woff2`, `cognitara-primary.svg`, `cognitara-primary-light.svg`, `cognitara-symbol.svg`, `cognitara-wordmark.svg`, `cognitara-app-icon.png`, `cognitara-favicon.ico`, `cognitara-identity.vectorcraft`, `cognitara_hero_video.mp4`, `static/images/screenshots/01_*.png`-`24_*.png` |
 | **Automated Tests** | `tests/` (**40** tests collected via `pytest tests/`) | Includes `test_modular_architecture_and_persistence.py` (17 tests), `test_phase4_6_master.py`, `test_security_audit_phase4_4.py`, `test_disaster_recovery.py`, `test_browser_phase4_3.py`, `test_concurrent_load_50.py`, `test_pilot_concurrency_benchmark.py` |
-| **Build & Security Toolchain** | Python `3.14.4`, Node `v24.19.0`, `cryptography 48.0.0`, `argon2-cffi 25.1.0`, `PyInstaller 6.20.0`, `pyarmor 9.2.4` | Installed locally (`pyarmor` currently reports `pyarmor-trial` license — see Risks in `tasks/plan.md` for large-module obfuscation mitigation) |
+| **Build & Security Toolchain** | Python `3.14.4`, Node `v24.19.0`, `cryptography 48.0.0`, `argon2-cffi 25.1.0`, `PyInstaller 6.20.0`, `pyarmor 9.2.4` | Installed locally (`pyarmor` currently reports `pyarmor-trial` license - see Risks in `tasks/plan.md` for large-module obfuscation mitigation) |
 | **Motion & Media Toolchain** | `C:\Program Files\EffectCraft\effectcraft-cli.exe`, `ffmpeg 9.0.1`, `playwright`, `edge_tts`, `kokoro_onnx` | Root helper scripts exist (`prepare_motion_assets.py`, `build_cognitara_motion_suite.py`, `synthesize_cognitara_audio.py`, `render_all_deliverables.py`). Note: `CogniTara-Motion-Graphics/` and `cognitara-motion-studio/` do **not** exist on disk yet and will be initialized in Stage 6 from verified `CogniTara-Brand-Identity/` and `static/fonts/` assets |
 
 ### 1.2 Six-Stage Delivery Roadmap & Mandatory User Approval Gates
 
-1. **Stage 1 (Current — Architecture & Live Desktop App Web Showcase):** Publish Master Plan, Task Breakdown, and interactive Super Admin Desktop App Web Showcase at `/desktop-preview` + `/api/preview/telemetry` -> **STOP FOR USER APPROVAL GATE #1**.
+1. **Stage 1 (Current - Architecture & Live Desktop App Web Showcase):** Publish Master Plan, Task Breakdown, and interactive Super Admin Desktop App Web Showcase at `/desktop-preview` + `/api/preview/telemetry` -> **STOP FOR USER APPROVAL GATE #1**.
 2. **Stage 2 (Windows Super Admin Desktop App Build):** Build packaged Windows desktop application (`desktop/` Electron custom frameless shell + Windows System Tray + PyInstaller/PyArmor Waitress daemon + 5-Layer Ed25519/DPAPI/Monotonic anti-tamper license vault).
 3. **Stage 3 (Academic Portal UI/UX Overhaul):** Author Design Preview of redesigned Daylight Academic templates -> **STOP FOR USER APPROVAL GATE #2** -> Roll out redesigned Student Dashboard, Distraction-Free Exam Engine, Non-Occluding Dockable/Floating Scientific Calculator v2, Teacher Dashboard, Visual Math/Chemistry Formula Studio v2 (`KaTeX` + `mhchem`), School Admin & Common Entrance portals, preserving all 201 baseline routes and SQLite WAL invariants.
 4. **Stage 4 (`cognitara.net` Cloud Platform):** Build Next.js App Router platform on Vercel + Neon Serverless Postgres + Paystack NGN/International Checkout & HMAC-SHA512 webhooks (`Monthly` / `Annual` / `Lifetime`) + Dual Referral Program (configurable cash commission wallet & payouts + bonus license days) + Ed25519 License Signing Authority + HQ Super Admin Portal.
@@ -146,12 +146,12 @@ flowchart LR
 
 **Hard Aesthetic Rules:**
 - **Zero Tailwind CSS** across Flask templates, Electron UI, and `cognitara.net` (authored using modular CSS custom properties + `@layer` architecture in `static/css/cognitara-tokens.css` and CSS Modules in Next.js).
-- **Zero external CDNs** in offline portal/desktop views — all fonts, icons, KaTeX, and brand assets load from local `/static/` paths.
+- **Zero external CDNs** in offline portal/desktop views - all fonts, icons, KaTeX, and brand assets load from local `/static/` paths.
 - **Zero rainbow clutter or generic AI SaaS tropes:** Strictly no unbranded violet/purple gradients, no decorative floating background icons, no tracked-out eyebrow spam above every heading, no em-dash fragment titles, and no `->` appended to buttons.
 
 ### 3.1 Color Token Matrix
 
-#### Tier A — Dark Command (`[data-ct-surface="dark-command"]` — Desktop App, `/desktop-preview`, `cognitara.net`)
+#### Tier A - Dark Command (`[data-ct-surface="dark-command"]` - Desktop App, `/desktop-preview`, `cognitara.net`)
 
 | Token Name | Hex / Value | Usage |
 | :--- | :--- | :--- |
@@ -168,7 +168,7 @@ flowchart LR
 | `--ct-slate-dim` | `#64748B` | Disabled/tertiary hints |
 | `--ct-ok` / `--ct-warn` / `--ct-danger` | `#10B981` / `#F59E0B` / `#EF4444` | Semantic badges & hardware/lockout indicators ONLY |
 
-#### Tier B — Daylight Academic (`[data-ct-surface="daylight-portal"]` — Student, Exam Engine, Calculator v2, Teacher, School Admin, Common Entrance)
+#### Tier B - Daylight Academic (`[data-ct-surface="daylight-portal"]` - Student, Exam Engine, Calculator v2, Teacher, School Admin, Common Entrance)
 
 | Token Name | Hex / Value | Usage |
 | :--- | :--- | :--- |
@@ -188,7 +188,7 @@ flowchart LR
 | **Brand Display Font** | `CogniTaraType` (`700` -> `/static/fonts/CogniTaraType-Bold.woff2`, `.woff`, `.ttf`; `400` -> `/static/fonts/CogniTaraType-Regular.woff2`, `.woff`, `.ttf`) | Wordmark lockups, boot titles, primary modal headings |
 | **UI & Academic Body Font** | `Instrument Sans` (`400`, `500`, `600` -> `/static/fonts/landing/InstrumentSans-{400,500,600}.woff2`) | Dashboards, exam questions, tables, forms |
 | **Monospace Font** | `'JetBrains Mono', ui-monospace, SFMono-Regular, Consolas, monospace` | Countdown timers, HWID hashes, license keys, LAN IPs, console logs |
-| **Spacing & Radii** | `4px` base grid (`--ct-space-1`..`16`) · Radii `6px` (`--ct-radius-sm`), `10px` (`--ct-radius-md`), `14px` (`--ct-radius-lg`) | Disciplined geometry; no oversized `24px–32px` pillow cards everywhere |
+| **Spacing & Radii** | `4px` base grid (`--ct-space-1`..`16`) · Radii `6px` (`--ct-radius-sm`), `10px` (`--ct-radius-md`), `14px` (`--ct-radius-lg`) | Disciplined geometry; no oversized `24px-32px` pillow cards everywhere |
 | **Motion Curves** | `--ct-ease-out: cubic-bezier(0.16, 1, 0.3, 1)` · `--ct-ease-spring: cubic-bezier(0.22, 1, 0.36, 1)` | Respect `@media (prefers-reduced-motion: reduce)` across all views |
 
 ### 3.3 Authentic Brand Mark Geometry (`CogniTara-Brand-Identity/cognitara-symbol.svg`)
@@ -199,7 +199,7 @@ All SVG icons, Electron boot screens, `/desktop-preview`, and video assets MUST 
 
 ---
 
-## 4. Stage 1 & Stage 2 — Super Admin Desktop App & 5-Layer License Vault
+## 4. Stage 1 & Stage 2 - Super Admin Desktop App & 5-Layer License Vault
 
 ### 4.1 Stage 1 Web Showcase (`/desktop-preview` & `/api/preview/telemetry`)
 - **Blueprint:** `cognitara/routes/preview.py` (`preview_bp`) registered in `cognitara/routes/__init__.py` `ALL_BLUEPRINTS`.
@@ -219,7 +219,7 @@ All SVG icons, Electron boot screens, `/desktop-preview`, and video assets MUST 
 
 ### 4.3 5-Layer Windows License & Anti-Clock-Tamper Specification
 
-#### Layer 1 — Ed25519 Signed Lease Payload (`.cgnlic` & Heartbeat JSON)
+#### Layer 1 - Ed25519 Signed Lease Payload (`.cgnlic` & Heartbeat JSON)
 Canonical UTF-8 JSON serialized with sorted keys and no whitespace (`separators=(",", ":")`) over the `payload` object, signed with the `cognitara.net` Ed25519 private key (`cryptography.hazmat.primitives.asymmetric.ed25519`). Public key `ED25519_PUBLIC_KEY_B64` is compiled inside both Electron main and PyArmor-protected `license_guard.py`.
 
 ```json
@@ -253,7 +253,7 @@ Canonical UTF-8 JSON serialized with sorted keys and no whitespace (`separators=
   - `annual`: `paid_duration_seconds = 365 * 86400 + bonus_days * 86400`, `lease_seconds = 30 * 86400`.
   - `lifetime`: `expires_at = null`, `paid_duration_seconds = null`, `lease_seconds = 90 * 86400` (anti-piracy periodic heartbeat refresh; monotonic counter still prevents lease rollover beyond `90d` offline without sync unless `offline_grace_override` is issued by HQ).
 
-#### Layer 2 — Hardware Fingerprint Binding (`hwid_hash`)
+#### Layer 2 - Hardware Fingerprint Binding (`hwid_hash`)
 Collected on Windows via WMI / CIM / Win32 Registry without shelling out to brittle text parsers when native APIs exist:
 1. `Win32_ComputerSystemProduct.UUID` (BIOS/SMBIOS UUID)
 2. `Win32_Processor.ProcessorId`
@@ -268,10 +268,10 @@ display_hwid = f"CT-HWID-{hwid_hash[:4].upper()}-{hwid_hash[4:8].upper()}-{hwid_
 ```
 Component hashes are also stored individually inside `license_activations.hw_components_json` on `cognitara.net`; if >= 3 of 4 match (e.g., SSD replacement), HQ/self-service allowance permits smooth re-binding without instant lockout, whereas <= 2 of 4 triggers `HWID_MISMATCH_LOCK` requiring HQ HWID Reset.
 
-#### Layer 3 — Triple-Anchor High-Water-Mark UTC & Monotonic Elapsed Counter
+#### Layer 3 - Triple-Anchor High-Water-Mark UTC & Monotonic Elapsed Counter
 Every 60 seconds, `license_guard.py` computes `delta = max(0, time.monotonic() - last_monotonic_tick)`, advances `used_seconds += delta`, `lease_used_seconds += delta`, and `max_seen_utc = max(max_seen_utc, now_utc)`, then atomically writes all three anchors:
 
-1. **Anchor A — Windows DPAPI Vault (`%ProgramData%\CogniTara\vault\license_vault.bin`):**
+1. **Anchor A - Windows DPAPI Vault (`%ProgramData%\CogniTara\vault\license_vault.bin`):**
    Encrypted via Windows `crypt32.dll!CryptProtectData` (`CRYPTPROTECT_LOCAL_MACHINE` + deterministic application entropy bytes `b"CogniTara-Vault-v2"`). Plaintext JSON inside DPAPI envelope:
    ```json
    {
@@ -290,9 +290,9 @@ Every 60 seconds, `license_guard.py` computes `delta = max(0, time.monotonic() -
      "state_hmac": "sha256_hmac_with_hwid_derived_key"
    }
    ```
-2. **Anchor B — Windows Registry Anchor (`HKLM\SOFTWARE\CogniTara\Vault` with automatic fallback to `HKCU\Software\CogniTara\Vault` if running non-elevated):**
+2. **Anchor B - Windows Registry Anchor (`HKLM\SOFTWARE\CogniTara\Vault` with automatic fallback to `HKCU\Software\CogniTara\Vault` if running non-elevated):**
    Stores `LicenseId`, `MaxSeenUtc` (QWORD), `UsedSeconds` (QWORD), `LockState` (REG_SZ), and `AnchorMac` (HMAC-SHA256 over the preceding values + `hwid_hash` so manual RegEdit tampering immediately invalidates the MAC).
-3. **Anchor C — SQLite `exam.db` Anchor (`local_license_state` table + exam timestamp cross-check):**
+3. **Anchor C - SQLite `exam.db` Anchor (`local_license_state` table + exam timestamp cross-check):**
    Additive table created non-destructively via `cognitara/database/initialization.py`:
    ```sql
    CREATE TABLE IF NOT EXISTS local_license_state (
@@ -316,7 +316,7 @@ Every 60 seconds, `license_guard.py` computes `delta = max(0, time.monotonic() -
   - If count > 0 and `active_exam_drain_until` is unset: set `active_exam_drain_until = now_utc + 900` (15-minute graceful drain), block new exam starts/logins, allow active exams to finish and auto-submit, then transition to `EXPIRED_LOCK`.
   - If count == 0 or drain window expired: enforce `EXPIRED_LOCK`.
 
-#### Layer 4 — Remote HQ Ban & Signed Revocation Tombstone
+#### Layer 4 - Remote HQ Ban & Signed Revocation Tombstone
 Returned on `POST /api/v1/license/heartbeat` (or pushed when checking `/api/v1/license/status`):
 ```json
 {
@@ -336,13 +336,13 @@ Returned on `POST /api/v1/license/heartbeat` (or pushed when checking `/api/v1/l
 ```
 Once signature-verified, the tombstone is burned into all 3 anchors; local engine switches immediately to `HQ_REVOKED_LOCK` (State 5) even if internet is subsequently disconnected.
 
-#### Layer 5 — Dual-Process Enforcement
+#### Layer 5 - Dual-Process Enforcement
 1. **Electron Main Process:** Calls `verifyVaultOnStartup()` before starting `cognitara-engine.exe`; disables server start IPC and surfaces State 4 or State 5 UI whenever `lock_state != "ACTIVE"`.
 2. **Python WSGI Daemon (`cognitara/security/license_guard.py`, compiled & obfuscated via PyArmor):** Invoked inside `wsgi.py` startup, inside `create_app()` (`cognitara/__init__.py`), via a 60-second background watchdog thread, and via `@app.before_request` hook (exempting `/health`, `/static/*`, and `/api/internal/license-status` read-only reporting, while failing closed with HTTP `403` / lock page on active portal routes when `lock_state in {'CLOCK_TAMPER_LOCK', 'EXPIRED_LOCK', 'HQ_REVOKED_LOCK', 'HWID_MISMATCH_LOCK'}`). Test isolation mode (`COGNITARA_TESTING_BYPASS_LICENSE=1` only accepted when `app.config['TESTING'] == True` and stripped in frozen builds via `getattr(sys, 'frozen', False)`) preserves fast pytest execution while preventing env-var bypass in production!
 
 ---
 
-## 5. Stage 3 — Academic Portal UI/UX Overhaul Blueprint (Approval Gate #2)
+## 5. Stage 3 - Academic Portal UI/UX Overhaul Blueprint (Approval Gate #2)
 
 All Stage 3 updates apply **Tier B (Daylight Academic)** tokens from `static/css/cognitara-tokens.css` + a new shared stylesheet `static/css/cognitara-academic.css`, preserving 100% of existing route URLs, CSRF meta/headers, form field names, and `cognitara-actions.js` hooks across all 73 templates.
 
@@ -361,7 +361,7 @@ All Stage 3 updates apply **Tier B (Daylight Academic)** tokens from `static/css
 
 ---
 
-## 6. Stage 4 — `cognitara.net` Cloud Platform & Neon Postgres DDL
+## 6. Stage 4 - `cognitara.net` Cloud Platform & Neon Postgres DDL
 
 ### 6.1 Cloud Stack & Core Modules (`cloud/` or `cognitara-cloud/`)
 - **Framework:** Next.js 15+ (App Router, React 19, TypeScript) deployed on Vercel (`cognitara.net`), styled strictly with CogniTara **Tier A Dark Command** CSS custom properties + CSS Modules (zero Tailwind v3).
@@ -592,7 +592,7 @@ CREATE INDEX idx_bans_school_time ON school_bans_audit(school_id, created_at DES
 
 ---
 
-## 7. Stage 5 — Security, Anti-Tamper & Regression Verification Matrix
+## 7. Stage 5 - Security, Anti-Tamper & Regression Verification Matrix
 
 1. **201-Route Parity & Modular Integrity:** `python scripts/validate_architecture.py` + `python scripts/inspect_routes.py` confirm zero broken endpoints across all blueprints.
 2. **Core Portal & Disaster Recovery Suites:** `pytest tests/` executes all 40 baseline tests (`test_modular_architecture_and_persistence.py`, `test_phase4_6_master.py`, `test_security_audit_phase4_4.py`, `test_disaster_recovery.py`, `test_browser_phase4_3.py`, `test_concurrent_load_50.py`, `test_pilot_concurrency_benchmark.py`).
@@ -608,7 +608,7 @@ CREATE INDEX idx_bans_school_time ON school_bans_audit(school_id, created_at DES
 
 ---
 
-## 8. Stage 6 — Launch Advert Motion Graphics Blueprint (`cognitara-v2-launch`)
+## 8. Stage 6 - Launch Advert Motion Graphics Blueprint (`cognitara-v2-launch`)
 
 ### 8.1 Studio Scaffold & Authentic Media Pipeline
 Since `CogniTara-Motion-Graphics/` and `cognitara-motion-studio/` do not yet exist on disk, Stage 6 first initializes `cognitara-motion-studio/tools/` (validation gates: `brand_asset_checker.py`, `media_manifest_validator.py`, `subtitle_timeline_checker.py`, `video_metadata_checker.py`, `production_quality_report.py`) and `cognitara-motion-studio/projects/cognitara-v2-launch/` importing only **genuine CogniTara assets**:
@@ -620,14 +620,14 @@ Since `CogniTara-Motion-Graphics/` and `cognitara-motion-studio/` do not yet exi
 
 | Beat | Timecode | Duration | Visual Composition & Camera Motion | Authentic Asset Source | On-Screen Kinetic Type (>=56pt) | Voiceover Script Beat | Sound Design |
 | :---: | :--- | :---: | :--- | :--- | :--- | :--- | :--- |
-| **1** | `00.0–03.5s` | 3.5s | Hard whip-wipe from batch console clutter to Midnight Void (`#060913`) & Luminary C pulse (`1.04x` scale drift) | `cognitara-symbol.svg` + terminal capture | **NO MORE BATCH TERMINALS.** | *"Schools shouldn't run high-stakes exams from a terminal window."* | Deep 55Hz drone + sharp glitch-cut riser |
-| **2** | `03.5–07.5s` | 4.0s | 2.5D tilted Desktop App Command Center; click `"Start Exam Server"` -> cyan orbital ring ignites + QR pops | Stage 2 Desktop App capture | **ONE-CLICK LAN COMMAND.** | *"Meet CogniTara v2: a native Windows desktop command studio that launches your entire exam hall in one click."* | Crystalline glass click + cyan sweep chime |
-| **3** | `07.5–11.5s` | 4.0s | Real exam lab photo masked behind diagonal telemetry HUD counting live concurrent stations & WAL health | `static/images/hero_students_cbt.jpeg` + `exam_hall_lab.jpeg` | **300+ STATIONS. ZERO LAG.** | *"Powered by SQLite WAL, every answer saves instantaneously offline—even across three hundred students."* | Subtle tactile keybed pulse + warm bed |
-| **4** | `11.5–15.5s` | 4.0s | Daylight Academic Exam Engine cleanly docking Scientific Calculator v2 into right split-pane beside physics question | Stage 3 Exam Engine + Calc v2 capture | **ZERO OCCLUSION CALCULATOR.** | *"Students get a distraction-free exam canvas with a dockable scientific calculator that never blocks a question."* | Soft UI slide swoosh + harmonic ping |
-| **5** | `15.5–19.5s` | 4.0s | Tight macro zoom (`1.05x` ease-out) on Teacher Formula Studio v2 building fractions & `\ce{H2SO4}` live | Stage 3 Formula Studio v2 capture | **VISUAL MATH & CHEMISTRY.** | *"Teachers craft rich fractions and chemical equations visually—zero raw LaTeX guesswork."* | Crisp pen-tap ticks + gentle chord lift |
-| **6** | `19.5–23.5s` | 4.0s | Dark Command License Vault highlighting Ed25519 signature, HWID lock, and 3-anchor monotonic clock shield | Stage 2 License Vault capture | **ED25519 + ANTI-TAMPER.** | *"Protected by Ed25519 cryptography, hardware locking, and triple-anchor anti-clock-tamper security."* | Vault mechanical lock thud + sub-bass |
-| **7** | `23.5–27.5s` | 4.0s | Rapid parallax slide from `cognitara.net` Paystack Monthly/Annual/Lifetime checkout to Dual Referral wallet & bonus days | Stage 4 `cognitara.net` capture | **PAYSTACK + DUAL REFERRALS.** | *"Activate in seconds on cognitara.net with Paystack, and earn cash or bonus days for every school you refer."* | Uplifting arpeggio riser + Paystack bell |
-| **8** | `27.5–36.0s` | 8.5s | Official CogniTara Luminary C + Tara Star reveal ending in `>=1.5s` unblemished resting hold + `cognitara.net` lockup | Official CogniTara reveal render (synthesized from `CogniTara-Brand-Identity` + `synthesize_cognitara_audio.py`) | **COGNITARA.NET** | *"CogniTara v2. Exam integrity, engineered."* | Signature glass impact + sub-bass decay |
+| **1** | `00.0-03.5s` | 3.5s | Hard whip-wipe from batch console clutter to Midnight Void (`#060913`) & Luminary C pulse (`1.04x` scale drift) | `cognitara-symbol.svg` + terminal capture | **NO MORE BATCH TERMINALS.** | *"Schools shouldn't run high-stakes exams from a terminal window."* | Deep 55Hz drone + sharp glitch-cut riser |
+| **2** | `03.5-07.5s` | 4.0s | 2.5D tilted Desktop App Command Center; click `"Start Exam Server"` -> cyan orbital ring ignites + QR pops | Stage 2 Desktop App capture | **ONE-CLICK LAN COMMAND.** | *"Meet CogniTara v2: a native Windows desktop command studio that launches your entire exam hall in one click."* | Crystalline glass click + cyan sweep chime |
+| **3** | `07.5-11.5s` | 4.0s | Real exam lab photo masked behind diagonal telemetry HUD counting live concurrent stations & WAL health | `static/images/hero_students_cbt.jpeg` + `exam_hall_lab.jpeg` | **300+ STATIONS. ZERO LAG.** | *"Powered by SQLite WAL, every answer saves instantaneously offline, even across three hundred students."* | Subtle tactile keybed pulse + warm bed |
+| **4** | `11.5-15.5s` | 4.0s | Daylight Academic Exam Engine cleanly docking Scientific Calculator v2 into right split-pane beside physics question | Stage 3 Exam Engine + Calc v2 capture | **ZERO OCCLUSION CALCULATOR.** | *"Students get a distraction-free exam canvas with a dockable scientific calculator that never blocks a question."* | Soft UI slide swoosh + harmonic ping |
+| **5** | `15.5-19.5s` | 4.0s | Tight macro zoom (`1.05x` ease-out) on Teacher Formula Studio v2 building fractions & `\ce{H2SO4}` live | Stage 3 Formula Studio v2 capture | **VISUAL MATH & CHEMISTRY.** | *"Teachers craft rich fractions and chemical equations visually, zero raw LaTeX guesswork."* | Crisp pen-tap ticks + gentle chord lift |
+| **6** | `19.5-23.5s` | 4.0s | Dark Command License Vault highlighting Ed25519 signature, HWID lock, and 3-anchor monotonic clock shield | Stage 2 License Vault capture | **ED25519 + ANTI-TAMPER.** | *"Protected by Ed25519 cryptography, hardware locking, and triple-anchor anti-clock-tamper security."* | Vault mechanical lock thud + sub-bass |
+| **7** | `23.5-27.5s` | 4.0s | Rapid parallax slide from `cognitara.net` Paystack Monthly/Annual/Lifetime checkout to Dual Referral wallet & bonus days | Stage 4 `cognitara.net` capture | **PAYSTACK + DUAL REFERRALS.** | *"Activate in seconds on cognitara.net with Paystack, and earn cash or bonus days for every school you refer."* | Uplifting arpeggio riser + Paystack bell |
+| **8** | `27.5-36.0s` | 8.5s | Official CogniTara Luminary C + Tara Star reveal ending in `>=1.5s` unblemished resting hold + `cognitara.net` lockup | Official CogniTara reveal render (synthesized from `CogniTara-Brand-Identity` + `synthesize_cognitara_audio.py`) | **COGNITARA.NET** | *"CogniTara v2. Exam integrity, engineered."* | Signature glass impact + sub-bass decay |
 
 ### 8.3 Subtitles & Broadcast Audio Mastering Specs
 - **Subtitles (`captions.ass`):** `PlayResX: 1080`, `PlayResY: 1920`, `MarginV: 440` (baseline strictly `<= Y=1480px` clear of TikTok/Reels/Shorts UI overlays), word-level kinetic highlight synchronized within `±2 frames (67ms)` to `voiceover_timed.json` extracted from actual generated speech audio, reading speed `<= 21 chars/sec`.

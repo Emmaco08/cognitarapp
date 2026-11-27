@@ -384,7 +384,7 @@ export function HqSchoolsTab({
                   </td>
                   <td className="mono">{fmtNgn(s.total_paid_ngn)}</td>
                   <td className="tnum" style={{ fontSize: 12.5, color: "var(--ink-2)" }}>
-                    {s.last_seen_at ? new Date(s.last_seen_at).toLocaleDateString(undefined, { dateStyle: "medium" }) : "—"}
+                    {s.last_seen_at ? new Date(s.last_seen_at).toLocaleDateString(undefined, { dateStyle: "medium" }) : "-"}
                   </td>
                 </tr>
               ))
@@ -467,7 +467,7 @@ export function HqSchoolsTab({
                   <div style={{ fontSize: 11, color: "var(--ink-3)" }}>Session &amp; Term</div>
                   <div style={{ fontWeight: 600, marginTop: 2 }}>
                     {selected.current_term || selected.academic_session
-                      ? `${selected.current_term || "—"} · ${selected.academic_session || "—"}`
+                      ? `${selected.current_term || "-"} · ${selected.academic_session || "-"}`
                       : "Not configured yet"}
                   </div>
                 </div>
@@ -497,7 +497,7 @@ export function HqSchoolsTab({
                 <div>
                   <div style={{ fontSize: 11, color: "var(--ink-3)" }}>Machine HWID</div>
                   <div className="mono" style={{ fontSize: 11.5, marginTop: 2, wordBreak: "break-all" }}>
-                    {selected.last_hwid || "—"}
+                    {selected.last_hwid || "-"}
                   </div>
                 </div>
                 <div>
@@ -509,7 +509,7 @@ export function HqSchoolsTab({
                       selected.last_app_version ? `v${selected.last_app_version}` : null,
                     ]
                       .filter(Boolean)
-                      .join(" · ") || "—"}
+                      .join(" · ") || "-"}
                   </div>
                 </div>
                 {selected.last_os_version ? (
@@ -1362,7 +1362,7 @@ export function HqCodesTab({
                   />
                 </div>
                 <div className="field">
-                  <label>Batch count (1–50)</label>
+                  <label>Batch count (1-50)</label>
                   <input type="number" min={1} max={50} value={batchCount} onChange={(e) => setBatchCount(e.target.value)} />
                 </div>
               </div>
@@ -1534,9 +1534,9 @@ export function HqCodesTab({
                       </div>
                     </td>
                     <td>
-                      <div style={{ fontWeight: 600 }}>{r.school_name || "—"}</div>
+                      <div style={{ fontWeight: 600 }}>{r.school_name || "-"}</div>
                       <div className="mono" style={{ fontSize: 11.5, color: "var(--ink-3)" }}>
-                        {r.email || r.buyer_email || "—"}
+                        {r.email || r.buyer_email || "-"}
                       </div>
                     </td>
                     <td className="mono">
@@ -1551,7 +1551,7 @@ export function HqCodesTab({
                           {r.license_key}
                         </div>
                       ) : (
-                        <span style={{ fontSize: 11.5, color: "var(--ink-3)" }}>—</span>
+                        <span style={{ fontSize: 11.5, color: "var(--ink-3)" }}>-</span>
                       )}
                     </td>
                     <td style={{ fontSize: 12, color: "var(--ink-2)" }}>

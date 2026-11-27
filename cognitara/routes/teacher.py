@@ -2181,7 +2181,7 @@ def student_exam_detail(student_id, exam_id):
         letters = ['A', 'B', 'C', 'D']
         
         # Determine chosen letter
-        chosen_letter = '—'
+        chosen_letter = '-'
         user_answer = q.get('user_answer')
         if user_answer:
             for i, opt in enumerate(options):
@@ -2190,7 +2190,7 @@ def student_exam_detail(student_id, exam_id):
                     break
         
         # Determine correct letter
-        correct_letter = '—'
+        correct_letter = '-'
         correct_answer = q.get('answer')
         if correct_answer:
             for i, opt in enumerate(options):

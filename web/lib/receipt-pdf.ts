@@ -27,8 +27,7 @@ export interface PdfReceiptInput {
 function pdfStr(input: string): string {
   const ascii = String(input || "")
     .replace(/₦/g, "NGN ")
-    .replace(/—/g, "-")
-    .replace(/–/g, "-")
+    .replace(new RegExp(`[${String.fromCharCode(8212)}${String.fromCharCode(8211)}]`, "g"), "-")
     .replace(/·/g, " | ")
     .replace(/[‘’]/g, "'")
     .replace(/[“”]/g, '"')

@@ -613,7 +613,7 @@ def delete_student(student_id):
         conn.execute("DELETE FROM warning_logs WHERE student_id=?", (student_id,))
         # 3. Delete scores
         conn.execute("DELETE FROM scores WHERE student_id=?", (student_id,))
-        # 4. Delete student (never touch ce_students — independent ID sequence!)
+        # 4. Delete student (never touch ce_students - independent ID sequence!)
         conn.execute("DELETE FROM students WHERE id=?", (student_id,))
         log_action("Admin", session["username"], f"Deleted student '{student['username']}'", conn=conn)
         conn.commit()

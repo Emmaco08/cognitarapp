@@ -1,5 +1,5 @@
 """
-CogniTara v2 — Layer 2 Hardware Fingerprint Binding (cognitara/security/hwid.py)
+CogniTara v2 - Layer 2 Hardware Fingerprint Binding (cognitara/security/hwid.py)
 
 Computes a deterministic HMAC-SHA256 hardware fingerprint from 4 machine identifiers:
   1. SMBIOS UUID (Win32_ComputerSystemProduct.UUID)

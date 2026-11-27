@@ -284,7 +284,7 @@ def admin_student_exam_detail(student_id, exam_id):
         options = [q.get('option1') or '', q.get('option2') or '', q.get('option3') or '', q.get('option4') or '']
         letters = ['A', 'B', 'C', 'D']
         
-        chosen_letter = '—'
+        chosen_letter = '-'
         user_answer = q.get('user_answer')
         if user_answer:
             for i, opt in enumerate(options):
@@ -292,7 +292,7 @@ def admin_student_exam_detail(student_id, exam_id):
                     chosen_letter = letters[i]
                     break
         
-        correct_letter = '—'
+        correct_letter = '-'
         correct_answer = q.get('answer')
         if correct_answer:
             for i, opt in enumerate(options):

@@ -11,7 +11,7 @@
 As Agent 4, I have conducted an exhaustive forensic and academic investigation into examination misconduct vectors, modern browser security boundaries, and the architectural requirements for CogniTara's Examination Integrity Engine.
 
 ### Critical Finding in Current Codebase
-In `cognitara/services/violation_service.py` (lines 43–52 and 110–119), when a student reaches `max_warnings`, the system executes:
+In `cognitara/services/violation_service.py` (lines 43-52 and 110-119), when a student reaches `max_warnings`, the system executes:
 ```python
 if new_count >= max_w:
     is_paused = 1
@@ -40,13 +40,13 @@ CogniTara's integrity architecture is engineered at the intersection of empirica
 - **Computer-Based Testing (CBT) Realities in Nigeria:** Following JAMB's pioneering nationwide CBT rollout and recent transitions by WAEC and NECO, schools operate in high-density computer laboratories often connected via a single shared NAT IP router, with intermittent grid power and local offline LAN servers. The anti-cheating system must be 100% offline-resilient, never rely on external CDN dependencies, and distinguish between infrastructure failures (power drops, cable unplugs) and willful misconduct.
 
 ### 1.2 Academic Literature Review
-- **Systematic Review of Online Exam Cheating (PMC8898996 — Noorbehbahani, Mohammadi, & Aminazadeh, 2022):**
-  - Synthesizes 58 peer-reviewed studies (2010–2021) categorizing digital misconduct into:
+- **Systematic Review of Online Exam Cheating (PMC8898996 - Noorbehbahani, Mohammadi, & Aminazadeh, 2022):**
+  - Synthesizes 58 peer-reviewed studies (2010-2021) categorizing digital misconduct into:
     1. *Unauthorized Information Retrieval* (search engines, saved notes, browser tabs).
     2. *Unauthorized Collaboration* (screen sharing, instant messaging, split windows).
     3. *Proxy Test-Taking & Device Multiplexing* (secondary devices, external assistance).
   - Demonstrates that unmonitored examinations exhibit cheating rates between 40% and 75%, but non-intrusive automated browser restriction tools combined with question pool randomization and server-side time fences reduce illicit collaboration by over 80%.
-- **Test Departure Detection & Paradata (PMID 27573006 — Diedenhofen & Musch, 2017 — PageFocus):**
+- **Test Departure Detection & Paradata (PMID 27573006 - Diedenhofen & Musch, 2017 - PageFocus):**
   - Establishes the psychometric science of *paradata* (behavioral tracking data of test administration).
   - Proves that monitoring browser focus events (`blur`, `visibilitychange`) achieves near 100% sensitivity in detecting when test-takers depart the examination context to query external resources.
   - Crucial Empirical Finding: The mere presence of an authoritative visual warning counter and immediate feedback toasts suppresses departure frequency by up to 73%. However, the study highlights that accidental departures occur (e.g., operating system update popups, anti-virus banners, unintentional mouse drag outside the viewport). Therefore, systems must implement an authoritative *debounce/grace window* (2 to 3 seconds) to prevent false-positive penalization.
@@ -56,7 +56,7 @@ CogniTara's integrity architecture is engineered at the intersection of empirica
   1. *Deprecation of Custom Text Strings:* Modern browsers (Chromium, Firefox, WebKit/Safari, Edge) strictly ignore custom strings assigned to `event.returnValue` or returned from the handler. The browser displays an immutable, localized system prompt (e.g., *"Changes you made may not be saved."*). No custom message can be forced.
   2. *Transient User Activation Requirement:* To prevent malicious trapping dialogs, browsers will only honor `beforeunload` if the user has performed an explicit user gesture (click, keypress) within the document context.
   3. *Asynchronous Request Abortion:* Standard `fetch()` and `XMLHttpRequest` calls executed within `beforeunload` or `unload` are forcefully cancelled when the document browsing context is destroyed.
-  4. *The Solution — `navigator.sendBeacon()` & `fetch(..., { keepalive: true })`:* 
+  4. *The Solution - `navigator.sendBeacon()` & `fetch(..., { keepalive: true })`:* 
      - `navigator.sendBeacon(url, data)` guarantees asynchronous delivery of small payloads (typically <= 64 KiB) by handing the buffer to the operating system's network stack, which persists across page unloading without blocking UI thread destruction.
      - For payload deliveries requiring custom headers (such as CSRF tokens), `fetch(url, { keepalive: true, method: 'POST', body: ... })` is the modern standard, though `sendBeacon` with URL query tokenization remains the most battle-tested for offline LANs.
 
@@ -102,7 +102,7 @@ The CogniTara Examination Portal supports four configurable policy tiers: **Low*
 
 | Policy Dimension | Low Mode (Formative / Practice) | Medium Mode (Term Exams / Summative) | High Mode (Common Entrance / Cert.) | Custom Mode (Configurable) |
 | :--- | :--- | :--- | :--- | :--- |
-| **Primary Use Case** | Classroom quizzes, Grade 1–3, practice trials | Standard terminal exams, SSS/JSS assessments | National Common Entrance, Scholarships | Customized institutional requirements |
+| **Primary Use Case** | Classroom quizzes, Grade 1-3, practice trials | Standard terminal exams, SSS/JSS assessments | National Common Entrance, Scholarships | Customized institutional requirements |
 | **Monitored Events** | Copy/Paste suppression only | Visibility change, Window blur, DevTools keys, Clipboard, Context menu | Fullscreen exit, Visibility change, Window blur, DevTools, Clipboard, Context menu | Granular toggle per event type |
 | **Fullscreen Enforced** | No | No (Recommended, but not hard-locked) | **Yes (Mandatory Fullscreen)** | Optional (Enabled / Disabled) |
 | **Debounce / Grace Window** | N/A (5.0s if enabled) | **3.0 seconds** | **1.5 seconds** | 1.0s to 5.0s (Configurable) |
@@ -113,7 +113,7 @@ The CogniTara Examination Portal supports four configurable policy tiers: **Low*
 | **Can Exam Be Paused on Max Violations?** | **NEVER** | **NEVER** | **NEVER** | **NEVER** |
 
 ### 3.1 Event Handling & Debounce Specification
-- **`visibilitychange` (Tab Switching):** When `document.hidden === true`, an interval timer begins. If the document remains hidden beyond the configured grace window (e.g. 2.0–3.0s), an authoritative violation packet is dispatched to `/log_warning` or `/ce_log_warning`. Rapid toggling within the grace period is absorbed as an accidental switch.
+- **`visibilitychange` (Tab Switching):** When `document.hidden === true`, an interval timer begins. If the document remains hidden beyond the configured grace window (e.g. 2.0-3.0s), an authoritative violation packet is dispatched to `/log_warning` or `/ce_log_warning`. Rapid toggling within the grace period is absorbed as an accidental switch.
 - **`window.blur` (Loss of Focus):** Triggers when the user clicks an external window or OS notification. Debounced by 2.0s to prevent false alerts from transient anti-virus popups.
 - **`fullscreenchange` (Fullscreen Exit):** In High Mode, exiting fullscreen triggers an immediate full-screen modal blocking question interaction until re-engaged, incrementing the violation counter.
 - **DevTools & Shortcuts (`keydown`):**
@@ -366,14 +366,14 @@ All security events are permanently recorded in SQLite across three forensic tab
 ## Summary of Architectural Recommendations for Implementation
 
 1. **Refactor `cognitara/services/violation_service.py`**:
-   - Replace lines 43–52 (`log_regular_warning`) and lines 110–119 (`log_ce_warning`) where `is_paused = 1` is set.
+   - Replace lines 43-52 (`log_regular_warning`) and lines 110-119 (`log_ce_warning`) where `is_paused = 1` is set.
    - Replace with immediate call to `finalize_regular_exam_attempt()` / `finalize_ce_exam_attempt()`.
    - Set `force_submit = 1, is_paused = 0` and return `"auto_submitted": True`.
 
 2. **Refactor Client-Side Templates (`templates/exam_page_new.html` & `ce_exam_page.html`)**:
    - Update `triggerWarning()` to recognize `data.auto_submitted === true`.
    - When `data.auto_submitted` is true, immediately clear all intervals, lock the screen, show the auto-submit notification, and redirect to the results page after 2 seconds.
-   - Adjust `warningCooldown` from 1000ms to the configured policy debounce (e.g. 2000ms–3000ms for Medium, 1500ms for High).
+   - Adjust `warningCooldown` from 1000ms to the configured policy debounce (e.g. 2000ms-3000ms for Medium, 1500ms for High).
 
 3. **Restrict or Deprecate `exam_clear_auto_lock`**:
    - In high-integrity modes, do not permit candidates to self-unpause within 20 seconds. Require explicit administrator authorization via `/admin/dashboard` or `/support`.

@@ -209,8 +209,8 @@
                     </div>
                   </div>
                   <div class="cloud-profile">
-                    <div class="cloud-profile__row"><span>Account holder</span><strong id="onbCvName">—</strong></div>
-                    <div class="cloud-profile__row"><span>Referral code</span><code id="onbCvRef">—</code></div>
+                    <div class="cloud-profile__row"><span>Account holder</span><strong id="onbCvName">-</strong></div>
+                    <div class="cloud-profile__row"><span>Referral code</span><code id="onbCvRef">-</code></div>
                     <div class="cloud-profile__row"><span>Cloud database</span><strong style="color:var(--ok)">Verified &amp; cached offline</strong></div>
                   </div>
                   <div style="display:flex;gap:8px;justify-content:flex-end">
@@ -252,7 +252,7 @@
                   </form>
 
                   <form class="form" id="onbOtpForm" hidden>
-                    <p style="margin:0;font-size:13px;color:var(--ink-2)">Enter the 6-digit verification code sent to <strong id="onbOtpEmailLabel">—</strong>.</p>
+                    <p style="margin:0;font-size:13px;color:var(--ink-2)">Enter the 6-digit verification code sent to <strong id="onbOtpEmailLabel">-</strong>.</p>
                     <label class="field">
                       <span>6-Digit Email Verification Code</span>
                       <input id="onbOtpCode" class="mono onb-otp-input" inputmode="numeric" maxlength="6" required placeholder="000000" autocomplete="one-time-code">
@@ -566,16 +566,16 @@
                 <g clip-path="url(#ct-c-clip)"><path class="lic__arc" id="licArc" d="M 141.01 58.99 A 58 58 0 1 0 141.01 141.01" pathLength="100"/></g>
                 <use class="lic__star" href="#ct-star"/>
               </svg>
-              <div class="lic__days"><strong id="licDays">—</strong><span id="licDaysLabel">checking licence</span></div>
+              <div class="lic__days"><strong id="licDays">-</strong><span id="licDaysLabel">checking licence</span></div>
             </section>
             <section class="lic__details">
               <dl class="dl">
-                <div><dt>Plan</dt><dd id="licPlan">—</dd></div>
+                <div><dt>Plan</dt><dd id="licPlan">-</dd></div>
                 <div><dt>School</dt><dd id="licSchool">CogniTara School</dd></div>
-                <div><dt id="licExpLabel">Expires</dt><dd id="licExp">—</dd></div>
+                <div><dt id="licExpLabel">Expires</dt><dd id="licExp">-</dd></div>
                 <div><dt>This computer</dt><dd><code id="licHwid">CT-HWID-0000-0000-0000</code></dd></div>
-                <div><dt>Last check-in</dt><dd id="licCheck">—</dd></div>
-                <div><dt>Check in again by</dt><dd id="licLease">—</dd></div>
+                <div><dt>Last check-in</dt><dd id="licCheck">-</dd></div>
+                <div><dt>Check in again by</dt><dd id="licLease">-</dd></div>
               </dl>
               <div class="lic__actions">
                 <button type="button" class="btn btn--ghost" id="licImportBtn"><svg><use href="#i-doc"/></svg>Import .cgnlic file</button>
@@ -846,7 +846,7 @@
           </div>
         </div>
 
-        <!-- ===== CLOUD ACCOUNT & RATE APP (Full-Screen Animated View — ZERO POPUPS) ===== -->
+        <!-- ===== CLOUD ACCOUNT & RATE APP (Full-Screen Animated View, ZERO POPUPS) ===== -->
         <div class="view view--full" data-view="cloud" id="cloudView">
           <header class="vhead vhead--flow">
             <div class="vhead__left">
@@ -869,19 +869,19 @@
               <div class="cloud-id-head">
                 <div class="cloud-id-crest" id="cmCrest">CT</div>
                 <div>
-                  <h2 id="cmSchool">—</h2>
+                  <h2 id="cmSchool">-</h2>
                   <p id="cmSync">Synced with CogniTara Cloud</p>
                 </div>
               </div>
 
               <div class="cloud-profile">
-                <div class="cloud-profile__row"><span>Account holder</span><strong id="cmUser">—</strong></div>
-                <div class="cloud-profile__row"><span>School email</span><code id="cmEmail">—</code></div>
+                <div class="cloud-profile__row"><span>Account holder</span><strong id="cmUser">-</strong></div>
+                <div class="cloud-profile__row"><span>School email</span><code id="cmEmail">-</code></div>
                 <div class="cloud-profile__row"><span>Verification</span><strong id="cmVerified" style="color:var(--ok)">Email OTP verified</strong></div>
                 <div class="cloud-profile__row">
                   <span>Referral code</span>
                   <span style="display:flex;align-items:center;gap:8px">
-                    <code id="cmRef">—</code>
+                    <code id="cmRef">-</code>
                     <button type="button" class="btn btn--ghost btn--sm" data-copy="#cmRef">Copy</button>
                   </span>
                 </div>
@@ -923,7 +923,7 @@
                     <button type="button" class="star-btn is-lit" data-star="4" aria-label="4 stars"><svg><use href="#i-star"/></svg></button>
                     <button type="button" class="star-btn is-lit" data-star="5" aria-label="5 stars"><svg><use href="#i-star"/></svg></button>
                   </div>
-                  <em class="review-rating-label" id="reviewRatingLabel">5 / 5 — Outstanding</em>
+                  <em class="review-rating-label" id="reviewRatingLabel">5 / 5 · Outstanding</em>
                 </div>
 
                 <div class="field-row">
@@ -981,7 +981,7 @@
               </form>
 
               <form class="form" id="cloudOtpForm" hidden>
-                <p style="margin:0;font-size:13.5px;color:var(--ink-2)">Enter the 6-digit verification code sent to <strong id="coEmailLabel">—</strong>.</p>
+                <p style="margin:0;font-size:13.5px;color:var(--ink-2)">Enter the 6-digit verification code sent to <strong id="coEmailLabel">-</strong>.</p>
                 <label class="field">
                   <span>6-digit verification code</span>
                   <input id="coCode" class="mono onb-otp-input" inputmode="numeric" maxlength="6" required placeholder="000000" autocomplete="one-time-code">

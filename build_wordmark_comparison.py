@@ -222,7 +222,7 @@ def build_comparison_specimen_svg():
         <text x="15" y="20" class="metric-lbl">READABILITY: <tspan class="metric-val">99.8%</tspan></text>
 
         <rect x="465" y="0" width="140" height="32" rx="8" fill="#151D33" stroke="#1E293B" stroke-width="1"/>
-        <text x="15" y="20" class="metric-lbl">SCALABILITY: <tspan class="metric-val">10px – 4K</tspan></text>
+        <text x="15" y="20" class="metric-lbl">SCALABILITY: <tspan class="metric-val">10px-4K</tspan></text>
       </g>
     </g>
   </g>

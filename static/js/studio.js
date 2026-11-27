@@ -1,4 +1,4 @@
-/* CogniTara Studio — desktop app preview behaviour.
+/* CogniTara Studio - desktop app preview behaviour.
    Real data comes from exam.db (read-only) via the embedded telemetry JSON.
    Live activity numbers are simulated in the preview so every state can be seen. */
 (function () {

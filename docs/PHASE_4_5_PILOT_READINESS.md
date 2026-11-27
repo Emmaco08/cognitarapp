@@ -1,6 +1,6 @@
-# CogniTara Offline Examination Portal — Phase 4.5 Pilot Readiness & Network Validation Report
+# CogniTara Offline Examination Portal - Phase 4.5 Pilot Readiness & Network Validation Report
 
-**Milestone:** Phase 4.5 — Controlled School Pilot, Real-Network Validation and Final Release Readiness  
+**Milestone:** Phase 4.5 - Controlled School Pilot, Real-Network Validation and Final Release Readiness  
 **Release Decision:** **CONDITIONAL GO FOR CONTROLLED SCHOOL PILOT**  
 **Certified Concurrency Operating Envelope:** **10 to 25 Simultaneous Students** (Hard Technical Ceiling: 30 Students per Host Instance / Wave)  
 **Production Database Status:** `exam.db` Cryptographic SHA-256 confirmed untouched: `7415985AE65B42C744F29F2B463457B78CA989B4735156DE465DF3FB63F67643`  
@@ -19,7 +19,7 @@ The application is formally certified for a **Controlled School Pilot** strictly
 
 1. **Certified Cohort Size:** **10 to 25 simultaneous students** per server instance.
 2. **Hard Instance Ceiling:** **30 simultaneous students**. Testing beyond 30 concurrent students under synthetic peak load exhibits queueing delays exceeding 1.5 seconds.
-3. **Mandatory Cohort Partitioning (Waves):** For student bodies exceeding 25–30 candidates (e.g., 50–200 students), the operator **must** split candidates into sequential testing waves of 20–25 candidates, executing an inter-wave hot backup and WAL checkpoint between cohorts.
+3. **Mandatory Cohort Partitioning (Waves):** For student bodies exceeding 25-30 candidates (e.g., 50-200 students), the operator **must** split candidates into sequential testing waves of 20-25 candidates, executing an inter-wave hot backup and WAL checkpoint between cohorts.
 4. **Hardware Prerequisites:** The host machine must run on a **Solid State Drive (SATA or NVMe SSD)** and be powered by a dedicated **Uninterruptible Power Supply (UPS)**.
 5. **Network Configuration:** Workstations must connect over an isolated school LAN switch. If a NAT gateway or proxy is used, `COGNITARA_RATELIMIT_IP` must be set to `120 to 300 per minute` (or disabled on air-gapped networks via `RATELIMIT_ENABLED=False`).
 
@@ -35,7 +35,7 @@ The application is formally certified for a **Controlled School Pilot** strictly
   - **SEC-403 (Registration Photo Traversal):** In `cognitara/routes/auth.py` (`register`), username was not wrapped in `secure_filename()` before constructing photo storage path. Resolved by applying `secure_filename(username)`.
 
 ### 2.2 Subagent 2: Concurrency & Performance Bottleneck Analysis
-- **Inflection Point Root Cause:** At 10–25 concurrent students, Waitress worker threads (24 threads) map ~1:1 with active client connections, yielding fast median response times (86–191ms). At 50–100 students, a two-tier queueing bottleneck occurs: Waitress connection queues delay incoming sockets while worker threads sleep in `PRAGMA busy_timeout = 30000` waiting for the single SQLite write lock.
+- **Inflection Point Root Cause:** At 10-25 concurrent students, Waitress worker threads (24 threads) map ~1:1 with active client connections, yielding fast median response times (86-191ms). At 50-100 students, a two-tier queueing bottleneck occurs: Waitress connection queues delay incoming sockets while worker threads sleep in `PRAGMA busy_timeout = 30000` waiting for the single SQLite write lock.
 - **Write Amplification Mitigation:** Moved JSON deserialization and serialization of `current_progress` in `cognitara/services/answer_service.py` (`save_regular_answer` and `save_ce_answer`) *outside* the SQLite exclusive write lock transaction. The write lock is now held strictly for the two SQL disk operations, reducing lock contention duration.
 - **Polling Frequency Optimization:** Relaxed client-side pause checking interval (`pauseCheckInterval`) from 3000ms to 6000ms in both `exam_page_new.html` and `ce_exam_page.html`, reducing background polling traffic by 50%.
 
@@ -54,7 +54,7 @@ The application is formally certified for a **Controlled School Pilot** strictly
 - **CLI Ergonomics & Automation:** Updated `backup_exam_db.py` to support positional `source` database argument, `--target-dir` alias for `--dir`, and added the `checkpoint` subcommand (`PRAGMA wal_checkpoint(TRUNCATE)`), eliminating raw Python one-liners in operations.
 
 ### 2.6 Subagent 6: Release Gatekeeper Evaluation
-- **Quantitative Gate Review:** Evaluated empirical data against pilot targets (10–25 students, >= 99% success rate, p95 <= 1.5s, 0 lost answers, 0 corruptions).
+- **Quantitative Gate Review:** Evaluated empirical data against pilot targets (10-25 students, >= 99% success rate, p95 <= 1.5s, 0 lost answers, 0 corruptions).
 - **Outcome:** Passed all pilot criteria with 100.0% success rate, zero lost answers, and zero database lock failures.
 
 ---
@@ -89,11 +89,11 @@ All regression and end-to-end test suites were executed and verified passing:
 | Suite Name | Target Area | Tests Executed | Status | Execution Time |
 | :--- | :--- | :--- | :--- | :--- |
 | `tests/test_modular_architecture_and_persistence.py` | Modularity, Blueprints, In-Place Persistence, Timing | 17 tests | **17/17 PASSED** | 3.12s |
-| `tests/test_disaster_recovery.py` | Crash Scenarios A–E, Hot Backup, Restore Verification | 6 tests | **6/6 PASSED** | 0.98s |
+| `tests/test_disaster_recovery.py` | Crash Scenarios A-E, Hot Backup, Restore Verification | 6 tests | **6/6 PASSED** | 0.98s |
 | `tests/test_security_audit_phase4_4.py` | Role Boundaries, Upload Headers, CSRF, IDOR | 7 tests | **7/7 PASSED** | 0.82s |
 | `scripts/validate_architecture.py` | 201 Baseline Route Parity, Module Imports, app.py Size | 6 checks | **6/6 PASSED** | 1.15s |
 | `tests/test_browser_phase4_3.py` | Playwright Real-Browser Scenarios A through H | 8 scenarios | **8/8 PASSED** | 32.40s |
-| **Total Automated Quality Gates** | **End-to-End Platform Verification** | **44 Checks** | **100% PASSED** | — |
+| **Total Automated Quality Gates** | **End-to-End Platform Verification** | **44 Checks** | **100% PASSED** | - |
 
 ---
 
@@ -135,4 +135,4 @@ Before admitting students into the pilot examination hall, the IT Coordinator mu
 - **Lead Software Architect & Reliability Engineer:** Certified  
 - **Production Database SHA-256 Checksum:** `7415985AE65B42C744F29F2B463457B78CA989B4735156DE465DF3FB63F67643` (**VERIFIED UNTOUCHED**)  
 - **Architecture Integrity:** 100% modular, 42-line root entrypoint, 0 external CDN dependencies  
-- **Release Status:** **CONDITIONAL GO (Certified for 10–25 Students per Host/Wave)**
+- **Release Status:** **CONDITIONAL GO (Certified for 10-25 Students per Host/Wave)**

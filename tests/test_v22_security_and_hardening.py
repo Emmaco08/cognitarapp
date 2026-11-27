@@ -1,5 +1,5 @@
 """
-CogniTara v2.2 — Full-Scale Security Hardening, Image Upload, XSS & Route Integrity Suite
+CogniTara v2.2 - Full-Scale Security Hardening, Image Upload, XSS & Route Integrity Suite
 """
 import io
 import os

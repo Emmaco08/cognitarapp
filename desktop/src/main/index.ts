@@ -1,5 +1,5 @@
 /**
- * CogniTara Studio — Electron Main Process Entrypoint
+ * CogniTara Studio: Electron Main Process Entrypoint
  *
  * Security & architecture invariants:
  * - Single-instance lock (`app.requestSingleInstanceLock()`).
@@ -750,7 +750,7 @@ function registerIpcHandlers(): void {
           last_lan_ip: settings.selectedLanIp || undefined,
           display_hwid: lic?.display_hwid || undefined,
         })
-        .catch(() => ({ ok: false, message: "Offline — saved locally." }));
+        .catch(() => ({ ok: false, message: "Offline. Saved locally." }));
       cloudSynced = Boolean(syncRes?.ok);
       cloudSyncMessage = syncRes?.message || "";
       if (cloudSynced && mainWindow && !mainWindow.isDestroyed()) {
@@ -993,7 +993,7 @@ function registerIpcHandlers(): void {
     return res;
   });
 
-  // ---- Cloud Licence Activation (Key / Signed Lease Only — Zero In-App Payments) ----
+  // ---- Cloud Licence Activation (Key / Signed Lease Only, Zero In-App Payments) ----
   async function activateSignedLeaseLocally(
     signedLease: Record<string, unknown> | null | undefined,
     fallbackLicenseKey?: string | null

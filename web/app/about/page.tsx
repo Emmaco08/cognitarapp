@@ -8,7 +8,7 @@ import { getCmsAboutPage, getCmsSupportPage } from "@/lib/cms";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Story — CogniTara",
+  title: "Story | CogniTara",
   description:
     "The idea behind CogniTara: a calm, local-first school examination server that runs reliably on one Windows PC.",
 };

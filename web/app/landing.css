@@ -1,5 +1,5 @@
 /* ============================================================================
-   CogniTara Landing Page — Exact Resurf.so Editorial Design System
+   CogniTara Landing Page: Editorial Design System
    Isolated strictly to `:has(.rs-root)` so /signin, /signup, /dashboard, /hq
    and /pay/* keep their existing dark carbon theme untouched.
    ============================================================================ */
@@ -4248,7 +4248,7 @@ body:has(.rs-root) {
 }
 
 /* ============================================================================
-   16. DEDICATED CHECKOUT PAGE (/pay/checkout) — Pure Monochrome Obsidian & Cream
+   16. DEDICATED CHECKOUT PAGE (/pay/checkout): Pure Monochrome Obsidian & Cream
    ============================================================================ */
 .rs-ck-page {
   max-width: none;

@@ -240,7 +240,7 @@ export async function POST(req: NextRequest) {
           {
             ok: false,
             error: "use_redeem_endpoint",
-            message: "This is a 100% free voucher code — click Redeem & Issue Licence Free.",
+            message: "This is a 100% free voucher code. Click Redeem & Issue Licence Free.",
           },
           { status: 400 }
         );
@@ -256,7 +256,7 @@ export async function POST(req: NextRequest) {
         {
           ok: false,
           error: "use_redeem_endpoint",
-          message: "Your 100% discount makes this order free — click Redeem & Issue Licence Free.",
+          message: "Your 100% discount makes this order free. Click Redeem & Issue Licence Free.",
         },
         { status: 400 }
       );

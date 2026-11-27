@@ -8,7 +8,7 @@ import { getPublishedChangelogs } from "@/lib/cms";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Updates & Changelog — CogniTara",
+  title: "Updates & Changelog | CogniTara",
   description:
     "New features, reliability improvements, and fixes shipped to CogniTara Studio Desktop, Local CBT Portals, and CogniTara Cloud.",
 };

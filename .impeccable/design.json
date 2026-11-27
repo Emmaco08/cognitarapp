@@ -215,7 +215,7 @@
       },
       {
         "name": "The Semantic-Only Status Rule",
-        "body": "Emerald (status-ok-*), amber (status-warn-*), and crimson (status-danger-*) appear exclusively on live engine health badges, clock-tamper alerts, warning counters, and revocation lockouts—never as decorative section accents.",
+        "body": "Emerald (status-ok-*), amber (status-warn-*), and crimson (status-danger-*) appear exclusively on live engine health badges, clock-tamper alerts, warning counters, and revocation lockouts, never as decorative section accents.",
         "section": "colors"
       },
       {

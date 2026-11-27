@@ -116,7 +116,7 @@ export default function FormatMarquee() {
   return (
     <section className="rs-container rs-marquee-section" data-rs-reveal>
       <p className="rs-marquee-lead">
-        Cross-device exam recovery, KaTeX equations, scientific calculator, hall-wide pause, shuffled options, and more — all offline on your LAN.
+        Cross-device exam recovery, KaTeX equations, scientific calculator, hall-wide pause, shuffled options, and more, all offline on your LAN.
       </p>
 
       <div

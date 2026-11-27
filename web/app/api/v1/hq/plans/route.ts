@@ -146,7 +146,7 @@ export async function DELETE(req: NextRequest) {
     `;
     if (Number(refs[0]?.cnt || 0) > 0) {
       await sql`UPDATE plans SET is_active = FALSE, updated_at = NOW() WHERE id = ${id}::uuid`;
-      return NextResponse.json({ ok: true, archived: true, message: "Plan has existing orders — archived (hidden from store)." });
+      return NextResponse.json({ ok: true, archived: true, message: "Plan has existing orders and has been archived (hidden from store)." });
     }
     await sql`DELETE FROM plans WHERE id = ${id}::uuid`;
     await logDeveloperAudit({

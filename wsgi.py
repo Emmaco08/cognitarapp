@@ -51,7 +51,7 @@ if __name__ == "__main__":
         lock_state = "BYPASS_DEV"
 
     print("=" * 65)
-    print("COGNITARA EXAMINATION PORTAL — PRODUCTION WSGI SERVER (WAITRESS)")
+    print("COGNITARA EXAMINATION PORTAL - PRODUCTION WSGI SERVER (WAITRESS)")
     print(f"Binding Address: http://{host}:{port}")
     print(f"Worker Threads:  {threads}")
     print(f"Conn Limit:      {conn_limit}")

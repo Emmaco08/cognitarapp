@@ -1,5 +1,5 @@
 /**
- * CogniTara v2 — Layer 5 Electron-Side Independent Ed25519 License Bridge
+ * CogniTara v2: Layer 5 Electron-Side Independent Ed25519 License Bridge
  *
  * Performs independent Ed25519 signature verification in the Electron main
  * process (using Node's native `crypto.verify`) so tampering with only the

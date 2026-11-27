@@ -1,10 +1,10 @@
 /**
- * CogniTara Studio — Direct In-App Auto-Updater (Custom Portrait Setup Engine)
+ * CogniTara Studio: Direct In-App Auto-Updater (Custom Portrait Setup Engine)
  *
  * Checks GitHub Releases (`latest.yml`) for newer versions, downloads the official
  * custom Tauri v2 portrait Setup (`CogniTara-Studio-Setup-X.Y.Z-x64.exe`) with
  * real-time progress and SHA-256 verification against `SHA256SUMS.txt`, safely stops
- * the local Flask engine, and launches our custom branded installer — never the
+ * the local Flask engine, and launches our custom branded installer, never the
  * legacy gray NSIS dialog.
  */
 
@@ -369,7 +369,7 @@ export class StudioUpdater {
         /ERR_INTERNET_DISCONNECTED|ENOTFOUND|EAI_AGAIN|ETIMEDOUT|ECONNREFUSED|net::/i.test(msg);
       this.setState({
         status: isOffline ? "offline" : "error",
-        error: isOffline ? "Offline — will check automatically when internet is available." : msg,
+        error: isOffline ? "Offline. Will check automatically when internet is available." : msg,
         checkedAt: Date.now(),
       });
     });
@@ -416,7 +416,7 @@ export class StudioUpdater {
       const isOffline = /ERR_INTERNET_DISCONNECTED|ENOTFOUND|EAI_AGAIN|ETIMEDOUT|net::/i.test(msg);
       this.setState({
         status: isOffline ? "offline" : "error",
-        error: isOffline ? "Offline — connect to the internet to check for updates." : msg,
+        error: isOffline ? "Offline. Connect to the internet to check for updates." : msg,
         checkedAt: Date.now(),
       });
     }

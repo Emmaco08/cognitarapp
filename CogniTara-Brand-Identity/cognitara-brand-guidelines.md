@@ -48,7 +48,7 @@ The chosen mark integrates three distinct levels of recognition:
 The wordmark uses **Direction C: Custom Technological**, engineered specifically for high-trust AI, intelligent systems, and enterprise software:
 - **Root-Cause Inversion Correction**: Authored in pure native SVG coordinates (y=0 Cap Height, y=28 x-Height, y=100 Baseline, y=125.5 Descender), guaranteeing 100% upright, distortion-free vector geometry without relying on flipping transforms.
 - **Unified Proportions & Stroke Weight**:
-  - Stroke thickness: Optical **9.6 pt** (~1:10.2 weight-to-cap-height ratio) — refined, slim, and contemporary (eliminating previous bulbous/rounded heaviness).
+  - Stroke thickness: Optical **9.6 pt** (~1:10.2 weight-to-cap-height ratio) - refined, slim, and contemporary (eliminating previous bulbous/rounded heaviness).
   - Both Cogni (Titanium White #FFFFFF) and Tara (Electric Cyan #00D2FF) share the exact same baseline, cap-height, x-height, and 1:1 stroke weight (eliminating the oversized Tara imbalance).
 - **Brand-Lineage Architectural Details**:
   - Capital C features precision 45° terminal chamfers echoing the Luminary C.

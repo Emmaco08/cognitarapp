@@ -1,5 +1,5 @@
 /**
- * CogniTara Studio — Hardened Cloud Auth,
+ * CogniTara Studio: Hardened Cloud Auth,
  * Cloud Exam Database Backups, Licence Sync & Live Directives
  */
 
@@ -384,7 +384,7 @@ export class CloudAuthManager {
         ok: true,
         offline: true,
         session: this.getSession(),
-        message: "Offline — using locally cached CogniTara Cloud profile.",
+        message: "Offline. Using locally cached CogniTara Cloud profile.",
       };
     }
 
@@ -458,7 +458,7 @@ export class CloudAuthManager {
         ok: false,
         offline: true,
         error: "network_offline",
-        message: res.data?.message || "Offline — saved locally and will sync when connected.",
+        message: res.data?.message || "Offline. Saved locally and will sync when connected.",
       };
     }
     if (res.ok && res.data?.school && this.cached) {

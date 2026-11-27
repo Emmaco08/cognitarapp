@@ -77,7 +77,7 @@
       color-scheme: light;
     }
 
-    /* Typography Families — Vector SVG handles CogniTara wordmark; Onest + JetBrains Mono handle UI & telemetry */
+    /* Typography Families - Vector SVG handles CogniTara wordmark; Onest + JetBrains Mono handle UI & telemetry */
     --ct-font-sans: "Onest", system-ui, -apple-system, "Segoe UI", sans-serif;
     --ct-font-mono: "JetBrains Mono", ui-monospace, "Cascadia Code", Consolas, monospace;
 

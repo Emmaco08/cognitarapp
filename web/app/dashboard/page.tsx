@@ -264,7 +264,7 @@ export default function DashboardPage() {
       setRedeemCode(clean);
       setPromoCode("");
       setTab("overview");
-      setMsg({ kind: "ok", text: "This is a 100% free voucher code — click Redeem in the Overview tab to activate immediately." });
+      setMsg({ kind: "ok", text: "This is a 100% free voucher code. Click Redeem in the Overview tab to activate immediately." });
       return;
     }
     setAppliedPromo({
@@ -479,7 +479,7 @@ export default function DashboardPage() {
                         <div style={{ fontSize: 12, color: "var(--ink-3)", marginTop: 3 }}>
                           {activeLic.expires_at
                             ? `Expires ${new Date(activeLic.expires_at).toLocaleDateString(undefined, { dateStyle: "medium" })}`
-                            : "Perpetual licence — never expires"}
+                            : "Perpetual licence (never expires)"}
                         </div>
                       </div>
                       <div className="hq-btn-row">
@@ -530,7 +530,7 @@ export default function DashboardPage() {
               <section className="card">
                 <h2 style={{ margin: "0 0 12px", fontSize: 16 }}>School Profile</h2>
                 <dl className="dl">
-                  <div><dt>School</dt><dd>{account.school?.school_name || "—"}</dd></div>
+                  <div><dt>School</dt><dd>{account.school?.school_name || "-"}</dd></div>
                   <div><dt>Account email</dt><dd className="mono" style={{ fontSize: 12.5 }}>{account.user.email}</dd></div>
                   <div><dt>Account status</dt><dd><span className="status-txt status-txt--ok">{account.school?.status || account.user.status}</span></dd></div>
                   <div>
@@ -542,7 +542,7 @@ export default function DashboardPage() {
                   <div>
                     <dt>Your referral code</dt>
                     <dd style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                      <code className="mono">{account.referral_code || "—"}</code>
+                      <code className="mono">{account.referral_code || "-"}</code>
                       {account.referral_code ? (
                         <button type="button" className="btn btn--ghost btn--xs" onClick={() => copyText(account.referral_code!, "ref-code")}>
                           {copiedId === "ref-code" ? "Copied" : "Copy"}
@@ -646,7 +646,7 @@ export default function DashboardPage() {
                           {(highlights.length > 0
                             ? highlights.slice(0, 4)
                             : [
-                                p.duration_days ? `${p.duration_days} days full CBT server access` : "Perpetual licence — zero renewals",
+                                p.duration_days ? `${p.duration_days} days full CBT server access` : "Perpetual licence with zero renewals",
                                 "Unlimited students, exams & question banks",
                                 "Encrypted CogniTara Cloud backups",
                               ]

@@ -1,5 +1,5 @@
 """
-CogniTara v2 — Layer 1, 4 & 5 License Guard, Ed25519 Verifier & 15-Min Exam Drain
+CogniTara v2 - Layer 1, 4 & 5 License Guard, Ed25519 Verifier & 15-Min Exam Drain
 (cognitara/security/license_guard.py)
 
 Responsibilities:
@@ -759,7 +759,7 @@ class LicenseGuard:
                 self._last_status = base_report
                 return dict(base_report)
 
-            # Status is OK — verify Ed25519 signature & HWID on stored signed_lease
+            # Status is OK - verify Ed25519 signature & HWID on stored signed_lease
             assert state is not None
             signed_lease = state.get("signed_lease")
             ok_lease, lease_err, payload = self.verify_lease_envelope(signed_lease)
@@ -1022,7 +1022,7 @@ def _render_lock_html(status: Dict[str, Any]) -> str:
     return (
         "<!doctype html><html lang='en'><head><meta charset='utf-8'>"
         "<meta name='viewport' content='width=device-width,initial-scale=1'>"
-        f"<title>{title} — CogniTara</title>"
+        f"<title>{title} | CogniTara</title>"
         "<style>"
         "body{margin:0;min-height:100vh;display:grid;place-items:center;background:#0A0E1A;color:#F3F6FB;"
         "font-family:system-ui,-apple-system,Segoe UI,sans-serif;padding:24px}"

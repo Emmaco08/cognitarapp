@@ -1,11 +1,11 @@
-# COGNITARA OFFLINE EXAMINATION PORTAL — PHASE 4.3
+# COGNITARA OFFLINE EXAMINATION PORTAL - PHASE 4.3
 ## End-to-End Reliability, Security, and Data-Integrity Hardening Audit Report
 
 **Project:** CogniTara Offline Examination Portal  
 **Project Directory:** `C:\COGNITARA EXAM PORTAL`  
-**Milestone:** Phase 4.3 — Final Multi-Agent Verification & Hardening  
+**Milestone:** Phase 4.3 - Final Multi-Agent Verification & Hardening  
 **Audit Date:** October 15, 2026  
-**Status:** COMPLETE & VERIFIED — 100% TESTS PASSING  
+**Status:** COMPLETE & VERIFIED - 100% TESTS PASSING  
 
 ---
 
@@ -141,7 +141,7 @@ tests\test_modular_architecture_and_persistence.py .................     [100%]
 Command: `python scripts/validate_architecture.py`
 ```
 ======================================================================
-COGNITARA OFFLINE EXAMINATION PORTAL — ARCHITECTURE VALIDATION
+COGNITARA OFFLINE EXAMINATION PORTAL - ARCHITECTURE VALIDATION
 ======================================================================
 [CHECK 1] Root app.py line count: 42 lines
           PASSED: Root app.py is a clean, minimal entrypoint.
@@ -251,7 +251,7 @@ Execution Command: `python tests/test_browser_phase4_3.py`
 
 ```
 ======================================================================
-COGNITARA PHASE 4.3 — REAL-BROWSER END-TO-END VERIFICATION SUITE
+COGNITARA PHASE 4.3 - REAL-BROWSER END-TO-END VERIFICATION SUITE
 ======================================================================
 Test database prepared: C:\COGNITARA EXAM PORTAL\backups_phase4_3\exam_browser_test.db
 Target test exam ID: 133

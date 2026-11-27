@@ -93,7 +93,7 @@ def wait_for_server():
 
 def test_browser_phase4_3():
     print("=" * 70)
-    print("COGNITARA PHASE 4.3 — REAL-BROWSER END-TO-END VERIFICATION SUITE")
+    print("COGNITARA PHASE 4.3 - REAL-BROWSER END-TO-END VERIFICATION SUITE")
     print("=" * 70)
 
     os.environ["COGNITARA_DB_NAME"] = TEST_DB_PATH

@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="csrf-token" content="{{ csrf_token() }}">
   <meta name="color-scheme" content="light dark">
-  <title>{{ class_name }} Analytics — Admin Console</title>
+  <title>{{ class_name }} Analytics | Admin Console</title>
   <link rel="icon" href="{{ url_for('static', filename='images/cognitara-favicon.ico') }}">
   <link rel="preload" href="{{ url_for('static', filename='fonts/ui/PlusJakartaSans-Variable.woff2') }}" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="{{ url_for('static', filename='fonts/ui/GeistMono-Variable.woff2') }}" as="font" type="font/woff2" crossorigin>
@@ -118,9 +118,9 @@
         </thead>
         <tbody>
           {% for sr in student_results %}
-          {% set best_ns = namespace(name='—', pct=0) %}
+          {% set best_ns = namespace(name='-', pct=0) %}
           {% for s in sr.scores %}{% if s.percentage and s.percentage > best_ns.pct %}{% set best_ns.name = s.exam_name %}{% set best_ns.pct = s.percentage %}{% endif %}{% endfor %}
-          {% set worst_ns = namespace(name='—', pct=999) %}
+          {% set worst_ns = namespace(name='-', pct=999) %}
           {% for s in sr.scores %}{% if s.percentage is not none and s.percentage < worst_ns.pct %}{% set worst_ns.name = s.exam_name %}{% set worst_ns.pct = s.percentage %}{% endif %}{% endfor %}
           <tr>
             <td>
@@ -138,8 +138,8 @@
               </div>
             </td>
             <td class="tc-mono">{{ sr.exam_count }}</td>
-            <td style="font-size:12.5px;color:var(--tc-ok)">{% if best_ns.name != '—' %}{{ best_ns.name[:22] }} ({{ best_ns.pct|round|int }}%){% else %}—{% endif %}</td>
-            <td style="font-size:12.5px;color:var(--tc-ink-2)">{% if worst_ns.pct != 999 %}{{ worst_ns.name[:22] }} ({{ worst_ns.pct|round|int }}%){% else %}—{% endif %}</td>
+            <td style="font-size:12.5px;color:var(--tc-ok)">{% if best_ns.name != '-' %}{{ best_ns.name[:22] }} ({{ best_ns.pct|round|int }}%){% else %}-{% endif %}</td>
+            <td style="font-size:12.5px;color:var(--tc-ink-2)">{% if worst_ns.pct != 999 %}{{ worst_ns.name[:22] }} ({{ worst_ns.pct|round|int }}%){% else %}-{% endif %}</td>
             <td style="text-align:right">
               <a href="/admin/student/{{ sr.id }}" class="tc-btn tc-btn--secondary tc-btn--sm">Details {{ ico('i-arrow-right', 'ct-ico--xs') }}</a>
             </td>
@@ -181,7 +181,7 @@
           {% set avg_val = (exam.avg_score or 0)|float %}
           <tr>
             <td><strong style="font-weight:650">{{ exam.name }}</strong></td>
-            <td style="color:var(--tc-ink-2)">{{ exam.teacher_name or '—' }}</td>
+            <td style="color:var(--tc-ink-2)">{{ exam.teacher_name or '-' }}</td>
             <td class="tc-mono">{{ exam.attempt_count or 0 }}</td>
             <td>
               <div class="tc-bar-cell">

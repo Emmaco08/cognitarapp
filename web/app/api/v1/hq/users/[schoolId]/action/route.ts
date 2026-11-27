@@ -102,7 +102,7 @@ export async function POST(
         ORDER BY created_at DESC LIMIT 1
       `;
       if (!lics.length) {
-        return NextResponse.json({ ok: false, error: "no_license", message: "This school has no licence yet — use Grant Licence instead." }, { status: 400 });
+        return NextResponse.json({ ok: false, error: "no_license", message: "This school has no licence yet. Use Grant Licence instead." }, { status: 400 });
       }
       const lic = lics[0] as Record<string, any>;
       const baseTime = lic.expires_at ? Math.max(Date.now(), new Date(lic.expires_at).getTime()) : Date.now();

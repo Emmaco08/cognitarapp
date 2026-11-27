@@ -1,6 +1,6 @@
 /*
- * CogniTara QR — compact, dependency-free QR Code encoder (byte mode, ECC level M,
- * versions 1–4, up to 62 bytes). Enough for LAN addresses like http://192.168.100.200:5000.
+ * CogniTara QR: compact, dependency-free QR Code encoder (byte mode, ECC level M,
+ * versions 1-4, up to 62 bytes). Enough for LAN addresses like http://192.168.100.200:5000.
  * Produces a real, scannable QR matrix. Exposes window.CogniQR.toSvg(text, opts).
  */
 (function (global) {
@@ -177,7 +177,7 @@
     var bytes = utf8Bytes(text);
     var ver = 0;
     for (var v = 1; v <= 4; v++) { if (bytes.length <= VERSIONS[v][0] * VERSIONS[v][1] - 2) { ver = v; break; } }
-    if (!ver) throw new Error("CogniQR: text too long for versions 1–4");
+    if (!ver) throw new Error("CogniQR: text too long for versions 1-4");
     var cw = encodeCodewords(bytes, ver);
     var best = null, bestScore = Infinity;
     for (var mask = 0; mask < 8; mask++) {

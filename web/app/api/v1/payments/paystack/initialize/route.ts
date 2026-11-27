@@ -150,7 +150,7 @@ export async function POST(req: NextRequest) {
           {
             ok: false,
             error: "use_redeem_endpoint",
-            message: "This is a free voucher code — click Redeem Code to activate immediately for free!",
+            message: "This is a free voucher code. Click Redeem Code to activate immediately for free!",
           },
           { status: 400 }
         );
@@ -166,7 +166,7 @@ export async function POST(req: NextRequest) {
         {
           ok: false,
           error: "zero_amount_use_redeem",
-          message: "Your 100% discount makes this order free — use Redeem Code to activate instantly!",
+          message: "Your 100% discount makes this order free. Use Redeem Code to activate instantly!",
         },
         { status: 400 }
       );

@@ -1,5 +1,5 @@
 /* ==========================================================================
-   CogniTara Web v3 — Design System (Web Portal: student · teacher · admin)
+   CogniTara Web v3 - Design System (Web Portal: student · teacher · admin)
    --------------------------------------------------------------------------
    Pure Monochrome Editorial palette: Warm Cream-White #F8F8F8/#EFEFEF/#FFFFFF
    and Obsidian Black #171614 in Light Mode; Carbon #111112/#151517/#1B1B1E
@@ -3186,7 +3186,7 @@ html[data-theme="light"] .ct-confirm-badge {
   .ct-m-foot { justify-content: flex-end; }
 }
 
-/* Modal Buttons — Unified Radius & Precision Contrast */
+/* Modal Buttons - Unified Radius & Precision Contrast */
 .ct-confirm-actions .ct-btn,
 .ct-m-foot .ct-btn {
   height: 38px;

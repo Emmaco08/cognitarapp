@@ -10,7 +10,7 @@ export default function ResurfBentoGrid() {
           not ideal internet labs.
         </h2>
         <p className="rs-section-sub">
-          Every feature inside CogniTara solves a real exam-day failure — dead workstations, power cuts, side-by-side copying, and slow Wi-Fi.
+          Every feature inside CogniTara solves a real exam-day failure: dead workstations, power cuts, side-by-side copying, and slow Wi-Fi.
         </p>
       </div>
 
@@ -180,7 +180,7 @@ export default function ResurfBentoGrid() {
               <h3 className="rs-bento-title">Per-Seat Randomization</h3>
             </div>
             <p className="rs-bento-desc">
-              Pull random subsets from larger question banks and shuffle A–D options per student so neighbors never share the same order.
+              Pull random subsets from larger question banks and shuffle A-D options per student so neighbors never share the same order.
             </p>
           </div>
         </article>
@@ -236,7 +236,7 @@ export default function ResurfBentoGrid() {
               <h3 className="rs-bento-title">KaTeX Math &amp; Chem</h3>
             </div>
             <p className="rs-bento-desc">
-              Visual formula builder for fractions, integrals, roots, and chemical equations with instant live preview — works 100% offline.
+              Visual formula builder for fractions, integrals, roots, and chemical equations with instant live preview, working 100% offline.
             </p>
           </div>
         </article>
@@ -277,7 +277,7 @@ export default function ResurfBentoGrid() {
           <div className="rs-bento-visual" aria-hidden="true">
             <div className="rs-summary-sheet rs-elevated">
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: 10.5 }}>
-                <span style={{ fontWeight: 600, color: "#171614", fontFamily: "var(--rs-mono)" }}>GRADED · A1–F9</span>
+                <span style={{ fontWeight: 600, color: "#171614", fontFamily: "var(--rs-mono)" }}>GRADED · A1-F9</span>
                 <span style={{ color: "rgba(23,22,20,0.45)", fontFamily: "var(--rs-mono)" }}>0.2s</span>
               </div>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: 11.5, color: "#171614", fontWeight: 500 }}>

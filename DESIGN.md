@@ -195,7 +195,7 @@ Visual restraint is functional, not minimal for its own sake. Structural hierarc
 The palette anchors every screen in deep slate-navy or crisp ceramic-white neutrals, reserving Cobalt and Electric Cyan strictly for primary actions, live active states, and the Tara Guiding Star focal mark.
 
 ### Primary
-- **Electric Cyan Accent** (`dark-accent`): Guides attention on dark surfaces—used for the Tara Star beacon, active LAN engine ring, focused selection borders, and primary Dark Mode highlights.
+- **Electric Cyan Accent** (`dark-accent`): Guides attention on dark surfaces, used for the Tara Star beacon, active LAN engine ring, focused selection borders, and primary Dark Mode highlights.
 - **Cobalt Blue Primary** (`light-accent` / `dark-accent-strong`): Anchors primary buttons, active Light Mode controls, exam question indicators, and interactive progress filaments.
 
 ### Secondary
@@ -210,7 +210,7 @@ The palette anchors every screen in deep slate-navy or crisp ceramic-white neutr
 ### Named Rules
 **The Accent Discipline Rule.** Cobalt Blue and Electric Cyan occupy at most ten percent of any viewport; structural surfaces remain calm slate or ceramic white so active telemetry and primary actions stand out immediately.
 **The Hue-Tinted Ink Rule.** Secondary and muted text on dark surfaces always carries cool slate undertone (`dark-ink-secondary` and `dark-ink-muted`) rather than flat pure gray so contrast never washes out.
-**The Semantic-Only Status Rule.** Emerald (`status-ok-*`), amber (`status-warn-*`), and crimson (`status-danger-*`) appear exclusively on live engine health badges, clock-tamper alerts, warning counters, and revocation lockouts—never as decorative section accents.
+**The Semantic-Only Status Rule.** Emerald (`status-ok-*`), amber (`status-warn-*`), and crimson (`status-danger-*`) appear exclusively on live engine health badges, clock-tamper alerts, warning counters, and revocation lockouts, never as decorative section accents.
 
 ## Typography
 
@@ -226,7 +226,7 @@ The palette anchors every screen in deep slate-navy or crisp ceramic-white neutr
 - **Title Large** (600, `1.75rem`, `1.2` line-height, `-0.02em` tracking): Primary workspace view titles and major modal headings.
 - **Headline** (600, `1.375rem`, `1.25` line-height, `-0.015em` tracking): Section headers inside split onboarding stages and Command Center panels.
 - **Title** (600, `1.125rem`, `1.35` line-height, `-0.01em` tracking): Panel titles, exam card titles, and vault headers.
-- **Body Large** (400, `1rem`, `1.6` line-height): Exam question passages and onboarding narrative paragraphs constrained to `65ch–75ch`.
+- **Body Large** (400, `1rem`, `1.6` line-height): Exam question passages and onboarding narrative paragraphs constrained to `65ch-75ch`.
 - **Body** (400, `0.875rem`, `1.5` line-height): Default table rows, forms, and descriptive UI copy (`>= 14px` body floor).
 - **Label & Caption** (500, `0.8125rem` / `0.75rem`, `1.35` line-height): Navigation links, metadata rows, and pill badges (`>= 12px` functional UI floor; zero sub-`11px` interactive labels).
 - **Monospace Data** (500, `0.8125rem`, `1.45` line-height): Tabular timers, license keys, port numbers, and live console streams.
@@ -239,7 +239,7 @@ The palette anchors every screen in deep slate-navy or crisp ceramic-white neutr
 
 Desktop Server Studio frames itself as a `1280×800` frameless Windows desktop shell (or `720×440` sculpted splash window during State 1 boot, expanding smoothly into the full workspace) with a Full Viewport toggle and clean responsive adaptation below `1024px`. Operating views organize into a `228px` fixed navigation rail, a `50px` custom window titlebar, and an asymmetric split canvas (`1.45fr` operational lanes / `1fr` reference & health ledger, or `42%` narrative / `58%` interactive stage in onboarding) built on a `4px` spacing rhythm with generous section separation and tight intra-group spacing.
 
-During active student examinations in Daylight Ceramic portals, the exam reading column caps at `780px` (`65ch–75ch` measure) and reserves a dedicated `340px` docked split-pane column when Scientific Calculator v2 opens so question text and answer controls never shift under overlapping modals.
+During active student examinations in Daylight Ceramic portals, the exam reading column caps at `780px` (`65ch-75ch` measure) and reserves a dedicated `340px` docked split-pane column when Scientific Calculator v2 opens so question text and answer controls never shift under overlapping modals.
 
 ## Elevation & Depth
 
@@ -263,7 +263,7 @@ Every interactive component shares crisp `1px` edge definition, clear `:hover` a
 
 ### Buttons
 - **Shape:** Subtle precision corners (`6px` radius).
-- **Primary:** Solid Cobalt (`light-accent` on light, `dark-accent-strong` / high-contrast `dark-accent` with `#041019` ink on dark), `10px 16px` padding, `38px` minimum height, weight `500`–`600`.
+- **Primary:** Solid Cobalt (`light-accent` on light, `dark-accent-strong` / high-contrast `dark-accent` with `#041019` ink on dark), `10px 16px` padding, `38px` minimum height, weight `500`-`600`.
 - **Hover / Focus:** Smooth `140ms` exponential color step and `-1px` hairline border lift; `:focus-visible` draws a crisp `2px` accent outline with `2px` offset.
 - **Secondary / Ghost:** Transparent or `surface` fill with `1px` `line-strong` border and primary ink text; zero `->` arrows appended to button copy.
 

@@ -1,4 +1,4 @@
-# CogniTara v2 — Master Plan
+# CogniTara v2 - Master Plan
 
 **What we're building:** turn the existing offline exam portal into a paid product. That means a Windows desktop app for the super admin (no more `.bat` terminal), a full redesign of the student, exam, teacher and admin screens, a website at **cognitara.net** where schools buy licences (Vercel + Neon + Paystack) with referrals and an HQ admin console, and a launch advert in motion graphics.
 

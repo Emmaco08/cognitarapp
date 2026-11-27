@@ -1,4 +1,4 @@
-/* CogniTara Cloud & Admin CMS — Resurf Warm Cream-Stone Light & Obsidian Monochrome Dark */
+/* CogniTara Cloud & Admin CMS: Resurf Warm Cream-Stone Light & Obsidian Monochrome Dark */
 
 @font-face {
   font-family: "Plus Jakarta Sans";
@@ -1187,7 +1187,7 @@ code, .mono, .num { font-family: var(--mono); font-variant-numeric: tabular-nums
 }
 
 /* ==========================================================================
-   ADMIN CMS SHELL (/hq) — Editorial Monochrome Sidebar, Ctrl+K & Content
+   ADMIN CMS SHELL (/hq): Editorial Monochrome Sidebar, Ctrl+K & Content
    ========================================================================== */
 .hq-layout {
   display: grid;

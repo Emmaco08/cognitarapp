@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="csrf-token" content="{{ csrf_token() }}">
   <meta name="color-scheme" content="light dark">
-  <title>Exam Control Center — {{ school_branding.school_name }} | CogniTara</title>
+  <title>Exam Control Center - {{ school_branding.school_name }} | CogniTara</title>
   <link rel="icon" href="{{ url_for('static', filename='images/cognitara-favicon.ico') }}">
   <script src="{{ url_for('static', filename='vendor/chartjs/chart.umd.min.js') }}"></script>
   <link rel="stylesheet" href="{{ url_for('static', filename='vendor/katex/katex.min.css') }}">
@@ -393,13 +393,13 @@
                 <span class="tc-pill tc-pill--accent">{{ exam.specialisation_tag or 'General' }}</span>
               </div>
             </td>
-            <td style="font-size:13px;color:var(--tc-ink-2)">{{ exam.teacher_name or '—' }}</td>
+            <td style="font-size:13px;color:var(--tc-ink-2)">{{ exam.teacher_name or '-' }}</td>
             <td class="tc-mono is-center">
               {{ exam.student_count or 0 }}
               {% if exam.in_progress_count %}<span style="color:var(--ct-warn);font-size:11px;margin-left:4px">({{ exam.in_progress_count }} live)</span>{% endif %}
             </td>
             <td class="tc-mono is-center" style="font-weight:650;color:{% if exam.avg_score is not none and exam.avg_score >= 70 %}var(--ct-ok){% elif exam.avg_score is not none and exam.avg_score >= 50 %}var(--ct-warn){% elif exam.avg_score is not none %}var(--ct-bad){% else %}var(--tc-ink-3){% endif %}">
-              {% if exam.avg_score is not none %}{{ "%.1f"|format(exam.avg_score) }}%{% else %}—{% endif %}
+              {% if exam.avg_score is not none %}{{ "%.1f"|format(exam.avg_score) }}%{% else %}-{% endif %}
             </td>
             <td class="is-center" data-status-cell>
               {% if exam.deactivated %}
@@ -826,14 +826,14 @@
         var hasGrades = dist.some(function (x) { return Number(x.count || 0) > 0; });
         body.innerHTML =
           '<div class="ecc-ins-grid">' +
-            '<div class="ecc-ins-card"><small>Class</small><strong>' + CT.esc(ex.class || "—") + '</strong></div>' +
+            '<div class="ecc-ins-card"><small>Class</small><strong>' + CT.esc(ex.class || "-") + '</strong></div>' +
             '<div class="ecc-ins-card"><small>Subject</small><strong>' + CT.esc(ex.subject_tag || "General") + '</strong></div>' +
             '<div class="ecc-ins-card"><small>Track</small><strong>' + CT.esc(ex.specialisation_tag || "General") + '</strong></div>' +
             '<div class="ecc-ins-card"><small>Duration</small><strong>' + CT.esc(ex.duration || 0) + ' min</strong></div>' +
-            '<div class="ecc-ins-card"><small>Teacher</small><strong>' + CT.esc(ex.teacher_name || "—") + '</strong></div>' +
+            '<div class="ecc-ins-card"><small>Teacher</small><strong>' + CT.esc(ex.teacher_name || "-") + '</strong></div>' +
             '<div class="ecc-ins-card"><small>Questions</small><strong>' + qCount + '</strong></div>' +
             '<div class="ecc-ins-card"><small>Completed</small><strong>' + completedCount + (liveCount ? ' <span style="font-size:11.5px;color:var(--ct-warn)">(' + liveCount + ' live)</span>' : '') + '</strong></div>' +
-            '<div class="ecc-ins-card"><small>Avg Score</small><strong style="color:var(--ct-ok)">' + (completedCount ? calcAvg(drwData.students) + '%' : '—') + '</strong></div>' +
+            '<div class="ecc-ins-card"><small>Avg Score</small><strong style="color:var(--ct-ok)">' + (completedCount ? calcAvg(drwData.students) + '%' : '-') + '</strong></div>' +
           '</div>' +
           '<div style="padding:16px;border-radius:12px;border:1px solid var(--tc-line);background:var(--tc-surface-2)">' +
             '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">' +
@@ -850,7 +850,7 @@
             if (!ctx || !window.Chart) return;
             if (gradeChart) { try { gradeChart.destroy(); } catch (e) {} gradeChart = null; }
             var palette = ["#575551", "#575551", "#2B2926", "#D6D4CF", "#575551", "#2B2926"];
-            var labels = dist.map(function (x) { return String(x.grade || "—"); });
+            var labels = dist.map(function (x) { return String(x.grade || "-"); });
             var counts = dist.map(function (x) { return Number(x.count || 0); });
             var colors = dist.map(function (x, i) { return x.color || palette[i % palette.length]; });
             var isLight = document.documentElement.getAttribute("data-theme") === "light";

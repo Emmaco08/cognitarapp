@@ -8,8 +8,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="csrf-token" content="{{ csrf_token() }}">
   <meta name="color-scheme" content="light dark">
-  <meta name="description" content="Welcome to the CogniTara Examination Portal — sign in or register to access your school's offline examination network.">
-  <title>Welcome to CogniTara Exam Portal — {{ _school.school_name }}</title>
+  <meta name="description" content="Welcome to the CogniTara Examination Portal. Sign in or register to access your school's offline examination network.">
+  <title>Welcome to CogniTara Exam Portal | {{ _school.school_name }}</title>
   <link rel="icon" href="{{ url_for('static', filename='images/cognitara-favicon.ico') }}">
   <link rel="preload" href="{{ url_for('static', filename='fonts/ui/PlusJakartaSans-Variable.woff2') }}" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/cognitara-web.css') }}">

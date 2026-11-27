@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="csrf-token" content="{{ csrf_token() }}">
   <meta name="color-scheme" content="light dark">
-  <title>Common Entrance Settings — {{ school_branding.school_name }} | CogniTara</title>
+  <title>Common Entrance Settings - {{ school_branding.school_name }} | CogniTara</title>
   <link rel="icon" href="{{ url_for('static', filename='images/cognitara-favicon.ico') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/cognitara-web.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/cognitara-teacher-studio.css') }}">
@@ -120,7 +120,7 @@
       <div class="tc-card__head">
         <div class="tc-card__title">
           <h2>Admissions Portal &amp; Examination Rules</h2>
-          <p>Isolated from internal school grading — applies strictly to Common Entrance candidates</p>
+          <p>Isolated from internal school grading. Applies strictly to Common Entrance candidates.</p>
         </div>
         <span class="tc-pill tc-pill--accent">{{ ce_exams|length }} CE Exam{% if ce_exams|length != 1 %}s{% endif %}</span>
       </div>
@@ -152,8 +152,8 @@
           <div class="ces-field">
             <label class="ces-label" for="ceRegOpen">Candidate Registration Status</label>
             <select id="ceRegOpen" name="registration_open" class="ces-select">
-              <option value="1" {% if ce_settings.registration_open %}selected{% endif %}>Open — Applicants can be registered</option>
-              <option value="0" {% if not ce_settings.registration_open %}selected{% endif %}>Closed — Registration portal locked</option>
+              <option value="1" {% if ce_settings.registration_open %}selected{% endif %}>Open: Applicants can be registered</option>
+              <option value="0" {% if not ce_settings.registration_open %}selected{% endif %}>Closed: Registration portal locked</option>
             </select>
           </div>
           <div class="ces-field">
@@ -167,8 +167,8 @@
           <div class="ces-field">
             <label class="ces-label" for="ceDirectSubmit">Instant Admission Decision</label>
             <select id="ceDirectSubmit" name="direct_submit" class="ces-select">
-              <option value="0" {% if not ce_settings.direct_submit %}selected{% endif %}>Manual Review — Submissions queue for admin approval</option>
-              <option value="1" {% if ce_settings.direct_submit %}selected{% endif %}>Automatic — Auto-approve if cut-off met, otherwise reject</option>
+              <option value="0" {% if not ce_settings.direct_submit %}selected{% endif %}>Manual Review: Submissions queue for admin approval</option>
+              <option value="1" {% if ce_settings.direct_submit %}selected{% endif %}>Automatic: Auto-approve if cut-off met, otherwise reject</option>
             </select>
           </div>
         </div>

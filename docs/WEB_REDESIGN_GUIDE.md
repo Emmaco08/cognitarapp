@@ -1,6 +1,6 @@
-# CogniTara Web Portal v3 — Opus Studio Design System Guide
+# CogniTara Web Portal v3 - Opus Studio Design System Guide
 
-This document defines the unified design system across all 73 Flask web portal templates (`templates/*.html`) — Student, Teacher, Admin, Live Exam Studio, Built-in Scientific Calculator, and Common Entrance. *(The Electron desktop app in `desktop/` is intentionally separate.)*
+This document defines the unified design system across all 73 Flask web portal templates (`templates/*.html`) - Student, Teacher, Admin, Live Exam Studio, Built-in Scientific Calculator, and Common Entrance. *(The Electron desktop app in `desktop/` is intentionally separate.)*
 
 ## Core Architecture
 
@@ -10,7 +10,7 @@ This document defines the unified design system across all 73 Flask web portal t
 | Portal Subpage Harmonizer | `static/css/cognitara-portal-unified.css` | Unifies Bootstrap/custom Admin, Teacher, Analytics, Question Builder, and Settings pages inside `.ct-app.ct-bs` |
 | Live CBT Exam Studio | `static/css/cognitara-exam-studio.css` | Focus workspace for `exam_page_new.html`, `ce_exam_page.html`, and `exam_page.html` |
 | Scientific Calculator | `static/js/cognitara-calc.js` | Offline Shunting-Yard AST calculator with inline SVGs, DEG/RAD mode, draggable & compact modes |
-| UI Runtime | `static/js/cognitara-web.js` | `window.CT` — theme persistence (`ct-theme`), staggered reveal, count-up numbers, ripple, modals, dropdowns, sidebar drawer, section scrollspy, command palette |
+| UI Runtime | `static/js/cognitara-web.js` | `window.CT` - theme persistence (`ct-theme`), staggered reveal, count-up numbers, ripple, modals, dropdowns, sidebar drawer, section scrollspy, command palette |
 | Vector Icon Sprite | `static/icons/cognitara-icons.svg` | 80+ crisp vector symbols + CogniTara app mark & wordmark (zero external CDNs) |
 | Shared Jinja Shell Macros | `templates/_ct_shell.html` | `ct_boot_script()`, `admin_shell_start()`, `teacher_shell_start()`, `student_topbar()`, `shell_end()` |
 
@@ -22,7 +22,7 @@ This document defines the unified design system across all 73 Flask web portal t
 - **Typography:** Self-hosted `Plus Jakarta Sans` UI + `Geist Mono` tabular numerals (`static/fonts/ui/`)
 
 ## Motion & Performance Rules
-- GPU-composited `transform` and `opacity` only — zero `backdrop-filter: blur(60px)` or animated `filter: blur()`.
+- GPU-composited `transform` and `opacity` only - zero `backdrop-filter: blur(60px)` or animated `filter: blur()`.
 - Page entry via `.ct-enter`, scroll reveal via `data-ct-reveal` and `data-ct-stagger`, KPI numerals via `data-ct-count`.
 - Full `@media (prefers-reduced-motion: reduce)` support.
 

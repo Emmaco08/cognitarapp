@@ -1,5 +1,5 @@
 """
-CogniTara v2 — End-to-End Fresh-Install Desktop + Admin + Live Exam Verification
+CogniTara v2 - End-to-End Fresh-Install Desktop + Admin + Live Exam Verification
 (tests/test_end_to_end_desktop_exam_flow.py)
 
 Simulates a brand-new Windows installation starting from an EMPTY data directory
@@ -33,7 +33,7 @@ from cognitara.security.vault_store import RegistryAnchor, TripleAnchorVaultStor
 
 
 def test_fresh_install_onboarding_admin_and_full_live_exam(tmp_path, monkeypatch):
-    # Completely empty fresh data dir — NO exam.db exists yet!
+    # Completely empty fresh data dir - NO exam.db exists yet!
     data_dir = tmp_path / "fresh_data"
     db_path = data_dir / "exam.db"
     backup_dir = tmp_path / "backups"

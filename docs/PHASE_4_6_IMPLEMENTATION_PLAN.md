@@ -1,4 +1,4 @@
-# COGNITARA OFFLINE EXAMINATION PORTAL — PHASE 4.6
+# COGNITARA OFFLINE EXAMINATION PORTAL - PHASE 4.6
 # MASTER IMPLEMENTATION PLAN: UI/UX, AJAX ACTIONS, EXAM INTEGRITY, SCHOOL SETTINGS, CALCULATORS, FORMULA AUTHORING AND STUDENT PROGRESSION
 
 **Document Version:** 1.0.0  
@@ -26,7 +26,7 @@ Phase 4.6 is a comprehensive, coordinated release for the CogniTara Offline Exam
 10. **Configurable Grading & Result Visibility:** WAEC 9-point and Standard Letter grading schemes with contiguous $[0, 100]$ validation, along with server-enforced immediate vs. withheld result policies.
 11. **Pure White Branded Startup Splash:** Authentic vector splash screen on `#FFFFFF` using official CogniTara brand assets and motion curves, gated per session.
 12. **Advanced Scientific Calculator:** Zero-latency offline client evaluator (Shunting-Yard) with trig, roots, powers, logs, and server-side `SafeMathEvaluator` parity, strictly governed by teacher settings.
-13. **Mobile Examination Usability:** Optimized 44px touch targets, sticky readable headers, fluid option cards, and zero horizontal overflow on 320px–390px screens.
+13. **Mobile Examination Usability:** Optimized 44px touch targets, sticky readable headers, fluid option cards, and zero horizontal overflow on 320px-390px screens.
 14. **Teacher Formula Authoring & Offline KaTeX:** 100% offline mathematical, physics, and chemical typesetting (`\ce{}`) with live side-by-side previews and explanation fields.
 15. **Student Progression, Promotion & Retention:** Multi-session enrollment tracking, class-teacher scoped progression, Grade 9 specialisation routing, and Grade 12 alumni graduation without data destruction.
 
@@ -138,7 +138,7 @@ flowchart TD
 
 ### 3.6 Independent School & CE Settings
 - **Isolated Tables:** `school_settings` (Singleton id=1) and `ce_settings` (Singleton id=1).
-- **Normalized `classes` Table:** Supports NERDC Primary 1–6, JSS 1–3, SSS 1–3, British Year 1–13, and American Grade 1–12 presets with customizable sort ordering.
+- **Normalized `classes` Table:** Supports NERDC Primary 1-6, JSS 1-3, SSS 1-3, British Year 1-13, and American Grade 1-12 presets with customizable sort ordering.
 - **Dedicated Admin Routes:**
   - `/admin/school-settings`: General identity, academic calendar, class presets, grading scheme studio, and result release controls.
   - `/admin/ce-settings`: Entrance portal identity, admission sessions, candidate registration toggles, passing scores, and decision disclosure policies.
@@ -148,8 +148,8 @@ flowchart TD
 - **Grading Schemes:** `grading_schemes` and `grading_scheme_rules` tables.
 - **Validation Engine:** `GradingSchemeValidator` enforces contiguous $[0.0, 100.0]$ coverage with zero gaps and zero overlaps.
 - **Pre-Seeded Defaults:**
-  - WAEC 9-Point Scale (A1: 75–100, B2: 70–74, B3: 65–69, C4: 60–64, C5: 55–59, C6: 50–54, D7: 45–49, E8: 40–44, F9: 0–39).
-  - Standard Letter Scale (A: 90–100, B: 80–89, C: 70–79, D: 60–69, F: 0–59).
+  - WAEC 9-Point Scale (A1: 75-100, B2: 70-74, B3: 65-69, C4: 60-64, C5: 55-59, C6: 50-54, D7: 45-49, E8: 40-44, F9: 0-39).
+  - Standard Letter Scale (A: 90-100, B: 80-89, C: 70-79, D: 60-69, F: 0-59).
 - **Result Release Server Guardrails:**
   - When `results_released == 0` or policy is `'withheld'`, student endpoints (`POST /exam/<id>`, `GET /result/<id>`, `GET /dashboard`) strip all scores, percentages, and grades.
   - Returns sanitized status message: `"Results pending release by administration."`
@@ -186,7 +186,7 @@ flowchart TD
   - Class teachers can only view and promote students belonging to their assigned class (`teachers.class_teacher_of`).
   - Administrators can promote across all classes.
 - **Progression Logic:**
-  - Primary 1–6 $\rightarrow$ JSS 1–3 $\rightarrow$ SSS 1–3.
+  - Primary 1-6 $\rightarrow$ JSS 1-3 $\rightarrow$ SSS 1-3.
   - Grade 9 (JSS 3) requires specialisation selection (`Science`, `Art`, `Commercial`, `General`) before advancing to Grade 10 (SSS 1).
   - Grade 12 (SSS 3) transitions students to `'graduated'` (Alumni) status without creating non-existent "Grade 13" errors.
   - Retention records maintain past scores and examination attempts intact.

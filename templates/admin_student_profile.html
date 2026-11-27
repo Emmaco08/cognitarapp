@@ -7,7 +7,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="csrf-token" content="{{ csrf_token() }}">
   <meta name="color-scheme" content="light dark">
-  <title>{{ st_name }} — Admin Student Profile</title>
+  <title>{{ st_name }} | Admin Student Profile</title>
   <link rel="icon" href="{{ url_for('static', filename='images/cognitara-favicon.ico') }}">
   <link rel="preload" href="{{ url_for('static', filename='fonts/ui/PlusJakartaSans-Variable.woff2') }}" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="{{ url_for('static', filename='fonts/ui/GeistMono-Variable.woff2') }}" as="font" type="font/woff2" crossorigin>
@@ -123,9 +123,9 @@
             </td>
             <td><span class="tc-pill {{ gcls }}">{{ grade }}</span></td>
             <td class="tc-mono" style="font-size:12px;color:var(--tc-ink-3)">
-              {% if r.time_spent_seconds %}{{ (r.time_spent_seconds // 60)|int }}m {{ (r.time_spent_seconds % 60)|int }}s{% else %}—{% endif %}
+              {% if r.time_spent_seconds %}{{ (r.time_spent_seconds // 60)|int }}m {{ (r.time_spent_seconds % 60)|int }}s{% else %}-{% endif %}
             </td>
-            <td style="font-size:12.5px;color:var(--tc-ink-2)">{{ r.teacher_name or '—' }}</td>
+            <td style="font-size:12.5px;color:var(--tc-ink-2)">{{ r.teacher_name or '-' }}</td>
             <td style="text-align:right">
               <a href="/admin/student/{{ student.id }}/exam/{{ r.exam_id }}" class="tc-btn tc-btn--secondary tc-btn--sm">View {{ ico('i-arrow-right', 'ct-ico--xs') }}</a>
             </td>

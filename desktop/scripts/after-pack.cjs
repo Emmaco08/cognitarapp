@@ -18,7 +18,7 @@ exports.default = async function afterPack(context) {
   const exePath = path.join(context.appOutDir, exeName);
 
   if (!fs.existsSync(exePath)) {
-    console.warn(`[afterPack] Skipping fuses — binary not found at ${exePath}`);
+    console.warn(`[afterPack] Skipping fuses: binary not found at ${exePath}`);
     return;
   }
 

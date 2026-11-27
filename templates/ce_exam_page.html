@@ -901,7 +901,7 @@
                 <div class="nav-rail-hint">
                     <span><kbd>←</kbd> <kbd>→</kbd> navigate</span>
                     <span>·</span>
-                    <span><kbd>A</kbd>–<kbd>D</kbd> answer</span>
+                    <span><kbd>A</kbd>-<kbd>D</kbd> answer</span>
                 </div>
             </div>
 
@@ -1726,7 +1726,7 @@
                 return;
             }
 
-            // Admin force-submitted this exam — save answers first, then submit
+            // Admin force-submitted this exam - save answers first, then submit
             if (data.force_submit) {
                 if (timerInterval) clearInterval(timerInterval);
                 
@@ -2342,7 +2342,7 @@ document.addEventListener('keydown', function(event) {
 
     // ============ CHECK IF EXAM IS LOCKED ON LOAD ============
     async function checkExamLockedOnLoad() {
-        // Check if this is a quick reload (F5) – timestamp less than 5 seconds old
+        // Check if this is a quick reload (F5)-timestamp less than 5 seconds old
         const closingTime = sessionStorage.getItem('ce_page_closing');
         const isQuickReload = closingTime && (Date.now() - parseInt(closingTime) < 5000);
         if (isQuickReload) {
@@ -2379,7 +2379,7 @@ document.addEventListener('keydown', function(event) {
 
     // ============ TIME SYNC ============
     function startTimeSync() {
-        // TIME SYNC REMOVED — syncing duration from the DB every 10s caused
+        // TIME SYNC REMOVED - syncing duration from the DB every 10s caused
         // the timer to jump forwards/backwards because the DB value is up to
         // 30s stale (autoSave interval). The timer is authoritative in the
         // browser; the DB is updated by autoSaveToBackend every 30s from the
@@ -2406,7 +2406,7 @@ document.addEventListener('keydown', function(event) {
         }
     });
 
-    // ============ BEFOREUNLOAD – LOCK THE EXAM ============
+    // ============ BEFOREUNLOAD-LOCK THE EXAM ============
     window.addEventListener('beforeunload', function(e) {
         if (!isSubmitting && !autoSubmitTriggered && !examLocked) {
             // Store timestamp to detect reload vs close
@@ -2450,7 +2450,7 @@ document.addEventListener('keydown', function(event) {
 
         // First, check if exam is locked due to tab closure or crash
         const isLocked = await checkExamLockedOnLoad();
-        if (isLocked) return;  // Stop – modal shown, no exam initialisation
+        if (isLocked) return;  // Stop-modal shown, no exam initialisation
 
         // Check if another tab is already running this exam session.
         // If so, skip fresh init and load state from the backend instead
@@ -2492,11 +2492,11 @@ document.addEventListener('keydown', function(event) {
                 setInterval(() => {
                     if (!isSubmitting && !autoSubmitTriggered && !examLocked && !isPaused) saveExamState();
                 }, 10000);
-                return; // Done — don't run the fresh-start path below
+                return; // Done - don't run the fresh-start path below
             }
         } catch(e) {}
 
-        // Not locked and we HAVE local state – load local state and start normally
+        // Not locked and we HAVE local state-load local state and start normally
         loadExamStateFromSession();
         if (warnings >= MAX_WARNINGS && !maxWarningTriggered) {
             maxWarningTriggered = true;

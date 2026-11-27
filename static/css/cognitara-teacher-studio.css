@@ -223,7 +223,7 @@ body.tc-studio .ct-sidebar__foot .ct-btn--primary:hover {
   filter: none !important;
 }
 
-/* Topbar refinement — quiet borderless controls like Claude & Antigravity */
+/* Topbar refinement - quiet borderless controls like Claude & Antigravity */
 body.tc-studio .ct-topbar {
   background: var(--tc-canvas) !important;
   border-bottom: 1px solid var(--tc-line) !important;
@@ -364,7 +364,7 @@ body.tc-studio .ct-btn--primary:hover {
   max-width: 100%;
 }
 
-/* Tactile Monogram Avatar — clean tonal fill, zero white outline */
+/* Tactile Monogram Avatar - clean tonal fill, zero white outline */
 .tc-avatar {
   width: 50px;
   height: 50px;
@@ -388,7 +388,7 @@ body.tc-studio .ct-btn--primary:hover {
 }
 .tc-avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
 
-/* Buttons — zero bright white outlines or harsh glare */
+/* Buttons - zero bright white outlines or harsh glare */
 .tc-btn {
   display: inline-flex;
   align-items: center;
@@ -981,7 +981,7 @@ body.tc-studio .modal-footer {
   border-top: 1px solid var(--tc-line) !important;
 }
 
-/* Legacy Teacher Subpage Harmonization (Technical Support, Questions, Settings, Import — Zero Pulses / Zero Pill Soup) */
+/* Legacy Teacher Subpage Harmonization (Technical Support, Questions, Settings, Import - Zero Pulses / Zero Pill Soup) */
 body.tc-studio.ct-bs .edu-icon,
 body.tc-studio.ct-bs .bg-shape,
 body.tc-studio.ct-bs .page-header .logo-icon { display: none !important; animation: none !important; }

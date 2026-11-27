@@ -4,8 +4,8 @@
 //! setup binary at compile time via `include_bytes!` / `include_str!`.
 //!
 //! Resolution order for the payload:
-//!   1. `COGNITARA_PAYLOAD`           – absolute path to the NSIS installer .exe
-//!   2. `../payload/payload.exe`      – written by `scripts/prepare_payload.py` in CI
+//!   1. `COGNITARA_PAYLOAD`           - absolute path to the NSIS installer .exe
+//!   2. `../payload/payload.exe`      - written by `scripts/prepare_payload.py` in CI
 //!   3. (none) → an empty payload is embedded and the app runs in *preview mode*
 //!      (simulated install) so the UI can be developed without a Windows build.
 //!

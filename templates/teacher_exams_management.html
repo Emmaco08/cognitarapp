@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="csrf-token" content="{{ csrf_token() }}">
   <meta name="color-scheme" content="light dark">
-  <title>Exam Control Center — {{ school_branding.school_name if school_branding is defined else 'CogniTara' }}</title>
+  <title>Exam Control Center | {{ school_branding.school_name if school_branding is defined else 'CogniTara' }}</title>
   <link rel="icon" href="{{ url_for('static', filename='images/cognitara-favicon.ico') }}">
   <link rel="preload" href="{{ url_for('static', filename='fonts/ui/PlusJakartaSans-Variable.woff2') }}" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="{{ url_for('static', filename='fonts/ui/GeistMono-Variable.woff2') }}" as="font" type="font/woff2" crossorigin>
@@ -225,7 +225,7 @@
               <td class="tc-mono is-center" style="color:var(--tc-ink-2)">{{ exam.duration }}m</td>
               <td class="tc-mono is-center">{{ exam.student_count or 0 }}</td>
               <td class="tc-mono is-center" style="font-weight:650;color:{% if avg_val >= 70 %}var(--ct-ok){% elif avg_val >= 50 %}var(--ct-warn){% elif (exam.student_count or 0) > 0 %}var(--ct-bad){% else %}var(--tc-ink-3){% endif %}">
-                {% if exam.student_count %}{{ "%.1f"|format(avg_val) }}%{% else %}—{% endif %}
+                {% if exam.student_count %}{{ "%.1f"|format(avg_val) }}%{% else %}-{% endif %}
               </td>
               <td class="is-center">
                 {% if exam.active %}
@@ -283,7 +283,7 @@
           <div class="tcc-stats">
             <div class="tcc-stat"><span>Questions</span><strong>{{ exam.question_count or 0 }}</strong></div>
             <div class="tcc-stat"><span>Attempts</span><strong>{{ exam.student_count or 0 }}</strong></div>
-            <div class="tcc-stat"><span>Avg Score</span><strong>{% if exam.student_count %}{{ "%.1f"|format(exam.avg_score or 0) }}%{% else %}—{% endif %}</strong></div>
+            <div class="tcc-stat"><span>Avg Score</span><strong>{% if exam.student_count %}{{ "%.1f"|format(exam.avg_score or 0) }}%{% else %}-{% endif %}</strong></div>
           </div>
 
           <div class="tcc-actions">
@@ -367,7 +367,7 @@
     all.forEach(function (c) { c.style.display = "none"; });
     matched.slice(start, end).forEach(function (c) { c.style.display = ""; });
 
-    var meta = total === 0 ? "No matching exams" : ("Showing <strong>" + (start + 1) + "&ndash;" + end + "</strong> of <strong>" + total + "</strong>");
+    var meta = total === 0 ? "No matching exams" : ("Showing <strong>" + (start + 1) + "-" + end + "</strong> of <strong>" + total + "</strong>");
     var nav = totalPages <= 1
       ? '<span class="ct-pager__single">Page 1 of 1</span>'
       : '<button type="button" class="ct-page-btn" ' + (cardPage <= 1 ? "disabled" : "") + ' onclick="window._tccCardPage(' + (cardPage - 1) + ')">' + CT.icon("i-chevron-left", "ct-ico--sm") + '</button>' +

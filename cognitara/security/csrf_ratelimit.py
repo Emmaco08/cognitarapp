@@ -49,7 +49,7 @@ def handle_csrf_error(e):
             "reason": getattr(e, 'description', 'Invalid token'),
             "message": "Your security token expired. Please refresh the page and try again."
         }, 400
-    # Never display the login screen to an already authenticated user — keep them in their portal
+    # Never display the login screen to an already authenticated user - keep them in their portal
     if "admin_id" in session or "teacher_id" in session or "student_id" in session or "ce_student_id" in session:
         ref = request.referrer
         if ref and request.host in ref and ref != request.url:

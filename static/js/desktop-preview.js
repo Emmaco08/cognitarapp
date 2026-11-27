@@ -1,5 +1,5 @@
 /* ==========================================================================
-   CogniTara Server Studio — Super Admin Desktop Preview Runtime (Carbon v3.0)
+   CogniTara Server Studio - Super Admin Desktop Preview Runtime (Carbon v3.0)
    100% Vanilla ES2023 | Zero External Dependencies | Offline-First
    ========================================================================== */
 
@@ -282,7 +282,7 @@
         at: 2150,
         phase: "ready",
         pct: 100,
-        msg: "Kernel verified & ready — explore the Interactive Tour or open Server Studio.",
+        msg: "Kernel verified & ready. Explore the Interactive Tour or open Server Studio.",
       },
     ];
 
@@ -393,7 +393,7 @@
       if (!isCut) {
         lanStage.dataset.power = "cut";
         btn.textContent = "Restore Mains Power";
-        walTitle.textContent = "Generator Trip Detected — WAL Checkpoint Flushed";
+        walTitle.textContent = "Generator Trip Detected: WAL Checkpoint Flushed";
         walDesc.textContent =
           "All in-flight student answers committed to exam.db-wal; countdown timers paused safely.";
         walBadge.className = "ct-status-chip is-warn";
@@ -986,7 +986,7 @@
     document.getElementById("ctWinMinBtn")?.addEventListener("click", () => {
       appShell?.classList.add("is-minimized");
       setTrayOpen(true);
-      showToast("Minimized to Windows System Tray — server stays online");
+      showToast("Minimized to Windows System Tray. Server stays online.");
     });
 
     document.getElementById("ctWinCloseBtn")?.addEventListener("click", () => {
@@ -1094,7 +1094,7 @@
           }
           if (heading) {
             heading.textContent =
-              "Windows system clock rollback detected — startup blocked until time sync";
+              "Windows system clock rollback detected: startup blocked until time sync";
           }
           if (desc) {
             desc.textContent =
@@ -1107,7 +1107,7 @@
           }
           if (heading) {
             heading.textContent =
-              "Subscription lease expired — new exam server startup is locked";
+              "Subscription lease expired: new exam server startup is locked";
           }
           if (desc) {
             desc.textContent =
@@ -1180,7 +1180,7 @@
       state.leaseSeconds = 365 * 86400;
       switchStage("studio");
       setStudioSubview("license");
-      showToast("Paystack webhook verified — 365-day Ed25519 license activated");
+      showToast("Paystack webhook verified. 365-day Ed25519 license activated.");
     });
 
     // Canvases, QR, Lease Ticker & Telemetry Poll

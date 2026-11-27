@@ -378,10 +378,10 @@ jobs:
           $latestYml = (Resolve-Path "desktop/release/latest.yml").Path
           $sums = (Resolve-Path "desktop/release/SHA256SUMS.txt").Path
           $notes = @'
-          CogniTara Studio __VER__ — Hardened Desktop Studio, Cloud Exam Backups, Paystack Payment Receipts & Simplified Portal UX
+          CogniTara Studio __VER__ - Hardened Desktop Studio, Cloud Exam Backups, Paystack Payment Receipts & Simplified Portal UX
 
           ### Downloads
-          - **Recommended Direct Installer:** `CogniTara-Studio-Setup-__VER__-x64.exe` — Borderless custom portrait Windows setup wizard with install-path picker, shortcut toggles, animated progress ring, and Dark/Light themes.
+          - **Recommended Direct Installer:** `CogniTara-Studio-Setup-__VER__-x64.exe` - Borderless custom portrait Windows setup wizard with install-path picker, shortcut toggles, animated progress ring, and Dark/Light themes.
           - **In-App Auto-Updater Channel:** `CogniTara-Studio-Update-__VER__-x64.exe` + `.blockmap` + `latest.yml` (used automatically by CogniTara Studio's built-in updater).
 
           ### What's New & Fixed in __VER__

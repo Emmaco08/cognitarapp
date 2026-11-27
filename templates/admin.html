@@ -8,7 +8,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="csrf-token" content="{{ csrf_token() }}">
   <meta name="color-scheme" content="light dark">
-  <title>Admin Console — {{ school_branding.school_name }} | CogniTara</title>
+  <title>Admin Console - {{ school_branding.school_name }} | CogniTara</title>
   <link rel="icon" href="{{ url_for('static', filename='images/cognitara-favicon.ico') }}">
   <link rel="preload" href="{{ url_for('static', filename='fonts/ui/PlusJakartaSans-Variable.woff2') }}" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="{{ url_for('static', filename='fonts/ui/GeistMono-Variable.woff2') }}" as="font" type="font/woff2" crossorigin>
@@ -176,7 +176,7 @@
         <div class="tc-card__head">
           <div class="tc-card__title">
             <h2>Examinations Directory</h2>
-            <p>Read-only paper oversight — preview teacher-authored exams, toggle availability, or manage in Control Center</p>
+            <p>Read-only paper oversight - preview teacher-authored exams, toggle availability, or manage in Control Center</p>
           </div>
           <div class="tc-card__tools">
             <label class="tc-search">
@@ -460,7 +460,7 @@
                       </button>
                     </div>
                   {% else %}
-                    <span style="color:var(--tc-ink-3)">—</span>
+                    <span style="color:var(--tc-ink-3)">-</span>
                   {% endif %}
                 </td>
                 <td>
@@ -645,7 +645,7 @@
           if (opt) opt.remove();
           if (sel.options.length === 0) {
             var rc = document.getElementById("reset-cell-" + studentId);
-            if (rc) rc.innerHTML = '<span style="color:var(--tc-ink-3)">—</span>';
+            if (rc) rc.innerHTML = '<span style="color:var(--tc-ink-3)">-</span>';
           }
         }
         var tag = document.getElementById("exam-tag-" + studentId + "-" + examId);

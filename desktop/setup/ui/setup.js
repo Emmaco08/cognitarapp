@@ -1,4 +1,4 @@
-/* CogniTara Studio Setup — UI controller (no frameworks, no network).
+/* CogniTara Studio Setup: UI controller (no frameworks, no network).
  * Talks to the Rust side through window.__TAURI__ (withGlobalTauri = true).
  */
 (() => {
@@ -10,12 +10,12 @@
   const $ = (id) => document.getElementById(id);
 
   const TIPS = [
-    { icon: "t-lan", title: "Offline-first LAN exams", body: "Run 300+ candidates over your school network — no internet needed during sittings." },
+    { icon: "t-lan", title: "Offline-first LAN exams", body: "Run 300+ candidates over your school network, with no internet needed during sittings." },
     { icon: "t-save", title: "Every answer saved instantly", body: "SQLite WAL persistence means a power cut never wipes a student's work." },
     { icon: "t-vault", title: "5-layer licence vault", body: "Hardware-bound Ed25519 leases with a graceful 15-minute exam drain." },
     { icon: "t-dial", title: "Live proctor controls", body: "Pause everyone, add +5 minutes or resume candidates from a single dial." },
     { icon: "t-backup", title: "Automatic hot backups", body: "Verified snapshots every 30 minutes, restored in one click." },
-    { icon: "t-update", title: "Updates inside the app", body: "Studio installs delta updates safely between exams — no re-downloads." },
+    { icon: "t-update", title: "Updates inside the app", body: "Studio installs delta updates safely between exams, with no re-downloads." },
   ];
 
   const state = {
@@ -34,7 +34,7 @@
 
   /* ---------------- helpers ---------------- */
   function fmtBytes(n) {
-    if (n == null || !isFinite(n)) return "—";
+    if (n == null || !isFinite(n)) return "-";
     const u = ["B", "KB", "MB", "GB", "TB"];
     let i = 0;
     while (n >= 1000 && i < u.length - 1) { n /= 1024; i++; }
@@ -104,7 +104,7 @@
       pill.hidden = false;
       $("app").classList.add("is-update");
       pill.textContent = info.existing.version === info.version
-        ? "Version " + info.version + " is already installed — setup will repair it"
+        ? "Version " + info.version + " is already installed. Setup will repair it"
         : "Updating from " + info.existing.version + " to " + info.version;
       $("continueLabel").textContent = info.existing.version === info.version ? "Repair" : "Update";
     }
@@ -271,7 +271,7 @@
   async function closeWindow() {
     try {
       const closed = await invoke("win_close");
-      if (closed === false) toast("Installation is in progress — please wait until it finishes.");
+      if (closed === false) toast("Installation is in progress. Please wait until it finishes.");
     } catch (_) { /* preview in browser */ }
   }
 
@@ -296,7 +296,7 @@
     document.addEventListener("contextmenu", (e) => e.preventDefault());
     listen("setup://progress", onProgress);
     listen("setup://finished", onFinished);
-    listen("setup://close-blocked", () => toast("Installation is in progress — please wait until it finishes."));
+    listen("setup://close-blocked", () => toast("Installation is in progress. Please wait until it finishes."));
   }
 
   async function init() {

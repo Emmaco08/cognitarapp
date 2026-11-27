@@ -46,7 +46,7 @@ Unlike cloud-only testing platforms that stall when school internet drops, or ra
 ## Evidence on Hand
 
 - **Verified Codebase & Architecture Docs:** `app.py`, `wsgi.py`, `exam.db`, `cognitara/`, `scripts/routes_baseline.json`, `scripts/validate_architecture.py`, `tests/` (40 automated tests), `docs/architecture/module-map.md`, `docs/architecture/database.md`, `docs/architecture/route-map.md`, and `docs/COGNITARA_V2_MASTER_PLAN.md`.
-- **Verified Authentic Brand & Media Assets:** `CogniTara-Brand-Identity/` (`cognitara-symbol.svg`, `cognitara-primary.svg`, `cognitara-app-icon.png`, `cognitara-favicon.ico`, `cognitara-brand-guidelines.md`), `static/fonts/`, `static/images/screenshots/01_*.png`–`24_*.png`, and authentic school photography (`static/images/hero_students_cbt.jpeg`, `proctor_control_center.jpeg`, `exam_hall_lab.jpeg`, `educator_analytics.jpeg`, `principal_report.jpeg`).
+- **Verified Authentic Brand & Media Assets:** `CogniTara-Brand-Identity/` (`cognitara-symbol.svg`, `cognitara-primary.svg`, `cognitara-app-icon.png`, `cognitara-favicon.ico`, `cognitara-brand-guidelines.md`), `static/fonts/`, `static/images/screenshots/01_*.png`-`24_*.png`, and authentic school photography (`static/images/hero_students_cbt.jpeg`, `proctor_control_center.jpeg`, `exam_hall_lab.jpeg`, `educator_analytics.jpeg`, `principal_report.jpeg`).
 - **Confirmed Absences (Do Not Fabricate):** No external customer testimonials, live revenue numbers, school enrollment counts beyond local `exam.db` seed data, or pre-existing `CogniTara-Motion-Graphics/` directory exist yet on disk.
 
 ## Product Principles

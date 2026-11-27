@@ -26,7 +26,7 @@ export const CHANGELOG_RELEASES: ChangelogRelease[] = [
       "Upgraded HQ Redeem & Discount Code engine with plan eligibility, minimum order thresholds, start/expiry windows, per-email limits, CSV batch export, and a full Redemption Audit Log.",
     ],
     improvedItems: [
-      "Removed in-app Plans & Billing menus from CogniTara Studio Desktop — schools activate or renew cleanly by pasting their Ed25519 licence key under Licence or directly on the Lock Screen.",
+      "Removed in-app Plans & Billing menus from CogniTara Studio Desktop. Schools now activate or renew cleanly by pasting their Ed25519 licence key under Licence or directly on the Lock Screen.",
       "Hardened payment & receipt security with 128-bit references, HMAC-SHA256 receipt tokens, HttpOnly grant cookies, CSRF origin validation, and brute-force lockouts.",
     ],
   },
@@ -37,7 +37,7 @@ export const CHANGELOG_RELEASES: ChangelogRelease[] = [
     summary:
       "Unified CogniTara Studio Desktop, every local CBT portal, and CogniTara Cloud under one calm pure black & warm cream-white palette, plus HQ-authored school testimonials.",
     newItems: [
-      "Add physical & word-of-mouth school reviews directly from CogniTara HQ with 1–5 star ratings and instant landing page publishing.",
+      "Add physical & word-of-mouth school reviews directly from CogniTara HQ with 1 to 5 star ratings and instant landing page publishing.",
       "Dedicated Story, Roadmap, Updates, How-to Guides, FAQ, Blog, and Support pages built for school principals and ICT coordinators.",
       "Email-OTP self-service password reset and environment-variable super-admin recovery for CogniTara HQ.",
     ],
@@ -82,7 +82,7 @@ export const CHANGELOG_RELEASES: ChangelogRelease[] = [
       "Live payment verification polling with animated verified receipt slips and automatic Ed25519 licence activation.",
     ],
     improvedItems: [
-      "Zero external browser popups required for bank transfers — complete transfer details and copy buttons live right inside Studio.",
+      "Zero external browser popups required for bank transfers. Complete transfer details and copy buttons live right inside Studio.",
       "Clearer renewal countdown rings showing remaining licence days and offline lease windows.",
     ],
   },
@@ -204,7 +204,7 @@ export const ROADMAP_ITEMS: RoadmapItem[] = [
     id: "rm-word-import",
     title: "Direct .DOCX Word Question Paper Importer",
     description:
-      "Upload an existing Microsoft Word exam paper with numbered questions, bolded answer keys, and embedded diagrams — automatically parsed into sections.",
+      "Upload an existing Microsoft Word exam paper with numbered questions, bolded answer keys, and embedded diagrams, automatically parsed into sections.",
     status: "planned",
     category: "Authoring",
     target: "v2.5",
@@ -275,7 +275,7 @@ export const GUIDES_LIST: GuideItem[] = [
     summary: "Go from download to a live school exam network with zero technical server setup.",
     steps: [
       "Visit cognitara.net/download, enter your school email, and click the instant Windows installer link delivered to your inbox.",
-      "Run CogniTara Studio Setup on one Windows 10 or 11 (64-bit) lab computer — no Python, XAMPP, or database installation required.",
+      "Run CogniTara Studio Setup on one Windows 10 or 11 (64-bit) lab computer, with no Python, XAMPP, or database installation required.",
       "Complete the quick 3-step onboarding: set your school name, crest initials, term/session, and create your local Admin username and password.",
       "Click Start Server on the Server home screen. CogniTara automatically detects your school router LAN address (for example http://192.168.10.24:5000) and generates a scannable QR code.",
     ],
@@ -288,7 +288,7 @@ export const GUIDES_LIST: GuideItem[] = [
     readTime: "3 min",
     summary: "Prepare your academic classes, subjects, teacher accounts, and candidate rosters ahead of exam week.",
     steps: [
-      "Sign in to the Admin Control Center from your host PC browser and open School Settings to verify classes (JSS 1–SS 3) and grading scales.",
+      "Sign in to the Admin Control Center from your host PC browser and open School Settings to verify classes (JSS 1 to SS 3) and grading scales.",
       "Create teacher accounts with full names and assigned subjects, or import your entire student roster via CSV.",
       "Enable self-registration during onboarding week so students create accounts on lab PCs, then bulk-approve them in Pending Approvals.",
       "For external admission tests, open Common Entrance to generate standalone candidate PIN slips without mixing applicants into regular classes.",
@@ -301,10 +301,10 @@ export const GUIDES_LIST: GuideItem[] = [
     readTime: "2 min",
     summary: "How CogniTara's authoritative server state saves every student answer so hardware failures never ruin a sitting.",
     steps: [
-      "Every time a student selects option A, B, C, or D, the answer writes immediately to the host PC's SQLite WAL database — nothing important lives only in browser memory.",
+      "Every time a student selects option A, B, C, or D, the answer writes immediately to the host PC's SQLite WAL database. Nothing important lives only in browser memory.",
       "If a student's desktop loses power, freezes, or runs out of battery, the server's heartbeat monitor detects the drop and protects their remaining exam clock cleanly.",
       "Seat the student at any spare laptop, desktop, Chromebook, or tablet connected to the same school Wi-Fi and open the server LAN URL.",
-      "Have the student sign in with their exact username and password. Their Student Dashboard displays a prominent Resume Exam button — clicking it returns them to their saved answers and remaining seconds.",
+      "Have the student sign in with their exact username and password. Their Student Dashboard displays a prominent Resume Exam button, and clicking it returns them to their saved answers and remaining seconds.",
     ],
     tip: "If the previous PC is still awake on the network, CogniTara's Single-Session Fence automatically blocks duplicate active logins so only one machine writes to the script.",
   },
@@ -317,7 +317,7 @@ export const GUIDES_LIST: GuideItem[] = [
     steps: [
       "Open Admin → Live Support & Pause (or press Ctrl+K and type Live Support).",
       "To freeze every active countdown across the examination hall during an announcement or generator switchover, click Pause All Exams.",
-      "When power or order is restored, click Resume All — every student's countdown resumes smoothly from the exact second it paused.",
+      "When power or order is restored, click Resume All so every student's countdown resumes smoothly from the exact second it paused.",
       "For an individual student who arrived late or experienced a workstation swap, click +5 min / +10 min or Reset Warnings right beside their name.",
     ],
   },
@@ -328,10 +328,10 @@ export const GUIDES_LIST: GuideItem[] = [
     readTime: "4 min",
     summary: "Set up a reliable offline LAN exam hall using a standard dual-band router or access points.",
     steps: [
-      "Plug your Windows host PC into your school router or switch using a standard LAN (Ethernet) cable — no SIM card or active ISP subscription is needed.",
-      "Have student laptops, Chromebooks, iPads, or tablets join the school Wi-Fi SSID (even if the device says 'Connected, no internet' — that is expected and ideal!).",
+      "Plug your Windows host PC into your school router or switch using a standard LAN (Ethernet) cable. No SIM card or active ISP subscription is needed.",
+      "Have student laptops, Chromebooks, iPads, or tablets join the school Wi-Fi SSID (even if the device says 'Connected, no internet', which is expected and ideal).",
       "Display the server QR code or write the LAN address (e.g. http://192.168.1.50:5000) on the whiteboard.",
-      "Students open Chrome, Edge, or Safari and enter that address directly in the address bar — no student app install needed.",
+      "Students open Chrome, Edge, or Safari and enter that address directly in the address bar, with no student app install needed.",
     ],
     tip: "For 100+ simultaneous students, use two or three access points wired to the same LAN switch on different Wi-Fi channels (1, 6, 11) so wireless airtime stays fast.",
   },
@@ -357,14 +357,14 @@ export const GUIDES_LIST: GuideItem[] = [
     steps: [
       "Sign in to the Teacher Studio, open an exam's Question Manager, and click Formula Builder above the question editor.",
       "Choose a template tab (Fraction, Root, Power, Subscript, Chem H₂O, or Custom TeX), fill in the boxes, and verify the instant Live Preview.",
-      "Click Insert into Question — CogniTara bundles KaTeX and mhchem locally so formulas render crisply offline on every student screen.",
+      "Click Insert into Question. CogniTara bundles KaTeX and mhchem locally so formulas render crisply offline on every student screen.",
       "To upload 50+ questions at once, click Download CSV Formula Template, fill your spreadsheet, and import the entire paper in one click.",
     ],
   },
   {
     id: "shuffled-anti-cheat",
     category: "Authoring & STEM",
-    title: "Randomize question order, shuffle A–D options, and set integrity limits",
+    title: "Randomize question order, shuffle A-D options, and set integrity limits",
     readTime: "2 min",
     summary: "Prevent side-by-side copying by giving every seat a unique question sequence and option layout.",
     steps: [
@@ -393,7 +393,7 @@ export const GUIDES_LIST: GuideItem[] = [
     summary: "Download class spreadsheets and institutional result sheets the second students submit.",
     steps: [
       "Open Admin → Results & Exports or Teacher → Results for any completed examination.",
-      "Filter by class, term, or subject to review individual answers, accuracy breakdowns, and A1–F9 letter grades.",
+      "Filter by class, term, or subject to review individual answers, accuracy breakdowns, and A1-F9 letter grades.",
       "Click Export CSV Broadsheet for Excel/report-card import, or open any candidate row to print a clean official result slip.",
     ],
   },
@@ -402,7 +402,7 @@ export const GUIDES_LIST: GuideItem[] = [
     category: "Licensing",
     title: "Buy a school licence via Paystack and activate offline Ed25519 keys",
     readTime: "2 min",
-    summary: "One institutional licence covers unlimited students, teachers, and exams — zero per-student charges.",
+    summary: "One institutional licence covers unlimited students, teachers, and exams with zero per-student charges.",
     steps: [
       "Visit cognitara.net/license and pick Monthly, Termly, Annual, or Lifetime to open our dedicated secure checkout page.",
       "Enter your school name and email address (plus any discount code or 100% free redeem voucher) and complete payment via Paystack (Card, Bank Transfer, USSD, or OPay).",
@@ -456,7 +456,7 @@ export const FAQ_GROUPS: FaqCategory[] = [
     items: [
       {
         q: "Do we need to install software on every student computer or tablet?",
-        a: "No. Students only need a normal web browser (Chrome, Edge, Safari, or Firefox). They open your host PC's local LAN address or scan the QR code — works seamlessly on Windows desktops, Chromebooks, MacBooks, iPads, and Android tablets.",
+        a: "No. Students only need a normal web browser (Chrome, Edge, Safari, or Firefox). They open your host PC's local LAN address or scan the QR code, and it works seamlessly on Windows desktops, Chromebooks, MacBooks, iPads, and Android tablets.",
       },
       {
         q: "How does CogniTara prevent cheating and students copying neighbors?",
@@ -490,7 +490,7 @@ export const FAQ_GROUPS: FaqCategory[] = [
     items: [
       {
         q: "Do you charge per student or per exam sitting?",
-        a: "Never. One institutional licence covers your entire school — unlimited students, unlimited teachers, unlimited question banks, and unlimited exam sittings across regular classes and Common Entrance.",
+        a: "Never. One institutional licence covers your entire school: unlimited students, unlimited teachers, unlimited question banks, and unlimited exam sittings across regular classes and Common Entrance.",
       },
       {
         q: "How do offline Ed25519 licence leases work?",
@@ -521,7 +521,7 @@ export const BLOG_POSTS: BlogPost[] = [
     slug: "cross-device-exam-continuity-when-a-pc-dies",
     title: "What happens when a student's computer dies 20 minutes into a final exam?",
     excerpt:
-      "Why browser-only CBT platforms fail real school labs — and how CogniTara's write-through SQLite WAL state lets any student walk to a spare PC and resume on the exact second.",
+      "Why browser-only CBT platforms fail real school labs, and how CogniTara's write-through SQLite WAL state lets any student walk to a spare PC and resume on the exact second.",
     date: "Nov 24, 2026",
     category: "Exam Reliability",
     author: "Emmanuel",
@@ -530,7 +530,7 @@ export const BLOG_POSTS: BlogPost[] = [
     sections: [
       {
         paragraphs: [
-          "Anyone who has invigilated a 200-student CBT exam in a real secondary school lab knows the moment. Twenty-two minutes into Mathematics, a desktop in Row 3 shuts off completely — loose power cable, dead battery, or a frozen browser tab.",
+          "Anyone who has invigilated a 200-student CBT exam in a real secondary school lab knows the moment. Twenty-two minutes into Mathematics, a desktop in Row 3 shuts off completely from a loose power cable, dead battery, or frozen browser tab.",
           "With typical cloud or client-cached CBT apps, that single hardware glitch turns into panic: lost answers, a ticking clock that keeps draining while the ICT teacher scrambles, or worse, a duplicate login lockout that blocks the student from signing in elsewhere.",
         ],
       },
@@ -545,7 +545,7 @@ export const BLOG_POSTS: BlogPost[] = [
         heading: "Walk to another desk, sign in, keep writing",
         paragraphs: [
           "Recovery takes fifteen seconds. The invigilator directs the student to any spare laptop, desktop, or tablet on the same school Wi-Fi. When the student signs in, CogniTara's Single-Session Fence cleanly hands the active attempt over to the new browser and invalidates the dead session.",
-          "The Student Dashboard immediately surfaces a Resume Exam card. One click brings back every previously selected option, section progress, and exact remaining seconds — turning a potential exam crisis into a calm non-event.",
+          "The Student Dashboard immediately surfaces a Resume Exam card. One click brings back every previously selected option, section progress, and exact remaining seconds, turning a potential exam crisis into a calm non-event.",
         ],
       },
     ],
@@ -554,7 +554,7 @@ export const BLOG_POSTS: BlogPost[] = [
     slug: "why-offline-lan-beats-cloud-cbt-for-300-students",
     title: "Why one local Windows PC beats cloud CBT when 300 students click Start at 9:00 AM",
     excerpt:
-      "School Wi-Fi bottlenecks aren't caused by hardware — they happen when 300 devices fight over a single mobile router to reach a remote internet server.",
+      "School Wi-Fi bottlenecks aren't caused by hardware. They happen when 300 devices fight over a single mobile router to reach a remote internet server.",
     date: "Nov 18, 2026",
     category: "Engineering",
     author: "Emmanuel",
@@ -563,21 +563,21 @@ export const BLOG_POSTS: BlogPost[] = [
     sections: [
       {
         paragraphs: [
-          "Many schools buy fast laptops and assume a cloud-hosted CBT website will work smoothly — until exam morning arrives. At 9:00 AM, 250 students press Start Examination within the same 10 seconds, all sharing one 4G router or modest school fiber line.",
+          "Many schools buy fast laptops and assume a cloud-hosted CBT website will work smoothly, right up until exam morning arrives. At 9:00 AM, 250 students press Start Examination within the same 10 seconds, all sharing one 4G router or modest school fiber line.",
           "Images stall, math formulas fail to load from external CDNs, answers time out, and students stare at spinning loaders while their countdown keeps burning.",
         ],
       },
       {
         heading: "Keep traffic inside the room",
         paragraphs: [
-          "A standard local Wi-Fi router moves traffic inside your school building at hundreds of megabits per second — completely independent of your ISP, mobile data balance, or external CDN outages.",
-          "CogniTara Studio turns one existing Windows 10 or 11 lab computer into a dedicated local examination server. Every asset — fonts, icons, KaTeX math renderer, scientific calculator, and question diagrams — is served directly from disk over local LAN.",
+          "A standard local Wi-Fi router moves traffic inside your school building at hundreds of megabits per second, completely independent of your ISP, mobile data balance, or external CDN outages.",
+          "CogniTara Studio turns one existing Windows 10 or 11 lab computer into a dedicated local examination server. Every asset (fonts, icons, KaTeX math renderer, scientific calculator, and question diagrams) is served directly from disk over local LAN.",
         ],
       },
       {
         heading: "Cloud only when you actually want it",
         paragraphs: [
-          "Local-first does not mean isolated. Whenever the host PC has internet after exams finish, CogniTara Studio lets you upload encrypted SQLite backups to CogniTara Cloud, check for app updates, and renew licences via Paystack — without ever putting live exam day at the mercy of internet uptime.",
+          "Local-first does not mean isolated. Whenever the host PC has internet after exams finish, CogniTara Studio lets you upload encrypted SQLite backups to CogniTara Cloud, check for app updates, and renew licences via Paystack, without ever putting live exam day at the mercy of internet uptime.",
         ],
       },
     ],
@@ -596,7 +596,7 @@ export const BLOG_POSTS: BlogPost[] = [
       {
         paragraphs: [
           "Most school software looks loud: neon gradients, warning banners shouting in orange, bright green pills competing with blue action buttons. During a two-hour examination or a long evening of uploading 400 Physics questions, that visual noise quietly drains attention.",
-          "With CogniTara v2.3.5, we rebuilt every surface — Desktop Studio, Admin Control Center, Teacher Studio, Student Dashboard, Live Exam Room, and Cloud HQ — around a restrained pure black and warm cream-white editorial palette.",
+          "With CogniTara v2.3.5, we rebuilt every surface (Desktop Studio, Admin Control Center, Teacher Studio, Student Dashboard, Live Exam Room, and Cloud HQ) around a restrained pure black and warm cream-white editorial palette.",
         ],
       },
       {
@@ -649,12 +649,12 @@ export const ABOUT_PAGE_DEFAULT: AboutPageContent = {
   title: "The idea behind CogniTara",
   lead: "Why we're building an examination tool that never makes you worry about exam day.",
   paragraphs: [
-    "Every term, schools try to run computer-based exams on cloud websites designed for fiber-connected offices. Everything looks fine during a two-laptop test — until exam morning arrives and 200 students press Start at 9:00 AM over one shared router.",
+    "Every term, schools try to run computer-based exams on cloud websites designed for fiber-connected offices. Everything looks fine during a two-laptop test, until exam morning arrives and 200 students press Start at 9:00 AM over one shared router.",
     "Pages stall, math equations fail to load, and when a lab computer shuts off in row three, a student watches their progress disappear while their countdown keeps burning.",
     "That's why we started building CogniTara.",
     "CogniTara is a local-first examination server built for real school labs. You install CogniTara Studio on one Windows PC, connect it to your school Wi-Fi, and immediately serve up to 300 student laptops, Chromebooks, tablets, and phones with zero internet required.",
     "Every click writes straight to SQLite WAL on your own machine. If a computer dies mid-exam, the student walks to a spare desk, signs in, and continues on the exact question and remaining second. If NEPA cuts power during a generator switchover, an administrator pauses the entire hall in one click.",
-    "Our vision with CogniTara is simple: give every school calm, institutional examination infrastructure — owned locally on your hardware, without per-student fees, ready whenever exam week arrives.",
+    "Our vision with CogniTara is simple: give every school calm, institutional examination infrastructure, owned locally on your hardware, without per-student fees, ready whenever exam week arrives.",
   ],
   signatureName: "Emmanuel",
   signatureRole: "Founder & Lead Engineer",
@@ -676,7 +676,7 @@ export const SUPPORT_CHANNELS = {
   lead: "CogniTara is built and supported directly by the team behind it. Every message gets a real reply.",
   email: "support@cognitara.net",
   whatsappLabel: "Direct Onboarding & Exam-Day Support",
-  responseWindow: "We typically reply within 2–6 hours on school days (priority during exam weeks).",
+  responseWindow: "We typically reply within 2 to 6 hours on school days (priority during exam weeks).",
   bugChecklist: [
     "CogniTara Studio version (Settings → About / Updates)",
     "Windows version (Windows 10 or Windows 11, 64-bit)",

@@ -1,10 +1,10 @@
 """
-CogniTara v2 — Legacy School Database (exam.db) Inspector & Atomic Migration Engine
+CogniTara v2 - Legacy School Database (exam.db) Inspector & Atomic Migration Engine
 (cognitara/services/legacy_db_import.py)
 
 Allows schools upgrading from older CogniTara installations to safely inspect and
 import their former `exam.db` SQLite database without losing students, teachers,
-exams, questions, results, or Common Entrance records — while:
+exams, questions, results, or Common Entrance records - while:
   1. Verifying SQLite magic header, PRAGMA integrity_check, and CogniTara tables.
   2. Creating an integrity-verified pre-import safety backup automatically.
   3. Staging and running full idempotent v2 schema migrations on an isolated copy.
@@ -232,7 +232,7 @@ def inspect_legacy_database(source_path: str) -> Dict[str, Any]:
             )
         if not has_recovery_codes:
             notes.append(
-                "Legacy database has no Desktop recovery codes — your active Super Admin recovery codes and Desktop licence vault will be preserved automatically."
+                "Legacy database has no Desktop recovery codes. Your active Super Admin recovery codes and Desktop licence vault will be preserved automatically."
             )
 
         return {

@@ -1,5 +1,5 @@
 ; =============================================================================
-; CogniTara Studio 2.2 — NSIS installer customisations (electron-builder)
+; CogniTara Studio 2.2: NSIS installer customisations (electron-builder)
 ;
 ; Role in 2.2: this NSIS installer is the *engine* behind the new custom setup
 ; experience (desktop/setup, Tauri + WebView2) which runs it silently, and it is
@@ -27,7 +27,7 @@
 
   ; Welcome / Finish page copy
   !define MUI_WELCOMEPAGE_TITLE "Welcome to CogniTara Studio Setup"
-  !define MUI_WELCOMEPAGE_TEXT "This will install CogniTara Studio ${VERSION} — the offline-first LAN CBT exam server with the 5-layer licence vault — on this computer.$\r$\n$\r$\nExam data, logs and backups are stored in %ProgramData%\CogniTara and are preserved during updates.$\r$\n$\r$\nClick Next to continue."
+  !define MUI_WELCOMEPAGE_TEXT "This will install CogniTara Studio ${VERSION}, the offline-first LAN CBT exam server with the 5-layer licence vault, on this computer.$\r$\n$\r$\nExam data, logs and backups are stored in %ProgramData%\CogniTara and are preserved during updates.$\r$\n$\r$\nClick Next to continue."
   !define MUI_FINISHPAGE_TITLE "CogniTara Studio is ready"
   !define MUI_FINISHPAGE_TEXT "CogniTara Studio ${VERSION} has been installed on this computer.$\r$\n$\r$\nLaunch Studio to complete the 5-step school setup, or sign in with your CogniTara Cloud account."
   !define MUI_FINISHPAGE_RUN_TEXT "Launch CogniTara Studio"

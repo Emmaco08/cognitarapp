@@ -1,6 +1,6 @@
-# CogniTara Offline Examination Portal — Phase 4.6 Pilot Safety and Acceptance Report
+# CogniTara Offline Examination Portal - Phase 4.6 Pilot Safety and Acceptance Report
 
-**Milestone:** Phase 4.6 — Data-Safety Verification and Supervised School Pilot  
+**Milestone:** Phase 4.6 - Data-Safety Verification and Supervised School Pilot  
 **Formal Release Decision:** **CONDITIONAL GO FOR CONTROLLED SCHOOL PILOT**  
 **Certified Concurrency Operating Envelope:** **10 to 25 Simultaneous Students** (Hard Technical Ceiling: 30 Students per Host Instance / Wave)  
 **Production Database Status:** `exam.db` SHA-256 Verified Untouched: `70FE827EE1D1965DD2FD5E1026E456BFA1C35BE1A1DF4D71CD449F5360E6C310`  
@@ -19,7 +19,7 @@ The application is formally approved for a **Supervised School Pilot** under the
 
 1. **Certified Cohort Size:** **10 to 25 simultaneous students** per server instance.
 2. **Hard Instance Ceiling:** **30 simultaneous students**. Concurrency exceeding 30 candidates on a single host produces request queueing that approaches the 1.5-second SLA ceiling.
-3. **Mandatory Cohort Partitioning (Waves):** For cohorts larger than 25–30 candidates (e.g. 50–200 students), the school operator **must** split candidates into sequential testing waves of 20–25 candidates. Between waves, the operator executes a hot backup and WAL checkpoint.
+3. **Mandatory Cohort Partitioning (Waves):** For cohorts larger than 25-30 candidates (e.g. 50-200 students), the school operator **must** split candidates into sequential testing waves of 20-25 candidates. Between waves, the operator executes a hot backup and WAL checkpoint.
 4. **Hardware Prerequisites:** The host machine must run on a **Solid State Drive (SATA or NVMe SSD)** and be powered by an **Uninterruptible Power Supply (UPS)** with battery backup.
 5. **Network Topology:** Workstations must connect over a dedicated local Ethernet switch or isolated Wi-Fi subnet. On NAT-routed school networks, `COGNITARA_RATELIMIT_IP` is configured to `300 per minute` to prevent false-positive IP throttling during login bursts.
 
@@ -61,10 +61,10 @@ The application is formally approved for a **Supervised School Pilot** under the
   - In [`cognitara/services/grading_service.py`](file:///C:/COGNITARA%20EXAM%20PORTAL/cognitara/services/grading_service.py), verified that `finalize_regular_exam_attempt()` and `finalize_ce_exam_attempt()` compute final student scores directly from atomic response rows (`exam_question_responses` / `ce_attempt_questions`), treating individual question answers as authoritative over stale JSON blobs.
 
 ### 2.3 Subagent 3: Shared-IP NAT Rate Limiting & Security Audit
-- **NAT Traffic Modeling:** In a school computer lab where 25–30 student workstations connect through a single NAT gateway or proxy, requests share a single IP address:
+- **NAT Traffic Modeling:** In a school computer lab where 25-30 student workstations connect through a single NAT gateway or proxy, requests share a single IP address:
   - Pause check polling: 10 req/min * 25 = 250 req/min
   - Session heartbeats: 6 req/min * 25 = 150 req/min
-  - Answer saves: 10–30 req/min * 25 = 250–750 req/min
+  - Answer saves: 10-30 req/min * 25 = 250-750 req/min
   - Aggregate peak: 650 to 1,250 requests per minute from a single IP.
 - **Rate-Limiting Architecture:**
   - Confirmed that in-exam routes (`/exam_save_single_answer`, `/ce_save_single_answer`, `/exam_auto_save`, `/ce_auto_save`, heartbeats, pause checks) have no rate-limiting decorators and are never throttled.
@@ -247,15 +247,15 @@ If a candidate workstation crashes, loses power, or freezes:
 
 ### 5.5 Wave Management (Cohorts > 25 Students)
 For a school body of 100 students:
-- **Wave 1:** Students 1–25 (09:00 – 10:00)
-- **Inter-Wave Interval (10:00 – 10:15):**
+- **Wave 1:** Students 1-25 (09:00-10:00)
+- **Inter-Wave Interval (10:00-10:15):**
   1. Proctors verify all Wave 1 attempts are submitted.
   2. Operator runs:
      ```powershell
      python scripts/backup_exam_db.py backup exam.db --target-dir backups/wave1_complete
      python scripts/backup_exam_db.py checkpoint exam.db
      ```
-- **Wave 2:** Students 26–50 (10:15 – 11:15)
+- **Wave 2:** Students 26-50 (10:15-11:15)
 - Repeat procedure for subsequent waves.
 
 ---

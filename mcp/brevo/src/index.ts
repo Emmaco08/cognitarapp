@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * CogniTara Brevo MCP Server (Model Context Protocol — stdio transport)
+ * CogniTara Brevo MCP Server (Model Context Protocol - stdio transport)
  *
  * Exposes Brevo v3 Transactional Email, OTP Verification, Sender Management,
  * Delivery Events, Templates, and Contacts tools to MCP-compatible AI clients.

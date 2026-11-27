@@ -1,4 +1,4 @@
-# CogniTara v2 — Cloud & GitHub Actions Handoff
+# CogniTara v2 - Cloud & GitHub Actions Handoff
 
 **Target Repository:** `https://github.com/Emmaco08/cognitarapp` (`main` branch)  
 **Purpose:** Continue building CogniTara v2 from cloud/remote agents and GitHub Actions while the user manages progress from their phone.
@@ -11,7 +11,7 @@ CogniTara is an offline-first LAN Computer-Based Testing (CBT) examination porta
 
 CogniTara v2 expands the local exam portal into four connected deliverables:
 1. **Packaged Windows Super Admin Desktop App (`desktop/`):** Replaces the terminal launcher (`start_offline_server.bat`) with a frameless Windows desktop studio featuring a 5-step onboarding wizard, one-click server start/stop dial, Windows System Tray, hot backups, and a **5-layer hardware-bound Ed25519 + triple-anchor DPAPI/Registry/SQLite anti-clock-tamper licence vault** with a 15-minute graceful active-exam drain on expiry.
-2. **Academic Portal v2 UI/UX Overhaul (`templates/`, `static/`):** Complete redesign of Student Dashboard, Distraction-Free Exam Engine, Non-Occluding Dockable Scientific Calculator v2, Teacher Dashboard, Visual Math/Chemistry Formula Studio v2 (`KaTeX` + `mhchem`), School Admin Console, and Common Entrance Portal — preserving all 201 baseline routes, form field names, and SQLite WAL invariants.
+2. **Academic Portal v2 UI/UX Overhaul (`templates/`, `static/`):** Complete redesign of Student Dashboard, Distraction-Free Exam Engine, Non-Occluding Dockable Scientific Calculator v2, Teacher Dashboard, Visual Math/Chemistry Formula Studio v2 (`KaTeX` + `mhchem`), School Admin Console, and Common Entrance Portal - preserving all 201 baseline routes, form field names, and SQLite WAL invariants.
 3. **`cognitara.net` Commercial Cloud Platform:** Next.js App Router + TypeScript on **Vercel** + **12-table Neon Serverless Postgres** + **Paystack** (`Monthly`, `Annual`, `Lifetime` plans in NGN/USD with HMAC-SHA512 verified webhooks) + **Dual Referral Program** (cash commission wallet & payout approvals OR bonus license days) + **Ed25519 License Signing Authority** + **HQ Super Admin Console** (school telemetry, account/school bans, signed revocation tombstones, HWID resets, payout approvals).
 4. **Launch Advert in Motion Graphics:** 9:16 vertical (plus 16:9 cut) launch advert created from authentic CogniTara assets, real UI captures, voiceover, synced captions, and mastered audio.
 
@@ -19,7 +19,7 @@ CogniTara v2 expands the local exam portal into four connected deliverables:
 
 ## 2. Exact Current Status (Where We Stopped)
 
-### Stage 1 & Stage 2 (Master Plan + Desktop App Design Preview) — COMPLETE & APPROVED (Gate 1 PASSED)
+### Stage 1 & Stage 2 (Master Plan + Desktop App Design Preview) - COMPLETE & APPROVED (Gate 1 PASSED)
 
 The user explicitly reviewed and approved the redesigned Desktop App preview (`"this is now perfect. i need you to now build the desktop app"`).
 
@@ -35,7 +35,7 @@ The user explicitly reviewed and approved the redesigned Desktop App preview (`"
 
 ---
 
-### Stage 3 (Windows Desktop App + 5-Layer Licence Vault + Windows CI Installer) — COMPLETE
+### Stage 3 (Windows Desktop App + 5-Layer Licence Vault + Windows CI Installer) - COMPLETE
 
 All Stage 3 deliverables have been implemented and verified:
 1. **5-Layer Windows Licensing & Anti-Clock-Tamper Vault (`cognitara/security/`):**
@@ -80,7 +80,7 @@ Summary of upcoming stages:
 ## 5. Non-Negotiable Design & Tech Rules
 
 - **Fixed Colour Palette ONLY:**
-  - Midnight Navy `#0A0E1A`, Obsidian `#05070C`–`#121825`, Cobalt `#0066FF`, Electric Cyan `#00D2FF`, Ceramic `#F6F8FC`/`#FFFFFF`, Slate `#94A3B8`/`#516278`.
+  - Midnight Navy `#0A0E1A`, Obsidian `#05070C`-`#121825`, Cobalt `#0066FF`, Electric Cyan `#00D2FF`, Ceramic `#F6F8FC`/`#FFFFFF`, Slate `#94A3B8`/`#516278`.
   - Emerald `#10B981`, Amber `#F59E0B`, Red `#F87171` **strictly for semantic status**, never decorative backgrounds.
 - **Bans:** **ZERO Tailwind CSS** anywhere. **ZERO generic AI SaaS templates** or purple/violet gradients. **ZERO external CDNs** in offline portals or the desktop app.
 - **Typography:** `Plus Jakarta Sans` for UI, `Geist Mono` for IP addresses/licence keys/timers/codes, official `CogniTara` SVG wordmark & Luminary C symbol from `CogniTara-Brand-Identity/`.

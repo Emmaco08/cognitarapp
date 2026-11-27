@@ -202,7 +202,7 @@ export async function POST(req: NextRequest) {
         {
           ok: false,
           error: "discount_requires_checkout",
-          message: "This is a partial discount code — proceed to Paystack checkout to apply your discount.",
+          message: "This is a partial discount code. Proceed to Paystack checkout to apply your discount.",
         },
         { status: 400 }
       );

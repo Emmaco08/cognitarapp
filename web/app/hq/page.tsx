@@ -525,7 +525,7 @@ export default function DeveloperHqPage() {
                         </td>
                         <td className="mono" style={{ fontSize: 12 }}>{row.actor_email || "system"}</td>
                         <td className="mono" style={{ fontSize: 12, fontWeight: 600 }}>{row.action}</td>
-                        <td className="mono" style={{ fontSize: 11.5, color: "var(--ink-3)" }}>{row.ip_address || "—"}</td>
+                        <td className="mono" style={{ fontSize: 11.5, color: "var(--ink-3)" }}>{row.ip_address || "-"}</td>
                         <td className="mono" style={{ fontSize: 11.5, color: "var(--ink-2)", maxWidth: 340, overflow: "hidden", textOverflow: "ellipsis" }}>
                           {JSON.stringify(row.details_json || {})}
                         </td>

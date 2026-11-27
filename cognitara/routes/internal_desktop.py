@@ -1,5 +1,5 @@
 """
-CogniTara v2 — Authenticated Localhost-Only Desktop Control API
+CogniTara v2 - Authenticated Localhost-Only Desktop Control API
 (cognitara/routes/internal_desktop.py)
 
 Communicates exclusively with the Electron main process over loopback using a

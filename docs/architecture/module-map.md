@@ -1,4 +1,4 @@
-# CogniTara Examination Portal — Module Map
+# CogniTara Examination Portal - Module Map
 
 ## 1. Architectural Overview
 

@@ -8,7 +8,7 @@ import { getCmsSupportPage, getPublishedGuides } from "@/lib/cms";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "How-to Guides — CogniTara",
+  title: "How-to Guides | CogniTara",
   description:
     "Step-by-step guides for installing CogniTara Studio, running 300-device Wi-Fi LAN exams, cross-device recovery, KaTeX formulas, and licensing.",
 };

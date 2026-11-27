@@ -1,5 +1,5 @@
 """
-CogniTara v2 — Layer 3 Triple-Anchor DPAPI, Registry & SQLite Vault Store
+CogniTara v2 - Layer 3 Triple-Anchor DPAPI, Registry & SQLite Vault Store
 (cognitara/security/vault_store.py)
 
 Persists license state, monotonic elapsed runtime, high-water-mark UTC clock,

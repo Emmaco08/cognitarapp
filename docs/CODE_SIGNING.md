@@ -1,6 +1,6 @@
-# Windows Code Signing Guide — Removing "Unknown Publisher" & SmartScreen Warnings
+# Windows Code Signing Guide - Removing "Unknown Publisher" & SmartScreen Warnings
 
-When an unsigned Windows executable is downloaded from the internet (for example from GitHub Releases), Windows Defender SmartScreen displays **"Windows protected your PC — Publisher: Unknown publisher"**.
+When an unsigned Windows executable is downloaded from the internet (for example from GitHub Releases), Windows Defender SmartScreen displays **"Windows protected your PC - Publisher: Unknown publisher"**.
 
 No code or manifest change can remove that warning on its own: Windows requires a valid **Authenticode** signature chained to a trusted Certificate Authority (CA) tied to your verified identity or organization.
 
@@ -19,11 +19,11 @@ When signing is enabled in CI, the workflow signs all Windows binaries in order 
 
 ## Option 1 (Recommended): Microsoft Azure Trusted Signing
 
-**Cost:** ~\$9.99/month (Basic tier) — includes cloud HSM storage and instant SmartScreen reputation benefits once identity verification completes.
+**Cost:** ~\$9.99/month (Basic tier) - includes cloud HSM storage and instant SmartScreen reputation benefits once identity verification completes.
 
 ### 1. Provision Azure Trusted Signing
 1. Open the Azure Portal and create a **Trusted Signing Account** (choose a supported region such as `East US`, `West US 2`, or `North Europe`).
-2. Under **Identity validations**, submit either an **Organization** or **Individual** identity validation and wait for approval (typically 1–3 business days).
+2. Under **Identity validations**, submit either an **Organization** or **Individual** identity validation and wait for approval (typically 1-3 business days).
 3. Under **Certificate profiles**, create a **Public Trust** certificate profile bound to your approved identity.
 4. Create a Microsoft Entra ID **App Registration** (Service Principal), generate a Client Secret, and assign it the **Trusted Signing Certificate Profile Signer** role on your Trusted Signing Account.
 

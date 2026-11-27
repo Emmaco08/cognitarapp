@@ -8,7 +8,7 @@ import { getCmsSupportPage } from "@/lib/cms";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Support — CogniTara",
+  title: "Support | CogniTara",
   description:
     "Get direct help from the CogniTara team for Windows lab setup, offline Wi-Fi configuration, licence keys, and exam-day diagnostics.",
 };

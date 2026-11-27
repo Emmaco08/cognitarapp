@@ -1,4 +1,4 @@
-# CogniTara Examination Portal — Database Architecture & Schema Specification
+# CogniTara Examination Portal - Database Architecture & Schema Specification
 
 ## 1. Engine & Durability Architecture
 

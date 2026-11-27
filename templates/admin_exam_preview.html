@@ -13,7 +13,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="csrf-token" content="{{ csrf_token() }}">
   <meta name="color-scheme" content="light dark">
-  <title>Exam Preview — {{ exam.name }} | CogniTara</title>
+  <title>Exam Preview - {{ exam.name }} | CogniTara</title>
   <link rel="icon" href="{{ url_for('static', filename='images/cognitara-favicon.ico') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='vendor/katex/katex.min.css') }}">
   <script src="{{ url_for('static', filename='vendor/katex/katex.min.js') }}"></script>
@@ -514,7 +514,7 @@
       if (meta) {
         meta.textContent = total === 0
           ? "No matching questions"
-          : ("Showing " + (start + 1) + "–" + end + " of " + total + " questions");
+          : ("Showing " + (start + 1) + "-" + end + " of " + total + " questions");
       }
 
       var pag = document.getElementById("previewPagination");

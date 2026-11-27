@@ -1,13 +1,13 @@
 """
-CogniTara Studio 2.2 — NSIS wizard bitmap generator (fallback / direct-run installer).
+CogniTara Studio 2.2: NSIS wizard bitmap generator (fallback / direct-run installer).
 
 The 2.2 NSIS wizard is a clean native *light* Windows wizard (see installer.nsh):
-  * sidebar.bmp  164x314  — MUI2 Welcome/Finish page panel (dark brand panel)
-  * header.bmp   150x57   — MUI2 inner-page header image (white, matches header bg)
+  * sidebar.bmp  164x314  - MUI2 Welcome/Finish page panel (dark brand panel)
+  * header.bmp   150x57   - MUI2 inner-page header image (white, matches header bg)
 
 Both are rendered 3x supersampled and downscaled with Lanczos for crisp edges.
 Content keeps generous safe margins and no edge-anchored text, so MUI2's default
-"FitControl" stretching at 125–200% DPI only scales — it never clips (the 2.1
+"FitControl" stretching at 125-200% DPI only scales and never clips (the 2.1
 490x218 feature slides were clipped under DPI scaling and have been removed).
 
 Also writes PNG previews plus a 100%-DPI mock of the Welcome and Finish pages to
@@ -248,7 +248,7 @@ def main() -> None:
         mock_wizard_page(
             sidebar,
             "Welcome to CogniTara Studio Setup",
-            "This will install CogniTara Studio 2.2.7 — the offline-first LAN CBT exam server with the 5-layer licence vault — on this computer.\n"
+            "This will install CogniTara Studio 2.2.7, the offline-first LAN CBT exam server with the 5-layer licence vault, on this computer.\n"
             "Exam data, logs and backups are stored in %ProgramData%\\CogniTara and are preserved during updates.\n"
             "Click Next to continue.",
             "mock_welcome_page",

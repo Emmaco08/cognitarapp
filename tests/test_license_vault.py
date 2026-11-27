@@ -1,5 +1,5 @@
 """
-CogniTara v2 — Comprehensive 5-Layer License Vault, Anti-Clock-Tamper,
+CogniTara v2 - Comprehensive 5-Layer License Vault, Anti-Clock-Tamper,
 15-Minute Active-Exam Drain & Internal Desktop Control API Test Suite
 """
 

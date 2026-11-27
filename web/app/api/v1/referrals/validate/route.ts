@@ -28,7 +28,7 @@ export async function GET(req: NextRequest) {
       referral_code: rec.referral_code,
       referred_by: rec.school_name || "CogniTara Partner",
       bonus_days: bonusDays,
-      message: `Referred by ${rec.school_name || "CogniTara Partner"} — you get +${bonusDays} free bonus days on your first paid plan.`,
+      message: `Referred by ${rec.school_name || "CogniTara Partner"}. You get +${bonusDays} free bonus days on your first paid plan.`,
     });
   } catch (err) {
     console.error("Referral validate error:", err);

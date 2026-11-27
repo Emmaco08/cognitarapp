@@ -6,7 +6,7 @@ cd /d "%~dp0"
 cls
 
 echo ======================================================================
-echo    COGNITARA EXAMINATION PORTAL — PRODUCTION WSGI SERVER
+echo    COGNITARA EXAMINATION PORTAL - PRODUCTION WSGI SERVER
 echo ======================================================================
 echo.
 echo [1/3] Checking Python environment...

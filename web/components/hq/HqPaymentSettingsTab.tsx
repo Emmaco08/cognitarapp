@@ -343,7 +343,7 @@ export function HqPaymentSettingsTab({
             className={`choice-card ${feeMode === "customer_added" ? "is-selected" : ""}`}
             onClick={() => setFeeMode("customer_added")}
           >
-            <strong>Schools pay it — added by CogniTara</strong>
+            <strong>Schools pay it (added by CogniTara)</strong>
             <p>The fee is calculated and displayed as its own line before paying using the numbers below.</p>
             <small>Paystack dashboard: Charge me</small>
           </button>
@@ -353,7 +353,7 @@ export function HqPaymentSettingsTab({
             className={`choice-card ${feeMode === "paystack_checkout" ? "is-selected" : ""}`}
             onClick={() => setFeeMode("paystack_checkout")}
           >
-            <strong>Schools pay it — added by Paystack</strong>
+            <strong>Schools pay it (added by Paystack)</strong>
             <p>Paystack adds its exact fee on its checkout screen. We show “+ Paystack fee at checkout”.</p>
             <small>Paystack dashboard: Charge my customers</small>
           </button>

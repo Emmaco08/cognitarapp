@@ -1,4 +1,4 @@
-# CogniTara Examination Portal — Data Flow & Sequence Architecture
+# CogniTara Examination Portal - Data Flow & Sequence Architecture
 
 This document details the server-authoritative data flows, state transitions, and sequence diagrams for student examination lifecycles, answer persistence, session recovery, and violation handling.
 

@@ -15,7 +15,7 @@ if PROJECT_ROOT not in sys.path:
 
 def run_validation():
     print("=" * 70)
-    print("COGNITARA OFFLINE EXAMINATION PORTAL — ARCHITECTURE VALIDATION")
+    print("COGNITARA OFFLINE EXAMINATION PORTAL - ARCHITECTURE VALIDATION")
     print("=" * 70)
     errors = []
 

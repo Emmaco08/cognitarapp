@@ -8,7 +8,7 @@ import { getCmsSupportPage, getPublishedFaqs } from "@/lib/cms";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "FAQ — CogniTara",
+  title: "FAQ | CogniTara",
   description:
     "Plain answers about offline LAN exams, cross-device recovery, backups, anti-cheat rules, and school licensing.",
 };

@@ -1,4 +1,4 @@
-# CogniTara Offline Examination Portal — Server Operator Runbook
+# CogniTara Offline Examination Portal - Server Operator Runbook
 **Document Version:** 4.4.0  
 **Target Audience:** System Administrators, IT Coordinators, and Examination Chief Proctors  
 **Scope:** Offline Enterprise Deployment, Concurrency Management, Live Monitoring, Hot Backups, and Disaster Recovery
@@ -65,7 +65,7 @@ The platform is architected around four operational pillars:
 - **Certified Operating Capacity:** 10 to 25 simultaneous students per host server instance.
 - **Hard Technical Ceiling:** 30 simultaneous students per instance.
 - **Large Cohort Protocol (50 to 200+ candidates):**
-  1. **Sequential Wave Partitioning:** Partition total student roster into sequential waves of 20 to 25 candidates (e.g., Wave A: 09:00–10:00, Wave B: 10:30–11:30, Wave C: 12:00–13:00).
+  1. **Sequential Wave Partitioning:** Partition total student roster into sequential waves of 20 to 25 candidates (e.g., Wave A: 09:00-10:00, Wave B: 10:30-11:30, Wave C: 12:00-13:00).
   2. **Inter-Wave Checkpoint & Backup:** Between waves, take an online backup and flush WAL:
      ```cmd
      python scripts/backup_exam_db.py checkpoint exam.db --mode TRUNCATE
@@ -380,4 +380,4 @@ Log into `/admin/reports` or use the CLI export to save:
 Copy the `archives_post_exam/` directory and exported spreadsheets to an external encrypted USB drive for archival storage.
 
 ---
-*End of Operator Runbook — CogniTara Offline Examination Portal*
+*End of Operator Runbook - CogniTara Offline Examination Portal*

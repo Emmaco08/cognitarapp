@@ -1,13 +1,13 @@
-# CogniTara v2 — Master Vertical Task Breakdown (`tasks/todo.md`)
+# CogniTara v2 - Master Vertical Task Breakdown (`tasks/todo.md`)
 
-All tasks are vertically sliced (`XS`/`S`/`M`, touching at most 5 files per task) and ordered bottom-up by dependency across Stages 1–6, separated by explicit checkpoints and **two mandatory User Approval Gates**.
+All tasks are vertically sliced (`XS`/`S`/`M`, touching at most 5 files per task) and ordered bottom-up by dependency across Stages 1-6, separated by explicit checkpoints and **two mandatory User Approval Gates**.
 
 ---
 
 ## Stage 1: Architecture Master Plan & Live Interactive Web Showcase (`/desktop-preview`)
 
 ### Task 1.1: Author Master Plan, Product/Design Truths & Task Breakdown
-**Description:** Inspect verified repository architecture, routes, SQLite schema, brand identity vectors, and installed toolchain, then author the authoritative CogniTara v2 master architecture specification, Impeccable `PRODUCT.md`, `DESIGN.md` + `.impeccable/design.json` dual-theme design system, and Stage 1–6 vertical task plan.
+**Description:** Inspect verified repository architecture, routes, SQLite schema, brand identity vectors, and installed toolchain, then author the authoritative CogniTara v2 master architecture specification, Impeccable `PRODUCT.md`, `DESIGN.md` + `.impeccable/design.json` dual-theme design system, and Stage 1-6 vertical task plan.
 
 **Acceptance criteria:**
 - [x] `docs/COGNITARA_V2_MASTER_PLAN.md` documents verified baseline metrics, Mermaid diagrams, Dual-Tone tokens, 5-layer Ed25519/DPAPI/monotonic schemas, all 12 Neon Postgres DDL tables, Stage 3 blueprint, and Stage 6 8-beat storyboard.
@@ -31,7 +31,7 @@ All tasks are vertically sliced (`XS`/`S`/`M`, touching at most 5 files per task
 ---
 
 ### Task 1.2: Self-Host Offline Fonts, Dual-Theme Tokens & Enriched Read-Only Telemetry
-**Description:** Self-host `Onest` (`400`–`700`) and `JetBrains Mono` (`400`–`600`) under `static/fonts/ui/`, upgrade `static/css/cognitara-tokens.css` for seamless `[data-theme="dark"]` (Obsidian Studio) and `[data-theme="light"]` (Daylight Ceramic) switching with zero bounce easing, and enrich `cognitara/routes/preview.py` read-only telemetry (`recent_exams`, `total_questions`, `classes_count`, `grading_scheme`, `portal_capabilities`).
+**Description:** Self-host `Onest` (`400`-`700`) and `JetBrains Mono` (`400`-`600`) under `static/fonts/ui/`, upgrade `static/css/cognitara-tokens.css` for seamless `[data-theme="dark"]` (Obsidian Studio) and `[data-theme="light"]` (Daylight Ceramic) switching with zero bounce easing, and enrich `cognitara/routes/preview.py` read-only telemetry (`recent_exams`, `total_questions`, `classes_count`, `grading_scheme`, `portal_capabilities`).
 
 **Acceptance criteria:**
 - [ ] `static/fonts/ui/` contains valid `wOF2` fonts (`Onest` + `JetBrains Mono`) and `static/css/cognitara-tokens.css` declares both `[data-theme="dark"]` and `[data-theme="light"]` token ladders with exponential ease-out (`cubic-bezier(0.16, 1, 0.3, 1)`).
@@ -447,7 +447,7 @@ All tasks are vertically sliced (`XS`/`S`/`M`, touching at most 5 files per task
 ## Stage 4: `cognitara.net` Cloud Platform (Next.js + Neon Postgres + Paystack + HQ Admin)
 
 ### Task 4.1: Initialize Next.js Cloud App & Apply Neon Postgres 12-Table Migration
-**Description:** Scaffold `cloud/` (Next.js App Router, TypeScript, CSS Modules with CogniTara Tier A tokens — zero Tailwind v3), configure `@neondatabase/serverless`, and apply the 12-table SQL DDL (`users_hq`, `schools`, `plans`, `subscriptions_payments`, `licenses`, `license_activations`, `license_heartbeats`, `referrals`, `referral_conversions`, `wallet_ledger`, `payout_requests`, `school_bans_audit`) plus plan seed data.
+**Description:** Scaffold `cloud/` (Next.js App Router, TypeScript, CSS Modules with CogniTara Tier A tokens - zero Tailwind v3), configure `@neondatabase/serverless`, and apply the 12-table SQL DDL (`users_hq`, `schools`, `plans`, `subscriptions_payments`, `licenses`, `license_activations`, `license_heartbeats`, `referrals`, `referral_conversions`, `wallet_ledger`, `payout_requests`, `school_bans_audit`) plus plan seed data.
 
 **Acceptance criteria:**
 - [ ] `cloud/db/schema.sql` (or Drizzle migrations) creates all 12 tables, constraints, and indexes cleanly on Neon Postgres.
@@ -683,10 +683,10 @@ All tasks are vertically sliced (`XS`/`S`/`M`, touching at most 5 files per task
 ## Stage 6: CogniTara v2 Launch Advert in Motion Graphics (`cognitara-v2-launch`)
 
 ### Task 6.1: Initialize `cognitara-motion-studio/` Validators & Authentic Media Asset Pack
-**Description:** Create `cognitara-motion-studio/tools/` quality-gate validators (`brand_asset_checker.py`, `media_manifest_validator.py`, `subtitle_timeline_checker.py`, `video_metadata_checker.py`, `production_quality_report.py`) and assemble `cognitara-motion-studio/projects/cognitara-v2-launch/assets/` with genuine vector exports from `CogniTara-Brand-Identity/`, `static/fonts/CogniTaraType-*.ttf`, verified school photography, and live Playwright captures of Stages 2–4 UIs, documented in `media_manifest.json`.
+**Description:** Create `cognitara-motion-studio/tools/` quality-gate validators (`brand_asset_checker.py`, `media_manifest_validator.py`, `subtitle_timeline_checker.py`, `video_metadata_checker.py`, `production_quality_report.py`) and assemble `cognitara-motion-studio/projects/cognitara-v2-launch/assets/` with genuine vector exports from `CogniTara-Brand-Identity/`, `static/fonts/CogniTaraType-*.ttf`, verified school photography, and live Playwright captures of Stages 2-4 UIs, documented in `media_manifest.json`.
 
 **Acceptance criteria:**
-- [ ] Zero generic AI backgrounds or redrawn logos; every asset in `media_manifest.json` has verified source path/license and Relevance Level 3–5.
+- [ ] Zero generic AI backgrounds or redrawn logos; every asset in `media_manifest.json` has verified source path/license and Relevance Level 3-5.
 - [ ] `brand_asset_checker.py` and `media_manifest_validator.py` pass with exit 0.
 
 **Verification:**
@@ -699,7 +699,7 @@ All tasks are vertically sliced (`XS`/`S`/`M`, touching at most 5 files per task
 - `cognitara-motion-studio/tools/media_manifest_validator.py`
 - `cognitara-motion-studio/projects/cognitara-v2-launch/assets/media_manifest.json`
 
-**Estimated scope:** Medium (3–5 files)
+**Estimated scope:** Medium (3-5 files)
 
 ---
 
@@ -726,7 +726,7 @@ All tasks are vertically sliced (`XS`/`S`/`M`, touching at most 5 files per task
 ---
 
 ### Task 6.3: Build EffectCraft 8-Beat Composition & Render 1080×1920 @ 30fps Video
-**Description:** Author `cognitara-motion-studio/projects/cognitara-v2-launch/comp/build_comp.jsx` to build the 36.0s 8-beat composition (`project.ecproj`) with non-linear cubic easing (`75%–85%` influence), continuous `1.02x–1.05x` camera drift, `>= 56pt` `CogniTaraType` kinetic titles, and Beat 8 official Luminary C reveal with `>= 1.5s` resting hold; render `renders/raw_video.mp4` headlessly via `C:\Program Files\EffectCraft\effectcraft-cli.exe`.
+**Description:** Author `cognitara-motion-studio/projects/cognitara-v2-launch/comp/build_comp.jsx` to build the 36.0s 8-beat composition (`project.ecproj`) with non-linear cubic easing (`75%-85%` influence), continuous `1.02x-1.05x` camera drift, `>= 56pt` `CogniTaraType` kinetic titles, and Beat 8 official Luminary C reveal with `>= 1.5s` resting hold; render `renders/raw_video.mp4` headlessly via `C:\Program Files\EffectCraft\effectcraft-cli.exe`.
 
 **Acceptance criteria:**
 - [ ] Native `.ecproj` compiles and renders cleanly via `effectcraft-cli.exe` at `1080×1920`, `30fps`.
@@ -747,7 +747,7 @@ All tasks are vertically sliced (`XS`/`S`/`M`, touching at most 5 files per task
 ---
 
 ### Task 6.4: Master 4-Stem Audio (EBU R128), Multiplex Final MP4 & Pass 6-Axis Quality Gate
-**Description:** Mix 4-stem audio (`voiceover.wav`, ambient synth bed, risers/impacts, UI clicks with `-3.5 dB` side-chain ducking) mastered via FFmpeg `loudnorm`/`ebur128` to `-14.0`–`-16.0 LUFS` and `<= -1.0 dBTP`, burn/multiplex `captions.ass` + `+faststart` into `renders/master_production.mp4`, generate social publishing copy, and pass `production_quality_report.py`.
+**Description:** Mix 4-stem audio (`voiceover.wav`, ambient synth bed, risers/impacts, UI clicks with `-3.5 dB` side-chain ducking) mastered via FFmpeg `loudnorm`/`ebur128` to `-14.0`-`-16.0 LUFS` and `<= -1.0 dBTP`, burn/multiplex `captions.ass` + `+faststart` into `renders/master_production.mp4`, generate social publishing copy, and pass `production_quality_report.py`.
 
 **Acceptance criteria:**
 - [ ] `ffmpeg -af ebur128` confirms integrated loudness `-14.0` to `-16.0 LUFS` and True-Peak `<= -1.0 dBTP`.

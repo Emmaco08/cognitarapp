@@ -466,11 +466,11 @@
                 <div class="q-answers">
                     <div class="q-answer-box your-answer right">
                         <strong>Your Answer</strong>
-                        {{ q.chosen_letter or '—' }}. {{ (q.user_answer or 'Not answered')|sanitize|safe }}
+                        {{ q.chosen_letter or '-' }}. {{ (q.user_answer or 'Not answered')|sanitize|safe }}
                     </div>
                     <div class="q-answer-box correct-answer">
                         <strong>Correct Answer</strong>
-                        {{ q.correct_letter or '—' }}. {{ (q.answer or '')|sanitize|safe }}
+                        {{ q.correct_letter or '-' }}. {{ (q.answer or '')|sanitize|safe }}
                     </div>
                 </div>
                 <span class="time-badge"><i class="fas fa-clock"></i> Time spent: {{ q.time_spent or 0 }} seconds</span>
@@ -493,11 +493,11 @@
                 <div class="q-answers">
                     <div class="q-answer-box your-answer wrong">
                         <strong>Your Answer</strong>
-                        {{ q.chosen_letter or '—' }}. {{ (q.user_answer or 'Not answered')|sanitize|safe }}
+                        {{ q.chosen_letter or '-' }}. {{ (q.user_answer or 'Not answered')|sanitize|safe }}
                     </div>
                     <div class="q-answer-box correct-answer">
                         <strong>Correct Answer</strong>
-                        {{ q.correct_letter or '—' }}. {{ (q.answer or '')|sanitize|safe }}
+                        {{ q.correct_letter or '-' }}. {{ (q.answer or '')|sanitize|safe }}
                     </div>
                 </div>
                 <span class="time-badge"><i class="fas fa-clock"></i> Time spent: {{ q.time_spent or 0 }} seconds</span>

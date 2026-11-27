@@ -20,7 +20,7 @@ class SensitiveDataFilter(logging.Filter):
 def setup_logging(app=None):
     """
     Configures structured logging with size-based rotation (5 files x 10MB = 50MB max).
-    Safe for local, offline deployment on Windows — writes exclusively into the
+    Safe for local, offline deployment on Windows - writes exclusively into the
     writable CogniTara data directory (%ProgramData%\\CogniTara\\data\\logs with
     %LOCALAPPDATA% fallback), never inside C:\\Program Files\\.
     """

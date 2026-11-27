@@ -1,5 +1,5 @@
 /* ==========================================================================
-   CogniTara Studio v2 — Desktop App (Monochrome Editorial Cream-White & Black)
+   CogniTara Studio v2: Desktop App (Monochrome Editorial Cream-White & Black)
    Theme re-skin matching cognitara.net: warm cream-white (#F8F8F8 / #EFEFEF)
    with obsidian black (#171614) in Light Mode, and crisp warm carbon in Dark
    Mode. Official black-and-white CogniTara logo. Zero blue accents.
@@ -149,7 +149,7 @@ a { color: var(--accent); text-underline-offset: 3px; }
 .sym__c { fill: var(--c-body); }
 .sym__star { fill: var(--star); }
 
-/* ---------- Wallpaper (pre-softened radial gradients — zero blur shader jank) ---------- */
+/* ---------- Wallpaper (pre-softened radial gradients, zero blur shader jank) ---------- */
 .wallpaper { position: fixed; inset: 0; overflow: hidden; background: var(--wall); transition: background-color 320ms var(--ease); }
 .wallpaper i { position: absolute; border-radius: 50%; pointer-events: none; }
 .wp-a { width: 70vw; height: 70vw; left: -18vw; bottom: -38vw; background: radial-gradient(circle, var(--wp-a) 0%, transparent 68%); }
@@ -403,7 +403,7 @@ a { color: var(--accent); text-underline-offset: 3px; }
 .onb__help svg { width: 16px; height: 16px; }
 
 .onb__main { position: relative; overflow: hidden; display: grid; grid-template-rows: 1fr auto; min-height: 0; background: var(--layer); border-top: 1px solid var(--layer-border); border-left: 1px solid var(--layer-border); border-top-left-radius: var(--r-md); contain: layout style paint; }
-/* Pre-softened GPU aurora gradients — zero filter: blur(90px) repaint lag */
+/* Pre-softened GPU aurora gradients, zero filter: blur(90px) repaint lag */
 .aurora { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
 .aurora i { position: absolute; left: 0; top: 0; border-radius: 50%; will-change: transform; transition: transform 1100ms var(--ease); }
 .au-a { width: 680px; height: 680px; background: radial-gradient(circle, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.015) 40%, transparent 70%); transform: translate3d(var(--ax, 400px), var(--ay, -260px), 0); }
@@ -968,7 +968,7 @@ h2 + .set-row { border-top: 0; }
 .toast::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--accent); }
 .toast.is-on { opacity: 1; transform: translate3d(-50%, 0, 0); }
 
-/* ---------- Tray (solid surface — zero backdrop-filter blur) ---------- */
+/* ---------- Tray (solid surface, zero backdrop-filter blur) ---------- */
 .tray { position: fixed; right: 16px; bottom: 72px; width: 250px; padding: 6px; background: var(--win-solid); border-radius: var(--r-md); box-shadow: var(--shadow-pop); display: grid; gap: 2px; z-index: 30; animation: pal-in 200ms var(--ease) both; }
 .tray[hidden] { display: none; }
 .tray__head { display: flex; gap: 10px; align-items: center; padding: 10px 10px 12px; }

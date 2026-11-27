@@ -1,4 +1,4 @@
-# CogniTara Examination Portal — Developer & Contributor Guide
+# CogniTara Examination Portal - Developer & Contributor Guide
 
 Welcome to the CogniTara developer guide. This guide explains how to develop, test, extend, and deploy the CogniTara modular offline examination portal.
 
@@ -7,7 +7,7 @@ Welcome to the CogniTara developer guide. This guide explains how to develop, te
 ## 1. Environment & Prerequisites
 
 - **Operating System:** Windows, Linux, or macOS
-- **Python Version:** Python 3.10 or higher (Python 3.11–3.14 tested)
+- **Python Version:** Python 3.10 or higher (Python 3.11-3.14 tested)
 - **Database:** SQLite 3 (included with standard Python runtime)
 - **Dependencies:**
   - `Flask`

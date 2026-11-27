@@ -770,7 +770,7 @@
             const sizeFormatted = sizeMB >= 1 ? sizeMB.toFixed(1) + ' MB' : sizeKB.toFixed(1) + ' KB';
 
             statusDiv.className = 'image-status success';
-            statusDiv.innerHTML = `<i class="fas fa-check-circle"></i> Image selected (${sizeFormatted}) — Full quality preserved`;
+            statusDiv.innerHTML = `<i class="fas fa-check-circle"></i> Image selected (${sizeFormatted}), full quality preserved`;
             statusDiv.style.display = 'block';
             imageValid[questionNum] = true;
             return true;
@@ -916,7 +916,7 @@ function addNewQuestion() {
             const sizeFormatted = sizeMB >= 1 ? sizeMB.toFixed(1) + ' MB' : sizeKB.toFixed(1) + ' KB';
 
             statusDiv.className = 'image-status success';
-            statusDiv.innerHTML = `<i class="fas fa-check-circle"></i> Image selected (${sizeFormatted}) — Full quality preserved`;
+            statusDiv.innerHTML = `<i class="fas fa-check-circle"></i> Image selected (${sizeFormatted}), full quality preserved`;
             statusDiv.style.display = 'block';
             imageValid[questionNum] = true;
             return true;

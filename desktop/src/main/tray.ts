@@ -60,7 +60,7 @@ export class StudioTray {
         ? "Licence attention needed"
         : "Server stopped";
 
-    this.tray.setToolTip(`CogniTara Studio — ${statusLabel}`);
+    this.tray.setToolTip(`CogniTara Studio | ${statusLabel}`);
     const menu = Menu.buildFromTemplate([
       { label: `CogniTara Studio · ${statusLabel}`, enabled: false },
       { type: "separator" },

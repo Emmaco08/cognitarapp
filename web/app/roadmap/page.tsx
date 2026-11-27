@@ -8,7 +8,7 @@ import { getCmsSupportPage, getPublishedRoadmap } from "@/lib/cms";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Roadmap — CogniTara",
+  title: "Roadmap | CogniTara",
   description:
     "See what shipped, what is in progress, and what we are building next for CogniTara Studio and Cloud.",
 };

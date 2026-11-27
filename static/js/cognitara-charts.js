@@ -473,7 +473,7 @@
     });
   }
 
-  /* Live Theme Switch Observer — re-renders charts smoothly when data-theme toggles */
+  /* Live Theme Switch Observer - re-renders charts smoothly when data-theme toggles */
   var lastTheme = document.documentElement.getAttribute("data-theme");
   var observer = new MutationObserver(function () {
     var next = document.documentElement.getAttribute("data-theme");

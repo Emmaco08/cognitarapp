@@ -1,5 +1,5 @@
 /* ==========================================================================
-   CogniTara Exam Studio v5 — Live CBT Examination & Precision Hardware Calc
+   CogniTara Exam Studio v5 - Live CBT Examination & Precision Hardware Calc
    --------------------------------------------------------------------------
    True Neutral Carbon Dark (#111111 -> #191919 -> #202020 -> #181818 chassis)
    and Neutral Paper Light (#F7F7F8 -> #FFFFFF -> #EFEFF1 chassis).
@@ -36,7 +36,7 @@
   --ex-bad-soft: rgba(23, 22, 20, 0.08);
   --ex-bad-line: rgba(23, 22, 20, 0.22);
 
-  /* Hardware Scientific Calculator Tokens — Cream-White & Obsidian Monochrome */
+  /* Hardware Scientific Calculator Tokens - Cream-White & Obsidian Monochrome */
   --calc-chassis: #EFEFEF;
   --calc-chassis-edge: rgba(23, 22, 20, 0.12);
   --calc-head: #E8E7E4;
@@ -89,7 +89,7 @@
   --ex-bad-soft: rgba(255, 255, 255, 0.10);
   --ex-bad-line: rgba(255, 255, 255, 0.22);
 
-  /* Hardware Scientific Calculator Tokens — Anodized Neutral Carbon */
+  /* Hardware Scientific Calculator Tokens - Anodized Neutral Carbon */
   --calc-chassis: #18181A;
   --calc-chassis-edge: rgba(255, 255, 255, 0.08);
   --calc-head: #131315;
@@ -416,7 +416,7 @@ body.ct-exam-studio .exam-rail {
   min-width: 0;
 }
 
-/* Previous / Next Card — Right-Hand Side ABOVE Question Palette */
+/* Previous / Next Card - Right-Hand Side ABOVE Question Palette */
 body.ct-exam-studio .nav-buttons {
   position: static !important;
   width: 100% !important;
@@ -543,7 +543,7 @@ body.ct-exam-studio .palette-swatch--unanswered {
   border: 1px solid var(--ex-line-2) !important;
 }
 
-/* Submit Exam Button — Anchored Cleanly Inside Right Rail */
+/* Submit Exam Button - Anchored Cleanly Inside Right Rail */
 body.ct-exam-studio .submit-btn {
   position: static !important;
   bottom: auto !important;
@@ -1152,7 +1152,7 @@ body.ct-exam-studio #saveStatusIndicator {
   background: var(--ex-bad-soft) !important;
 }
 
-/* Recessed Matte Optical LCD Display Well — STRICT RIGHT ALIGNMENT */
+/* Recessed Matte Optical LCD Display Well - STRICT RIGHT ALIGNMENT */
 #calculatorModal .calculator-display {
   margin: 12px 14px 4px !important;
   padding: 14px 16px 12px !important;
@@ -1327,7 +1327,7 @@ body.ct-exam-studio #saveStatusIndicator {
   box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.35) !important;
 }
 
-/* Zone A — Scientific & Paren Functions */
+/* Zone A - Scientific & Paren Functions */
 #calculatorModal .calc-btn.scientific,
 #calculatorModal .calc-btn.paren,
 #calculatorModal .calc-btn.sign {
@@ -1345,7 +1345,7 @@ body.ct-exam-studio #saveStatusIndicator {
   color: var(--ex-ink) !important;
 }
 
-/* Zone B — Elevated Tactile Number Pad (0–9, .) */
+/* Zone B - Elevated Tactile Number Pad (0-9, .) */
 #calculatorModal .calc-btn.num,
 #calculatorModal .calc-btn.decimal {
   background: var(--calc-key-num) !important;
@@ -1363,7 +1363,7 @@ body.ct-exam-studio #saveStatusIndicator {
   box-shadow: var(--calc-key-num-shadow) !important;
 }
 
-/* Zone C — Clear & Backspace (Refined Braun Terracotta Ink, Zero Muddy Boxes) */
+/* Zone C - Clear & Backspace (Refined Braun Terracotta Ink, Zero Muddy Boxes) */
 #calculatorModal .calc-btn.clear,
 #calculatorModal .calc-btn.backspace {
   background: var(--calc-key-util) !important;
@@ -1376,7 +1376,7 @@ body.ct-exam-studio #saveStatusIndicator {
   background: var(--calc-key-util-hover) !important;
 }
 
-/* Zone D — Arithmetic Operators */
+/* Zone D - Arithmetic Operators */
 #calculatorModal .calc-btn.operator {
   background: var(--calc-key-op) !important;
   color: var(--calc-key-op-ink) !important;
@@ -1390,7 +1390,7 @@ body.ct-exam-studio #saveStatusIndicator {
   color: var(--calc-key-op-ink) !important;
 }
 
-/* Zone E — Iconic Dieter Rams Warm Amber Equals Key */
+/* Zone E - Iconic Dieter Rams Warm Amber Equals Key */
 #calculatorModal .calc-btn.equals {
   background: var(--calc-key-eq) !important;
   color: var(--ex-cta-ink) !important;
@@ -1409,7 +1409,7 @@ body.ct-exam-studio #saveStatusIndicator {
 
 /* ==========================================================================
    4. MODALS & MOTION-GRAPHICS OVERLAYS INSIDE EXAM STUDIO
-      100% Native Neutral Carbon (Dark) & Paper (Light) — Zero White-Box Glare
+      100% Native Neutral Carbon (Dark) & Paper (Light) - Zero White-Box Glare
    ========================================================================== */
 @keyframes ex-backdrop-in {
   from { opacity: 0; }
@@ -1814,7 +1814,7 @@ body.ct-exam-studio .ex-stay-btn:hover { color: var(--ex-ink); }
 
 /* ==========================================================================
    6. MINIMALIST PURE-MONOCHROME ANIMATED EXAM SCENARIO OVERLAYS
-      Icon + Clear Title (+ Single Action or Sweep Line) — Zero Clutter
+      Icon + Clear Title (+ Single Action or Sweep Line) - Zero Clutter
    ========================================================================== */
 @keyframes ex-sonar-wave {
   0% { opacity: 0.48; transform: scale3d(0.86, 0.86, 1); }

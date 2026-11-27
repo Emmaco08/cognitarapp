@@ -1,4 +1,4 @@
-# CogniTara Examination Portal — Complete Route Map
+# CogniTara Examination Portal - Complete Route Map
 
 This document lists all **203 registered endpoints** in the CogniTara modular application, cataloged by Blueprint, URL pattern, permitted HTTP methods, handler endpoint, and source file.
 

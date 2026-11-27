@@ -8,7 +8,7 @@ import { getPublishedBlogPosts } from "@/lib/cms";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Blog — CogniTara",
+  title: "Blog | CogniTara",
   description:
     "Engineering notes, exam-hall reliability deep dives, migration guides, and release stories from CogniTara.",
 };

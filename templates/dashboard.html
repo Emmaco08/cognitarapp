@@ -26,8 +26,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="csrf-token" content="{{ csrf_token() }}">
   <meta name="color-scheme" content="light dark">
-  <meta name="description" content="Student examination portal for {{ _school.school_name }} — view scheduled exams, resume active papers, and review grades.">
-  <title>Student Portal — {{ _school.school_name }} | CogniTara</title>
+  <meta name="description" content="Student examination portal for {{ _school.school_name }}: view scheduled exams, resume active papers, and review grades.">
+  <title>Student Portal - {{ _school.school_name }} | CogniTara</title>
   <link rel="icon" href="{{ url_for('static', filename='images/cognitara-favicon.ico') }}">
   <link rel="preload" href="{{ url_for('static', filename='fonts/ui/PlusJakartaSans-Variable.woff2') }}" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/cognitara-web.css') }}">
@@ -220,7 +220,7 @@
                   <tr>
                     <td class="st-table__name">{{ exam.exam_name }}</td>
                     <td><span class="st-pill">{{ ico('i-lock', 'ct-ico--xs') }}Withheld</span></td>
-                    <td class="st-mono" style="color:var(--st-ink-3)">—</td>
+                    <td class="st-mono" style="color:var(--st-ink-3)">-</td>
                     <td style="text-align:right"><span class="st-pill">Pending</span></td>
                   </tr>
                   {% else %}

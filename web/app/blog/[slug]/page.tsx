@@ -15,9 +15,9 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await params;
   const post = await getPublishedBlogPostBySlug(slug);
-  if (!post) return { title: "Blog — CogniTara" };
+  if (!post) return { title: "Blog | CogniTara" };
   return {
-    title: `${post.title} — CogniTara Blog`,
+    title: `${post.title} | CogniTara Blog`,
     description: post.excerpt,
   };
 }

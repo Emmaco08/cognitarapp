@@ -27,7 +27,7 @@ def verify_and_upgrade_password(conn, table_name, id_col, user_id, stored_pwd, i
             return check_password_hash(stored_str, input_str)
         except Exception:
             return False
-    # Legacy unhashed row only — constant-time comparison + immediate upgrade
+    # Legacy unhashed row only - constant-time comparison + immediate upgrade
     if hmac.compare_digest(stored_str, input_str):
         if (table_name, id_col) in _ALLOWED_AUTH_TABLES:
             try:

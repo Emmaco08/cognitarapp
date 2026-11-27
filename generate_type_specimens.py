@@ -140,7 +140,7 @@ def build_full_specimen_svg():
   <!-- ========================================================================= -->
   <g transform="translate(80, 720)">
     <rect width="1440" height="290" rx="18" fill="#0D1322" stroke="#1E293B" stroke-width="1"/>
-    <text x="40" y="45" class="spec-h2">Uppercase Latin (A–Z) · Bold &amp; Regular Weights</text>
+    <text x="40" y="45" class="spec-h2">Uppercase Latin (A-Z) · Bold &amp; Regular Weights</text>
     <text x="40" y="70" class="spec-desc">Structured, architectural proportions with uniform optical rhythm.</text>
 
     <!-- Row 1: A-M (13 columns) -->
@@ -184,7 +184,7 @@ def build_full_specimen_svg():
   <!-- ========================================================================= -->
   <g transform="translate(80, 1040)">
     <rect width="1440" height="290" rx="18" fill="#0D1322" stroke="#1E293B" stroke-width="1"/>
-    <text x="40" y="45" class="spec-h2">Lowercase Latin (a–z) · High-Contrast Geometric</text>
+    <text x="40" y="45" class="spec-h2">Lowercase Latin (a-z) · High-Contrast Geometric</text>
     <text x="40" y="70" class="spec-desc">Engineered for long-form reading, UI dashboards, code interfaces, and micro-typography.</text>
 
     <!-- Row 1: a-m -->
@@ -227,7 +227,7 @@ def build_full_specimen_svg():
   <!-- ========================================================================= -->
   <g transform="translate(80, 1360)">
     <rect width="1440" height="230" rx="18" fill="#0D1322" stroke="#1E293B" stroke-width="1"/>
-    <text x="40" y="45" class="spec-h2">Numerals (0–9) &amp; Punctuation</text>
+    <text x="40" y="45" class="spec-h2">Numerals (0-9) &amp; Punctuation</text>
     <text x="40" y="70" class="spec-desc">Proportional figures designed for financial interfaces, cognitive metric displays, and code.</text>
 
     <!-- Digits 0-9 -->

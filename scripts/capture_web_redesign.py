@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-CogniTara web redesign — Playwright screenshot harness.
+CogniTara web redesign - Playwright screenshot harness.
 
 Captures full-page screenshots of portal pages in BOTH dark and light themes
 for every role, and logs console errors / page errors / failed requests.
@@ -152,7 +152,7 @@ def resolve_params(db_path: str) -> dict:
 def seed_demo_data(db_path: str) -> None:
     """Idempotently add realistic demo content so pages are not empty."""
     if not os.path.isfile(db_path):
-        print(f"[seed] {db_path} not found — run `python3 init_db.py` first.")
+        print(f"[seed] {db_path} not found - run `python3 init_db.py` first.")
         return
     conn = sqlite3.connect(db_path)
     c = conn.cursor()
@@ -207,11 +207,11 @@ def seed_demo_data(db_path: str) -> None:
     exam_cols = cols("exams")
     teacher_id = _one(conn, "SELECT id FROM teachers WHERE username='teacher1'") or 1
     demo_exams = [
-        ("Mathematics — First Term Test", "Grade 1", 45, 1, "Mathematics", "General"),
-        ("English Language — Comprehension", "Grade 1", 40, 1, "English", "General"),
-        ("Basic Science — Mid-Term", "Grade 1", 30, 1, "Basic Science", "Science"),
-        ("Civic Education — Quiz", "Grade 1", 20, 0, "Civic Education", "General"),
-        ("Agricultural Science — Practical", "Grade 2", 35, 1, "Agric", "Science"),
+        ("Mathematics - First Term Test", "Grade 1", 45, 1, "Mathematics", "General"),
+        ("English Language - Comprehension", "Grade 1", 40, 1, "English", "General"),
+        ("Basic Science - Mid-Term", "Grade 1", 30, 1, "Basic Science", "Science"),
+        ("Civic Education - Quiz", "Grade 1", 20, 0, "Civic Education", "General"),
+        ("Agricultural Science - Practical", "Grade 2", 35, 1, "Agric", "Science"),
     ]
     exam_ids = {}
     for name, klass, dur, active, subj, spec in demo_exams:
@@ -234,7 +234,7 @@ def seed_demo_data(db_path: str) -> None:
     sid = _one(conn, "SELECT id FROM students WHERE username='student1'")
     score_cols = cols("scores")
     if sid:
-        for name, score in [("Basic Science — Mid-Term", 4), ("Civic Education — Quiz", 5)]:
+        for name, score in [("Basic Science - Mid-Term", 4), ("Civic Education - Quiz", 5)]:
             eid = exam_ids.get(name)
             if eid and _one(conn, "SELECT id FROM scores WHERE student_id=? AND exam_id=?", (sid, eid)) is None:
                 sd = {"student_id": sid, "exam_id": eid, "score": score, "total": 5, "submitted": 1, "status": "completed",
@@ -246,7 +246,7 @@ def seed_demo_data(db_path: str) -> None:
         # Classmates' scores for analytics
         for uname, sc in [("chidi.n", 3), ("amara.b", 5), ("ifeoma.e", 2)]:
             osid = _one(conn, "SELECT id FROM students WHERE username=?", (uname,))
-            eid = exam_ids.get("Basic Science — Mid-Term")
+            eid = exam_ids.get("Basic Science - Mid-Term")
             if osid and eid and _one(conn, "SELECT id FROM scores WHERE student_id=? AND exam_id=?", (osid, eid)) is None:
                 sd = {"student_id": osid, "exam_id": eid, "score": sc, "total": 5, "submitted": 1, "status": "completed",
                       "start_time": (now - timedelta(days=2)).strftime("%Y-%m-%d %H:%M:%S"),
@@ -410,7 +410,7 @@ def capture(args) -> int:
 
     with open(os.path.join(args.out, "capture_report.json"), "w", encoding="utf-8") as fh:
         json.dump(report, fh, indent=2)
-    print(f"\nSaved {len(report['pages'])} screenshots to {args.out} — console/page errors: {total_errors}")
+    print(f"\nSaved {len(report['pages'])} screenshots to {args.out} - console/page errors: {total_errors}")
     return 1 if (total_errors and args.strict) else 0
 
 

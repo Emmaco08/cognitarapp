@@ -459,7 +459,7 @@ mod windows_impl {
             other => Finished::error(
                 other as i64,
                 "Installation failed",
-                "Something went wrong while installing CogniTara Studio. Try again — if it keeps failing, send the details below to CogniTara support.",
+                "Something went wrong while installing CogniTara Studio. Try again. If it keeps failing, send the details below to CogniTara support.",
                 format!("Installer exit code {other} (0x{other:X})."),
                 &dir,
             ),

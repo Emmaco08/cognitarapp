@@ -548,7 +548,7 @@ export function HqCmsTab({ onToast }: { onToast: (msg: string) => void }) {
                 value={summary}
                 onChange={(e) => setSummary(e.target.value)}
                 required
-                placeholder={subTab === "faq" ? "Write a plain, clear answer…" : "Concise 1–2 sentence overview…"}
+                placeholder={subTab === "faq" ? "Write a plain, clear answer…" : "Concise 1-2 sentence overview…"}
               />
             </label>
 
@@ -754,7 +754,7 @@ export function HqCmsTab({ onToast }: { onToast: (msg: string) => void }) {
                         {item.body_json?.date ? ` · ${item.body_json.date}` : ""}
                       </div>
                     </td>
-                    <td>{item.category || "—"}</td>
+                    <td>{item.category || "-"}</td>
                     <td>
                       <span className={`status-txt ${item.published ? "status-txt--ok" : "status-txt--warn"}`}>
                         {subTab === "roadmap"

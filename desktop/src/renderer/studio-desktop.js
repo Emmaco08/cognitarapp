@@ -1,4 +1,4 @@
-/* CogniTara Studio — Production Electron Desktop Renderer
+/* CogniTara Studio: Production Electron Desktop Renderer
    Ported directly from the approved Studio design (studio.js) and wired to the
    real Electron IPC bridge (`window.cognitaraDesktop`), local Flask/Waitress engine,
    and 5-layer Windows licence vault. */
@@ -71,15 +71,15 @@
     });
   }
   function fmtDateShort(isoOrSec) {
-    if (!isoOrSec) return "—";
+    if (!isoOrSec) return "-";
     var d = typeof isoOrSec === "number" ? new Date(isoOrSec * 1000) : new Date(isoOrSec);
     if (isNaN(d.getTime())) return String(isoOrSec);
     return d.toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
   }
   function fmtDateTime(sec) {
-    if (!sec) return "—";
+    if (!sec) return "-";
     var d = new Date(sec * 1000);
-    if (isNaN(d.getTime())) return "—";
+    if (isNaN(d.getTime())) return "-";
     return d.toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" }) +
       ", " + pad(d.getHours()) + ":" + pad(d.getMinutes());
   }
@@ -474,7 +474,7 @@
       if ($("#onbCvSchool")) $("#onbCvSchool").textContent = schoolName;
       if ($("#onbCvEmail")) $("#onbCvEmail").textContent = (s.user.email || "") + " · Email OTP verified";
       if ($("#onbCvName")) $("#onbCvName").textContent = s.user.full_name || "School Admin";
-      if ($("#onbCvRef")) $("#onbCvRef").textContent = s.referralCode || "—";
+      if ($("#onbCvRef")) $("#onbCvRef").textContent = s.referralCode || "-";
 
       // Auto-populate Step 3 (school name) and Step 6 (admin full name) if still default/empty
       if ($("#fSchool") && schoolName && (!$("#fSchool").value.trim() || $("#fSchool").value.trim() === "CogniTara School")) {
@@ -626,7 +626,7 @@
           if (onbResendTimer) { clearInterval(onbResendTimer); onbResendTimer = null; }
           renderCloudAccount(res.session);
           setOnbCloudMsg("", "Email verified! You can continue to school setup.");
-          toast("Email verified — CogniTara Cloud account active!");
+          toast("Email verified. CogniTara Cloud account active!");
           logEvent("licence", "ok", "i-shield", "<b>Cloud account verified via OTP</b> (" + esc(res.session.user.email) + ")");
         } else {
           setOnbCloudMsg((res && res.message) || "Invalid or expired 6-digit code. Try again or resend.", "");
@@ -736,7 +736,7 @@
     }
     if (step === 3 && state.onboardingComplete && activated) {
       enterApp();
-      toast("Licence verified — CogniTara Studio is ready.");
+      toast("Licence verified. CogniTara Studio is ready.");
       return;
     }
     if (step === 5 && bridge) {
@@ -1481,7 +1481,7 @@
       return;
     }
 
-    // Start failed or licence blocked — cancel forward sweep cleanly
+    // Start failed or licence blocked; cancel forward sweep cleanly
     serverAnimToken++;
     clearStepTimers();
     setProgress(null);
@@ -1798,7 +1798,7 @@
     var lic = state.license;
     if (!lic) {
       $("#licPlan").textContent = "Not activated";
-      $("#licDays").textContent = "—";
+      $("#licDays").textContent = "-";
       $("#licDaysLabel").textContent = "no active licence";
       $("#railPlan").textContent = "Unactivated";
       $("#railDays").textContent = "Activate licence";
@@ -1830,10 +1830,10 @@
         : "works offline for 30 days at a time";
       $("#licLease").innerHTML = esc(fmtDateShort(leaseDue)) + " <em>" + esc(leaseNote) + "</em>";
     } else {
-      $("#licLease").textContent = "—";
+      $("#licLease").textContent = "-";
     }
 
-    $("#licDays").textContent = isLifetime ? "∞" : (days != null ? String(days) : "—");
+    $("#licDays").textContent = isLifetime ? "∞" : (days != null ? String(days) : "-");
     $("#licDaysLabel").textContent = isLifetime ? "never expires" : (days != null ? "days left of " + total : "no active licence");
 
     var arc = $("#licArc");
@@ -1865,7 +1865,7 @@
       } else if (res && res.revoked) {
         showLock("revoked", res.status || state.license);
       } else {
-        toast("Could not reach cognitara.net — continuing on offline lease.");
+        toast("Could not reach cognitara.net. Continuing on offline lease.");
         logEvent("licence", "warn", "i-alert", "<b>Check-in unreachable</b>. Offline lease remains active.");
       }
     } finally {
@@ -1927,7 +1927,7 @@
     tbody.innerHTML = state.cloudBackups.map(function (b) {
       var statsText = (b.exams_count || 0) + " exams · " + (b.questions_count || 0) + " Qs · " + (b.students_count || 0) + " students · " + (b.results_count || 0) + " scores";
       var sizeLabel = fmtBytes(b.compressed_size_bytes || b.raw_size_bytes || 0);
-      var when = b.created_at ? fmtDateShort(b.created_at) : "—";
+      var when = b.created_at ? fmtDateShort(b.created_at) : "-";
       return "<tr>" +
         "<td><strong>" + esc(b.label || b.filename) + "</strong><em class='mono'>" + esc(b.filename) + "</em></td>" +
         "<td style='font-size:12px;color:var(--ink-2)'>" + esc(statsText) + "</td>" +
@@ -2025,7 +2025,7 @@
         toast("Exam database backed up to CogniTara Cloud!");
         logEvent("backup", "ok", "i-backup", "<b>Cloud exam backup</b> uploaded and verified");
       } else {
-        toast((res && (res.message || res.error)) || "Cloud backup failed — check your internet connection.");
+        toast((res && (res.message || res.error)) || "Cloud backup failed. Check your internet connection.");
       }
     } finally {
       if (prog && bar) {
@@ -2257,7 +2257,7 @@
         if (typeof reader.result === "string") {
           settingsSchoolDraftLogo = reader.result;
           applySchoolCrestEverywhere(settingsSchoolDraftLogo, ($("#setSchoolName") && $("#setSchoolName").value.trim()) || state.school.school_name);
-          setSettingsSchoolMsg("", "Logo ready — click Save school profile to apply everywhere.");
+          setSettingsSchoolMsg("", "Logo ready. Click Save school profile to apply everywhere.");
         }
       };
       reader.readAsDataURL(f);
@@ -2268,7 +2268,7 @@
     $("#setSchoolLogoRemoveBtn").addEventListener("click", function () {
       settingsSchoolDraftLogo = null;
       applySchoolCrestEverywhere(null, ($("#setSchoolName") && $("#setSchoolName").value.trim()) || state.school.school_name);
-      setSettingsSchoolMsg("", "Logo marked for removal — click Save school profile to confirm.");
+      setSettingsSchoolMsg("", "Logo marked for removal. Click Save school profile to confirm.");
     });
   }
   if ($("#setSchoolSaveBtn")) {
@@ -2619,7 +2619,7 @@
       box.hidden = true;
       tbBtn.hidden = true;
     } else if (upd.status === "offline") {
-      sub.textContent = upd.error || "Offline — will check automatically when internet returns.";
+      sub.textContent = upd.error || "Offline. Will check automatically when internet returns.";
       box.hidden = true;
       tbBtn.hidden = true;
     } else if (upd.status === "error") {
@@ -2708,7 +2708,7 @@
         $("#cmVerified").textContent = ver ? "Email OTP verified" : "Pending verification";
         $("#cmVerified").style.color = ver ? "var(--ok)" : "var(--warn)";
       }
-      if ($("#cmRef")) $("#cmRef").textContent = s.referralCode || "—";
+      if ($("#cmRef")) $("#cmRef").textContent = s.referralCode || "-";
       if ($("#cmLicCount")) {
         var activeCount = Array.isArray(s.licenses)
           ? s.licenses.filter(function (l) { return String(l.status || "").toLowerCase() === "active"; }).length
@@ -2946,7 +2946,7 @@
           if ($("#cloudOtpForm")) $("#cloudOtpForm").hidden = true;
           renderCloudAccount(res.session);
           setCloudMsg("", "Email verified & cached locally for offline exam days.");
-          toast("Email verified — signed in to CogniTara Cloud");
+          toast("Email verified. Signed in to CogniTara Cloud.");
           logEvent("licence", "ok", "i-shield", "<b>Cloud account verified via OTP</b> (" + esc(res.session.user.email) + ")");
           loadMySchoolReview();
         } else {
@@ -2964,7 +2964,7 @@
     var res = await bridge.cloudSync().catch(function () { return null; });
     if (res && res.session) renderCloudAccount(res.session);
     if (res && res.ok) {
-      toast(res.offline ? "Offline — using cached profile" : "CogniTara Cloud profile synced");
+      toast(res.offline ? "Offline. Using cached profile." : "CogniTara Cloud profile synced");
     } else {
       toast((res && res.message) || "Could not sync cloud profile");
     }
@@ -2995,11 +2995,11 @@
   /* ---- 5-Star In-App Rating Studio (Reports Directly to CogniTara HQ) ---- */
   var selectedReviewStars = 5;
   var RATING_LABELS = {
-    1: "1 / 5 — Needs work",
-    2: "2 / 5 — Fair",
-    3: "3 / 5 — Good",
-    4: "4 / 5 — Very good",
-    5: "5 / 5 — Outstanding"
+    1: "1 / 5 · Needs work",
+    2: "2 / 5 · Fair",
+    3: "3 / 5 · Good",
+    4: "4 / 5 · Very good",
+    5: "5 / 5 · Outstanding"
   };
 
   function paintReviewStars(activeVal) {
@@ -3414,7 +3414,7 @@
           toast(
             rec.license.is_clock_rollback
               ? "Windows clock is still behind the last trusted timestamp."
-              : "Vault mismatch still present — click Reset & Re-activate on This PC."
+              : "Vault mismatch still present. Click Reset & Re-activate on This PC."
           );
         }
       }

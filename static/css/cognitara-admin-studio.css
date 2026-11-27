@@ -163,7 +163,7 @@ body.ad-studio .ct-btn--primary:hover {
   filter: none !important;
 }
 
-/* Topbar refinement — borderless quiet controls matching Claude & Antigravity */
+/* Topbar refinement - borderless quiet controls matching Claude & Antigravity */
 body.ad-studio .ct-topbar {
   background: var(--tc-canvas) !important;
   border-bottom: 1px solid var(--tc-line) !important;
@@ -609,7 +609,7 @@ body.ad-studio.ct-bs .table-header h3,
 body.ad-studio.ct-bs .table-header h5,
 body.ad-studio.ct-bs .chart-header h3 { color: var(--tc-ink) !important; }
 
-/* Fix Segmented Nav Tabs (School Settings & Common Entrance — calm elevated neutral active state) */
+/* Fix Segmented Nav Tabs (School Settings & Common Entrance - calm elevated neutral active state) */
 body.ad-studio.ct-bs .nav-tabs,
 body.ad-studio.ct-bs .nav-tabs-custom {
   background: var(--tc-surface) !important;

@@ -205,7 +205,7 @@ def build_evaluation_sheet_svg():
     <text x="40" y="72" class="card-desc">
       A bespoke enterprise wordmark engineered in direct dialogue with the Luminary C. Features 45° beveled terminal cuts mirroring the C symbol,
       an architectural capital T with chamfered undercuts, and an exquisitely proportioned micro-spark beacon tittle on 'i'.
-      Both "Cogni" and "Tara" share exact cap-height, x-height, baseline, and stroke thickness—restoring visual equilibrium.
+      Both "Cogni" and "Tara" share exact cap-height, x-height, baseline, and stroke thickness, restoring visual equilibrium.
     </text>
 
     <!-- Complete Horizontal Logo Preview (Scale 1:1) -->

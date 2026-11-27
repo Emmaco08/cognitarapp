@@ -1,5 +1,5 @@
 /**
- * CogniTara v2 — Packaged Python Engine Process Supervisor
+ * CogniTara v2: Packaged Python Engine Process Supervisor
  *
  * Manages:
  *  1. Loopback-only Control Engine (`127.0.0.1:<controlPort>`): serves authenticated
@@ -8,7 +8,7 @@
  *  2. LAN Exam Server (`0.0.0.0:<examPort>`): started/stopped on demand by the Super
  *     Admin ONLY after Layer 5 dual-process license verification passes.
  *
- * Spawns `cognitara-engine.exe` when packaged (with `windowsHide: true` — zero console
+ * Spawns `cognitara-engine.exe` when packaged (with `windowsHide: true`, zero console
  * windows ever) or `python wsgi.py` in local development.
  */
 

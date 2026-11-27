@@ -1,4 +1,4 @@
--- CogniTara Cloud (cognitara-cloud) — Authoritative Neon Serverless Postgres DDL (v2.2)
+-- CogniTara Cloud (cognitara-cloud): Authoritative Neon Serverless Postgres DDL (v2.2)
 -- Commercial licensing, Paystack billing, promo/redeem codes, remote control & HQ developer console
 
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
@@ -428,8 +428,8 @@ INSERT INTO plans (slug, display_name, description, badge, sort_order, billing_c
 VALUES
     ('monthly', 'Monthly School Plan', 'Flexible month-to-month CBT licensing for up to 300 concurrent students.', '', 1, 'monthly', 'monthly', 30, 7, 2500000, 1900, 1, 15.00, 7, '{"highlights":["Up to 300 concurrent students","Offline 7-day lease protection","Automated SQLite hot backups","All Regular & Common Entrance exams"]}'::jsonb),
     ('termly', 'Termly School Plan', 'Full 120-day academic term coverage built for WAEC, BECE, and mock exams.', 'Popular', 2, 'termly', 'termly', 120, 14, 7500000, 5900, 1, 15.00, 10, '{"highlights":["Full 120-day academic term","14-day offline lease window","Unlimited exams & question banks","Priority technical support"]}'::jsonb),
-    ('annual', 'Annual School Plan', 'Best value — full 365-day institutional licence covering all three terms.', 'Best Value', 3, 'annual', 'annual', 365, 30, 22000000, 17900, 1, 15.00, 14, '{"highlights":["Full 365-day academic session","30-day offline lease resilience","Instant auto-updates & cloud sync","Priority WhatsApp & remote support"]}'::jsonb),
-    ('lifetime', 'Lifetime Institutional Plan', 'One-time perpetual institutional licence with 90-day offline check-in windows.', 'Institutional', 4, 'lifetime', 'lifetime', NULL, 90, 65000000, 49900, 2, 15.00, 30, '{"highlights":["Perpetual licence — never expires","Up to 2 server installations","90-day offline lease window","Lifetime updates & dedicated onboarding"]}'::jsonb)
+    ('annual', 'Annual School Plan', 'Best value: full 365-day institutional licence covering all three terms.', 'Best Value', 3, 'annual', 'annual', 365, 30, 22000000, 17900, 1, 15.00, 14, '{"highlights":["Full 365-day academic session","30-day offline lease resilience","Instant auto-updates & cloud sync","Priority WhatsApp & remote support"]}'::jsonb),
+    ('lifetime', 'Lifetime Institutional Plan', 'One-time perpetual institutional licence with 90-day offline check-in windows.', 'Institutional', 4, 'lifetime', 'lifetime', NULL, 90, 65000000, 49900, 2, 15.00, 30, '{"highlights":["Perpetual licence that never expires","Up to 2 server installations","90-day offline lease window","Lifetime updates & dedicated onboarding"]}'::jsonb)
 ON CONFLICT (slug) DO UPDATE SET
     description = COALESCE(NULLIF(plans.description, ''), EXCLUDED.description),
     badge = COALESCE(NULLIF(plans.badge, ''), EXCLUDED.badge),

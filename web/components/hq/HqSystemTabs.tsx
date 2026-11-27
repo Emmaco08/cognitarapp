@@ -451,7 +451,7 @@ export function HqBroadcastsTab({
               <span aria-hidden="true">→</span>
             </span>
           ) : (
-            <span style={{ fontSize: 12.5, color: "var(--ink-3)" }}>Hidden — hero starts directly with the headline.</span>
+            <span style={{ fontSize: 12.5, color: "var(--ink-3)" }}>Hidden. Hero starts directly with the headline.</span>
           )}
         </div>
       </section>
@@ -800,7 +800,7 @@ export function HqStaffSecurityTab({
             totpState?.setup ? (
               <form className="form-grid" onSubmit={enableTotp}>
                 <p style={{ margin: 0, fontSize: 13, color: "var(--ink-2)" }}>
-                  Scan this QR code with Google Authenticator, Authy, or 1Password — or enter the setup key manually:
+                  Scan this QR code with Google Authenticator, Authy, or 1Password, or enter the setup key manually:
                 </p>
                 <div style={{ display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
                   <img
@@ -1066,7 +1066,7 @@ export function HqReviewsTab({
                 {editingId ? "Edit school review" : "Add physical / direct school review"}
               </h2>
               <p style={{ margin: "4px 0 0", fontSize: 13, color: "var(--ink-3)" }}>
-                Record feedback shared with you in person, over WhatsApp, or by phone — it appears immediately in the landing page Reviews section.
+                Record feedback shared with you in person, over WhatsApp, or by phone. It appears immediately in the landing page Reviews section.
               </p>
             </div>
             <button
@@ -1210,7 +1210,7 @@ export function HqReviewsTab({
       <div className="hq-kpi-strip">
         <div className="hq-kpi"><span className="hq-kpi__lbl">Pending approval</span><span className="hq-kpi__val">{sum.pending}</span></div>
         <div className="hq-kpi"><span className="hq-kpi__lbl">Live on website</span><span className="hq-kpi__val">{sum.approved}</span></div>
-        <div className="hq-kpi"><span className="hq-kpi__lbl">Average rating</span><span className="hq-kpi__val">{sum.average_rating ? `${sum.average_rating.toFixed(1)} / 5` : "—"}</span></div>
+        <div className="hq-kpi"><span className="hq-kpi__lbl">Average rating</span><span className="hq-kpi__val">{sum.average_rating ? `${sum.average_rating.toFixed(1)} / 5` : "-"}</span></div>
         <div className="hq-kpi"><span className="hq-kpi__lbl">Total reviews</span><span className="hq-kpi__val">{sum.total}</span></div>
       </div>
 

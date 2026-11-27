@@ -58,7 +58,7 @@ function renderEmailShell(params: {
   const safeSite = escapeHtml(siteOrigin);
   const footerNote = params.footerNote
     ? escapeHtml(params.footerNote)
-    : "CogniTara — Local-First School Exam Server for Windows & School LAN.";
+    : "CogniTara · Local-First School Exam Server for Windows & School LAN.";
 
   return `<!doctype html>
 <html lang="en" xmlns="http://www.w3.org/1999/xhtml">
@@ -205,7 +205,7 @@ export function buildOtpEmailHtml(params: {
       ? "Enter the 6-digit security code below to verify your sign-in to CogniTara."
       : params.purpose === "password_reset"
       ? "We received a request to reset your CogniTara password. Enter the 6-digit code below to set a new password."
-      : `Welcome to CogniTara${params.schoolName ? ` — <strong style="color:#171614;">${escapeHtml(params.schoolName)}</strong>` : ""}. Enter the 6-digit verification code below to activate your account.`;
+      : `Welcome to CogniTara${params.schoolName ? `, <strong style="color:#171614;">${escapeHtml(params.schoolName)}</strong>` : ""}. Enter the 6-digit verification code below to activate your account.`;
 
   const bodyHtml = `
     <h1 class="em-h1" style="margin:0 0 12px;font-family:Georgia,'Times New Roman',serif;font-size:24px;font-weight:400;line-height:1.22;letter-spacing:-0.02em;color:#171614;">
@@ -242,7 +242,7 @@ export function buildOtpEmailHtml(params: {
   `;
 
   return renderEmailShell({
-    title: `${params.code} — CogniTara ${badgeText}`,
+    title: `${params.code}: CogniTara ${badgeText}`,
     preheader: `Your CogniTara security code is ${params.code}. Valid for ${params.expiresMinutes} minutes.`,
     badgeText,
     bodyHtml,
@@ -501,7 +501,7 @@ export async function sendPaymentReceiptEmail(params: {
   const amtText = `${sym}${(Number(params.amountPaidMinor || 0) / 100).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   const htmlContent = buildPaymentReceiptEmailHtml(params);
   const textContent = [
-    `CogniTara Licence Active — ${params.schoolName}`,
+    `CogniTara Licence Active: ${params.schoolName}`,
     `Licence Key: ${params.licenseKey}`,
     `Plan: ${params.planName}`,
     `Amount paid: ${amtText}`,
@@ -714,7 +714,7 @@ export async function createAndSendEmailOtp(params: {
   `;
 
   const expiresMinutes = Math.round(OTP_TTL_SECONDS / 60);
-  const subjectPrefix = params.purpose === "hq_2fa" ? `${code} — CogniTara HQ 2FA Security Code` : `${code} is your CogniTara verification code`;
+  const subjectPrefix = params.purpose === "hq_2fa" ? `${code}: CogniTara HQ 2FA Security Code` : `${code} is your CogniTara verification code`;
   const sendRes = await brevoSendTransactionalEmail({
     apiKey: params.settings.brevo_api_key,
     senderEmail: params.settings.brevo_sender_email,

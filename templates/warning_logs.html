@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="csrf-token" content="{{ csrf_token() }}">
   <meta name="color-scheme" content="light dark">
-  <title>Warning Logs — {{ school_branding.school_name }} | CogniTara</title>
+  <title>Warning Logs - {{ school_branding.school_name }} | CogniTara</title>
   <link rel="icon" href="{{ url_for('static', filename='images/cognitara-favicon.ico') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/cognitara-web.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/cognitara-teacher-studio.css') }}">
@@ -167,7 +167,7 @@
               <span class="tc-pill {% if wc >= 3 %}tc-pill--bad{% else %}tc-pill--warn{% endif %}">{{ wc }} alert{% if wc != 1 %}s{% endif %}</span>
             </td>
             <td class="tc-mono is-center">{{ s.exams_with_warnings }}</td>
-            <td class="tc-mono" style="font-size:12px;color:var(--tc-ink-2)">{{ s.last_warning | wat_time if s.last_warning else '—' }}</td>
+            <td class="tc-mono" style="font-size:12px;color:var(--tc-ink-2)">{{ s.last_warning | wat_time if s.last_warning else '-' }}</td>
             <td>
               <button type="button" class="tc-btn tc-btn--ghost tc-btn--sm" style="color:var(--tc-bad)" onclick="clearStudentWarnings({{ s.student_name|tojson|forceescape }}, 'wl-stu-{{ loop.index }}')">
                 {{ ico('i-trash', 'ct-ico--xs') }}Clear
@@ -221,7 +221,7 @@
               <span class="tc-pill {% if (row.warning_events_in_exam or 0) >= 3 %}tc-pill--bad{% else %}tc-pill--warn{% endif %}">{{ row.warning_events_in_exam }}</span>
             </td>
             <td style="font-size:12.5px;color:var(--tc-ink-2);max-width:340px">{{ (row.warnings_list or '')[:110] }}{% if row.warnings_list and row.warnings_list|length > 110 %}…{% endif %}</td>
-            <td class="tc-mono" style="font-size:12px;color:var(--tc-ink-2)">{{ row.last_warning | wat_time if row.last_warning else '—' }}</td>
+            <td class="tc-mono" style="font-size:12px;color:var(--tc-ink-2)">{{ row.last_warning | wat_time if row.last_warning else '-' }}</td>
           </tr>
           {% endfor %}
         </tbody>

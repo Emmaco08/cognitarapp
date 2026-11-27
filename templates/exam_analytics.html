@@ -12,7 +12,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="csrf-token" content="{{ csrf_token() }}">
   <meta name="color-scheme" content="light dark">
-  <title>{{ exam.name }} — Exam Analytics</title>
+  <title>{{ exam.name }} | Exam Analytics</title>
   <link rel="icon" href="{{ url_for('static', filename='images/cognitara-favicon.ico') }}">
   <link rel="preload" href="{{ url_for('static', filename='fonts/ui/PlusJakartaSans-Variable.woff2') }}" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="{{ url_for('static', filename='fonts/ui/GeistMono-Variable.woff2') }}" as="font" type="font/woff2" crossorigin>
@@ -77,7 +77,7 @@
     </div>
     <div class="tc-kpi">
       <span class="tc-kpi__label">Score Range</span>
-      <strong class="tc-kpi__val" style="font-size:23px">{{ "%.0f"|format(score_stats.lowest_score or 0) }}% – {{ "%.0f"|format(score_stats.highest_score or 0) }}%</strong>
+      <strong class="tc-kpi__val" style="font-size:23px">{{ "%.0f"|format(score_stats.lowest_score or 0) }}% - {{ "%.0f"|format(score_stats.highest_score or 0) }}%</strong>
       <span class="tc-kpi__meta">Lowest to highest achieved</span>
     </div>
   </section>
@@ -90,7 +90,7 @@
           <h2>Grade Distribution</h2>
           <p>Letter-band shares for this examination</p>
         </div>
-        <span class="tc-pill">A – F Scale</span>
+        <span class="tc-pill">A-F Scale</span>
       </div>
       <div class="tc-card__body">
         <div class="tc-ring-layout">
@@ -229,7 +229,7 @@
               <td class="tc-mono" style="font-weight:660">{{ "%.1f"|format(pct) }}%</td>
               <td><span class="tc-pill {{ gcls }}">{{ grade }}</span></td>
               <td class="tc-mono" style="font-size:12px;color:var(--tc-ink-3)">
-                {% if r.time_spent_seconds %}{{ (r.time_spent_seconds // 60)|int }}m {{ (r.time_spent_seconds % 60)|int }}s{% else %}—{% endif %}
+                {% if r.time_spent_seconds %}{{ (r.time_spent_seconds // 60)|int }}m {{ (r.time_spent_seconds % 60)|int }}s{% else %}-{% endif %}
               </td>
               <td style="text-align:right">
                 <a href="/teacher/student/{{ r.id }}/exam/{{ exam.id }}" class="tc-btn tc-btn--secondary tc-btn--sm">Detail</a>

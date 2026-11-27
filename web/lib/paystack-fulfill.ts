@@ -108,7 +108,7 @@ export async function fulfillConfirmedPaystackPayment(params: {
   `;
 
   if (!claimedRows.length) {
-    // Another request already won the claim — wait briefly if license insertion is mid-flight, then return it
+    // Another request already won the claim. Wait briefly if license insertion is mid-flight, then return it
     for (let i = 0; i < 6; i++) {
       const existingLic = await sql`
         SELECT * FROM licenses WHERE latest_payment_id = ${pay.id}::uuid LIMIT 1

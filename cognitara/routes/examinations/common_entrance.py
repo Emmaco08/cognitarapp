@@ -462,7 +462,7 @@ def ce_check_active_session(attempt_id):
     Called by a newly opened tab on load.
     Returns whether this attempt is already being actively used in another tab
     (recent heartbeat within 20s, not paused, status=in_progress).
-    If so, the new tab should NOT start fresh — it must load state from backend.
+    If so, the new tab should NOT start fresh - it must load state from backend.
     """
     if "ce_student_id" not in session and "admin_id" not in session:
         return {"error": "Unauthorized"}, 401

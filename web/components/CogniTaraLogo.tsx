@@ -1,7 +1,7 @@
 import React from "react";
 
 /**
- * Official CogniTara Monochrome Brand Identity (Black & White — zero blue/cyan)
+ * Official CogniTara Monochrome Brand Identity (Black & White, zero blue/cyan)
  * Vector paths extracted directly from CogniTara-Brand-Identity/cognitara-black.svg
  */
 

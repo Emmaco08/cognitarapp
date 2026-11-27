@@ -523,7 +523,7 @@
                 <div class="flip-card" style="height:150px">
                     <div class="flip-card-inner">
                         <div class="flip-card-front"><i class="fas fa-radiation" style="color: #2B2926;"></i><h3>{% if most_warned %}{{ most_warned.total_warnings }}{% else %}0{% endif %}</h3><p>Highest Warning Count</p></div>
-                        <div class="flip-card-back"><i class="fas fa-user-tag"></i><p>{% if most_warned %}{{ most_warned.full_name }}{% else %}—{% endif %}</p></div>
+                        <div class="flip-card-back"><i class="fas fa-user-tag"></i><p>{% if most_warned %}{{ most_warned.full_name }}{% else %}-{% endif %}</p></div>
                     </div>
                 </div>
             </div>
@@ -592,8 +592,8 @@
                 <div class="flip-card" onclick="showStudentList('rejected')"><div class="flip-card-inner"><div class="flip-card-front"><i class="fas fa-ban" style="color: #D6D4CF;"></i><h3>{{ total_all_rejected|default(0) }}</h3><p>Rejected</p></div><div class="flip-card-back"><i class="fas fa-gavel"></i><p>Click to view</p></div></div></div>
                 <div class="flip-card" onclick="showStudentList('approved')"><div class="flip-card-inner"><div class="flip-card-front"><i class="fas fa-user-check" style="color: var(--ct-accent);"></i><h3>{{ total_all_approved|default(0) }}</h3><p>Approved</p></div><div class="flip-card-back"><i class="fas fa-check-double"></i><p>Click to view</p></div></div></div>
                 <div class="flip-card"><div class="flip-card-inner"><div class="flip-card-front"><i class="fas fa-chart-simple" style="color: var(--ct-accent);"></i><h3>{{ global_avg|default(0) }}%</h3><p>Average Score</p></div><div class="flip-card-back"><i class="fas fa-chart-line"></i><p>Class average</p></div></div></div>
-                <div class="flip-card" id="highestCard"><div class="flip-card-inner"><div class="flip-card-front"><i class="fas fa-trophy" style="color: #D6D4CF;"></i><h3>{{ global_highest|default(0) }}%</h3><p>Highest Score</p></div><div class="flip-card-back"><i class="fas fa-crown"></i><p>{{ highest_student_name|default('—') }}</p></div></div></div>
-                <div class="flip-card" id="lowestCard"><div class="flip-card-inner"><div class="flip-card-front"><i class="fas fa-arrow-down" style="color: #2B2926;"></i><h3>{{ global_lowest|default(0) }}%</h3><p>Lowest Score</p></div><div class="flip-card-back"><i class="fas fa-chart-line"></i><p>{{ lowest_student_name|default('—') }}</p></div></div></div>
+                <div class="flip-card" id="highestCard"><div class="flip-card-inner"><div class="flip-card-front"><i class="fas fa-trophy" style="color: #D6D4CF;"></i><h3>{{ global_highest|default(0) }}%</h3><p>Highest Score</p></div><div class="flip-card-back"><i class="fas fa-crown"></i><p>{{ highest_student_name|default('-') }}</p></div></div></div>
+                <div class="flip-card" id="lowestCard"><div class="flip-card-inner"><div class="flip-card-front"><i class="fas fa-arrow-down" style="color: #2B2926;"></i><h3>{{ global_lowest|default(0) }}%</h3><p>Lowest Score</p></div><div class="flip-card-back"><i class="fas fa-chart-line"></i><p>{{ lowest_student_name|default('-') }}</p></div></div></div>
             </div>
 
             <div class="card-custom">

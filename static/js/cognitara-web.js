@@ -1,5 +1,5 @@
 /* ==========================================================================
-   CogniTara Web v3 — runtime helpers (zero dependencies)
+   CogniTara Web v3 - runtime helpers (zero dependencies)
    --------------------------------------------------------------------------
    Exposes window.CT with:
      CT.icon(name, cls)            -> SVG string referencing the shared sprite
@@ -759,7 +759,7 @@
 
       var rangeText = total === 0
         ? "No matching records"
-        : ("Showing <strong>" + (startIdx + 1) + "&ndash;" + endIdx + "</strong> of <strong>" + total + "</strong>");
+        : ("Showing <strong>" + (startIdx + 1) + "-" + endIdx + "</strong> of <strong>" + total + "</strong>");
 
       var sizeOptions = sizes.map(function (s) {
         return '<option value="' + s + '"' + (s === pageSize ? " selected" : "") + '>' + s + " / page</option>";

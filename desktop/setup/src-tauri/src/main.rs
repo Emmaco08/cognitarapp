@@ -1,4 +1,4 @@
-// CogniTara Studio Setup — custom Windows installer experience.
+// CogniTara Studio Setup: custom Windows installer experience.
 //
 // A tiny Tauri v2 (Rust + WebView2) shell whose UI lives in `../ui` (plain
 // HTML/CSS/JS). The real installation is performed by the electron-builder NSIS

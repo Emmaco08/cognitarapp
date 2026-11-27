@@ -220,7 +220,7 @@ export function computePaystackFeeBreakdown(params: {
     charge_minor: baseMinor,
     estimated_paystack_fee_minor: estFeeMinor,
     fee_mode: "merchant",
-    fee_note: "No extra fees — covered by CogniTara",
+    fee_note: "No extra fees, covered by CogniTara",
   };
 }
 
@@ -492,7 +492,7 @@ export async function evaluatePromoCode(params: {
     final_amount_minor: finalMinor,
     message:
       finalMinor === 0
-        ? "100% discount applied — activate free!"
+        ? "100% discount applied. Activate free!"
         : promo.discount_kind === "percent"
         ? `${val}% discount applied`
         : `${currency === "USD" ? "$" : "₦"}${(discountMinor / 100).toLocaleString()} discount applied`,

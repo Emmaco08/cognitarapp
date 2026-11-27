@@ -1,5 +1,5 @@
 """
-CogniTara v2 — Self-Healing Core Database Bootstrap
+CogniTara v2 - Self-Healing Core Database Bootstrap
 (cognitara/database/bootstrap.py)
 
 Idempotently ensures all 32+ core tables, indexes, and modular schema migrations
