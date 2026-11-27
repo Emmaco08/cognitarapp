@@ -61,7 +61,7 @@ export default function StudentPortalDashboard() {
         const json = await res.json().catch(() => ({}));
         if (res.status === 401 || res.status === 403) {
           setErr(json.message || "Sign in to access your student portal.");
-          if (res.status === 401) router.replace("/portal");
+          if (res.status === 401) router.replace("/");
           return;
         }
         if (res.ok && json.ok) {
@@ -76,7 +76,7 @@ export default function StudentPortalDashboard() {
 
   async function handleSignOut() {
     await fetch("/api/v1/portal/auth/logout", { method: "POST", credentials: "include" });
-    router.replace(data?.school?.school_code ? `/portal?school=${encodeURIComponent(data.school.school_code)}` : "/portal");
+    router.replace(data?.school?.school_code ? `/?school=${encodeURIComponent(data.school.school_code)}` : "/");
   }
 
   return (
@@ -113,7 +113,7 @@ export default function StudentPortalDashboard() {
             <div className="pt-alert pt-alert--dark" style={{ marginBottom: 16 }}>
               {err}
             </div>
-            <Link href="/portal" className="pt-btn pt-btn--primary">
+            <Link href="/" className="pt-btn pt-btn--primary">
               Back to School Portal
             </Link>
           </div>
@@ -185,7 +185,7 @@ export default function StudentPortalDashboard() {
                           </button>
                         ) : isInProg ? (
                           <Link
-                            href={`/portal/exam/${ex.local_id}`}
+                            href={`/exam/${ex.local_id}`}
                             className="pt-btn pt-btn--primary"
                             style={{ width: "100%" }}
                           >
@@ -270,7 +270,7 @@ export default function StudentPortalDashboard() {
               <button
                 type="button"
                 className="pt-btn pt-btn--primary"
-                onClick={() => router.push(`/portal/exam/${confirmExam.local_id}`)}
+                onClick={() => router.push(`/exam/${confirmExam.local_id}`)}
               >
                 Begin Now
               </button>

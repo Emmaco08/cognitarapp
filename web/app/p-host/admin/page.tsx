@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { CogniTaraLockup } from "@/components/CogniTaraLogo";
 import { PortalPowerDial } from "@/components/portal/PortalPowerDial";
@@ -127,7 +126,7 @@ export default function AdminOnlineControlCenterPage() {
     try {
       const meRes = await fetch("/api/v1/portal/auth/me", { credentials: "include" }).then((r) => r.json()).catch(() => null);
       if (!meRes?.authenticated || meRes.session?.role !== "admin") {
-        router.replace("/portal");
+        router.replace("/");
         return;
       }
       setAuthOk(true);
@@ -164,7 +163,7 @@ export default function AdminOnlineControlCenterPage() {
 
   async function handleSignOut() {
     await fetch("/api/v1/portal/auth/logout", { method: "POST", credentials: "include" });
-    router.replace(schoolCode ? `/portal?school=${encodeURIComponent(schoolCode)}` : "/portal");
+    router.replace(schoolCode ? `/?school=${encodeURIComponent(schoolCode)}` : "/");
   }
 
   async function patchExam(localId: number, patch: Record<string, unknown>, label: string) {
@@ -306,9 +305,14 @@ export default function AdminOnlineControlCenterPage() {
           </div>
           <div className="pt-topbar-meta">
             <span className="pt-pill pt-hide-sm">{adminLabel}</span>
-            <Link href="/dashboard" className="pt-btn pt-btn--ghost pt-btn--sm">
+            <a
+              href="https://cognitara.net/dashboard"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="pt-btn pt-btn--ghost pt-btn--sm"
+            >
               Cloud Dashboard
-            </Link>
+            </a>
             <button type="button" className="pt-btn pt-btn--sm" onClick={handleSignOut}>
               Sign Out
             </button>

@@ -603,13 +603,14 @@ export default function DashboardPage() {
                   </p>
                 </div>
                 <div className="hq-btn-row">
-                  <Link
-                    href={account.school?.school_code ? `/portal?school=${encodeURIComponent(account.school.school_code)}` : "/portal"}
+                  <a
+                    href={account.school?.school_code ? `https://portal.cognitara.net/s/${encodeURIComponent(account.school.school_code)}` : "https://portal.cognitara.net"}
                     className="btn btn--primary btn--sm"
                     target="_blank"
+                    rel="noopener noreferrer"
                   >
                     Open Online Exam Portal
-                  </Link>
+                  </a>
                 </div>
               </section>
             </div>

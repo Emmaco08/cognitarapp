@@ -138,7 +138,7 @@ export async function POST(req: NextRequest) {
       const res = NextResponse.json({
         ok: true,
         role: "student",
-        redirect: "/portal/student",
+        redirect: "/student",
         user: {
           local_id: Number(st.local_id),
           username: String(st.username),
@@ -176,7 +176,7 @@ export async function POST(req: NextRequest) {
       const res = NextResponse.json({
         ok: true,
         role: "teacher",
-        redirect: "/portal/teacher",
+        redirect: "/teacher",
         user: {
           local_id: Number(tc.local_id),
           username: String(tc.username),
@@ -243,7 +243,7 @@ export async function POST(req: NextRequest) {
     const res = NextResponse.json({
       ok: true,
       role: "admin",
-      redirect: "/portal/admin",
+      redirect: "/admin",
       user: {
         local_id: authedAdmin.localId,
         username: authedAdmin.username,

@@ -7,5 +7,5 @@ export default async function SchoolShortLinkPage({
 }) {
   const { code } = await params;
   const clean = String(code || "").trim().toUpperCase();
-  redirect(`/portal?school=${encodeURIComponent(clean)}`);
+  redirect(`/?school=${encodeURIComponent(clean)}`);
 }

@@ -81,7 +81,7 @@ export async function GET(req: NextRequest) {
         classes: Array.isArray(pset?.classes_json) ? pset.classes_json : [],
       },
       portal_url: `https://portal.cognitara.net/s/${schoolCode}`,
-      fallback_portal_url: `https://cognitara.net/portal?school=${encodeURIComponent(schoolCode)}`,
+      fallback_portal_url: `https://portal.cognitara.net/?school=${encodeURIComponent(schoolCode)}`,
       counts: {
         admins: Number(c.admins || 0),
         teachers: Number(c.teachers || 0),

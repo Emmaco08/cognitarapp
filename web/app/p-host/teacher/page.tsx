@@ -115,7 +115,7 @@ export default function TeacherOnlineStudioPage() {
         fetch("/api/v1/portal/results", { credentials: "include" }),
       ]);
       if (exRes.status === 401) {
-        router.replace("/portal");
+        router.replace("/");
         return;
       }
       const exJson = await exRes.json().catch(() => ({}));
@@ -148,7 +148,7 @@ export default function TeacherOnlineStudioPage() {
 
   async function handleSignOut() {
     await fetch("/api/v1/portal/auth/logout", { method: "POST", credentials: "include" });
-    router.replace(school?.school_code ? `/portal?school=${encodeURIComponent(school.school_code)}` : "/portal");
+    router.replace(school?.school_code ? `/?school=${encodeURIComponent(school.school_code)}` : "/");
   }
 
   async function handleCreateExam(e: React.FormEvent) {
@@ -271,7 +271,7 @@ export default function TeacherOnlineStudioPage() {
             <div className="pt-alert pt-alert--dark" style={{ marginBottom: 16 }}>
               {err}
             </div>
-            <Link href="/portal" className="pt-btn pt-btn--primary">
+            <Link href="/" className="pt-btn pt-btn--primary">
               Back to School Portal
             </Link>
           </div>

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
-import "@/app/portal/portal.css";
+import "@/app/p-host/portal.css";
 
 export interface PortalControlData {
   school: {
@@ -257,7 +257,7 @@ export function PortalPowerDial({
                 {copied === "link" ? "Copied Link" : "Copy Portal Link"}
               </button>
               <a
-                href={`/portal?school=${encodeURIComponent(s.school_code)}`}
+                href={data.portal_url}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="pt-btn pt-btn--primary pt-btn--sm"

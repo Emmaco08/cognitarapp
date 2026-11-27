@@ -4,6 +4,71 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
   serverExternalPackages: ["sql.js"],
+  async redirects() {
+    return [
+      {
+        source: "/portal",
+        has: [{ type: "host", value: "portal\\..*" }],
+        destination: "/",
+        permanent: true,
+      },
+      {
+        source: "/portal/:path*",
+        has: [{ type: "host", value: "portal\\..*" }],
+        destination: "/:path*",
+        permanent: true,
+      },
+    ];
+  },
+  async rewrites() {
+    return {
+      beforeFiles: [
+        // Host-isolated Online Exam Portal exclusively on portal.cognitara.net
+        // Zero Edge Middleware invocations on Free Vercel Hobby!
+        {
+          source: "/s/:code",
+          has: [{ type: "host", value: "portal\\..*" }],
+          destination: "/p-host?school=:code",
+        },
+        {
+          source: "/",
+          has: [{ type: "host", value: "portal\\..*" }],
+          destination: "/p-host",
+        },
+        {
+          source: "/student",
+          has: [{ type: "host", value: "portal\\..*" }],
+          destination: "/p-host/student",
+        },
+        {
+          source: "/teacher",
+          has: [{ type: "host", value: "portal\\..*" }],
+          destination: "/p-host/teacher",
+        },
+        {
+          source: "/admin",
+          has: [{ type: "host", value: "portal\\..*" }],
+          destination: "/p-host/admin",
+        },
+        {
+          source: "/exam/:examId",
+          has: [{ type: "host", value: "portal\\..*" }],
+          destination: "/p-host/exam/:examId",
+        },
+        // Block direct access to internal /p-host on non-portal hosts
+        {
+          source: "/p-host",
+          missing: [{ type: "host", value: "portal\\..*" }],
+          destination: "/__not_found__",
+        },
+        {
+          source: "/p-host/:path*",
+          missing: [{ type: "host", value: "portal\\..*" }],
+          destination: "/__not_found__",
+        },
+      ],
+    };
+  },
   async headers() {
     const csp = [
       "default-src 'self'",

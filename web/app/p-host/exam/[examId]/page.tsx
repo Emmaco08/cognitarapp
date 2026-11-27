@@ -173,7 +173,7 @@ export default function OnlineExamRoomPage() {
       .then(async (res) => {
         const data = await res.json().catch(() => ({}));
         if (res.status === 401) {
-          router.replace("/portal");
+          router.replace("/");
           return;
         }
         if (!res.ok || !data.ok) {
@@ -319,7 +319,7 @@ export default function OnlineExamRoomPage() {
           <div className="pt-alert pt-alert--dark" style={{ marginBottom: 16 }}>
             {loadErr}
           </div>
-          <Link href="/portal/student" className="pt-btn pt-btn--primary pt-btn--lg">
+          <Link href="/student" className="pt-btn pt-btn--primary pt-btn--lg">
             Back to Dashboard
           </Link>
         </div>
@@ -349,7 +349,7 @@ export default function OnlineExamRoomPage() {
           ) : (
             <h2 style={{ marginBottom: 20 }}>Exam Submitted</h2>
           )}
-          <Link href="/portal/student" className="pt-btn pt-btn--primary pt-btn--lg">
+          <Link href="/student" className="pt-btn pt-btn--primary pt-btn--lg">
             Back to Dashboard
           </Link>
         </div>

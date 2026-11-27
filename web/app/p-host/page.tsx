@@ -152,7 +152,7 @@ function PortalGatewayInner() {
         setLoginBusy(false);
         return;
       }
-      router.push(data.redirect || `/portal/${role}`);
+      router.push(data.redirect || `/${role}`);
     } catch {
       setLoginErr("Network error while signing in. Please try again.");
       setLoginBusy(false);
@@ -178,17 +178,17 @@ function PortalGatewayInner() {
 
   const continueHref = activeSession
     ? activeSession.role === "admin"
-      ? "/portal/admin"
+      ? "/admin"
       : activeSession.role === "teacher"
-        ? "/portal/teacher"
-        : "/portal/student"
-    : "/portal";
+        ? "/teacher"
+        : "/student"
+    : "/";
 
   return (
     <>
       <header className="pt-topbar">
         <div className="pt-topbar-inner">
-          <Link href="/portal" className="pt-brand-link" onClick={handleSwitchSchool}>
+          <Link href="/" className="pt-brand-link" onClick={handleSwitchSchool}>
             <CogniTaraLockup markSize={22} wordmarkHeight={16} suffix="Online Portal" />
           </Link>
           <div className="pt-topbar-meta">
@@ -196,11 +196,7 @@ function PortalGatewayInner() {
               <Link href={continueHref} className="pt-btn pt-btn--primary pt-btn--sm">
                 Continue as {activeSession.fullName}
               </Link>
-            ) : (
-              <Link href="https://cognitara.net" className="pt-btn pt-btn--ghost pt-btn--sm">
-                cognitara.net
-              </Link>
-            )}
+            ) : null}
           </div>
         </div>
       </header>
@@ -210,10 +206,7 @@ function PortalGatewayInner() {
           {!school ? (
             <>
               <div className="pt-gateway-head">
-                <div style={{ display: "inline-flex", justifyContent: "center" }}>
-                  <span className="pt-pill pt-pill--mono">portal.cognitara.net</span>
-                </div>
-                <h1>Enter your School ID</h1>
+                <h1 style={{ marginTop: 0 }}>Enter your School ID</h1>
                 <p>
                   Connect to your school&apos;s synced exam portal using the School ID provided by your administrator.
                 </p>
@@ -270,9 +263,14 @@ function PortalGatewayInner() {
                 }}
               >
                 School admins can find their School ID inside CogniTara Studio Desktop or on{" "}
-                <Link href="/dashboard" style={{ color: "var(--pt-ink)", fontWeight: 600 }}>
+                <a
+                  href="https://cognitara.net/dashboard"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ color: "var(--pt-ink)", fontWeight: 600 }}
+                >
                   cognitara.net/dashboard
-                </Link>
+                </a>
                 .
               </div>
             </>
