@@ -15,6 +15,22 @@ export interface ChangelogRelease {
 
 export const CHANGELOG_RELEASES: ChangelogRelease[] = [
   {
+    version: "v2.4.0",
+    date: "November 27, 2026",
+    title: "Dedicated web-only checkout, signed PDF receipts & licence-key-only Desktop",
+    summary:
+      "All school licence purchases and renewals now happen exclusively on cognitara.net with hardened receipt security, downloadable PDF certificates, an upgraded discount & free voucher engine, and a cleaner distraction-free CogniTara Studio Desktop.",
+    newItems: [
+      "Dedicated /pay/checkout flow collecting only School Name and School Email, with a unified Discount Code & 100% Free Redeem Voucher input.",
+      "Choreographed post-payment confirmation with an Obsidian Ed25519 Licence Card, one-click .cgnlic download, and server-generated downloadable PDF payment receipts.",
+      "Upgraded HQ Redeem & Discount Code engine with plan eligibility, minimum order thresholds, start/expiry windows, per-email limits, CSV batch export, and a full Redemption Audit Log.",
+    ],
+    improvedItems: [
+      "Removed in-app Plans & Billing menus from CogniTara Studio Desktop — schools activate or renew cleanly by pasting their Ed25519 licence key under Licence or directly on the Lock Screen.",
+      "Hardened payment & receipt security with 128-bit references, HMAC-SHA256 receipt tokens, HttpOnly grant cookies, CSRF origin validation, and brute-force lockouts.",
+    ],
+  },
+  {
     version: "v2.3.5",
     date: "November 26, 2026",
     title: "Pure monochrome interface, HQ physical reviews & editorial resource hub",
@@ -388,10 +404,10 @@ export const GUIDES_LIST: GuideItem[] = [
     readTime: "2 min",
     summary: "One institutional licence covers unlimited students, teachers, and exams — zero per-student charges.",
     steps: [
-      "Visit cognitara.net/license (or open Plans & Billing directly inside CogniTara Studio Desktop) and pick Monthly, Termly, Annual, or Lifetime.",
-      "Pay via Paystack online (Card, Bank Transfer, USSD, OPay) or instant Paystack-Titan virtual bank transfer inside Studio.",
-      "As soon as payment confirms, your cryptographically signed Ed25519 licence key is issued immediately in your receipt and Cloud Dashboard.",
-      "Paste the key inside CogniTara Studio → Licence (or let Studio sync automatically). Your server then runs completely offline for the full lease window (7 to 90 days per check-in).",
+      "Visit cognitara.net/license and pick Monthly, Termly, Annual, or Lifetime to open our dedicated secure checkout page.",
+      "Enter your school name and email address (plus any discount code or 100% free redeem voucher) and complete payment via Paystack (Card, Bank Transfer, USSD, or OPay).",
+      "As soon as payment confirms, your cryptographically signed Ed25519 licence key and downloadable PDF payment receipt appear immediately on screen and arrive in your school email.",
+      "Open CogniTara Studio Desktop → Licence, paste your licence key (or import the .cgnlic file), and click Activate. Your server then runs completely offline for the full lease window (7 to 90 days per check-in).",
     ],
   },
   {
@@ -482,7 +498,7 @@ export const FAQ_GROUPS: FaqCategory[] = [
       },
       {
         q: "What payment methods are supported?",
-        a: "Schools in Nigeria and internationally can pay via Paystack using instant Bank Transfer (including in-app Paystack-Titan virtual accounts), Debit/Credit Card, USSD, or OPay in NGN (₦) or USD ($).",
+        a: "All licence purchases and renewals happen securely on cognitara.net/license via Paystack using Bank Transfer, Debit/Credit Card, USSD, or OPay in NGN (₦) or USD ($). Discount codes and 100% free school redeem vouchers are also supported directly at checkout, with an instant downloadable PDF receipt.",
       },
     ],
   },

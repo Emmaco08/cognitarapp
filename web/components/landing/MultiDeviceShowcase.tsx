@@ -21,7 +21,7 @@ export default function MultiDeviceShowcase() {
             <div className="rs-hw-laptop-notch" aria-hidden="true" />
             <div className="rs-hw-laptop-screen">
               <img
-                src="/tour/01-studio-server.webp"
+                src="/tour/01-studio-server.webp?v=240"
                 alt="CogniTara Studio running natively on a Windows laptop"
                 width={1600}
                 height={1000}
@@ -48,7 +48,7 @@ export default function MultiDeviceShowcase() {
           <div className="rs-hw-tablet">
             <div className="rs-hw-tablet-screen">
               <img
-                src="/tour/08-live-exam-room.webp"
+                src="/tour/08-live-exam-room.webp?v=240"
                 alt="CogniTara Live Exam Room with Scientific Calculator on a classroom tablet"
                 width={1600}
                 height={1000}

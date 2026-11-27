@@ -527,7 +527,7 @@ export function HqBroadcastsTab({
           <input type="checkbox" checked={allowSignup} onChange={(e) => setAllowSignup(e.target.checked)} style={{ width: 18, height: 18 }} />
         </div>
         <div className="hq-switch-row">
-          <div><strong>Allow Paystack checkout</strong><span>Turn off to pause new payments temporarily across web and desktop.</span></div>
+          <div><strong>Allow Paystack checkout</strong><span>Turn off to pause new payments temporarily on cognitara.net.</span></div>
           <input type="checkbox" checked={allowCheckout} onChange={(e) => setAllowCheckout(e.target.checked)} style={{ width: 18, height: 18 }} />
         </div>
         <div className="hq-switch-row">
