@@ -319,9 +319,9 @@ export default function DeveloperHqPage() {
               {overview?.hq_user?.email}
             </div>
           </div>
-          <Link href="/dashboard" className="btn btn--ghost btn--sm" style={{ width: "100%" }}>
-            School view
-          </Link>
+          <a href="https://portal.cognitara.net/admin" className="btn btn--ghost btn--sm" style={{ width: "100%" }}>
+            School Portal
+          </a>
           <button type="button" className="btn btn--outline btn--sm" style={{ width: "100%" }} onClick={() => void handleSignOut()}>
             Sign out
           </button>

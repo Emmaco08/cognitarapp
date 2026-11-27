@@ -3098,8 +3098,7 @@
   }
   if ($("#cmOpenPortalBtn")) {
     $("#cmOpenPortalBtn").addEventListener("click", function () {
-      var base = (state.cloudAccount && state.cloudAccount.cloudUrl) || "https://cognitara.net";
-      openExternalUrl(base.replace(/\/+$/, "") + "/dashboard");
+      openExternalUrl("https://portal.cognitara.net/admin");
     });
   }
   if ($("#cmSignOutBtn")) {

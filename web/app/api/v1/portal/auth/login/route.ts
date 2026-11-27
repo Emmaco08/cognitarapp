@@ -147,7 +147,7 @@ export async function POST(req: NextRequest) {
           specialisation: String(st.specialisation || ""),
         },
       });
-      attachPortalCookie(res, token);
+      attachPortalCookie(res, token, req);
       return res;
     }
 
@@ -183,7 +183,7 @@ export async function POST(req: NextRequest) {
           full_name: String(tc.full_name || tc.username),
         },
       });
-      attachPortalCookie(res, token);
+      attachPortalCookie(res, token, req);
       return res;
     }
 
@@ -250,7 +250,7 @@ export async function POST(req: NextRequest) {
         full_name: authedAdmin.fullName,
       },
     });
-    attachPortalCookie(res, token);
+    attachPortalCookie(res, token, req);
     return res;
   } catch (err) {
     console.error("Portal login error:", err);

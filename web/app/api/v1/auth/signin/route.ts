@@ -334,7 +334,20 @@ export async function POST(req: NextRequest) {
     };
 
     const res = NextResponse.json(payload, { status: 200 });
-    attachSessionCookie(res, rawToken, maxAgeSeconds);
+    attachSessionCookie(res, rawToken, maxAgeSeconds, req);
+    if (!isHqAdmin && school?.id) {
+      const { attachPortalCookie, ensureSchoolCode, signPortalSession } = await import("@/lib/portal-auth");
+      const code = await ensureSchoolCode(String(school.id));
+      const pTok = signPortalSession({
+        schoolId: String(school.id),
+        schoolCode: code,
+        role: "admin",
+        localId: 0,
+        username: String(user.email),
+        fullName: String(user.full_name || `${school.school_name} Admin`),
+      });
+      attachPortalCookie(res, pTok, req);
+    }
     return res;
   } catch (err) {
     console.error("Sign-in error:", err);

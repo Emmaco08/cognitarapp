@@ -18,6 +18,18 @@ const nextConfig: NextConfig = {
         destination: "/:path*",
         permanent: true,
       },
+      {
+        source: "/dashboard",
+        has: [{ type: "host", value: "portal\\..*" }],
+        destination: "/admin",
+        permanent: true,
+      },
+      {
+        source: "/dashboard",
+        missing: [{ type: "host", value: "portal\\..*" }],
+        destination: "https://portal.cognitara.net/admin",
+        permanent: true,
+      },
     ];
   },
   async rewrites() {

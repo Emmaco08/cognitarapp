@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSql } from "@/lib/db";
-import { extractBearerOrCookieToken, resolveAuthenticatedAccount } from "@/lib/auth";
+import { resolveSchoolAccountForRequest } from "@/lib/auth";
 import { generatePaymentReceiptPdf } from "@/lib/receipt-pdf";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 import { hasValidReceiptAccess } from "@/lib/security";
@@ -25,8 +25,7 @@ export async function GET(
     }
 
     const sql = getSql();
-    const token = extractBearerOrCookieToken(req);
-    const account = token ? await resolveAuthenticatedAccount(token) : null;
+    const account = await resolveSchoolAccountForRequest(req);
 
     const rows = await sql`
       SELECT

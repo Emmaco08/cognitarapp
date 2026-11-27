@@ -71,17 +71,37 @@ export function extractBearerOrCookieToken(req: NextRequest): string | null {
   return cookieTok || null;
 }
 
-export function attachSessionCookie(res: NextResponse, rawToken: string, maxAgeSeconds = DEFAULT_SESSION_TTL_DAYS * 86400): void {
+export function attachSessionCookie(
+  res: NextResponse,
+  rawToken: string,
+  maxAgeSeconds = DEFAULT_SESSION_TTL_DAYS * 86400,
+  req?: NextRequest
+): void {
+  const host = String(req?.headers.get("x-forwarded-host") || req?.headers.get("host") || req?.nextUrl?.hostname || "")
+    .toLowerCase()
+    .split(":")[0];
+  const domain =
+    process.env.NODE_ENV === "production" && (host === "cognitara.net" || host.endsWith(".cognitara.net"))
+      ? ".cognitara.net"
+      : undefined;
   res.cookies.set(SESSION_COOKIE_NAME, rawToken, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
     path: "/",
     maxAge: maxAgeSeconds,
+    ...(domain ? { domain } : {}),
   });
 }
 
-export function clearSessionCookie(res: NextResponse): void {
+export function clearSessionCookie(res: NextResponse, req?: NextRequest): void {
+  const host = String(req?.headers.get("x-forwarded-host") || req?.headers.get("host") || req?.nextUrl?.hostname || "")
+    .toLowerCase()
+    .split(":")[0];
+  const domain =
+    process.env.NODE_ENV === "production" && (host === "cognitara.net" || host.endsWith(".cognitara.net"))
+      ? ".cognitara.net"
+      : undefined;
   res.cookies.set(SESSION_COOKIE_NAME, "", {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
@@ -89,6 +109,12 @@ export function clearSessionCookie(res: NextResponse): void {
     path: "/",
     maxAge: 0,
   });
+  if (domain) {
+    res.headers.append(
+      "Set-Cookie",
+      `${SESSION_COOKIE_NAME}=; Path=/; Domain=${domain}; Max-Age=0; HttpOnly; SameSite=Lax; Secure`
+    );
+  }
 }
 
 export async function createCloudSession(params: {
@@ -241,6 +267,113 @@ export async function resolveAuthenticatedAccount(rawToken: string) {
     licenses,
     directives,
   };
+}
+
+export async function resolveAccountBySchoolId(schoolId: string) {
+  const sql = getSql();
+  const rows = await sql`
+    SELECT s.id, s.owner_user_id, s.school_code, s.school_name, s.country_code, s.state_region,
+           s.contact_email, s.contact_phone, s.status, s.ban_reason, s.custom_notice,
+           s.custom_notice_level, s.feature_overrides_json, s.last_cloud_backup_at,
+           s.online_portal_enabled, s.online_teachers_enabled, s.online_students_enabled,
+           s.online_portal_notice, s.online_synced_at, s.created_at,
+           u.email, u.full_name, u.phone, u.role, u.status AS user_status,
+           u.email_verified, u.totp_enabled, u.created_at AS user_created_at
+    FROM schools s
+    JOIN users_hq u ON u.id = s.owner_user_id
+    WHERE s.id = ${schoolId}::uuid
+    LIMIT 1
+  `;
+  if (!rows.length) return null;
+  const row = rows[0] as Record<string, any>;
+  if (row.status !== "active" || row.user_status !== "active") return null;
+
+  let schoolCode = String(row.school_code || "").trim().toUpperCase();
+  if (!schoolCode) {
+    const { ensureSchoolCode } = await import("./portal-auth");
+    schoolCode = await ensureSchoolCode(String(row.id));
+  }
+
+  const [referrals, licenses, settings] = await Promise.all([
+    sql`
+      SELECT referral_code, reward_mode
+      FROM referrals
+      WHERE owner_user_id = ${row.owner_user_id}::uuid AND is_active = TRUE
+      ORDER BY created_at ASC
+      LIMIT 1
+    `,
+    sql`
+      SELECT l.id, l.license_key, l.plan_tier, l.status, l.issued_at, l.expires_at,
+             l.bonus_days_total, l.lease_seconds, l.signed_lease_json, l.revocation_tombstone_json,
+             p.display_name AS plan_name, p.slug AS plan_slug
+      FROM licenses l
+      LEFT JOIN plans p ON p.id = l.plan_id
+      WHERE l.school_id = ${row.id}::uuid
+      ORDER BY l.created_at DESC
+      LIMIT 10
+    `,
+    getPlatformSettings(),
+  ]);
+
+  const referral = referrals[0] || null;
+  const directives = {
+    ...toPublicPlatformDirectives(settings),
+    school_status: row.status || "active",
+    school_ban_reason: row.ban_reason || null,
+    school_notice: row.custom_notice || "",
+    school_notice_level: row.custom_notice_level || "info",
+    feature_overrides: row.feature_overrides_json || {},
+    last_cloud_backup_at: row.last_cloud_backup_at ? new Date(row.last_cloud_backup_at).toISOString() : null,
+  };
+
+  return {
+    sessionId: `portal_admin:${row.id}`,
+    user: {
+      id: row.owner_user_id as string,
+      email: row.email as string,
+      full_name: row.full_name as string,
+      phone: (row.phone as string) || "",
+      role: row.role as string,
+      status: row.user_status as string,
+      email_verified: Boolean(row.email_verified),
+      totp_enabled: Boolean(row.totp_enabled),
+      created_at: row.user_created_at,
+    },
+    school: {
+      id: row.id as string,
+      school_code: schoolCode,
+      school_name: row.school_name as string,
+      country_code: String(row.country_code || "NG").trim(),
+      state_region: row.state_region || "",
+      contact_email: row.contact_email as string,
+      contact_phone: row.contact_phone || "",
+      status: row.status as string,
+      ban_reason: row.ban_reason || null,
+      last_cloud_backup_at: row.last_cloud_backup_at ? new Date(row.last_cloud_backup_at).toISOString() : null,
+      online_portal_enabled: Boolean(row.online_portal_enabled),
+      online_teachers_enabled: Boolean(row.online_teachers_enabled),
+      online_students_enabled: Boolean(row.online_students_enabled),
+      online_portal_notice: String(row.online_portal_notice || ""),
+      online_synced_at: row.online_synced_at ? new Date(row.online_synced_at).toISOString() : null,
+    },
+    referral_code: (referral as any)?.referral_code || null,
+    licenses,
+    directives,
+  };
+}
+
+export async function resolveSchoolAccountForRequest(req: NextRequest) {
+  const token = extractBearerOrCookieToken(req);
+  if (token) {
+    const account = await resolveAuthenticatedAccount(token);
+    if (account) return account;
+  }
+  const { getPortalSessionFromRequest } = await import("./portal-auth");
+  const portalSess = getPortalSessionFromRequest(req);
+  if (portalSess && portalSess.role === "admin" && portalSess.schoolId) {
+    return resolveAccountBySchoolId(portalSess.schoolId);
+  }
+  return null;
 }
 
 export async function requireHqAdmin(req: NextRequest) {

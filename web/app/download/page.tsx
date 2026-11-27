@@ -244,7 +244,7 @@ export default function DownloadPage() {
             <p className="rs-dl-help-copy">
               Need help setting up your school lab PC or migrating an older CBT database? Email{" "}
               <a href="mailto:hello@cognitara.net">hello@cognitara.net</a> or sign in to your{" "}
-              <Link href="/dashboard">school dashboard</Link>.
+              <a href="https://portal.cognitara.net/admin">Admin Portal</a>.
             </p>
           </div>
         </section>

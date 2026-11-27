@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSql } from "@/lib/db";
-import { extractBearerOrCookieToken, resolveAuthenticatedAccount } from "@/lib/auth";
+import { resolveSchoolAccountForRequest } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
@@ -9,13 +9,9 @@ export async function GET(
   context: { params: Promise<{ backupId: string }> }
 ) {
   try {
-    const token = extractBearerOrCookieToken(req);
-    if (!token) {
-      return NextResponse.json({ ok: false, message: "Sign in required." }, { status: 401 });
-    }
-    const account = await resolveAuthenticatedAccount(token);
+    const account = await resolveSchoolAccountForRequest(req);
     if (!account) {
-      return NextResponse.json({ ok: false, message: "Session expired." }, { status: 401 });
+      return NextResponse.json({ ok: false, message: "Sign in required." }, { status: 401 });
     }
 
     const { backupId } = await context.params;

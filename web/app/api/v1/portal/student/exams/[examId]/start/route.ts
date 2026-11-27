@@ -257,6 +257,11 @@ export async function POST(
     return NextResponse.json({
       ok: true,
       already_submitted: false,
+      student: {
+        full_name: session.fullName,
+        username: session.username,
+        student_class: session.studentClass || "",
+      },
       attempt: {
         id: String(attempt.id),
         exam_local_id: examLocalId,

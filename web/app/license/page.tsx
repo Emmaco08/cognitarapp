@@ -480,7 +480,7 @@ export default function LicensePage() {
               Need help choosing? Email <a href="mailto:hello@cognitara.net">hello@cognitara.net</a>.
             </p>
             <p>
-              Already have a licence? <Link href="/dashboard">Manage it in your school dashboard</Link>.
+              Already have a licence? <a href="https://portal.cognitara.net/admin">Manage it in your Admin Portal</a>.
             </p>
           </div>
         </section>

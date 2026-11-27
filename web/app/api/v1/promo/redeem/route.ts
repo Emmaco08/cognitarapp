@@ -2,12 +2,11 @@ import crypto from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { getSql } from "@/lib/db";
 import {
-  extractBearerOrCookieToken,
   generateReferralCode,
   hashPassword,
   isValidEmail,
   normalizeEmail,
-  resolveAuthenticatedAccount,
+  resolveSchoolAccountForRequest,
 } from "@/lib/auth";
 import {
   evaluatePromoCode,
@@ -73,8 +72,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: false, error: "invalid_json", message: "Invalid JSON body." }, { status: 400 });
     }
 
-    const token = extractBearerOrCookieToken(req);
-    const account = token ? await resolveAuthenticatedAccount(token) : null;
+    const account = await resolveSchoolAccountForRequest(req);
 
     const rawCode = String(body.code || "").trim().toUpperCase();
     let planId: string | null = body.plan_id ? String(body.plan_id).trim() : null;

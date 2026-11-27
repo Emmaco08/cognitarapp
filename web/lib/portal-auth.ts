@@ -113,17 +113,32 @@ export function verifyPortalSessionToken(token: string | null | undefined): Port
   }
 }
 
-export function attachPortalCookie(res: NextResponse, token: string): void {
+export function getSharedCookieDomain(req?: NextRequest): string | undefined {
+  if (process.env.NODE_ENV !== "production") return undefined;
+  const host = String(req?.headers.get("x-forwarded-host") || req?.headers.get("host") || req?.nextUrl?.hostname || "")
+    .toLowerCase()
+    .split(":")[0];
+  if (!host) return undefined;
+  if (host === "cognitara.net" || host.endsWith(".cognitara.net")) {
+    return ".cognitara.net";
+  }
+  return undefined;
+}
+
+export function attachPortalCookie(res: NextResponse, token: string, req?: NextRequest): void {
+  const domain = getSharedCookieDomain(req);
   res.cookies.set(PORTAL_COOKIE_NAME, token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
     path: "/",
     maxAge: PORTAL_SESSION_TTL_SECONDS,
+    ...(domain ? { domain } : {}),
   });
 }
 
-export function clearPortalCookie(res: NextResponse): void {
+export function clearPortalCookie(res: NextResponse, req?: NextRequest): void {
+  const domain = getSharedCookieDomain(req);
   res.cookies.set(PORTAL_COOKIE_NAME, "", {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
@@ -131,6 +146,12 @@ export function clearPortalCookie(res: NextResponse): void {
     path: "/",
     maxAge: 0,
   });
+  if (domain) {
+    res.headers.append(
+      "Set-Cookie",
+      `${PORTAL_COOKIE_NAME}=; Path=/; Domain=${domain}; Max-Age=0; HttpOnly; SameSite=Lax; Secure`
+    );
+  }
 }
 
 export function getPortalSessionFromRequest(req: NextRequest): PortalSessionPayload | null {

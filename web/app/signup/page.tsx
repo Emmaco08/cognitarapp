@@ -107,7 +107,11 @@ export default function SignUpPage() {
         setSubmitting(false);
         return;
       }
-      router.push("/dashboard");
+      if (typeof window !== "undefined" && window.location.hostname.startsWith("portal.")) {
+        router.push("/admin");
+      } else if (typeof window !== "undefined") {
+        window.location.href = "https://portal.cognitara.net/admin";
+      }
     } catch {
       setError("Could not reach CogniTara right now. Please try again.");
       setSubmitting(false);
@@ -138,7 +142,11 @@ export default function SignUpPage() {
         setSubmitting(false);
         return;
       }
-      router.push("/dashboard");
+      if (typeof window !== "undefined" && window.location.hostname.startsWith("portal.")) {
+        router.push("/admin");
+      } else if (typeof window !== "undefined") {
+        window.location.href = "https://portal.cognitara.net/admin";
+      }
     } catch {
       setError("Network error while verifying code.");
       setSubmitting(false);

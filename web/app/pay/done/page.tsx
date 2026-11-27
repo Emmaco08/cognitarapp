@@ -681,9 +681,9 @@ export default function PaymentDonePage() {
                   <Link href="/download" className="rs-btn rs-btn--soft">
                     Download Desktop App
                   </Link>
-                  <Link href="/dashboard" className="rs-btn rs-btn--soft">
-                    {data.authenticated ? "School Dashboard" : "Sign in"}
-                  </Link>
+                  <a href="https://portal.cognitara.net/admin" className="rs-btn rs-btn--soft">
+                    Open Admin Portal
+                  </a>
                 </div>
               </section>
             </>

@@ -28,12 +28,12 @@ const PRIMARY_NAV_ITEMS: { label: string; href: string }[] = [
 ];
 
 const RESOURCE_ITEMS: { label: string; sub: string; href: string }[] = [
-  { label: "Online Exam Portal", sub: "Sign in with your School ID", href: "https://portal.cognitara.net" },
+  { label: "School Portal", sub: "Student, Teacher & Admin portal", href: "https://portal.cognitara.net" },
   { label: "How-to guides", sub: "Install, LAN setup & recovery", href: "/guides" },
   { label: "FAQ", sub: "Offline exams, backups & pricing", href: "/faq" },
   { label: "Blog", sub: "Engineering & exam-day notes", href: "/blog" },
   { label: "Get support", sub: "Direct help for your school", href: "/support" },
-  { label: "Sign in", sub: "Manage licence & cloud backups", href: "/signin" },
+  { label: "Create school account", sub: "Get your School ID & backups", href: "/signup" },
 ];
 
 export default function LandingNav({ activePath = "/" }: LandingNavProps) {

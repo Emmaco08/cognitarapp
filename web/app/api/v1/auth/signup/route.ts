@@ -285,6 +285,7 @@ export async function POST(req: NextRequest) {
       },
       school: {
         id: school.id,
+        school_code: String(school.school_code || schoolCode),
         school_name: school.school_name,
         country_code: String(school.country_code || "NG").trim(),
         state_region: school.state_region || "",
@@ -298,7 +299,17 @@ export async function POST(req: NextRequest) {
     };
 
     const res = NextResponse.json(payload, { status: 201 });
-    attachSessionCookie(res, rawToken, maxAgeSeconds);
+    attachSessionCookie(res, rawToken, maxAgeSeconds, req);
+    const { attachPortalCookie, signPortalSession } = await import("@/lib/portal-auth");
+    const pTok = signPortalSession({
+      schoolId: String(school.id),
+      schoolCode: String(school.school_code || schoolCode),
+      role: "admin",
+      localId: 0,
+      username: String(user.email),
+      fullName: String(user.full_name || `${school.school_name} Admin`),
+    });
+    attachPortalCookie(res, pTok, req);
     return res;
   } catch (err) {
     console.error("Sign-up error:", err);

@@ -263,10 +263,10 @@ export function QuestionAuthorModal({
           </button>
         </div>
 
-        <div className="pt-tabs" style={{ marginBottom: 16 }}>
+        <div className="pt-filter-tabs" style={{ margin: "0 -24px 16px", padding: "0 24px" }}>
           <button
             type="button"
-            className={`pt-tab ${mode === "list" ? "is-active" : ""}`}
+            className={`pt-filter-tab ${mode === "list" ? "is-active" : ""}`}
             onClick={() => {
               setMode("list");
               setMsg("");
@@ -276,18 +276,18 @@ export function QuestionAuthorModal({
           </button>
           <button
             type="button"
-            className={`pt-tab ${mode === "add" ? "is-active" : ""}`}
+            className={`pt-filter-tab ${mode === "add" ? "is-active" : ""}`}
             onClick={() => {
               if (mode !== "add") resetForm();
               setMode("add");
               setMsg("");
             }}
           >
-            {editingId ? "Edit Question" : "+ Add Question"}
+            {editingId ? "Edit Question" : "Add Question"}
           </button>
           <button
             type="button"
-            className={`pt-tab ${mode === "csv" ? "is-active" : ""}`}
+            className={`pt-filter-tab ${mode === "csv" ? "is-active" : ""}`}
             onClick={() => {
               setMode("csv");
               setMsg("");
@@ -317,14 +317,14 @@ export function QuestionAuthorModal({
                   key={q.local_id}
                   style={{
                     border: "1px solid var(--pt-line)",
-                    borderRadius: 12,
+                    borderRadius: 10,
                     padding: 14,
-                    background: "var(--pt-surface-subtle)",
+                    background: "var(--pt-well)",
                   }}
                 >
                   <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 10 }}>
-                    <div style={{ fontSize: 14, fontWeight: 600, lineHeight: 1.5 }}>
-                      <span className="pt-pill pt-pill--dark" style={{ marginRight: 8 }}>
+                    <div style={{ fontSize: 14, fontWeight: 500, lineHeight: 1.55 }}>
+                      <span className="pt-tag pt-tag--solid" style={{ marginRight: 8 }}>
                         Q{idx + 1}
                       </span>
                       <MathText text={q.question} />
@@ -351,11 +351,11 @@ export function QuestionAuthorModal({
                         <div
                           key={oi}
                           style={{
-                            padding: "6px 10px",
+                            padding: "7px 10px",
                             borderRadius: 8,
-                            border: isAns ? "1.5px solid var(--pt-obsidian)" : "1px solid var(--pt-line)",
-                            background: isAns ? "var(--pt-obsidian)" : "var(--pt-surface)",
-                            color: isAns ? "var(--pt-obsidian-text)" : "var(--pt-ink)",
+                            border: isAns ? "1px solid var(--pt-cta-bg)" : "1px solid var(--pt-line)",
+                            background: isAns ? "var(--pt-cta-bg)" : "var(--pt-surface)",
+                            color: isAns ? "var(--pt-cta-ink)" : "var(--pt-ink)",
                           }}
                         >
                           <strong>{["A", "B", "C", "D"][oi]}.</strong> <MathText text={opt} />
@@ -370,7 +370,7 @@ export function QuestionAuthorModal({
         ) : mode === "add" ? (
           <form className="pt-form" onSubmit={handleSaveQuestion}>
             <div className="pt-field">
-              <label htmlFor="qTextArea">Question Text (Formula Chips Insert LaTeX)</label>
+              <label htmlFor="qTextArea">Question text (click symbols to insert LaTeX)</label>
               <div className="pt-formula-bar">
                 {FORMULA_CHIPS.map((chip) => (
                   <button
@@ -389,22 +389,14 @@ export function QuestionAuthorModal({
                 required
                 value={qText}
                 onChange={(e) => setQText(e.target.value)}
-                placeholder="e.g. Solve for x when $\frac{x + 4}{2} = 7$"
+                placeholder="Solve for x when $\frac{x + 4}{2} = 7$"
               />
             </div>
 
             {qText.trim() ? (
-              <div
-                style={{
-                  padding: "10px 14px",
-                  borderRadius: 10,
-                  border: "1px dashed var(--pt-line-strong)",
-                  background: "var(--pt-surface-subtle)",
-                  fontSize: 14.5,
-                }}
-              >
-                <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", color: "var(--pt-ink-3)", marginBottom: 4 }}>
-                  Live Student Preview
+              <div className="pt-preview-box">
+                <div style={{ fontSize: 11.5, fontWeight: 500, color: "var(--pt-ink-3)", marginBottom: 4 }}>
+                  Student preview
                 </div>
                 <MathText text={qText} />
               </div>

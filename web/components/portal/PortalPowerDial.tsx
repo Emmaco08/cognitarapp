@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
-import "@/app/p-host/portal.css";
+import { PIconCopy, PIconPower } from "./PortalIcons";
 
 export interface PortalControlData {
   school: {
@@ -94,13 +94,14 @@ export function PortalPowerDial({
       });
       const json = await res.json().catch(() => ({}));
       if (!res.ok || !json.ok) {
-        setFeedback({ kind: "err", text: json.message || "Could not update Online Portal switch." });
+        setFeedback({ kind: "err", text: json.message || "Could not update Online Portal switch" });
       } else {
-        setFeedback({ kind: "ok", text: json.message || "Updated." });
+        setFeedback({ kind: "ok", text: json.message || "Portal settings saved" });
         await refresh();
+        onSynced?.();
       }
     } catch {
-      setFeedback({ kind: "err", text: "Network error while updating Online Portal." });
+      setFeedback({ kind: "err", text: "Network error while updating Online Portal" });
     } finally {
       setBusyKey("");
     }
@@ -118,14 +119,14 @@ export function PortalPowerDial({
       });
       const json = await res.json().catch(() => ({}));
       if (!res.ok || !json.ok) {
-        setFeedback({ kind: "err", text: json.message || "Could not sync backup." });
+        setFeedback({ kind: "err", text: json.message || "Could not sync backup" });
       } else {
-        setFeedback({ kind: "ok", text: json.message || "Database synced." });
+        setFeedback({ kind: "ok", text: json.message || "Database synced" });
         await refresh();
         onSynced?.();
       }
     } catch {
-      setFeedback({ kind: "err", text: "Network error while syncing backup." });
+      setFeedback({ kind: "err", text: "Network error while syncing backup" });
     } finally {
       setBusyKey("");
     }
@@ -138,7 +139,7 @@ export function PortalPowerDial({
     if (file.size > 4 * 1024 * 1024) {
       setFeedback({
         kind: "err",
-        text: "File is over 4 MB. Use CogniTara Studio Desktop Cloud Backup, then click Sync Latest Backup.",
+        text: "File is over 4 MB. Upload via CogniTara Studio Desktop Cloud Backup, then click Sync Latest Backup.",
       });
       return;
     }
@@ -160,14 +161,14 @@ export function PortalPowerDial({
       });
       const json = await res.json().catch(() => ({}));
       if (!res.ok || !json.ok) {
-        setFeedback({ kind: "err", text: json.message || "Could not import database file." });
+        setFeedback({ kind: "err", text: json.message || "Could not import database file" });
       } else {
-        setFeedback({ kind: "ok", text: json.message || "Database imported." });
+        setFeedback({ kind: "ok", text: json.message || "Database imported" });
         await refresh();
         onSynced?.();
       }
     } catch {
-      setFeedback({ kind: "err", text: "Could not upload exam database." });
+      setFeedback({ kind: "err", text: "Could not upload exam database" });
     } finally {
       setBusyKey("");
     }
@@ -181,16 +182,16 @@ export function PortalPowerDial({
 
   if (loading) {
     return (
-      <div className="pt-card" style={{ padding: 28, textAlign: "center", color: "var(--pt-ink-2)" }}>
-        Loading Online Exam Portal controls...
+      <div className="pt-card pt-card--pad" style={{ textAlign: "center", color: "var(--pt-ink-2)" }}>
+        Loading Online Portal controls...
       </div>
     );
   }
 
   if (!data) {
     return (
-      <div className="pt-card" style={{ padding: 24 }}>
-        <div className="pt-alert">Could not load Online Exam Portal controls. Refresh the page and try again.</div>
+      <div className="pt-card pt-card--pad">
+        <div className="pt-alert">Could not load Online Portal controls. Refresh the page and try again.</div>
       </div>
     );
   }
@@ -204,7 +205,6 @@ export function PortalPowerDial({
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
       <div className="pt-power-shell">
-        {/* Left: Obsidian / Warm Stone Master ON/OFF Dial */}
         <div className="pt-dial-col">
           <button
             type="button"
@@ -213,31 +213,26 @@ export function PortalPowerDial({
             onClick={() => patchControl({ online_portal_enabled: !masterOn }, "master")}
             aria-pressed={masterOn}
           >
-            <span className="pt-dial-ring" aria-hidden="true" />
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <path d="M12 2v8" />
-              <path d="M18.36 6.64a9 9 0 1 1-12.73 0" />
-            </svg>
+            <PIconPower size={24} />
             <span className="pt-dial-state">
-              {busyKey === "master" ? "..." : masterOn ? "LIVE" : "OFF"}
+              {busyKey === "master" ? "..." : masterOn ? "Live" : "Off"}
             </span>
             <span className="pt-dial-label">
-              {masterOn ? "Tap to turn OFF" : "Tap to turn ON"}
+              {masterOn ? "Turn off portal" : "Turn on portal"}
             </span>
           </button>
-          <div style={{ fontSize: 12.5, color: "var(--pt-ink-2)", maxWidth: 200, lineHeight: 1.4 }}>
+          <div style={{ fontSize: 12.5, color: "var(--pt-ink-2)", maxWidth: 204, lineHeight: 1.45 }}>
             {masterOn
-              ? "Students and teachers can sign in online using your School ID."
-              : "Online portal is paused for students and teachers. Admins can still sign in."}
+              ? "Students and teachers can sign in online with your School ID"
+              : "Online access is paused for staff and students. Admins retain access"}
           </div>
         </div>
 
-        {/* Right: School ID + Granular Role Switches + Sync Actions */}
         <div className="pt-power-body">
           <div className="pt-school-id-bar">
             <div>
-              <div style={{ fontSize: 11.5, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--pt-ink-2)" }}>
-                School ID (share with staff & students)
+              <div style={{ fontSize: 12, fontWeight: 500, color: "var(--pt-ink-3)" }}>
+                School ID
               </div>
               <div className="pt-school-id-code">{s.school_code}</div>
             </div>
@@ -247,14 +242,15 @@ export function PortalPowerDial({
                 className="pt-btn pt-btn--sm"
                 onClick={() => copyValue(s.school_code, "code")}
               >
-                {copied === "code" ? "Copied ID" : "Copy ID"}
+                <PIconCopy size={13} />
+                <span>{copied === "code" ? "Copied ID" : "Copy ID"}</span>
               </button>
               <button
                 type="button"
                 className="pt-btn pt-btn--sm"
-                onClick={() => copyValue(data.portal_url, "link")}
+                onClick={() => copyValue(data.portal_url, "url")}
               >
-                {copied === "link" ? "Copied Link" : "Copy Portal Link"}
+                {copied === "url" ? "Copied link" : "Copy portal link"}
               </button>
               <a
                 href={data.portal_url}
@@ -262,7 +258,7 @@ export function PortalPowerDial({
                 rel="noopener noreferrer"
                 className="pt-btn pt-btn--primary pt-btn--sm"
               >
-                Open Portal
+                Open gateway
               </a>
             </div>
           </div>
@@ -270,56 +266,64 @@ export function PortalPowerDial({
           <div className="pt-toggles-grid">
             <div className="pt-toggle-card">
               <div>
-                <strong>Teachers Access</strong>
-                <span>
-                  {masterOn && teachersOn
-                    ? "Teachers can set exams from home"
-                    : !masterOn
-                      ? "Master switch is OFF"
-                      : "Blocked from online sign-in"}
-                </span>
+                <strong>Teachers access</strong>
+                <span>Author and manage exams from home</span>
               </div>
-              <button
-                type="button"
-                role="switch"
-                aria-checked={teachersOn}
-                aria-label="Toggle Teachers Online Access"
-                disabled={busyKey === "teachers"}
-                className={`pt-switch ${teachersOn ? "is-on" : ""}`}
-                onClick={() => patchControl({ online_teachers_enabled: !teachersOn }, "teachers")}
-              />
+              <div className="pt-rocker" role="group" aria-label="Teachers access">
+                <button
+                  type="button"
+                  className={`pt-rocker__opt ${!teachersOn ? "is-selected" : ""}`}
+                  disabled={busyKey === "teachers" || !masterOn}
+                  onClick={() => teachersOn && patchControl({ online_teachers_enabled: false }, "teachers")}
+                >
+                  Off
+                </button>
+                <button
+                  type="button"
+                  className={`pt-rocker__opt ${teachersOn ? "is-selected" : ""}`}
+                  disabled={busyKey === "teachers" || !masterOn}
+                  onClick={() => !teachersOn && patchControl({ online_teachers_enabled: true }, "teachers")}
+                >
+                  On
+                </button>
+              </div>
             </div>
 
             <div className="pt-toggle-card">
               <div>
-                <strong>Students Access</strong>
-                <span>
-                  {masterOn && studentsOn
-                    ? "Students can take active exams online"
-                    : !masterOn
-                      ? "Master switch is OFF"
-                      : "Blocked from online sign-in"}
-                </span>
+                <strong>Students access</strong>
+                <span>Sit active exams from any browser</span>
               </div>
-              <button
-                type="button"
-                role="switch"
-                aria-checked={studentsOn}
-                aria-label="Toggle Students Online Access"
-                disabled={busyKey === "students"}
-                className={`pt-switch ${studentsOn ? "is-on" : ""}`}
-                onClick={() => patchControl({ online_students_enabled: !studentsOn }, "students")}
-              />
+              <div className="pt-rocker" role="group" aria-label="Students access">
+                <button
+                  type="button"
+                  className={`pt-rocker__opt ${!studentsOn ? "is-selected" : ""}`}
+                  disabled={busyKey === "students" || !masterOn}
+                  onClick={() => studentsOn && patchControl({ online_students_enabled: false }, "students")}
+                >
+                  Off
+                </button>
+                <button
+                  type="button"
+                  className={`pt-rocker__opt ${studentsOn ? "is-selected" : ""}`}
+                  disabled={busyKey === "students" || !masterOn}
+                  onClick={() => !studentsOn && patchControl({ online_students_enabled: true }, "students")}
+                >
+                  On
+                </button>
+              </div>
             </div>
           </div>
 
-          {/* Database sync row */}
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, flexWrap: "wrap" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
             <div style={{ fontSize: 12.5, color: "var(--pt-ink-2)" }}>
-              Database sync: <strong style={{ color: "var(--pt-ink)" }}>{fmtRelative(s.online_synced_at)}</strong>
+              Database sync:{" "}
+              <strong style={{ color: "var(--pt-ink)", fontWeight: 600 }}>
+                {fmtRelative(s.online_synced_at)}
+              </strong>
               {c.unsynced_submissions > 0 ? (
-                <span className="pt-pill" style={{ marginLeft: 8 }}>
-                  {c.unsynced_submissions} new online score{c.unsynced_submissions === 1 ? "" : "s"}
+                <span className="pt-mono" style={{ marginLeft: 10, color: "var(--pt-ink)" }}>
+                  {c.unsynced_submissions} pending PC pull
                 </span>
               ) : null}
             </div>
@@ -328,9 +332,9 @@ export function PortalPowerDial({
                 type="button"
                 className="pt-btn pt-btn--primary pt-btn--sm"
                 disabled={busyKey === "sync" || data.backups.length === 0}
-                onClick={syncLatestBackup}
+                onClick={() => void syncLatestBackup()}
               >
-                {busyKey === "sync" ? "Syncing..." : "Sync Latest Cloud Backup"}
+                {busyKey === "sync" ? "Syncing..." : "Sync latest cloud backup"}
               </button>
               <button
                 type="button"
@@ -338,7 +342,7 @@ export function PortalPowerDial({
                 disabled={busyKey === "upload"}
                 onClick={() => fileRef.current?.click()}
               >
-                {busyKey === "upload" ? "Importing..." : "Upload .db File"}
+                {busyKey === "upload" ? "Importing..." : "Upload .db file"}
               </button>
               <input
                 ref={fileRef}
@@ -351,55 +355,68 @@ export function PortalPowerDial({
           </div>
 
           {!compact ? (
-            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            <form
+              style={{ display: "flex", gap: 8, alignItems: "center" }}
+              onSubmit={(e) => {
+                e.preventDefault();
+                void patchControl({ online_portal_notice: noticeDraft }, "notice");
+              }}
+            >
               <input
                 type="text"
                 className="pt-input"
-                style={{ flex: "1 1 240px", height: 36, fontSize: 13 }}
+                style={{ height: 36, fontSize: 13 }}
                 value={noticeDraft}
+                maxLength={280}
+                placeholder="Optional notice banner shown on portal sign-in"
                 onChange={(e) => setNoticeDraft(e.target.value)}
-                placeholder="Optional notice shown on your school portal login (e.g. Second Term Exams open 9am to 2pm)"
-                maxLength={240}
               />
               <button
-                type="button"
+                type="submit"
                 className="pt-btn pt-btn--sm"
-                style={{ height: 36 }}
                 disabled={busyKey === "notice"}
-                onClick={() => patchControl({ online_portal_notice: noticeDraft }, "notice")}
               >
-                {busyKey === "notice" ? "Saving..." : "Save Notice"}
+                {busyKey === "notice" ? "Saving..." : "Save notice"}
               </button>
-            </div>
+            </form>
           ) : null}
 
           {feedback ? (
-            <div className={`pt-alert ${feedback.kind === "ok" ? "" : "pt-alert--dark"}`}>
+            <div className={`pt-alert ${feedback.kind === "err" ? "pt-alert--dark" : ""}`}>
               {feedback.text}
             </div>
           ) : null}
         </div>
       </div>
 
-      {/* Synced School Inventory Strip */}
-      <div className="pt-stats-strip">
-        <div className="pt-stat-tile">
-          <div className="pt-stat-num">{c.students}</div>
-          <div className="pt-stat-lbl">Students ({c.pending_students} pending)</div>
+      {!compact ? (
+        <div className="pt-kpi-rail">
+          <div className="pt-kpi-cell">
+            <span className="pt-kpi-cell__label">Students synced</span>
+            <strong className="pt-kpi-cell__val">{c.students}</strong>
+            <span className="pt-kpi-cell__meta">
+              {c.pending_students > 0 ? `${c.pending_students} pending` : "All approved"}
+            </span>
+          </div>
+          <div className="pt-kpi-cell">
+            <span className="pt-kpi-cell__label">Teachers synced</span>
+            <strong className="pt-kpi-cell__val">{c.teachers}</strong>
+            <span className="pt-kpi-cell__meta">Faculty accounts</span>
+          </div>
+          <div className="pt-kpi-cell">
+            <span className="pt-kpi-cell__label">Active exams</span>
+            <strong className="pt-kpi-cell__val">{c.active_exams} / {c.exams}</strong>
+            <span className="pt-kpi-cell__meta">{c.questions} questions</span>
+          </div>
+          <div className="pt-kpi-cell">
+            <span className="pt-kpi-cell__label">Online submissions</span>
+            <strong className="pt-kpi-cell__val">{c.online_submissions}</strong>
+            <span className="pt-kpi-cell__meta">
+              {c.online_created_exams} authored online
+            </span>
+          </div>
         </div>
-        <div className="pt-stat-tile">
-          <div className="pt-stat-num">{c.teachers}</div>
-          <div className="pt-stat-lbl">Teachers</div>
-        </div>
-        <div className="pt-stat-tile">
-          <div className="pt-stat-num">{c.active_exams} / {c.exams}</div>
-          <div className="pt-stat-lbl">Active Exams ({c.questions} Qs)</div>
-        </div>
-        <div className="pt-stat-tile">
-          <div className="pt-stat-num">{c.online_submissions}</div>
-          <div className="pt-stat-lbl">Online Submissions</div>
-        </div>
-      </div>
+      ) : null}
     </div>
   );
 }

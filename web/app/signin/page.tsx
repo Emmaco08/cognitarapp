@@ -38,8 +38,10 @@ export default function SignInPage() {
   function routeAfterAuth(role?: string) {
     if (role === "hq_super_admin" || role === "hq_admin") {
       router.push("/hq");
-    } else {
-      router.push("/dashboard");
+    } else if (typeof window !== "undefined" && window.location.hostname.startsWith("portal.")) {
+      router.push("/admin");
+    } else if (typeof window !== "undefined") {
+      window.location.href = "https://portal.cognitara.net/admin";
     }
   }
 
@@ -179,7 +181,7 @@ export default function SignInPage() {
       setPassword("");
       setResetCode("");
       setNewPassword("");
-      setNotice(data.message || "Password updated! Sign in with your new password.");
+      setNotice(data.message || "Password updated. Sign in with your new password.");
       setMode("signin");
       setSubmitting(false);
     } catch {
@@ -356,7 +358,7 @@ export default function SignInPage() {
             <>
               <div className="auth-head">
                 <h1>Sign in</h1>
-                <p>Manage your school licence, payments, backups, and referral rewards.</p>
+                <p>Manage your school portal, licence, backups, and referral rewards.</p>
               </div>
 
               {error ? <div className="alert alert--bad" role="alert">{error}</div> : null}

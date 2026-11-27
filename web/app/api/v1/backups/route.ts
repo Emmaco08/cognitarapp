@@ -1,7 +1,11 @@
 import crypto from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { getSql } from "@/lib/db";
-import { extractBearerOrCookieToken, resolveAuthenticatedAccount } from "@/lib/auth";
+import {
+  extractBearerOrCookieToken,
+  resolveAuthenticatedAccount,
+  resolveSchoolAccountForRequest,
+} from "@/lib/auth";
 import { getPlatformSettings } from "@/lib/platform";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 
@@ -12,11 +16,7 @@ const MAX_BACKUPS_PER_SCHOOL = 10;
 
 export async function GET(req: NextRequest) {
   try {
-    const token = extractBearerOrCookieToken(req);
-    if (!token) {
-      return NextResponse.json({ ok: false, error: "unauthorized", message: "Sign in required." }, { status: 401 });
-    }
-    const account = await resolveAuthenticatedAccount(token);
+    const account = await resolveSchoolAccountForRequest(req);
     if (!account || !account.school) {
       return NextResponse.json({ ok: false, error: "unauthorized", message: "School account required." }, { status: 401 });
     }
@@ -180,10 +180,8 @@ export async function POST(req: NextRequest) {
 
 export async function DELETE(req: NextRequest) {
   try {
-    const token = extractBearerOrCookieToken(req);
-    if (!token) return NextResponse.json({ ok: false, message: "Sign in required." }, { status: 401 });
-    const account = await resolveAuthenticatedAccount(token);
-    if (!account) return NextResponse.json({ ok: false, message: "Session expired." }, { status: 401 });
+    const account = await resolveSchoolAccountForRequest(req);
+    if (!account) return NextResponse.json({ ok: false, message: "Sign in required." }, { status: 401 });
 
     const id = String(req.nextUrl.searchParams.get("id") || "").trim();
     if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) {

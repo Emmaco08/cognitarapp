@@ -11,7 +11,7 @@ export async function GET(req: NextRequest) {
 
   try {
     const sql = getSql();
-    const [settingsRows, teacherRows, examRows] = await Promise.all([
+    const [settingsRows, teacherRows, examRows, studentCountRows] = await Promise.all([
       sql`
         SELECT school_name, school_motto, academic_session, current_term, classes_json
         FROM portal_school_settings
@@ -52,6 +52,12 @@ export async function GET(req: NextRequest) {
               AND (e.teacher_local_id = ${session.localId} OR e.teacher_local_id IS NULL)
             ORDER BY e.local_id DESC
           `,
+      sql`
+        SELECT student_class, COUNT(*)::int AS cnt
+        FROM portal_students
+        WHERE school_id = ${session.schoolId}::uuid AND status = 'approved'
+        GROUP BY student_class
+      `,
     ]);
 
     const pset = (settingsRows[0] || {}) as Record<string, any>;
@@ -60,14 +66,34 @@ export async function GET(req: NextRequest) {
     const teacherClasses: string[] =
       tc && Array.isArray(tc.classes_json) && tc.classes_json.length ? tc.classes_json : schoolClasses;
 
+    const teacherClassSet = new Set(teacherClasses.map((c) => String(c || "").trim().toLowerCase()));
+    let studentCount = 0;
+    for (const r of studentCountRows as Record<string, any>[]) {
+      const cls = String(r.student_class || "").trim().toLowerCase();
+      if (session.role === "admin" || teacherClassSet.size === 0 || teacherClassSet.has(cls)) {
+        studentCount += Number(r.cnt || 0);
+      }
+    }
+
     return NextResponse.json({
       ok: true,
       school: {
         ...school,
         portal_school_name: String(pset.school_name || school.school_name),
+        school_motto: String(pset.school_motto || ""),
         academic_session: String(pset.academic_session || "2026/2027"),
         current_term: String(pset.current_term || "First Term"),
       },
+      teacher: tc
+        ? {
+            local_id: Number(tc.local_id),
+            username: String(tc.username),
+            full_name: String(tc.full_name || tc.username),
+            primary_class: String(tc.primary_class || ""),
+            classes: teacherClasses,
+          }
+        : null,
+      student_count: studentCount,
       classes: session.role === "teacher" ? teacherClasses : schoolClasses,
       exams: examRows,
     });

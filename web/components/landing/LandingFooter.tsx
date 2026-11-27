@@ -24,10 +24,10 @@ export default function LandingFooter() {
             <h3>Product</h3>
             <ul>
               <li><Link href="/download">Download for Windows</Link></li>
-              <li><a href="https://portal.cognitara.net">Online Exam Portal</a></li>
+              <li><a href="https://portal.cognitara.net">School Portal</a></li>
               <li><Link href="/#features">Features</Link></li>
               <li><Link href="/license">Pricing &amp; Licensing</Link></li>
-              <li><Link href="/dashboard">Manage License</Link></li>
+              <li><a href="https://portal.cognitara.net/admin">Admin Portal</a></li>
             </ul>
           </div>
 
@@ -55,9 +55,9 @@ export default function LandingFooter() {
           <div className="rs-footer-col">
             <h3>Account</h3>
             <ul>
-              <li><Link href="/signin">Sign in</Link></li>
+              <li><a href="https://portal.cognitara.net">Sign in to Portal</a></li>
               <li><Link href="/signup">Create school account</Link></li>
-              <li><Link href="/dashboard">School dashboard</Link></li>
+              <li><a href="https://portal.cognitara.net/admin">Manage Licence &amp; Backups</a></li>
               <li><Link href="/hq">Admin Console</Link></li>
             </ul>
           </div>

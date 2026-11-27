@@ -1,16 +1,47 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { CogniTaraLockup } from "@/components/CogniTaraLogo";
+import { PortalShell } from "@/components/portal/PortalShell";
 import { PortalPowerDial } from "@/components/portal/PortalPowerDial";
 import { QuestionAuthorModal } from "@/components/portal/QuestionAuthorModal";
+import {
+  AdminCloudViews,
+  CloudAccountPayload,
+  CloudBackupPayload,
+  CloudPaymentRecord,
+  CloudReferralPayload,
+} from "@/components/portal/AdminCloudViews";
+import {
+  PIconArrowRight,
+  PIconChart,
+  PIconCheck,
+  PIconClock,
+  PIconCloud,
+  PIconCopy,
+  PIconDoc,
+  PIconDownload,
+  PIconGift,
+  PIconHome,
+  PIconKey,
+  PIconLive,
+  PIconPause,
+  PIconPlay,
+  PIconPlus,
+  PIconPower,
+  PIconSearch,
+  PIconTrash,
+  PIconUser,
+  PIconUsers,
+} from "@/components/portal/PortalIcons";
 
 interface AdminExamRow {
   local_id: number;
   name: string;
   exam_class: string;
   teacher_name: string | null;
+  subject_tag?: string;
+  specialisation?: string;
   duration: number;
   active: boolean;
   is_paused_all: boolean;
@@ -55,10 +86,24 @@ interface RosterTeacher {
   classes_json: string[];
 }
 
+type AdminNavId =
+  | "overview"
+  | "exams"
+  | "results"
+  | "teachers"
+  | "students"
+  | "approvals"
+  | "portal"
+  | "licence"
+  | "backups"
+  | "referrals";
+
 function downloadResultsCsv(rows: AdminResultRow[]) {
   const esc = (v: unknown) => `"${String(v ?? "").replace(/"/g, '""')}"`;
   const lines = [
-    ["Student", "Username", "Class", "Exam", "Score", "Total", "Percent", "Grade", "Origin", "SyncedToDesktop"].map(esc).join(","),
+    ["Student", "Username", "Class", "Exam", "Score", "Total", "Percent", "Grade", "Origin", "SyncedToDesktop"]
+      .map(esc)
+      .join(","),
     ...rows.map((r) =>
       [
         r.student_name,
@@ -80,27 +125,42 @@ function downloadResultsCsv(rows: AdminResultRow[]) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = "cognitara-school-online-results.csv";
+  a.download = "cognitara-school-results.csv";
   document.body.appendChild(a);
   a.click();
   a.remove();
   URL.revokeObjectURL(url);
 }
 
-export default function AdminOnlineControlCenterPage() {
+export default function AdminPortalConsolePage() {
   const router = useRouter();
-  const [tab, setTab] = useState<"exams" | "results" | "people">("exams");
+  const [nav, setNav] = useState<AdminNavId>("overview");
   const [authOk, setAuthOk] = useState(false);
-  const [adminLabel, setAdminLabel] = useState("");
+  const [adminLabel, setAdminLabel] = useState("Administrator");
   const [schoolCode, setSchoolCode] = useState("");
+  const [schoolName, setSchoolName] = useState("CogniTara School");
+  const [termMeta, setTermMeta] = useState("First Term · 2026/2027");
+  const [portalLive, setPortalLive] = useState(false);
+
   const [classes, setClasses] = useState<string[]>([]);
   const [exams, setExams] = useState<AdminExamRow[]>([]);
   const [results, setResults] = useState<AdminResultRow[]>([]);
   const [students, setStudents] = useState<RosterStudent[]>([]);
   const [teachers, setTeachers] = useState<RosterTeacher[]>([]);
+
+  // Unified Cloud Account data (replaces old cognitara.net/dashboard)
+  const [cloudAccount, setCloudAccount] = useState<CloudAccountPayload | null>(null);
+  const [cloudPayments, setCloudPayments] = useState<CloudPaymentRecord[]>([]);
+  const [cloudBackups, setCloudBackups] = useState<CloudBackupPayload | null>(null);
+  const [cloudReferrals, setCloudReferrals] = useState<CloudReferralPayload | null>(null);
+  const [loadingCloud, setLoadingCloud] = useState(true);
+
+  const [examSearch, setExamSearch] = useState("");
+  const [examStatusFilter, setExamStatusFilter] = useState<"all" | "active" | "inactive">("all");
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [toast, setToast] = useState("");
+  const [copiedCode, setCopiedCode] = useState(false);
 
   // Modals
   const [authorExam, setAuthorExam] = useState<{ id: number; name: string } | null>(null);
@@ -119,24 +179,32 @@ export default function AdminOnlineControlCenterPage() {
 
   function notify(msg: string) {
     setToast(msg);
-    setTimeout(() => setToast((cur) => (cur === msg ? "" : cur)), 3200);
+    setTimeout(() => setToast((cur) => (cur === msg ? "" : cur)), 3400);
   }
 
   async function loadAll() {
     try {
-      const meRes = await fetch("/api/v1/portal/auth/me", { credentials: "include" }).then((r) => r.json()).catch(() => null);
+      const meRes = await fetch("/api/v1/portal/auth/me", { credentials: "include" })
+        .then((r) => r.json())
+        .catch(() => null);
       if (!meRes?.authenticated || meRes.session?.role !== "admin") {
         router.replace("/");
         return;
       }
       setAuthOk(true);
       setAdminLabel(String(meRes.session.fullName || meRes.session.username));
-      setSchoolCode(String(meRes.session.schoolCode || ""));
+      setSchoolCode(String(meRes.session.schoolCode || meRes.school?.school_code || ""));
+      if (meRes.school?.school_name) setSchoolName(String(meRes.school.school_name));
+      setPortalLive(Boolean(meRes.school?.online_portal_enabled));
 
-      const [exRes, resRes, rosRes] = await Promise.all([
+      const [exRes, resRes, rosRes, accRes, payRes, bakRes, refRes] = await Promise.all([
         fetch("/api/v1/portal/exams", { credentials: "include" }).then((r) => (r.ok ? r.json() : null)).catch(() => null),
         fetch("/api/v1/portal/results", { credentials: "include" }).then((r) => (r.ok ? r.json() : null)).catch(() => null),
         fetch("/api/v1/portal/roster", { credentials: "include" }).then((r) => (r.ok ? r.json() : null)).catch(() => null),
+        fetch("/api/v1/auth/me", { credentials: "include" }).then((r) => (r.ok ? r.json() : null)).catch(() => null),
+        fetch("/api/v1/payments/history", { credentials: "include" }).then((r) => (r.ok ? r.json() : null)).catch(() => null),
+        fetch("/api/v1/backups", { credentials: "include" }).then((r) => (r.ok ? r.json() : null)).catch(() => null),
+        fetch("/api/v1/referrals/me", { credentials: "include" }).then((r) => (r.ok ? r.json() : null)).catch(() => null),
       ]);
 
       if (exRes?.ok) {
@@ -145,18 +213,39 @@ export default function AdminOnlineControlCenterPage() {
         setClasses(cls);
         if (!exClass && cls.length) setExClass(cls[0]);
         if (!pClass && cls.length) setPClass(cls[0]);
+        if (exRes.school?.portal_school_name) setSchoolName(String(exRes.school.portal_school_name));
+        if (exRes.school?.current_term || exRes.school?.academic_session) {
+          setTermMeta(
+            `${exRes.school.current_term || "First Term"} · ${exRes.school.academic_session || "2026/2027"}`
+          );
+        }
+        if (typeof exRes.school?.online_portal_enabled === "boolean") {
+          setPortalLive(exRes.school.online_portal_enabled);
+        }
       }
       if (resRes?.ok && Array.isArray(resRes.results)) setResults(resRes.results);
       if (rosRes?.ok) {
         setStudents(Array.isArray(rosRes.students) ? rosRes.students : []);
         setTeachers(Array.isArray(rosRes.teachers) ? rosRes.teachers : []);
       }
+      if (accRes?.ok) setCloudAccount(accRes);
+      if (payRes?.ok && Array.isArray(payRes.payments)) setCloudPayments(payRes.payments);
+      if (bakRes?.ok) setCloudBackups(bakRes);
+      if (refRes?.ok) setCloudReferrals(refRes);
     } finally {
       setLoading(false);
+      setLoadingCloud(false);
     }
   }
 
   useEffect(() => {
+    const q = new URLSearchParams(window.location.search).get("tab");
+    if (
+      q &&
+      ["overview", "exams", "results", "teachers", "students", "approvals", "portal", "licence", "backups", "referrals"].includes(q)
+    ) {
+      setNav(q as AdminNavId);
+    }
     void loadAll();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -184,6 +273,23 @@ export default function AdminOnlineControlCenterPage() {
     }
   }
 
+  async function deleteExam(localId: number) {
+    if (!window.confirm("Delete this exam and all its questions?")) return;
+    setBusy(true);
+    try {
+      const res = await fetch(`/api/v1/portal/exams?local_id=${localId}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+      if (res.ok) {
+        notify("Exam deleted");
+        await loadAll();
+      }
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function handleCreateExam(e: React.FormEvent) {
     e.preventDefault();
     setBusy(true);
@@ -204,20 +310,24 @@ export default function AdminOnlineControlCenterPage() {
       if (res.ok && data.ok) {
         setShowAddExam(false);
         setExName("");
-        notify("Exam created.");
+        notify("Exam created");
         await loadAll();
         if (data.exam?.local_id) {
           setAuthorExam({ id: Number(data.exam.local_id), name: String(data.exam.name) });
         }
       } else {
-        notify(data.message || "Could not create exam.");
+        notify(data.message || "Could not create exam");
       }
     } finally {
       setBusy(false);
     }
   }
 
-  async function handleResultAction(attemptId: string, action: "force_submit" | "toggle_release", extra: Record<string, unknown> = {}) {
+  async function handleResultAction(
+    attemptId: string,
+    action: "force_submit" | "toggle_release",
+    extra: Record<string, unknown> = {}
+  ) {
     setBusy(true);
     try {
       const res = await fetch("/api/v1/portal/results", {
@@ -228,7 +338,7 @@ export default function AdminOnlineControlCenterPage() {
       });
       const data = await res.json().catch(() => ({}));
       if (res.ok && data.ok) {
-        notify(data.message || "Updated.");
+        notify(data.message || "Updated");
         await loadAll();
       }
     } finally {
@@ -246,7 +356,7 @@ export default function AdminOnlineControlCenterPage() {
         body: JSON.stringify({ local_id: localId, status }),
       });
       if (res.ok) {
-        notify(`Student ${status}.`);
+        notify(`Student ${status}`);
         await loadAll();
       }
     } finally {
@@ -275,382 +385,758 @@ export default function AdminOnlineControlCenterPage() {
         setPName("");
         setPUser("");
         setPPass("");
-        notify(data.message || "Added.");
+        notify(data.message || "Account added");
         await loadAll();
       } else {
-        notify(data.message || "Could not add account.");
+        notify(data.message || "Could not add account");
       }
     } finally {
       setBusy(false);
     }
   }
 
+  const approvedStudents = useMemo(
+    () => students.filter((s) => s.status === "approved"),
+    [students]
+  );
+  const pendingStudents = useMemo(
+    () => students.filter((s) => s.status !== "approved"),
+    [students]
+  );
+  const activeExamsCount = useMemo(() => exams.filter((e) => e.active).length, [exams]);
+
+  const filteredExams = useMemo(() => {
+    const q = examSearch.trim().toLowerCase();
+    return exams.filter((ex) => {
+      if (examStatusFilter === "active" && !ex.active) return false;
+      if (examStatusFilter === "inactive" && ex.active) return false;
+      if (q) {
+        const hay = `${ex.name} ${ex.exam_class || ""} ${ex.teacher_name || ""} ${ex.subject_tag || ""}`.toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+      return true;
+    });
+  }, [exams, examSearch, examStatusFilter]);
+
   if (loading || !authOk) {
     return (
-      <div className="pt-gateway-page">
+      <div className="pt-modal-backdrop" style={{ background: "var(--pt-canvas)" }}>
         <div className="pt-modal">
-          <h2>Loading Admin Control Center...</h2>
+          <h2>Loading Admin Portal...</h2>
         </div>
       </div>
     );
   }
 
-  return (
-    <>
-      <header className="pt-topbar">
-        <div className="pt-topbar-inner">
-          <div className="pt-brand-link">
-            <CogniTaraLockup markSize={20} wordmarkHeight={15} suffix="Admin" />
-            {schoolCode ? <span className="pt-pill pt-pill--mono pt-pill--dark">{schoolCode}</span> : null}
+  const crumbMap: Record<AdminNavId, string> = {
+    overview: "Dashboard",
+    exams: "Examinations",
+    results: "Results",
+    teachers: "Teachers",
+    students: "Students",
+    approvals: "Pending Approvals",
+    portal: "Online Portal Control",
+    licence: "Licence & Billing",
+    backups: "Cloud Backups",
+    referrals: "Referrals & Rewards",
+  };
+
+  function copySchoolId() {
+    if (!schoolCode) return;
+    navigator.clipboard?.writeText(schoolCode).catch(() => {});
+    setCopiedCode(true);
+    setTimeout(() => setCopiedCode(false), 1800);
+  }
+
+  function renderExamsTable() {
+    return (
+      <section className="pt-card" aria-label="Examinations directory">
+        <div className="pt-card__head">
+          <div className="pt-card__title">
+            <h2>Examinations Directory</h2>
+            <p>Manage paper availability, edit questions, pause active sessions, or release scores</p>
           </div>
-          <div className="pt-topbar-meta">
-            <span className="pt-pill pt-hide-sm">{adminLabel}</span>
-            <a
-              href="https://cognitara.net/dashboard"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="pt-btn pt-btn--ghost pt-btn--sm"
+          <div className="pt-card__tools">
+            <label className="pt-search">
+              <PIconSearch size={14} />
+              <input
+                type="search"
+                placeholder="Filter exams, class, teacher"
+                value={examSearch}
+                onChange={(e) => setExamSearch(e.target.value)}
+                aria-label="Filter exams"
+              />
+            </label>
+            <select
+              className="pt-select-sm"
+              value={examStatusFilter}
+              onChange={(e) => setExamStatusFilter(e.target.value as "all" | "active" | "inactive")}
+              aria-label="Filter exam status"
             >
-              Cloud Dashboard
-            </a>
-            <button type="button" className="pt-btn pt-btn--sm" onClick={handleSignOut}>
-              Sign Out
+              <option value="all">All Status</option>
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
+            </select>
+            <button type="button" className="pt-btn pt-btn--primary pt-btn--sm" onClick={() => setShowAddExam(true)}>
+              <PIconPlus size={13} />
+              <span>Create Exam</span>
             </button>
           </div>
         </div>
-      </header>
 
-      <main id="main-content" className="pt-wrap" style={{ display: "flex", flexDirection: "column", gap: 24 }}>
-        {/* Master Online Portal ON/OFF Power Dial + Role Toggles */}
-        <PortalPowerDial onSynced={() => void loadAll()} />
+        {filteredExams.length === 0 ? (
+          <div className="pt-empty">
+            <span className="pt-empty__ico">
+              <PIconDoc size={18} />
+            </span>
+            <strong>No examinations found</strong>
+            <p>Sync a cloud backup from CogniTara Studio Desktop or create an online examination directly.</p>
+          </div>
+        ) : (
+          <div className="pt-table-wrap">
+            <table className="pt-table">
+              <thead>
+                <tr>
+                  <th>Examination</th>
+                  <th>Class</th>
+                  <th>Duration</th>
+                  <th>Questions</th>
+                  <th>Submissions</th>
+                  <th>Status</th>
+                  <th style={{ textAlign: "right" }}>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredExams.map((ex) => (
+                  <tr key={ex.local_id}>
+                    <td>
+                      <strong style={{ display: "block", fontWeight: 600 }}>{ex.name}</strong>
+                      <span className="pt-mono" style={{ fontSize: 11.5, color: "var(--pt-ink-3)" }}>
+                        #{ex.local_id}
+                        {ex.teacher_name ? ` · ${ex.teacher_name}` : ""}
+                      </span>
+                    </td>
+                    <td>{ex.exam_class || "All"}</td>
+                    <td className="pt-mono" style={{ color: "var(--pt-ink-2)" }}>{ex.duration} min</td>
+                    <td className="pt-mono">{ex.question_count}</td>
+                    <td className="pt-mono">
+                      {ex.submission_count}
+                      {ex.live_count > 0 ? (
+                        <span style={{ marginLeft: 6, color: "var(--pt-ink-3)", fontSize: 11.5 }}>
+                          ({ex.live_count} live)
+                        </span>
+                      ) : null}
+                    </td>
+                    <td>
+                      <span className={`pt-status ${ex.active && !ex.is_paused_all ? "is-live" : ""}`}>
+                        <span className="pt-dot" />
+                        {ex.is_paused_all ? "Paused" : ex.active ? "Active" : "Inactive"}
+                      </span>
+                    </td>
+                    <td style={{ textAlign: "right" }}>
+                      <div className="pt-row-actions">
+                        <button
+                          type="button"
+                          className="pt-btn pt-btn--sm"
+                          onClick={() => setAuthorExam({ id: ex.local_id, name: ex.name })}
+                        >
+                          Questions
+                        </button>
+                        <button
+                          type="button"
+                          className="pt-btn pt-btn--sm"
+                          disabled={busy}
+                          onClick={() =>
+                            void patchExam(
+                              ex.local_id,
+                              { active: !ex.active },
+                              ex.active ? "Exam stopped" : "Exam started"
+                            )
+                          }
+                        >
+                          {ex.active ? "Stop" : "Start"}
+                        </button>
+                        <button
+                          type="button"
+                          className="pt-btn pt-btn--sm"
+                          disabled={busy}
+                          onClick={() =>
+                            void patchExam(
+                              ex.local_id,
+                              { is_paused_all: !ex.is_paused_all },
+                              ex.is_paused_all ? "Exam resumed" : "Exam paused"
+                            )
+                          }
+                        >
+                          {ex.is_paused_all ? <PIconPlay size={13} /> : <PIconPause size={13} />}
+                          <span>{ex.is_paused_all ? "Resume" : "Pause"}</span>
+                        </button>
+                        <button
+                          type="button"
+                          className="pt-btn pt-btn--sm"
+                          disabled={busy}
+                          onClick={() =>
+                            void patchExam(
+                              ex.local_id,
+                              { results_released: !ex.results_released },
+                              ex.results_released ? "Scores withheld" : "Scores released"
+                            )
+                          }
+                        >
+                          {ex.results_released ? "Withhold" : "Release"}
+                        </button>
+                        <button
+                          type="button"
+                          className="pt-btn pt-btn--ghost pt-btn--icon"
+                          disabled={busy}
+                          onClick={() => void deleteExam(ex.local_id)}
+                          title="Delete exam"
+                          aria-label={`Delete ${ex.name}`}
+                        >
+                          <PIconTrash size={14} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
+    );
+  }
+
+  return (
+    <>
+      <PortalShell
+        roleLabel="Admin"
+        schoolName={schoolName}
+        schoolTermMeta={termMeta}
+        userName={adminLabel}
+        userSubtitle={`Administrator · ${schoolCode}`}
+        activeId={nav}
+        crumbLabel={crumbMap[nav]}
+        pendingCount={pendingStudents.length}
+        onClickBell={() => setNav("approvals")}
+        navItems={[
+          { id: "overview", group: "Workspace", label: "Overview", icon: <PIconHome size={16} /> },
+          { id: "exams", group: "Workspace", label: "Exams", icon: <PIconDoc size={16} />, count: exams.length },
+          { id: "results", group: "Workspace", label: "Results", icon: <PIconChart size={16} />, count: results.length },
+          { id: "teachers", group: "People", label: "Teachers", icon: <PIconUser size={16} />, count: teachers.length },
+          { id: "students", group: "People", label: "Students", icon: <PIconUsers size={16} />, count: approvedStudents.length },
+          { id: "approvals", group: "People", label: "Approvals", icon: <PIconClock size={16} />, count: pendingStudents.length },
+          { id: "portal", group: "Cloud & Account", label: "Online Portal", icon: <PIconPower size={16} /> },
+          { id: "licence", group: "Cloud & Account", label: "Licence & Billing", icon: <PIconKey size={16} /> },
+          { id: "backups", group: "Cloud & Account", label: "Cloud Backups", icon: <PIconCloud size={16} /> },
+          { id: "referrals", group: "Cloud & Account", label: "Referrals", icon: <PIconGift size={16} /> },
+        ]}
+        onSelectNav={(id) => setNav(id as AdminNavId)}
+        onSignOut={() => void handleSignOut()}
+        commands={[
+          { id: "cmd:exam", label: "Create new exam", hint: "Action", onSelect: () => setShowAddExam(true) },
+          { id: "cmd:teacher", label: "Add teacher", hint: "Action", onSelect: () => setShowAddPerson("teacher") },
+          { id: "cmd:student", label: "Add student", hint: "Action", onSelect: () => setShowAddPerson("student") },
+          { id: "cmd:csv", label: "Export results CSV", hint: "Action", onSelect: () => downloadResultsCsv(results) },
+        ]}
+        footerAction={
+          <button
+            type="button"
+            className="pt-btn pt-btn--sm"
+            style={{ width: "100%" }}
+            onClick={() => setNav("portal")}
+          >
+            <PIconLive size={14} />
+            <span className="pt-hide-collapsed">
+              Portal: {portalLive ? "Live" : "Off"}
+            </span>
+          </button>
+        }
+      >
+        {/* Editorial School Header (Matches Offline admin.html) */}
+        <header className="pt-page-head">
+          <div>
+            <h1>{schoolName}</h1>
+            <div className="pt-meta-line">
+              <span>{termMeta}</span>
+              <span className="pt-meta-sep" />
+              <span className="pt-mono">School ID {schoolCode}</span>
+              <button
+                type="button"
+                className="pt-text-btn"
+                style={{ fontSize: 12 }}
+                onClick={copySchoolId}
+                title="Copy School ID"
+              >
+                <PIconCopy size={12} />
+                <span>{copiedCode ? "Copied" : "Copy"}</span>
+              </button>
+              <span className="pt-meta-sep" />
+              <span className={`pt-status ${portalLive ? "is-live" : ""}`}>
+                <span className="pt-dot" />
+                {portalLive ? "Online Portal Live" : "Online Portal Off"}
+              </span>
+            </div>
+          </div>
+
+          <div className="pt-page-head__actions">
+            <button type="button" className="pt-btn" onClick={() => setNav("portal")}>
+              <PIconPower size={15} />
+              <span>Online Control</span>
+            </button>
+            <button type="button" className="pt-btn" onClick={() => setShowAddPerson("teacher")}>
+              <PIconUser size={15} />
+              <span>Add Teacher</span>
+            </button>
+            <button type="button" className="pt-btn pt-btn--primary" onClick={() => setShowAddPerson("student")}>
+              <PIconUsers size={15} />
+              <span>Add Student</span>
+            </button>
+          </div>
+        </header>
 
         {toast ? <div className="pt-alert pt-alert--dark">{toast}</div> : null}
 
-        {/* School Management Tabs */}
-        <div>
-          <div className="pt-tabs">
-            <button type="button" className={`pt-tab ${tab === "exams" ? "is-active" : ""}`} onClick={() => setTab("exams")}>
-              Exams ({exams.length})
-            </button>
-            <button type="button" className={`pt-tab ${tab === "results" ? "is-active" : ""}`} onClick={() => setTab("results")}>
-              Results ({results.length})
-            </button>
-            <button type="button" className={`pt-tab ${tab === "people" ? "is-active" : ""}`} onClick={() => setTab("people")}>
-              Students & Teachers ({students.length + teachers.length})
-            </button>
-          </div>
-
-          {tab === "exams" ? (
-            <div>
-              <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 14 }}>
-                <button type="button" className="pt-btn pt-btn--primary pt-btn--sm" onClick={() => setShowAddExam(true)}>
-                  + Create Exam
-                </button>
+        {nav === "overview" ? (
+          <>
+            {/* 4-Column Typographic KPI Strip (Exact Match to Offline admin.html) */}
+            <section className="pt-kpi-rail" aria-label="School overview numbers">
+              <div className="pt-kpi-cell">
+                <span className="pt-kpi-cell__label">Total Exams</span>
+                <strong className="pt-kpi-cell__val">{exams.length}</strong>
+                <div className="pt-kpi-cell__meta">
+                  <span className={`pt-status ${activeExamsCount > 0 ? "is-live" : ""}`}>
+                    <span className="pt-dot" />
+                    {activeExamsCount} active
+                  </span>
+                  <button type="button" className="pt-kpi-link" onClick={() => setNav("exams")}>
+                    <span>Directory</span>
+                    <PIconArrowRight size={13} />
+                  </button>
+                </div>
               </div>
-              {exams.length === 0 ? (
-                <div className="pt-card" style={{ textAlign: "center", padding: 32, color: "var(--pt-ink-2)" }}>
-                  No exams synced yet. Click &ldquo;Sync Latest Cloud Backup&rdquo; above or create an exam directly.
+              <div className="pt-kpi-cell">
+                <span className="pt-kpi-cell__label">Approved Students</span>
+                <strong className="pt-kpi-cell__val">{approvedStudents.length}</strong>
+                <div className="pt-kpi-cell__meta">
+                  <span>Enrolled this session</span>
+                  <button type="button" className="pt-kpi-link" onClick={() => setNav("students")}>
+                    <span>Roster</span>
+                    <PIconArrowRight size={13} />
+                  </button>
                 </div>
-              ) : (
-                <div className="pt-table-wrap">
-                  <table className="pt-table">
-                    <thead>
-                      <tr>
-                        <th>Exam</th>
-                        <th>Class</th>
-                        <th>Questions</th>
-                        <th>Taken</th>
-                        <th>Status</th>
-                        <th>Controls</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {exams.map((ex) => (
-                        <tr key={ex.local_id}>
-                          <td>
-                            <strong>{ex.name}</strong>
-                            <div style={{ fontSize: 12, color: "var(--pt-ink-2)" }}>
-                              {ex.duration} min · {ex.teacher_name || "Admin"}
-                            </div>
-                          </td>
-                          <td>{ex.exam_class || "All"}</td>
-                          <td>{ex.question_count}</td>
-                          <td>
-                            {ex.submission_count}
-                            {ex.live_count > 0 ? <span className="pt-pill" style={{ marginLeft: 6 }}>{ex.live_count} live</span> : null}
-                          </td>
-                          <td>
-                            <span className={`pt-pill ${ex.active ? "pt-pill--dark" : ""}`}>
-                              {ex.is_paused_all ? "Paused" : ex.active ? "Active" : "Inactive"}
-                            </span>
-                          </td>
-                          <td>
-                            <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                              <button
-                                type="button"
-                                className="pt-btn pt-btn--sm"
-                                onClick={() => setAuthorExam({ id: ex.local_id, name: ex.name })}
-                              >
-                                Questions
-                              </button>
-                              <button
-                                type="button"
-                                className="pt-btn pt-btn--sm"
-                                disabled={busy}
-                                onClick={() => patchExam(ex.local_id, { active: !ex.active }, ex.active ? "Exam deactivated." : "Exam activated.")}
-                              >
-                                {ex.active ? "Turn Off" : "Activate"}
-                              </button>
-                              <button
-                                type="button"
-                                className="pt-btn pt-btn--sm"
-                                disabled={busy}
-                                onClick={() =>
-                                  patchExam(
-                                    ex.local_id,
-                                    { is_paused_all: !ex.is_paused_all },
-                                    ex.is_paused_all ? "Exam resumed." : "Exam paused."
-                                  )
-                                }
-                              >
-                                {ex.is_paused_all ? "Resume" : "Pause"}
-                              </button>
-                              <button
-                                type="button"
-                                className="pt-btn pt-btn--sm"
-                                disabled={busy}
-                                onClick={() =>
-                                  patchExam(
-                                    ex.local_id,
-                                    { results_released: !ex.results_released },
-                                    ex.results_released ? "Results withheld." : "Results released."
-                                  )
-                                }
-                              >
-                                {ex.results_released ? "Withhold Scores" : "Release Scores"}
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+              </div>
+              <div className="pt-kpi-cell">
+                <span className="pt-kpi-cell__label">Teachers</span>
+                <strong className="pt-kpi-cell__val">{teachers.length}</strong>
+                <div className="pt-kpi-cell__meta">
+                  <span>Faculty accounts</span>
+                  <button type="button" className="pt-kpi-link" onClick={() => setNav("teachers")}>
+                    <span>Manage</span>
+                    <PIconArrowRight size={13} />
+                  </button>
                 </div>
-              )}
+              </div>
+              <div className="pt-kpi-cell">
+                <span className="pt-kpi-cell__label">Pending Approvals</span>
+                <strong className="pt-kpi-cell__val">{pendingStudents.length}</strong>
+                <div className="pt-kpi-cell__meta">
+                  <span>{pendingStudents.length > 0 ? "Action needed" : "All caught up"}</span>
+                  <button type="button" className="pt-kpi-link" onClick={() => setNav("approvals")}>
+                    <span>Review</span>
+                    <PIconArrowRight size={13} />
+                  </button>
+                </div>
+              </div>
+            </section>
+
+            {/* Examinations Directory */}
+            {renderExamsTable()}
+          </>
+        ) : nav === "exams" ? (
+          renderExamsTable()
+        ) : nav === "results" ? (
+          <section className="pt-card">
+            <div className="pt-card__head">
+              <div className="pt-card__title">
+                <h2>Examination Results</h2>
+                <p>Online and synced student scores across the school</p>
+              </div>
+              <button
+                type="button"
+                className="pt-btn pt-btn--sm"
+                disabled={results.length === 0}
+                onClick={() => downloadResultsCsv(results)}
+              >
+                <PIconDownload size={13} />
+                <span>Export CSV</span>
+              </button>
             </div>
-          ) : tab === "results" ? (
-            <div>
-              <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 14 }}>
-                <button
-                  type="button"
-                  className="pt-btn pt-btn--sm"
-                  disabled={results.length === 0}
-                  onClick={() => downloadResultsCsv(results)}
-                >
-                  Export Broadsheet CSV
-                </button>
+            {results.length === 0 ? (
+              <div className="pt-empty">
+                <span className="pt-empty__ico">
+                  <PIconChart size={18} />
+                </span>
+                <strong>No exam attempts recorded yet</strong>
+                <p>Completed online and synced offline attempts will appear here.</p>
               </div>
-              {results.length === 0 ? (
-                <div className="pt-card" style={{ textAlign: "center", padding: 32, color: "var(--pt-ink-2)" }}>
-                  No exam attempts recorded yet.
-                </div>
-              ) : (
-                <div className="pt-table-wrap">
-                  <table className="pt-table">
-                    <thead>
-                      <tr>
-                        <th>Student</th>
-                        <th>Exam</th>
-                        <th>Score</th>
-                        <th>Grade</th>
-                        <th>Source</th>
-                        <th>Action</th>
+            ) : (
+              <div className="pt-table-wrap">
+                <table className="pt-table">
+                  <thead>
+                    <tr>
+                      <th>Student</th>
+                      <th>Examination</th>
+                      <th>Score</th>
+                      <th>Grade</th>
+                      <th>PC Sync</th>
+                      <th style={{ textAlign: "right" }}>Controls</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {results.map((r) => (
+                      <tr key={r.id}>
+                        <td>
+                          <strong style={{ display: "block", fontWeight: 600 }}>{r.student_name}</strong>
+                          <span className="pt-mono" style={{ fontSize: 11.5, color: "var(--pt-ink-3)" }}>
+                            @{r.student_username} · {r.student_class}
+                          </span>
+                        </td>
+                        <td>{r.exam_name}</td>
+                        <td className="pt-mono">
+                          {r.submitted ? `${r.score} / ${r.total} (${r.percentage}%)` : "In progress"}
+                        </td>
+                        <td className="pt-mono" style={{ fontWeight: 600 }}>
+                          {r.submitted ? r.grade_label || "-" : "-"}
+                        </td>
+                        <td>
+                          <span className={`pt-status ${r.synced_to_desktop ? "is-live" : ""}`}>
+                            <span className="pt-dot" />
+                            {r.origin === "offline"
+                              ? "Offline"
+                              : r.synced_to_desktop
+                                ? "Pulled to PC"
+                                : "Pending PC pull"}
+                          </span>
+                        </td>
+                        <td style={{ textAlign: "right" }}>
+                          {!r.submitted ? (
+                            <button
+                              type="button"
+                              className="pt-btn pt-btn--primary pt-btn--sm"
+                              disabled={busy}
+                              onClick={() => void handleResultAction(r.id, "force_submit")}
+                            >
+                              Force Submit
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              className="pt-btn pt-btn--sm"
+                              disabled={busy}
+                              onClick={() =>
+                                void handleResultAction(r.id, "toggle_release", { release: !r.results_released })
+                              }
+                            >
+                              {r.results_released ? "Withhold" : "Release"}
+                            </button>
+                          )}
+                        </td>
                       </tr>
-                    </thead>
-                    <tbody>
-                      {results.map((r) => (
-                        <tr key={r.id}>
-                          <td>
-                            <strong>{r.student_name}</strong>
-                            <div style={{ fontSize: 12, color: "var(--pt-ink-2)" }}>
-                              {r.student_username} · {r.student_class || "N/A"}
-                            </div>
-                          </td>
-                          <td>{r.exam_name}</td>
-                          <td style={{ fontWeight: 700, fontVariantNumeric: "tabular-nums" }}>
-                            {r.submitted ? `${r.score}/${r.total} (${r.percentage}%)` : "In Progress"}
-                          </td>
-                          <td>{r.submitted ? r.grade_label || "-" : "-"}</td>
-                          <td>
-                            <span className={`pt-pill ${r.origin === "online" ? "pt-pill--dark" : ""}`}>
-                              {r.origin === "online" ? (r.synced_to_desktop ? "Online · Synced" : "Online · New") : "Desktop"}
-                            </span>
-                          </td>
-                          <td>
-                            {!r.submitted ? (
-                              <button
-                                type="button"
-                                className="pt-btn pt-btn--sm"
-                                disabled={busy}
-                                onClick={() => void handleResultAction(r.id, "force_submit")}
-                              >
-                                Force Submit
-                              </button>
-                            ) : (
-                              <button
-                                type="button"
-                                className="pt-btn pt-btn--sm"
-                                disabled={busy}
-                                onClick={() =>
-                                  void handleResultAction(r.id, "toggle_release", {
-                                    results_released: !r.results_released,
-                                  })
-                                }
-                              >
-                                {r.results_released ? "Withhold" : "Release"}
-                              </button>
-                            )}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </section>
+        ) : nav === "teachers" ? (
+          <section className="pt-card">
+            <div className="pt-card__head">
+              <div className="pt-card__title">
+                <h2>Teachers</h2>
+                <p>Faculty accounts able to sign in and author exams when teacher access is turned on</p>
+              </div>
+              <button type="button" className="pt-btn pt-btn--primary pt-btn--sm" onClick={() => setShowAddPerson("teacher")}>
+                <PIconPlus size={13} />
+                <span>Add Teacher</span>
+              </button>
             </div>
-          ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-              <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
-                <button type="button" className="pt-btn pt-btn--sm" onClick={() => setShowAddPerson("teacher")}>
-                  + Add Teacher
-                </button>
-                <button type="button" className="pt-btn pt-btn--primary pt-btn--sm" onClick={() => setShowAddPerson("student")}>
-                  + Add Student
-                </button>
+            {teachers.length === 0 ? (
+              <div className="pt-empty">
+                <span className="pt-empty__ico">
+                  <PIconUser size={18} />
+                </span>
+                <strong>No teacher accounts synced yet</strong>
+                <p>Sync a cloud backup or add a teacher account directly.</p>
               </div>
-
-              <div>
-                <h3 style={{ margin: "0 0 10px", fontSize: 15 }}>Students ({students.length})</h3>
-                <div className="pt-table-wrap">
-                  <table className="pt-table">
-                    <thead>
-                      <tr>
-                        <th>Name</th>
-                        <th>Username</th>
-                        <th>Class</th>
-                        <th>Status</th>
-                        <th>Action</th>
+            ) : (
+              <div className="pt-table-wrap">
+                <table className="pt-table">
+                  <thead>
+                    <tr>
+                      <th>Full Name</th>
+                      <th>Username</th>
+                      <th>Assigned Classes</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {teachers.map((t) => (
+                      <tr key={t.local_id}>
+                        <td style={{ fontWeight: 600 }}>{t.full_name}</td>
+                        <td className="pt-mono">@{t.username}</td>
+                        <td style={{ color: "var(--pt-ink-2)" }}>
+                          {Array.isArray(t.classes_json) && t.classes_json.length
+                            ? t.classes_json.join(", ")
+                            : t.primary_class || "All"}
+                        </td>
                       </tr>
-                    </thead>
-                    <tbody>
-                      {students.slice(0, 100).map((st) => (
-                        <tr key={st.local_id}>
-                          <td><strong>{st.full_name}</strong></td>
-                          <td><code>{st.username}</code></td>
-                          <td>{st.student_class || "-"}</td>
-                          <td>
-                            <span className={`pt-pill ${st.status === "approved" ? "pt-pill--dark" : ""}`}>
-                              {st.status}
-                            </span>
-                          </td>
-                          <td>
-                            {st.status !== "approved" ? (
-                              <button
-                                type="button"
-                                className="pt-btn pt-btn--primary pt-btn--sm"
-                                disabled={busy}
-                                onClick={() => void updateStudentStatus(st.local_id, "approved")}
-                              >
-                                Approve
-                              </button>
-                            ) : (
-                              <button
-                                type="button"
-                                className="pt-btn pt-btn--sm"
-                                disabled={busy}
-                                onClick={() => void updateStudentStatus(st.local_id, "suspended")}
-                              >
-                                Suspend
-                              </button>
-                            )}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                    ))}
+                  </tbody>
+                </table>
               </div>
-
-              <div>
-                <h3 style={{ margin: "0 0 10px", fontSize: 15 }}>Teachers ({teachers.length})</h3>
-                <div className="pt-table-wrap">
-                  <table className="pt-table">
-                    <thead>
-                      <tr>
-                        <th>Name</th>
-                        <th>Username</th>
-                        <th>Classes</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {teachers.map((tc) => (
-                        <tr key={tc.local_id}>
-                          <td><strong>{tc.full_name}</strong></td>
-                          <td><code>{tc.username}</code></td>
-                          <td>{Array.isArray(tc.classes_json) && tc.classes_json.length ? tc.classes_json.join(", ") : tc.primary_class || "All"}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+            )}
+          </section>
+        ) : nav === "students" ? (
+          <section className="pt-card">
+            <div className="pt-card__head">
+              <div className="pt-card__title">
+                <h2>Students</h2>
+                <p>Enrolled student accounts synced with your school database</p>
               </div>
+              <button type="button" className="pt-btn pt-btn--primary pt-btn--sm" onClick={() => setShowAddPerson("student")}>
+                <PIconPlus size={13} />
+                <span>Add Student</span>
+              </button>
             </div>
-          )}
-        </div>
-      </main>
+            {students.length === 0 ? (
+              <div className="pt-empty">
+                <span className="pt-empty__ico">
+                  <PIconUsers size={18} />
+                </span>
+                <strong>No student accounts synced yet</strong>
+                <p>Sync a cloud backup or add a student account directly.</p>
+              </div>
+            ) : (
+              <div className="pt-table-wrap">
+                <table className="pt-table">
+                  <thead>
+                    <tr>
+                      <th>Student</th>
+                      <th>Class</th>
+                      <th>Status</th>
+                      <th style={{ textAlign: "right" }}>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {students.map((st) => (
+                      <tr key={st.local_id}>
+                        <td>
+                          <strong style={{ display: "block", fontWeight: 600 }}>{st.full_name}</strong>
+                          <span className="pt-mono" style={{ fontSize: 11.5, color: "var(--pt-ink-3)" }}>
+                            @{st.username}
+                          </span>
+                        </td>
+                        <td>{st.student_class || "-"}</td>
+                        <td>
+                          <span className={`pt-status ${st.status === "approved" ? "is-live" : ""}`}>
+                            <span className="pt-dot" />
+                            {st.status}
+                          </span>
+                        </td>
+                        <td style={{ textAlign: "right" }}>
+                          {st.status !== "approved" ? (
+                            <button
+                              type="button"
+                              className="pt-btn pt-btn--primary pt-btn--sm"
+                              disabled={busy}
+                              onClick={() => void updateStudentStatus(st.local_id, "approved")}
+                            >
+                              Approve
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              className="pt-btn pt-btn--ghost pt-btn--sm"
+                              disabled={busy}
+                              onClick={() => void updateStudentStatus(st.local_id, "suspended")}
+                            >
+                              Suspend
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </section>
+        ) : nav === "approvals" ? (
+          <section className="pt-card">
+            <div className="pt-card__head">
+              <div className="pt-card__title">
+                <h2>Pending Student Approvals</h2>
+                <p>Approve students before they can sign in and sit examinations</p>
+              </div>
+              <span className="pt-mono" style={{ fontSize: 12, color: "var(--pt-ink-3)" }}>
+                {pendingStudents.length} pending
+              </span>
+            </div>
+            {pendingStudents.length === 0 ? (
+              <div className="pt-empty">
+                <span className="pt-empty__ico">
+                  <PIconCheck size={18} />
+                </span>
+                <strong>All student registrations are approved</strong>
+                <p>New pending student accounts will appear here for review.</p>
+              </div>
+            ) : (
+              <div className="pt-table-wrap">
+                <table className="pt-table">
+                  <thead>
+                    <tr>
+                      <th>Student</th>
+                      <th>Class</th>
+                      <th>Status</th>
+                      <th style={{ textAlign: "right" }}>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {pendingStudents.map((st) => (
+                      <tr key={st.local_id}>
+                        <td>
+                          <strong style={{ display: "block", fontWeight: 600 }}>{st.full_name}</strong>
+                          <span className="pt-mono" style={{ fontSize: 11.5, color: "var(--pt-ink-3)" }}>
+                            @{st.username}
+                          </span>
+                        </td>
+                        <td>{st.student_class || "-"}</td>
+                        <td>
+                          <span className="pt-status">
+                            <span className="pt-dot" />
+                            {st.status}
+                          </span>
+                        </td>
+                        <td style={{ textAlign: "right" }}>
+                          <button
+                            type="button"
+                            className="pt-btn pt-btn--primary pt-btn--sm"
+                            disabled={busy}
+                            onClick={() => void updateStudentStatus(st.local_id, "approved")}
+                          >
+                            Approve Student
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </section>
+        ) : nav === "portal" ? (
+          <PortalPowerDial onSynced={() => void loadAll()} />
+        ) : (
+          <AdminCloudViews
+            section={nav}
+            account={cloudAccount}
+            payments={cloudPayments}
+            backups={cloudBackups}
+            referrals={cloudReferrals}
+            loadingCloud={loadingCloud}
+            onRefreshAll={loadAll}
+            onNotify={notify}
+          />
+        )}
+      </PortalShell>
 
-      {/* Add Exam Modal */}
+      {/* Create Exam Modal */}
       {showAddExam ? (
         <div className="pt-modal-backdrop" role="dialog" aria-modal="true" aria-label="Create Exam">
-          <div className="pt-modal pt-modal--wide">
-            <h2 style={{ marginBottom: 16 }}>Create Online Exam</h2>
+          <div className="pt-modal pt-modal--wide" style={{ maxWidth: 480 }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
+              <h2 style={{ margin: 0 }}>Create Online Exam</h2>
+              <button type="button" className="pt-btn pt-btn--sm" onClick={() => setShowAddExam(false)}>
+                Close
+              </button>
+            </div>
             <form className="pt-form" onSubmit={handleCreateExam}>
               <div className="pt-field">
-                <label htmlFor="admExName">Exam Title</label>
-                <input id="admExName" className="pt-input" required value={exName} onChange={(e) => setExName(e.target.value)} />
+                <label htmlFor="admExName">Exam title</label>
+                <input
+                  id="admExName"
+                  className="pt-input"
+                  required
+                  value={exName}
+                  onChange={(e) => setExName(e.target.value)}
+                  placeholder="First Term Physics Examination"
+                />
               </div>
               <div className="pt-form-grid-2">
                 <div className="pt-field">
                   <label htmlFor="admExClass">Class</label>
-                  <input id="admExClass" className="pt-input" list="admClasses" required value={exClass} onChange={(e) => setExClass(e.target.value)} />
-                  <datalist id="admClasses">
-                    {classes.map((c) => <option key={c} value={c} />)}
-                  </datalist>
+                  {classes.length ? (
+                    <select id="admExClass" className="pt-select" value={exClass} onChange={(e) => setExClass(e.target.value)}>
+                      {classes.map((c) => (
+                        <option key={c} value={c}>
+                          {c}
+                        </option>
+                      ))}
+                      <option value="All">All Classes</option>
+                    </select>
+                  ) : (
+                    <input
+                      id="admExClass"
+                      className="pt-input"
+                      required
+                      value={exClass}
+                      onChange={(e) => setExClass(e.target.value)}
+                      placeholder="SS1"
+                    />
+                  )}
                 </div>
                 <div className="pt-field">
-                  <label htmlFor="admExDur">Duration (min)</label>
-                  <input id="admExDur" type="number" min={1} max={360} className="pt-input" value={exDur} onChange={(e) => setExDur(Number(e.target.value))} />
+                  <label htmlFor="admExDur">Duration (minutes)</label>
+                  <input
+                    id="admExDur"
+                    type="number"
+                    min={1}
+                    max={360}
+                    className="pt-input"
+                    value={exDur}
+                    onChange={(e) => setExDur(Number(e.target.value))}
+                    required
+                  />
                 </div>
               </div>
               <div className="pt-form-grid-2">
                 <div className="pt-field">
                   <label htmlFor="admExCalc">Calculator</label>
-                  <select id="admExCalc" className="pt-select" value={exCalc} onChange={(e) => setExCalc(e.target.value as "none" | "basic" | "scientific")}>
-                    <option value="none">Disabled</option>
+                  <select
+                    id="admExCalc"
+                    className="pt-select"
+                    value={exCalc}
+                    onChange={(e) => setExCalc(e.target.value as "none" | "basic" | "scientific")}
+                  >
+                    <option value="none">None</option>
                     <option value="basic">Basic</option>
                     <option value="scientific">Scientific</option>
                   </select>
                 </div>
                 <div className="pt-field" style={{ justifyContent: "flex-end" }}>
-                  <label style={{ display: "flex", alignItems: "center", gap: 8, paddingTop: 20 }}>
+                  <label style={{ display: "flex", alignItems: "center", gap: 8, paddingBottom: 10, cursor: "pointer" }}>
                     <input type="checkbox" checked={exActive} onChange={(e) => setExActive(e.target.checked)} />
-                    Active immediately
+                    Activate immediately
                   </label>
                 </div>
               </div>
               <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
-                <button type="button" className="pt-btn" onClick={() => setShowAddExam(false)}>Cancel</button>
-                <button type="submit" className="pt-btn pt-btn--primary" disabled={busy}>{busy ? "Saving..." : "Create"}</button>
+                <button type="button" className="pt-btn" onClick={() => setShowAddExam(false)}>
+                  Cancel
+                </button>
+                <button type="submit" className="pt-btn pt-btn--primary" disabled={busy}>
+                  {busy ? "Creating..." : "Create & Add Questions"}
+                </button>
               </div>
             </form>
           </div>
@@ -660,30 +1146,52 @@ export default function AdminOnlineControlCenterPage() {
       {/* Add Student / Teacher Modal */}
       {showAddPerson ? (
         <div className="pt-modal-backdrop" role="dialog" aria-modal="true" aria-label={`Add ${showAddPerson}`}>
-          <div className="pt-modal pt-modal--wide">
-            <h2 style={{ marginBottom: 16 }}>Add {showAddPerson === "teacher" ? "Teacher" : "Student"}</h2>
+          <div className="pt-modal pt-modal--wide" style={{ maxWidth: 440 }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
+              <h2 style={{ margin: 0 }}>{showAddPerson === "teacher" ? "Add Teacher" : "Add Student"}</h2>
+              <button type="button" className="pt-btn pt-btn--sm" onClick={() => setShowAddPerson(null)}>
+                Close
+              </button>
+            </div>
             <form className="pt-form" onSubmit={handleAddPerson}>
               <div className="pt-field">
-                <label htmlFor="pName">Full Name</label>
-                <input id="pName" className="pt-input" required value={pName} onChange={(e) => setPName(e.target.value)} />
-              </div>
-              <div className="pt-form-grid-2">
-                <div className="pt-field">
-                  <label htmlFor="pUser">Username</label>
-                  <input id="pUser" className="pt-input" required value={pUser} onChange={(e) => setPUser(e.target.value)} />
-                </div>
-                <div className="pt-field">
-                  <label htmlFor="pPass">Password</label>
-                  <input id="pPass" type="text" className="pt-input" required minLength={4} value={pPass} onChange={(e) => setPPass(e.target.value)} />
-                </div>
+                <label htmlFor="pFull">Full name</label>
+                <input id="pFull" className="pt-input" required value={pName} onChange={(e) => setPName(e.target.value)} />
               </div>
               <div className="pt-field">
-                <label htmlFor="pClass">{showAddPerson === "teacher" ? "Classes (comma separated)" : "Class"}</label>
-                <input id="pClass" className="pt-input" value={pClass} onChange={(e) => setPClass(e.target.value)} placeholder="e.g. SS1" />
+                <label htmlFor="pUser">Username</label>
+                <input id="pUser" className="pt-input" required value={pUser} onChange={(e) => setPUser(e.target.value)} />
+              </div>
+              <div className="pt-field">
+                <label htmlFor="pPass">Password</label>
+                <input
+                  id="pPass"
+                  type="password"
+                  className="pt-input"
+                  required
+                  minLength={4}
+                  value={pPass}
+                  onChange={(e) => setPPass(e.target.value)}
+                />
+              </div>
+              <div className="pt-field">
+                <label htmlFor="pCls">{showAddPerson === "teacher" ? "Classes (comma separated)" : "Class"}</label>
+                <input
+                  id="pCls"
+                  className="pt-input"
+                  required
+                  value={pClass}
+                  onChange={(e) => setPClass(e.target.value)}
+                  placeholder="SS1"
+                />
               </div>
               <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
-                <button type="button" className="pt-btn" onClick={() => setShowAddPerson(null)}>Cancel</button>
-                <button type="submit" className="pt-btn pt-btn--primary" disabled={busy}>{busy ? "Saving..." : "Save Account"}</button>
+                <button type="button" className="pt-btn" onClick={() => setShowAddPerson(null)}>
+                  Cancel
+                </button>
+                <button type="submit" className="pt-btn pt-btn--primary" disabled={busy}>
+                  {busy ? "Saving..." : "Save Account"}
+                </button>
               </div>
             </form>
           </div>

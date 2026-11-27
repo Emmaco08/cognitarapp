@@ -127,7 +127,7 @@ export function ScientificCalculator({
   ];
 
   return (
-    <div className="pt-calc-wrap" role="dialog" aria-label="Exam Calculator">
+    <div className="pt-calc" role="dialog" aria-label="Exam Calculator">
       <div className="pt-calc-head">
         <span>{mode === "scientific" ? "Scientific Calculator" : "Calculator"}</span>
         <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
@@ -139,10 +139,10 @@ export function ScientificCalculator({
                 border: "1px solid #3c3933",
                 background: "#22201d",
                 color: "#f7f6f2",
-                borderRadius: 6,
+                borderRadius: 4,
                 padding: "2px 7px",
                 fontSize: 11,
-                fontWeight: 700,
+                fontWeight: 600,
                 cursor: "pointer",
               }}
             >
@@ -157,19 +157,22 @@ export function ScientificCalculator({
               border: "none",
               background: "transparent",
               color: "#d4d0c8",
-              fontSize: 16,
-              lineHeight: 1,
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
               cursor: "pointer",
               padding: "2px 4px",
             }}
           >
-            ✕
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round">
+              <path d="M18 6 6 18M6 6l12 12" />
+            </svg>
           </button>
         </div>
       </div>
 
-      <div className="pt-calc-screen">
-        <div className="pt-calc-expr">{expr || " "}</div>
+      <div className="pt-calc-display">
+        <div className="pt-calc-expr">{expr || "\u00A0"}</div>
         <div className="pt-calc-val">{display}</div>
       </div>
 

@@ -93,9 +93,9 @@ export function BrandHeader({
           ) : null}
 
           {signedIn ? (
-            <Link href="/dashboard" className="btn btn--primary btn--sm">
-              Dashboard
-            </Link>
+            <a href="https://portal.cognitara.net/admin" className="btn btn--primary btn--sm">
+              School Portal
+            </a>
           ) : (
             <>
               <Link href="/signin" className="ct-nav__link ct-nav__signin">

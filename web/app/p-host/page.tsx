@@ -3,7 +3,18 @@
 import React, { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { CogniTaraLockup } from "@/components/CogniTaraLogo";
+import { CogniTaraMark } from "@/components/CogniTaraLogo";
+import {
+  getMonogram,
+  PIconArrowLeft,
+  PIconArrowRight,
+  PIconEye,
+  PIconEyeOff,
+  PIconLock,
+  PIconMail,
+  PIconUser,
+  PortalThemeToggle,
+} from "@/components/portal/PortalIcons";
 
 interface ResolvedSchool {
   school_code: string;
@@ -29,6 +40,12 @@ function PortalGatewayInner() {
   const [school, setSchool] = useState<ResolvedSchool | null>(null);
   const [resolving, setResolving] = useState(false);
   const [resolveErr, setResolveErr] = useState("");
+
+  // Super Admin Forgot School ID mode
+  const [recoverMode, setRecoverMode] = useState(false);
+  const [recoverEmail, setRecoverEmail] = useState("");
+  const [recoverBusy, setRecoverBusy] = useState(false);
+  const [recoverMsg, setRecoverMsg] = useState<{ kind: "ok" | "err"; text: string } | null>(null);
 
   const [role, setRole] = useState<"student" | "teacher" | "admin">("student");
   const [username, setUsername] = useState("");
@@ -58,19 +75,19 @@ function PortalGatewayInner() {
       const data = await res.json().catch(() => ({}));
       if (!res.ok || !data.ok) {
         if (!silent) {
-          setResolveErr(data.message || "School ID not found. Check with your school administrator.");
+          setResolveErr(data.message || "School ID not found. Verify the code with your administrator.");
         }
         setSchool(null);
         return;
       }
       const s: ResolvedSchool = data.school;
       setSchool(s);
+      setRecoverMode(false);
       setCodeInput(s.school_code);
       try {
         localStorage.setItem(LAST_SCHOOL_KEY, s.school_code);
       } catch {}
 
-      // Default to an available role tab cleanly
       if (!s.online_portal_enabled) {
         setRole("admin");
       } else if (!s.online_students_enabled && s.online_teachers_enabled) {
@@ -81,14 +98,13 @@ function PortalGatewayInner() {
         setRole("student");
       }
     } catch {
-      if (!silent) setResolveErr("Could not connect to CogniTara right now. Please try again.");
+      if (!silent) setResolveErr("Could not connect to CogniTara right now. Try again shortly.");
     } finally {
       setResolving(false);
     }
   }
 
   useEffect(() => {
-    // Check if user already has a valid portal session
     fetch("/api/v1/portal/auth/me", { credentials: "include" })
       .then((r) => (r.ok ? r.json() : null))
       .then((d) => {
@@ -103,7 +119,17 @@ function PortalGatewayInner() {
       })
       .catch(() => {});
 
-    const qp = (searchParams.get("school") || searchParams.get("code") || "").trim().toUpperCase();
+    let qp = (searchParams.get("school") || searchParams.get("code") || "").trim().toUpperCase();
+    if (!qp && typeof window !== "undefined") {
+      const m = window.location.pathname.match(/^\/s\/([^/?#]+)/i);
+      if (m && m[1]) {
+        try {
+          qp = decodeURIComponent(m[1]).trim().toUpperCase();
+        } catch {
+          qp = m[1].trim().toUpperCase();
+        }
+      }
+    }
     if (qp) {
       setCodeInput(qp);
       void resolveSchool(qp);
@@ -111,22 +137,48 @@ function PortalGatewayInner() {
     }
     try {
       const saved = localStorage.getItem(LAST_SCHOOL_KEY);
-      if (saved) {
-        setCodeInput(saved);
-      }
+      if (saved) setCodeInput(saved);
     } catch {}
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
 
   function handleSwitchSchool() {
     setSchool(null);
+    setRecoverMode(false);
     setLoginErr("");
     setResolveErr("");
+    setRecoverMsg(null);
     setUsername("");
     setPassword("");
     try {
       localStorage.removeItem(LAST_SCHOOL_KEY);
     } catch {}
+  }
+
+  async function handleRecoverSchoolId(e: React.FormEvent) {
+    e.preventDefault();
+    setRecoverBusy(true);
+    setRecoverMsg(null);
+    try {
+      const res = await fetch("/api/v1/portal/recover-school-id", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: recoverEmail.trim() }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.ok) {
+        setRecoverMsg({ kind: "err", text: data.message || "Could not send School ID email." });
+      } else {
+        setRecoverMsg({
+          kind: "ok",
+          text: data.message || "If that email matches a registered school super admin account, your School ID has been sent.",
+        });
+      }
+    } catch {
+      setRecoverMsg({ kind: "err", text: "Network error while requesting your School ID." });
+    } finally {
+      setRecoverBusy(false);
+    }
   }
 
   async function handleLogin(e: React.FormEvent) {
@@ -154,7 +206,7 @@ function PortalGatewayInner() {
       }
       router.push(data.redirect || `/${role}`);
     } catch {
-      setLoginErr("Network error while signing in. Please try again.");
+      setLoginErr("Network error while signing in. Try again.");
       setLoginBusy(false);
     }
   }
@@ -162,13 +214,13 @@ function PortalGatewayInner() {
   const roleBlockedReason = (() => {
     if (!school || role === "admin") return "";
     if (!school.online_portal_enabled) {
-      return "Online Exam Portal is currently switched OFF by your school administrator.";
+      return "Online Exam Portal is currently switched off by your school administrator.";
     }
     if (role === "student" && !school.online_students_enabled) {
-      return "Student online access is currently switched OFF by your school administrator.";
+      return "Student online access is currently switched off by your school administrator.";
     }
     if (role === "teacher" && !school.online_teachers_enabled) {
-      return "Teacher online access is currently switched OFF by your school administrator.";
+      return "Teacher online access is currently switched off by your school administrator.";
     }
     if (!school.synced) {
       return "Your school has not synced its exam database to the online portal yet.";
@@ -185,267 +237,355 @@ function PortalGatewayInner() {
     : "/";
 
   return (
-    <>
-      <header className="pt-topbar">
-        <div className="pt-topbar-inner">
-          <Link href="/" className="pt-brand-link" onClick={handleSwitchSchool}>
-            <CogniTaraLockup markSize={22} wordmarkHeight={16} suffix="Online Portal" />
-          </Link>
-          <div className="pt-topbar-meta">
+    <div className="pt-auth-split">
+      {/* Left Architectural Editorial Pane (Matches Offline login.html) */}
+      <section className="pt-auth-media" aria-label="Examination portal overview">
+        <img
+          src="/images/auth-editorial-portal.jpg"
+          alt=""
+          className="pt-auth-media__img"
+          loading="eager"
+        />
+        <div className="pt-auth-media__scrim" aria-hidden="true" />
+
+        <div className="pt-auth-media__top">
+          <div className="pt-auth-brand-chip">
+            <CogniTaraMark size={18} />
+            <span>CogniTara</span>
+          </div>
+          <div className="pt-auth-term">
+            {school
+              ? `${school.current_term} · ${school.academic_session}`
+              : "Online Examination Portal"}
+          </div>
+        </div>
+
+        <div className="pt-auth-media__bot">
+          <div className="pt-auth-media__kicker">
+            {school ? school.school_name : "CogniTara Examination Suite"}
+          </div>
+          <h2>Calm, focused examinations from anywhere</h2>
+          <p>
+            Instant answer persistence, built-in scientific tools, and verified integrity, synced cleanly with your school database.
+          </p>
+        </div>
+      </section>
+
+      {/* Right Auth Stage */}
+      <section className="pt-auth-stage" id="main-content">
+        <div className="pt-auth-stage__top">
+          <div>
+            {school ? (
+              <button type="button" className="pt-text-btn" onClick={handleSwitchSchool}>
+                <PIconArrowLeft size={14} />
+                <span>Switch school</span>
+              </button>
+            ) : recoverMode ? (
+              <button
+                type="button"
+                className="pt-text-btn"
+                onClick={() => {
+                  setRecoverMode(false);
+                  setRecoverMsg(null);
+                }}
+              >
+                <PIconArrowLeft size={14} />
+                <span>Back to School ID</span>
+              </button>
+            ) : (
+              <span style={{ display: "inline-flex", alignItems: "center", gap: 8, fontSize: 13.5, fontWeight: 600 }}>
+                <CogniTaraMark size={18} />
+                <span>CogniTara</span>
+              </span>
+            )}
+          </div>
+
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             {activeSession ? (
-              <Link href={continueHref} className="pt-btn pt-btn--primary pt-btn--sm">
+              <Link href={continueHref} className="pt-btn pt-btn--sm">
                 Continue as {activeSession.fullName}
               </Link>
             ) : null}
+            <PortalThemeToggle />
           </div>
         </div>
-      </header>
 
-      <main id="main-content" className="pt-gateway-page">
-        <div className="pt-gateway-card">
-          {!school ? (
-            <>
-              <div className="pt-gateway-head">
-                <h1 style={{ marginTop: 0 }}>Enter your School ID</h1>
-                <p>
-                  Connect to your school&apos;s synced exam portal using the School ID provided by your administrator.
-                </p>
-              </div>
-
-              {resolveErr ? (
-                <div className="pt-alert pt-alert--dark" role="alert" style={{ marginBottom: 16 }}>
-                  {resolveErr}
-                </div>
-              ) : null}
-
-              <form
-                className="pt-form"
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  void resolveSchool(codeInput);
-                }}
-              >
-                <div className="pt-field">
-                  <label htmlFor="schoolIdInput">School ID</label>
-                  <input
-                    id="schoolIdInput"
-                    type="text"
-                    className="pt-school-id-input"
-                    placeholder="CT-4829A"
-                    autoComplete="off"
-                    autoCapitalize="characters"
-                    spellCheck={false}
-                    maxLength={16}
-                    value={codeInput}
-                    onChange={(e) => setCodeInput(e.target.value.toUpperCase())}
-                    required
-                  />
-                </div>
-
-                <button
-                  type="submit"
-                  className="pt-btn pt-btn--primary pt-btn--lg"
-                  disabled={resolving || codeInput.trim().length < 4}
-                >
-                  {resolving ? "Finding School..." : "Continue to School Portal"}
-                </button>
-              </form>
-
-              <div
-                style={{
-                  marginTop: 22,
-                  paddingTop: 18,
-                  borderTop: "1px solid var(--pt-line)",
-                  fontSize: 12.5,
-                  color: "var(--pt-ink-2)",
-                  textAlign: "center",
-                  lineHeight: 1.55,
-                }}
-              >
-                School admins can find their School ID inside CogniTara Studio Desktop or on{" "}
-                <a
-                  href="https://cognitara.net/dashboard"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{ color: "var(--pt-ink)", fontWeight: 600 }}
-                >
-                  cognitara.net/dashboard
-                </a>
-                .
-              </div>
-            </>
-          ) : (
-            <>
-              {/* Resolved School Banner */}
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "flex-start",
-                  justifyContent: "space-between",
-                  gap: 12,
-                  paddingBottom: 16,
-                  marginBottom: 18,
-                  borderBottom: "1px solid var(--pt-line)",
-                }}
-              >
-                <div style={{ minWidth: 0 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginBottom: 6 }}>
-                    <span className="pt-pill pt-pill--mono pt-pill--dark">{school.school_code}</span>
-                    <span className="pt-pill">
-                      <span className={`pt-status-dot ${school.online_portal_enabled ? "pt-status-dot--live" : ""}`} />
-                      {school.online_portal_enabled ? "Portal Live" : "Portal Off"}
-                    </span>
-                  </div>
-                  <h1 style={{ margin: 0, fontSize: 21, fontWeight: 700, letterSpacing: "-0.02em", lineHeight: 1.25 }}>
-                    {school.school_name}
-                  </h1>
-                  <div style={{ fontSize: 12.5, color: "var(--pt-ink-2)", marginTop: 3 }}>
-                    {school.academic_session} · {school.current_term}
+        <div className="pt-auth-stage__center">
+          <div className="pt-auth-card">
+            {!school && !recoverMode ? (
+              <>
+                <div className="pt-auth-card__head">
+                  <span className="pt-crest">CT</span>
+                  <div className="pt-auth-card__title">
+                    <h1>Enter your School ID</h1>
+                    <p>Connect to your school portal using the ID provided by your administrator</p>
                   </div>
                 </div>
-                <button
-                  type="button"
-                  className="pt-btn pt-btn--ghost pt-btn--sm"
-                  onClick={handleSwitchSchool}
+
+                {resolveErr ? (
+                  <div className="pt-alert pt-alert--dark" role="alert" style={{ marginBottom: 16 }}>
+                    {resolveErr}
+                  </div>
+                ) : null}
+
+                <form
+                  className="pt-form"
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    void resolveSchool(codeInput);
+                  }}
                 >
-                  Switch
-                </button>
-              </div>
+                  <div className="pt-field">
+                    <label htmlFor="schoolIdInput">School ID</label>
+                    <input
+                      id="schoolIdInput"
+                      type="text"
+                      className="pt-school-id-input"
+                      placeholder="CT-4829A"
+                      autoComplete="off"
+                      autoCapitalize="characters"
+                      spellCheck={false}
+                      maxLength={16}
+                      value={codeInput}
+                      onChange={(e) => setCodeInput(e.target.value.toUpperCase())}
+                      required
+                    />
+                  </div>
 
-              {school.online_portal_notice ? (
-                <div className="pt-alert" style={{ marginBottom: 16 }}>
-                  {school.online_portal_notice}
+                  <button
+                    type="submit"
+                    className="pt-btn pt-btn--primary pt-btn--lg"
+                    disabled={resolving || codeInput.trim().length < 4}
+                  >
+                    <span>{resolving ? "Finding school..." : "Continue"}</span>
+                    <PIconArrowRight size={15} />
+                  </button>
+                </form>
+
+                <div className="pt-link-row">
+                  <button
+                    type="button"
+                    className="pt-text-btn"
+                    onClick={() => {
+                      setRecoverMode(true);
+                      setResolveErr("");
+                      setRecoverMsg(null);
+                    }}
+                  >
+                    <PIconMail size={14} />
+                    <span>Forgot School ID</span>
+                  </button>
+                  <a
+                    href="https://cognitara.net/signup"
+                    className="pt-text-btn"
+                  >
+                    New school account
+                  </a>
                 </div>
-              ) : null}
+              </>
+            ) : !school && recoverMode ? (
+              <>
+                <div className="pt-auth-card__head">
+                  <span className="pt-crest">ID</span>
+                  <div className="pt-auth-card__title">
+                    <h1>Find your School ID</h1>
+                    <p>Enter your registered school super admin email and we will email your School ID</p>
+                  </div>
+                </div>
 
-              {/* Role Switcher */}
-              <div className="pt-role-tabs" role="tablist" aria-label="Sign in role">
-                {(["student", "teacher", "admin"] as const).map((r) => {
-                  const isOn =
-                    r === "admin" ||
-                    (school.online_portal_enabled &&
-                      (r === "student" ? school.online_students_enabled : school.online_teachers_enabled));
-                  return (
+                {recoverMsg ? (
+                  <div
+                    className={`pt-alert ${recoverMsg.kind === "err" ? "pt-alert--dark" : ""}`}
+                    role={recoverMsg.kind === "err" ? "alert" : "status"}
+                    style={{ marginBottom: 16 }}
+                  >
+                    {recoverMsg.text}
+                  </div>
+                ) : null}
+
+                <form className="pt-form" onSubmit={handleRecoverSchoolId}>
+                  <div className="pt-field">
+                    <label htmlFor="superAdminEmail">Super admin email</label>
+                    <div className="pt-input-wrap">
+                      <span className="pt-input-wrap__ico">
+                        <PIconMail size={15} />
+                      </span>
+                      <input
+                        id="superAdminEmail"
+                        type="email"
+                        className="pt-input"
+                        placeholder="principal@school.edu.ng"
+                        autoComplete="email"
+                        value={recoverEmail}
+                        onChange={(e) => setRecoverEmail(e.target.value)}
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <button
+                    type="submit"
+                    className="pt-btn pt-btn--primary pt-btn--lg"
+                    disabled={recoverBusy || !recoverEmail.trim()}
+                  >
+                    <span>{recoverBusy ? "Sending School ID..." : "Send School ID to email"}</span>
+                    <PIconArrowRight size={15} />
+                  </button>
+                </form>
+
+                <div className="pt-link-row">
+                  <button
+                    type="button"
+                    className="pt-text-btn"
+                    onClick={() => {
+                      setRecoverMode(false);
+                      setRecoverMsg(null);
+                    }}
+                  >
+                    <PIconArrowLeft size={14} />
+                    <span>I have my School ID</span>
+                  </button>
+                </div>
+              </>
+            ) : school ? (
+              <>
+                <div className="pt-auth-card__head">
+                  <span className="pt-crest">{getMonogram(school.school_name, "CT")}</span>
+                  <div className="pt-auth-card__title" style={{ minWidth: 0 }}>
+                    <h1>Sign in to your portal</h1>
+                    <p>
+                      {school.school_name}
+                      {school.school_motto ? ` · ${school.school_motto}` : ` · ${school.school_code}`}
+                    </p>
+                  </div>
+                </div>
+
+                {school.online_portal_notice ? (
+                  <div className="pt-alert" style={{ marginBottom: 16 }}>
+                    {school.online_portal_notice}
+                  </div>
+                ) : null}
+
+                <div className="pt-seg" role="tablist" aria-label="Portal role">
+                  {(["student", "teacher", "admin"] as const).map((r) => (
                     <button
                       key={r}
                       type="button"
                       role="tab"
                       aria-selected={role === r}
-                      className={`pt-role-tab ${role === r ? "is-active" : ""}`}
+                      className={`pt-seg__btn ${role === r ? "is-active" : ""}`}
                       onClick={() => {
                         setRole(r);
                         setLoginErr("");
                       }}
                     >
-                      <span className={`pt-role-dot ${isOn ? "is-on" : ""}`} />
                       {r === "student" ? "Student" : r === "teacher" ? "Teacher" : "Admin"}
                     </button>
-                  );
-                })}
-              </div>
-
-              {roleBlockedReason ? (
-                <div className="pt-alert pt-alert--dark" role="status" style={{ marginBottom: 16 }}>
-                  {roleBlockedReason}
-                </div>
-              ) : null}
-
-              {loginErr ? (
-                <div className="pt-alert pt-alert--dark" role="alert" style={{ marginBottom: 16 }}>
-                  {loginErr}
-                </div>
-              ) : null}
-
-              <form className="pt-form" onSubmit={handleLogin}>
-                <div className="pt-field">
-                  <label htmlFor="portalUsername">
-                    {role === "admin" ? "Admin Username or Cloud Email" : "Username"}
-                  </label>
-                  <input
-                    id="portalUsername"
-                    type="text"
-                    className="pt-input"
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
-                    placeholder={
-                      role === "student"
-                        ? "Same username as school computer lab"
-                        : role === "teacher"
-                          ? "Same teacher username as offline portal"
-                          : "admin or school owner email"
-                    }
-                    autoComplete="username"
-                    required
-                    disabled={Boolean(roleBlockedReason)}
-                  />
+                  ))}
                 </div>
 
-                <div className="pt-field">
-                  <label htmlFor="portalPassword">Password</label>
-                  <div style={{ position: "relative" }}>
-                    <input
-                      id="portalPassword"
-                      type={showPw ? "text" : "password"}
-                      className="pt-input"
-                      style={{ paddingRight: 64 }}
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      placeholder="Enter your password"
-                      autoComplete="current-password"
-                      required
-                      disabled={Boolean(roleBlockedReason)}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPw((v) => !v)}
-                      style={{
-                        position: "absolute",
-                        right: 10,
-                        top: "50%",
-                        transform: "translateY(-50%)",
-                        border: "none",
-                        background: "transparent",
-                        fontSize: 12,
-                        fontWeight: 600,
-                        color: "var(--pt-ink-2)",
-                        cursor: "pointer",
-                      }}
-                    >
-                      {showPw ? "Hide" : "Show"}
-                    </button>
+                {roleBlockedReason ? (
+                  <div className="pt-alert pt-alert--dark" role="status" style={{ marginBottom: 16 }}>
+                    {roleBlockedReason}
                   </div>
+                ) : null}
+
+                {loginErr ? (
+                  <div className="pt-alert pt-alert--dark" role="alert" style={{ marginBottom: 16 }}>
+                    {loginErr}
+                  </div>
+                ) : null}
+
+                <form className="pt-form" onSubmit={handleLogin}>
+                  <div className="pt-field">
+                    <label htmlFor="portalUsername">
+                      {role === "student"
+                        ? "Admission number or username"
+                        : role === "teacher"
+                          ? "Teacher username"
+                          : "Admin username or super admin email"}
+                    </label>
+                    <div className="pt-input-wrap">
+                      <span className="pt-input-wrap__ico">
+                        <PIconUser size={15} />
+                      </span>
+                      <input
+                        id="portalUsername"
+                        type="text"
+                        className="pt-input"
+                        value={username}
+                        onChange={(e) => setUsername(e.target.value)}
+                        placeholder={
+                          role === "admin"
+                            ? "Enter admin username or email"
+                            : "Enter your username"
+                        }
+                        autoComplete="username"
+                        required
+                        disabled={Boolean(roleBlockedReason)}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="pt-field">
+                    <label htmlFor="portalPassword">Password</label>
+                    <div className="pt-input-wrap">
+                      <span className="pt-input-wrap__ico">
+                        <PIconLock size={15} />
+                      </span>
+                      <input
+                        id="portalPassword"
+                        type={showPw ? "text" : "password"}
+                        className="pt-input"
+                        style={{ paddingRight: 42 }}
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        placeholder="Enter your password"
+                        autoComplete="current-password"
+                        required
+                        disabled={Boolean(roleBlockedReason)}
+                      />
+                      <button
+                        type="button"
+                        className="pt-input-wrap__tail"
+                        onClick={() => setShowPw((v) => !v)}
+                        aria-label={showPw ? "Hide password" : "Show password"}
+                      >
+                        {showPw ? <PIconEyeOff size={15} /> : <PIconEye size={15} />}
+                      </button>
+                    </div>
+                  </div>
+
+                  <button
+                    type="submit"
+                    className="pt-btn pt-btn--primary pt-btn--lg"
+                    disabled={loginBusy || Boolean(roleBlockedReason)}
+                  >
+                    <span>{loginBusy ? "Signing in..." : "Sign in"}</span>
+                    <PIconArrowRight size={15} />
+                  </button>
+                </form>
+
+                <div className="pt-link-row">
+                  <span className="pt-mono" style={{ fontSize: 12, color: "var(--pt-ink-3)" }}>
+                    {school.school_code}
+                  </span>
+                  <span className={`pt-status ${school.online_portal_enabled ? "is-live" : ""}`}>
+                    <span className="pt-dot" />
+                    {school.online_portal_enabled ? "Portal live" : "Portal off"}
+                  </span>
                 </div>
-
-                <button
-                  type="submit"
-                  className="pt-btn pt-btn--primary pt-btn--lg"
-                  disabled={loginBusy || Boolean(roleBlockedReason)}
-                >
-                  {loginBusy
-                    ? "Signing in..."
-                    : role === "student"
-                      ? "Sign In as Student"
-                      : role === "teacher"
-                        ? "Sign In as Teacher"
-                        : "Sign In as Administrator"}
-                </button>
-              </form>
-
-              <p
-                style={{
-                  margin: "16px 0 0",
-                  fontSize: 12,
-                  color: "var(--pt-ink-3)",
-                  textAlign: "center",
-                }}
-              >
-                Uses your exact offline CogniTara school database credentials.
-              </p>
-            </>
-          )}
+              </>
+            ) : null}
+          </div>
         </div>
-      </main>
-    </>
+
+        <div className="pt-auth-stage__foot">
+          <span>CogniTara Examination Portal</span>
+          <span>Synced with school database</span>
+        </div>
+      </section>
+    </div>
   );
 }
 
@@ -453,9 +593,13 @@ export default function PortalGatewayPage() {
   return (
     <Suspense
       fallback={
-        <div className="pt-gateway-page">
-          <div className="pt-gateway-card" style={{ textAlign: "center", color: "var(--pt-ink-2)" }}>
-            Loading Online Exam Portal...
+        <div className="pt-auth-split">
+          <div className="pt-auth-stage" style={{ gridColumn: "1 / -1" }}>
+            <div className="pt-auth-stage__center">
+              <div className="pt-auth-card" style={{ textAlign: "center", color: "var(--pt-ink-2)" }}>
+                Loading school portal...
+              </div>
+            </div>
           </div>
         </div>
       }

@@ -1,18 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSql } from "@/lib/db";
-import { extractBearerOrCookieToken, generateReferralCode, resolveAuthenticatedAccount } from "@/lib/auth";
+import { generateReferralCode, resolveSchoolAccountForRequest } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
   try {
-    const token = extractBearerOrCookieToken(req);
-    if (!token) {
-      return NextResponse.json({ ok: false, error: "unauthorized", message: "Sign in required." }, { status: 401 });
-    }
-    const account = await resolveAuthenticatedAccount(token);
+    const account = await resolveSchoolAccountForRequest(req);
     if (!account) {
-      return NextResponse.json({ ok: false, error: "unauthorized", message: "Session expired." }, { status: 401 });
+      return NextResponse.json({ ok: false, error: "unauthorized", message: "Sign in required." }, { status: 401 });
     }
 
     const sql = getSql();
@@ -83,7 +79,8 @@ export async function GET(req: NextRequest) {
       .filter((c: Record<string, any>) => c.status === "credited")
       .reduce((acc: number, c: Record<string, any>) => acc + Number(c.bonus_days_granted_referrer || 0), 0);
 
-    const origin = req.nextUrl.origin || "https://cognitara-cloud.vercel.app";
+    const rawOrigin = (process.env.NEXT_PUBLIC_SITE_URL || "https://cognitara.net").trim().replace(/\/+$/, "");
+    const shareOrigin = rawOrigin.includes("portal.cognitara.net") ? "https://cognitara.net" : rawOrigin;
 
     return NextResponse.json({
       ok: true,
@@ -92,7 +89,7 @@ export async function GET(req: NextRequest) {
             ...ref,
             commission_pct: Number(ref.custom_commission_pct ?? 15),
             bonus_days: Number(ref.custom_bonus_days ?? 14),
-            share_url: `${origin}/signup?ref=${encodeURIComponent(ref.referral_code)}`,
+            share_url: `${shareOrigin}/signup?ref=${encodeURIComponent(ref.referral_code)}`,
           }
         : null,
       stats: {
@@ -115,13 +112,9 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    const token = extractBearerOrCookieToken(req);
-    if (!token) {
-      return NextResponse.json({ ok: false, message: "Sign in required." }, { status: 401 });
-    }
-    const account = await resolveAuthenticatedAccount(token);
+    const account = await resolveSchoolAccountForRequest(req);
     if (!account) {
-      return NextResponse.json({ ok: false, message: "Session expired." }, { status: 401 });
+      return NextResponse.json({ ok: false, message: "Sign in required." }, { status: 401 });
     }
 
     const body = (await req.json().catch(() => null)) as Record<string, unknown> | null;

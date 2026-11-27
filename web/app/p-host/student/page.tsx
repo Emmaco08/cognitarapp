@@ -1,9 +1,23 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { CogniTaraLockup } from "@/components/CogniTaraLogo";
+import {
+  getMonogram,
+  PIconAlert,
+  PIconArrowRight,
+  PIconCheck,
+  PIconChevronDown,
+  PIconClock,
+  PIconDoc,
+  PIconLock,
+  PIconLogOut,
+  PIconPlay,
+  PIconShield,
+  PortalThemeToggle,
+} from "@/components/portal/PortalIcons";
 
 interface StudentDashboardData {
   school: {
@@ -20,6 +34,7 @@ interface StudentDashboardData {
     full_name: string;
     student_class: string;
     specialisation: string;
+    warnings_count?: number;
   };
   available_exams: Array<{
     local_id: number;
@@ -53,7 +68,9 @@ export default function StudentPortalDashboard() {
   const [data, setData] = useState<StudentDashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState("");
+  const [menuOpen, setMenuOpen] = useState(false);
   const [confirmExam, setConfirmExam] = useState<StudentDashboardData["available_exams"][number] | null>(null);
+  const menuRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     fetch("/api/v1/portal/student/dashboard", { credentials: "include" })
@@ -67,49 +84,115 @@ export default function StudentPortalDashboard() {
         if (res.ok && json.ok) {
           setData(json);
         } else {
-          setErr(json.message || "Could not load your exams.");
+          setErr(json.message || "Could not load your examinations.");
         }
       })
-      .catch(() => setErr("Network error while loading student dashboard."))
+      .catch(() => setErr("Network error while loading student portal."))
       .finally(() => setLoading(false));
   }, [router]);
+
+  useEffect(() => {
+    const onDocClick = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", onDocClick);
+    return () => document.removeEventListener("mousedown", onDocClick);
+  }, []);
 
   async function handleSignOut() {
     await fetch("/api/v1/portal/auth/logout", { method: "POST", credentials: "include" });
     router.replace(data?.school?.school_code ? `/?school=${encodeURIComponent(data.school.school_code)}` : "/");
   }
 
+  const inProgressExams = data ? data.available_exams.filter((e) => e.attempt_status === "in_progress") : [];
+  const scheduledExams = data ? data.available_exams.filter((e) => e.attempt_status === "not_started") : [];
+  const releasedResults = data
+    ? data.completed_results.filter((r) => r.results_released && r.percentage !== null)
+    : [];
+  const avgScore = releasedResults.length
+    ? (
+        releasedResults.reduce((sum, r) => sum + Number(r.percentage || 0), 0) / releasedResults.length
+      ).toFixed(1)
+    : "0";
+  const bestScore = releasedResults.length
+    ? Math.round(Math.max(...releasedResults.map((r) => Number(r.percentage || 0))))
+    : 0;
+  const warningsCount = Number(data?.student.warnings_count || 0);
+  const initials = data ? getMonogram(data.student.full_name, "ST") : "ST";
+
   return (
-    <>
-      <header className="pt-topbar">
-        <div className="pt-topbar-inner">
-          <div className="pt-brand-link">
-            <CogniTaraLockup markSize={20} wordmarkHeight={15} />
-            {data ? (
-              <span className="pt-pill pt-pill--mono">{data.school.school_code}</span>
-            ) : null}
-          </div>
-          <div className="pt-topbar-meta">
-            {data ? (
-              <span className="pt-pill">
-                {data.student.full_name}
-                {data.student.student_class ? ` · ${data.student.student_class}` : ""}
-              </span>
-            ) : null}
-            <button type="button" className="pt-btn pt-btn--sm" onClick={handleSignOut}>
-              Sign Out
-            </button>
-          </div>
+    <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
+      {/* Editorial Top Bar (Matches Offline dashboard.html) */}
+      <header className="pt-st-nav">
+        <div className="pt-st-brand">
+          <CogniTaraLockup markSize={22} wordmarkHeight={14} />
+          {data ? (
+            <>
+              <span className="pt-st-brand__sep" aria-hidden="true" />
+              <span className="pt-st-brand__school">{data.school.school_name}</span>
+            </>
+          ) : null}
+        </div>
+
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          {data ? (
+            <span className="pt-mono pt-hide-sm" style={{ fontSize: 11.5, color: "var(--pt-ink-3)" }}>
+              {data.school.current_term} · {data.school.academic_session}
+            </span>
+          ) : null}
+
+          <PortalThemeToggle />
+
+          {data ? (
+            <div className="pt-user-menu-wrap" ref={menuRef}>
+              <button
+                type="button"
+                className="pt-user-trigger"
+                onClick={() => setMenuOpen((v) => !v)}
+                aria-expanded={menuOpen}
+                aria-haspopup="menu"
+              >
+                <span className="pt-crest pt-crest--solid pt-crest--xs">{initials}</span>
+                <span className="pt-hide-sm">{data.student.full_name}</span>
+                <PIconChevronDown size={13} />
+              </button>
+
+              {menuOpen ? (
+                <div className="pt-dropdown-menu" role="menu">
+                  <div className="pt-dropdown-menu__head">
+                    <strong>{data.student.full_name}</strong>
+                    <span>
+                      {data.student.student_class || "Student"} · @{data.student.username}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    className="pt-dropdown-item"
+                    role="menuitem"
+                    onClick={() => {
+                      setMenuOpen(false);
+                      void handleSignOut();
+                    }}
+                  >
+                    <PIconLogOut size={14} />
+                    <span>Sign out</span>
+                  </button>
+                </div>
+              ) : null}
+            </div>
+          ) : null}
         </div>
       </header>
 
-      <main id="main-content" className="pt-wrap">
+      <main id="main-content" className="pt-st-main">
         {loading ? (
-          <div className="pt-card" style={{ textAlign: "center", padding: 36, color: "var(--pt-ink-2)" }}>
-            Loading your exams...
+          <div className="pt-card pt-card--pad" style={{ textAlign: "center", padding: 40, color: "var(--pt-ink-2)" }}>
+            Loading your examinations...
           </div>
         ) : err ? (
-          <div className="pt-card" style={{ maxWidth: 460, margin: "40px auto", textAlign: "center" }}>
+          <div className="pt-card pt-card--pad" style={{ maxWidth: 440, margin: "40px auto", textAlign: "center" }}>
             <div className="pt-alert pt-alert--dark" style={{ marginBottom: 16 }}>
               {err}
             </div>
@@ -118,149 +201,318 @@ export default function StudentPortalDashboard() {
             </Link>
           </div>
         ) : data ? (
-          <div style={{ display: "flex", flexDirection: "column", gap: 28 }}>
-            {/* Minimal School & Student Header */}
-            <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
-              <div>
-                <div style={{ fontSize: 12.5, color: "var(--pt-ink-2)", fontWeight: 600 }}>
-                  {data.school.school_name} · {data.school.academic_session} · {data.school.current_term}
+          <>
+            {/* Editorial Student Identity + Unified 4-Cell KPI Rail */}
+            <section className="pt-st-header" aria-label="Student overview">
+              <div className="pt-page-head__left">
+                <span className="pt-crest pt-crest--solid pt-crest--lg">{initials}</span>
+                <div>
+                  <h1 style={{ margin: 0, fontSize: 26, fontWeight: 600, letterSpacing: "-0.025em", lineHeight: 1.2 }}>
+                    {data.student.full_name}
+                  </h1>
+                  <div className="pt-meta-line">
+                    {data.student.student_class ? <span>{data.student.student_class}</span> : null}
+                    {data.student.student_class ? <span className="pt-meta-sep" /> : null}
+                    <span className="pt-mono">@{data.student.username}</span>
+                    <span className="pt-meta-sep" />
+                    <span className="pt-status is-live">
+                      <span className="pt-dot" />
+                      Ready for examinations
+                    </span>
+                  </div>
                 </div>
-                <h1 style={{ margin: "4px 0 0", fontSize: 26, fontWeight: 700, letterSpacing: "-0.025em" }}>
-                  {data.student.full_name}
-                </h1>
               </div>
-              {data.student.student_class ? (
-                <span className="pt-pill pt-pill--dark">
-                  {data.student.student_class}
-                  {data.student.specialisation ? ` · ${data.student.specialisation}` : ""}
-                </span>
-              ) : null}
-            </div>
+
+              <div className="pt-kpi-rail" aria-label="Performance summary">
+                <div className="pt-kpi-cell">
+                  <span className="pt-kpi-cell__label">Available</span>
+                  <strong className="pt-kpi-cell__val">{scheduledExams.length + inProgressExams.length}</strong>
+                </div>
+                <div className="pt-kpi-cell">
+                  <span className="pt-kpi-cell__label">Completed</span>
+                  <strong className="pt-kpi-cell__val">{data.completed_results.length}</strong>
+                </div>
+                <div className="pt-kpi-cell">
+                  <span className="pt-kpi-cell__label">Average</span>
+                  <strong className="pt-kpi-cell__val">{avgScore}%</strong>
+                </div>
+                <div className="pt-kpi-cell">
+                  <span className="pt-kpi-cell__label">Best score</span>
+                  <strong className="pt-kpi-cell__val">{bestScore}%</strong>
+                </div>
+              </div>
+            </section>
 
             {data.school.online_portal_notice ? (
               <div className="pt-alert">{data.school.online_portal_notice}</div>
             ) : null}
 
-            {/* Active Exams */}
-            <section>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
-                <h2 style={{ margin: 0, fontSize: 17, fontWeight: 700 }}>Active Exams</h2>
-                <span className="pt-pill pt-pill--muted">{data.available_exams.length} available</span>
-              </div>
-
-              {data.available_exams.length === 0 ? (
-                <div className="pt-card" style={{ textAlign: "center", padding: 34, color: "var(--pt-ink-2)" }}>
-                  No active exams for your class right now.
-                </div>
-              ) : (
-                <div className="pt-exam-grid">
-                  {data.available_exams.map((ex) => {
-                    const isDone = ex.attempt_status === "completed";
-                    const isInProg = ex.attempt_status === "in_progress";
-                    return (
-                      <div key={ex.local_id} className="pt-exam-card">
-                        <div>
-                          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 8 }}>
-                            <span className="pt-pill">
-                              {ex.duration} min · {ex.question_count} Qs
-                            </span>
-                            {isDone ? (
-                              <span className="pt-pill pt-pill--dark">Completed</span>
-                            ) : ex.is_paused ? (
-                              <span className="pt-pill">Paused</span>
-                            ) : isInProg ? (
-                              <span className="pt-pill pt-pill--dark">In Progress</span>
-                            ) : null}
-                          </div>
-                          <h3>{ex.name}</h3>
-                        </div>
-
-                        {isDone ? (
-                          <button type="button" className="pt-btn" disabled style={{ width: "100%" }}>
-                            Submitted
-                          </button>
-                        ) : ex.is_paused ? (
-                          <button type="button" className="pt-btn" disabled style={{ width: "100%" }}>
-                            Exam Paused
-                          </button>
-                        ) : isInProg ? (
-                          <Link
-                            href={`/exam/${ex.local_id}`}
-                            className="pt-btn pt-btn--primary"
-                            style={{ width: "100%" }}
-                          >
-                            Resume Exam
-                          </Link>
-                        ) : (
-                          <button
-                            type="button"
-                            className="pt-btn pt-btn--primary"
-                            style={{ width: "100%" }}
-                            onClick={() => setConfirmExam(ex)}
-                          >
-                            Start Exam
-                          </button>
-                        )}
+            {/* Asymmetric Two-Column Editorial Workspace */}
+            <div className="pt-st-workspace">
+              {/* Left Primary Column */}
+              <div className="pt-st-col">
+                {inProgressExams.length > 0 ? (
+                  <section className="pt-card" aria-label="In-progress examinations">
+                    <div className="pt-card__head">
+                      <div className="pt-card__title">
+                        <h2>Resume in-progress examination</h2>
+                        <p>Answers and remaining time are saved automatically</p>
                       </div>
-                    );
-                  })}
-                </div>
-              )}
-            </section>
-
-            {/* Completed Results (Minimalist: just exam name + score/grade or Submitted) */}
-            <section>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
-                <h2 style={{ margin: 0, fontSize: 17, fontWeight: 700 }}>Results</h2>
-                <span className="pt-pill pt-pill--muted">{data.completed_results.length}</span>
-              </div>
-
-              {data.completed_results.length === 0 ? (
-                <div className="pt-card" style={{ textAlign: "center", padding: 28, color: "var(--pt-ink-2)" }}>
-                  Your submitted exam results will appear here.
-                </div>
-              ) : (
-                <div className="pt-exam-grid">
-                  {data.completed_results.map((r) => (
-                    <div key={r.attempt_id} className="pt-exam-card" style={{ gap: 10 }}>
-                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
-                        <h3 style={{ fontSize: 15 }}>{r.exam_name}</h3>
-                        {r.results_released && r.grade_label ? (
-                          <span className="pt-pill pt-pill--dark">{r.grade_label}</span>
-                        ) : (
-                          <span className="pt-pill">Submitted</span>
-                        )}
-                      </div>
-                      {r.results_released && r.score !== null && r.total !== null ? (
-                        <div style={{ display: "flex", alignItems: "baseline", gap: 10 }}>
-                          <span style={{ fontSize: 28, fontWeight: 800, letterSpacing: "-0.03em", fontVariantNumeric: "tabular-nums" }}>
-                            {r.score}/{r.total}
-                          </span>
-                          <span style={{ fontSize: 14, fontWeight: 600, color: "var(--pt-ink-2)" }}>
-                            {r.percentage}%
-                          </span>
-                        </div>
-                      ) : null}
+                      <span className="pt-mono" style={{ fontSize: 12, color: "var(--pt-ink-3)" }}>
+                        {inProgressExams.length} active
+                      </span>
                     </div>
-                  ))}
-                </div>
-              )}
-            </section>
-          </div>
+                    <div>
+                      {inProgressExams.map((ex) => (
+                        <div key={ex.local_id} className="pt-exam-row">
+                          <div>
+                            <span className="pt-exam-row__title">{ex.name}</span>
+                            <div className="pt-exam-row__meta">
+                              <span className="pt-mono">
+                                <PIconClock size={13} />
+                                {ex.duration} minutes
+                              </span>
+                              <span className="pt-status is-live">
+                                <span className="pt-dot" />
+                                In progress
+                              </span>
+                            </div>
+                          </div>
+                          {ex.is_paused ? (
+                            <button type="button" className="pt-btn" disabled>
+                              Paused
+                            </button>
+                          ) : (
+                            <Link href={`/exam/${ex.local_id}`} className="pt-btn pt-btn--primary">
+                              <span>Resume Exam</span>
+                              <PIconArrowRight size={14} />
+                            </Link>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </section>
+                ) : null}
+
+                <section className="pt-card" aria-label="Scheduled examinations">
+                  <div className="pt-card__head">
+                    <div className="pt-card__title">
+                      <h2>Scheduled Examinations</h2>
+                      <p>Active papers assigned to {data.student.student_class || "your class"}</p>
+                    </div>
+                    <span className="pt-mono" style={{ fontSize: 12, color: "var(--pt-ink-3)" }}>
+                      {scheduledExams.length} ready
+                    </span>
+                  </div>
+
+                  {scheduledExams.length > 0 ? (
+                    <div>
+                      {scheduledExams.map((ex, idx) => (
+                        <div key={ex.local_id} className="pt-exam-row">
+                          <div>
+                            <span className="pt-exam-row__title">{ex.name}</span>
+                            <div className="pt-exam-row__meta">
+                              <span className="pt-mono">
+                                <PIconClock size={13} />
+                                {ex.duration} minutes · {ex.question_count} questions
+                              </span>
+                              <span>
+                                <PIconShield size={13} />
+                                Auto-save &amp; integrity monitoring
+                              </span>
+                            </div>
+                          </div>
+                          {ex.is_paused ? (
+                            <button type="button" className="pt-btn" disabled>
+                              Paused
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              className={`pt-btn ${inProgressExams.length === 0 && idx === 0 ? "pt-btn--primary" : ""}`}
+                              onClick={() => setConfirmExam(ex)}
+                            >
+                              <span>Start Exam</span>
+                              <PIconArrowRight size={14} />
+                            </button>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="pt-empty">
+                      <span className="pt-empty__ico">
+                        <PIconCheck size={18} />
+                      </span>
+                      <strong>No active examinations right now</strong>
+                      <p>When your teacher or administrator activates an exam for your class, it will appear here.</p>
+                    </div>
+                  )}
+                </section>
+
+                <section className="pt-card" aria-label="Academic transcript">
+                  <div className="pt-card__head">
+                    <div className="pt-card__title">
+                      <h2>Academic Transcript</h2>
+                      <p>Completed papers and released grades for this session</p>
+                    </div>
+                    <span className="pt-mono" style={{ fontSize: 12, color: "var(--pt-ink-3)" }}>
+                      {data.completed_results.length} recorded
+                    </span>
+                  </div>
+
+                  {data.completed_results.length > 0 ? (
+                    <div className="pt-table-wrap">
+                      <table className="pt-table">
+                        <thead>
+                          <tr>
+                            <th>Examination</th>
+                            <th>Score</th>
+                            <th>Accuracy</th>
+                            <th style={{ textAlign: "right" }}>Grade</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {data.completed_results.map((r) => {
+                            const pct = r.percentage !== null ? Math.round(r.percentage) : 0;
+                            return (
+                              <tr key={r.attempt_id}>
+                                <td style={{ fontWeight: 500 }}>{r.exam_name}</td>
+                                <td className="pt-mono">
+                                  {r.results_released && r.score !== null && r.total !== null ? (
+                                    `${r.score} / ${r.total}`
+                                  ) : (
+                                    <span style={{ display: "inline-flex", alignItems: "center", gap: 5, color: "var(--pt-ink-3)" }}>
+                                      <PIconLock size={13} />
+                                      Withheld
+                                    </span>
+                                  )}
+                                </td>
+                                <td>
+                                  {r.results_released && r.percentage !== null ? (
+                                    <div className="pt-bar-cell">
+                                      <span className="pt-mini-bar">
+                                        <i style={{ width: `${Math.min(100, Math.max(0, pct))}%` }} />
+                                      </span>
+                                      <span className="pt-mono" style={{ fontSize: 12.5 }}>
+                                        {pct}%
+                                      </span>
+                                    </div>
+                                  ) : (
+                                    <span className="pt-mono" style={{ color: "var(--pt-ink-3)" }}>
+                                      -
+                                    </span>
+                                  )}
+                                </td>
+                                <td style={{ textAlign: "right", fontWeight: 600 }}>
+                                  {r.results_released && r.grade_label ? (
+                                    <span className="pt-mono">{r.grade_label}</span>
+                                  ) : (
+                                    <span style={{ color: "var(--pt-ink-3)", fontWeight: 500 }}>Pending</span>
+                                  )}
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  ) : (
+                    <div className="pt-empty">
+                      <span className="pt-empty__ico">
+                        <PIconDoc size={18} />
+                      </span>
+                      <strong>No completed papers yet</strong>
+                      <p>Submitted exams and released grades will appear on your transcript here.</p>
+                    </div>
+                  )}
+                </section>
+              </div>
+
+              {/* Right Contextual Rail (Matches Offline dashboard.html) */}
+              <aside className="pt-st-col" aria-label="Exam integrity and guidelines">
+                <section className="pt-card pt-card--pad">
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 8 }}>
+                    <strong style={{ display: "inline-flex", alignItems: "center", gap: 7, fontSize: 14, fontWeight: 600 }}>
+                      <PIconShield size={15} />
+                      <span>Integrity Standing</span>
+                    </strong>
+                    <span className="pt-mono" style={{ fontSize: 12.5, fontWeight: 600 }}>
+                      {warningsCount} warning{warningsCount === 1 ? "" : "s"}
+                    </span>
+                  </div>
+                  <p style={{ margin: 0, fontSize: 13, color: "var(--pt-ink-2)", lineHeight: 1.55 }}>
+                    {warningsCount > 0
+                      ? `Previous sessions recorded ${warningsCount} focus warning${warningsCount === 1 ? "" : "s"}. Stay inside your exam window and avoid switching tabs during papers.`
+                      : "Clean integrity standing. Stay inside your exam window and avoid switching tabs during active papers."}
+                  </p>
+                </section>
+
+                <section className="pt-card">
+                  <div className="pt-card__head" style={{ padding: "16px 20px" }}>
+                    <div className="pt-card__title">
+                      <h2>Before You Begin</h2>
+                      <p>How examinations operate on this portal</p>
+                    </div>
+                  </div>
+                  <div className="pt-guide-list">
+                    <div className="pt-guide-row">
+                      <span className="pt-guide-num">01</span>
+                      <div>
+                        <strong>Authoritative Timer</strong>
+                        <p>Each paper runs on a server-verified countdown starting when you begin.</p>
+                      </div>
+                    </div>
+                    <div className="pt-guide-row">
+                      <span className="pt-guide-num">02</span>
+                      <div>
+                        <strong>Instant Auto-Save</strong>
+                        <p>Every selected option is stored immediately on your device and synced safely.</p>
+                      </div>
+                    </div>
+                    <div className="pt-guide-row">
+                      <span className="pt-guide-num">03</span>
+                      <div>
+                        <strong>Power-Safe Resume</strong>
+                        <p>If your connection drops or your device restarts, sign back in to continue.</p>
+                      </div>
+                    </div>
+                    <div className="pt-guide-row">
+                      <span className="pt-guide-num">04</span>
+                      <div>
+                        <strong>Verified Grading</strong>
+                        <p>Scores appear upon submission when instant release is enabled by your school.</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="pt-guide-foot">
+                    <div style={{ display: "flex", alignItems: "center", gap: 6, fontWeight: 500, color: "var(--pt-ink)" }}>
+                      <PIconAlert size={14} />
+                      <span>5 warnings auto-submit your paper</span>
+                    </div>
+                    <div className="pt-guide-rules">
+                      <span>No tab switching</span>
+                      <span>No right-click</span>
+                      <span>No copy / paste</span>
+                      <span>No DevTools</span>
+                    </div>
+                  </div>
+                </section>
+              </aside>
+            </div>
+          </>
         ) : null}
       </main>
 
-      {/* Ultra-minimal Start Exam Confirmation Modal */}
+      {/* Minimalist Start Exam Confirmation Modal */}
       {confirmExam ? (
-        <div className="pt-modal-backdrop" role="dialog" aria-modal="true" aria-label="Start Exam">
+        <div className="pt-modal-backdrop" role="dialog" aria-modal="true" aria-label="Start examination">
           <div className="pt-modal">
             <div className="pt-modal-icon">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round">
-                <polygon points="5 3 19 12 5 21 5 3" />
-              </svg>
+              <PIconPlay size={20} />
             </div>
             <h2>{confirmExam.name}</h2>
-            <div style={{ fontSize: 14, color: "var(--pt-ink-2)", marginBottom: 20 }}>
+            <div className="pt-mono" style={{ fontSize: 13, color: "var(--pt-ink-2)", marginBottom: 22 }}>
               {confirmExam.duration} minutes · {confirmExam.question_count} questions
             </div>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
@@ -278,6 +530,6 @@ export default function StudentPortalDashboard() {
           </div>
         </div>
       ) : null}
-    </>
+    </div>
   );
 }

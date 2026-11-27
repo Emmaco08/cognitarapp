@@ -42,7 +42,7 @@ export async function GET(req: NextRequest) {
         SELECT a.id, a.exam_local_id, e.name AS exam_name, e.exam_class, e.duration,
                a.score, a.total, a.percentage, a.grade_label, a.grade_remark,
                a.status, a.submitted, a.started_at, a.completed_at, a.authoritative_deadline,
-               a.remaining_time, a.is_paused, a.results_released, a.origin
+               a.remaining_time, a.is_paused, a.results_released, a.origin, a.warnings_count
         FROM portal_attempts a
         LEFT JOIN portal_exams e ON e.school_id = a.school_id AND e.local_id = a.exam_local_id
         WHERE a.school_id = ${session.schoolId}::uuid AND a.student_local_id = ${session.localId}
@@ -62,8 +62,10 @@ export async function GET(req: NextRequest) {
     const stSpec = norm(student.specialisation);
 
     const attemptByExam = new Map<number, Record<string, any>>();
+    let totalWarnings = 0;
     for (const a of attemptRows as Record<string, any>[]) {
       attemptByExam.set(Number(a.exam_local_id), a);
+      totalWarnings += Number(a.warnings_count || 0);
     }
 
     const availableExams = (examRows as Record<string, any>[])
@@ -131,6 +133,7 @@ export async function GET(req: NextRequest) {
         full_name: String(student.full_name || student.username),
         student_class: String(student.student_class || ""),
         specialisation: String(student.specialisation || ""),
+        warnings_count: totalWarnings,
       },
       available_exams: availableExams,
       completed_results: completedResults,

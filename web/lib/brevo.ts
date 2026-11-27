@@ -125,7 +125,7 @@ function renderEmailShell(params: {
                     </a>
                   </td>
                   <td align="right" valign="middle" class="em-head-cell em-head-badge-cell">
-                    <span style="display:inline-block;padding:5px 11px;border-radius:999px;background-color:#262522;border:1px solid #3A3833;font-size:10.5px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:#EAE8E3;white-space:nowrap;">${safeBadge}</span>
+                    <span style="display:inline-block;padding:4px 9px;border-radius:4px;background-color:#262522;border:1px solid #3A3833;font-size:11px;font-weight:600;letter-spacing:0.04em;color:#EAE8E3;white-space:nowrap;">${safeBadge}</span>
                   </td>
                 </tr>
               </table>
@@ -828,4 +828,95 @@ export async function verifyStoredEmailOtp(params: {
     purpose: rec.purpose as OtpPurpose,
     clientMeta: (rec.client_meta_json || {}) as Record<string, any>,
   };
+}
+
+export function buildSchoolIdRecoveryEmailHtml(params: {
+  schoolName: string;
+  schoolCode: string;
+  fullName?: string;
+  siteUrl?: string;
+  supportEmail?: string;
+}): string {
+  const safeSchool = escapeHtml(params.schoolName || "Your School");
+  const safeCode = escapeHtml(params.schoolCode);
+  const safeName = params.fullName ? escapeHtml(params.fullName) : "Administrator";
+  const portalUrl = `https://portal.cognitara.net/s/${encodeURIComponent(params.schoolCode)}`;
+  const safePortalUrl = escapeHtml(portalUrl);
+
+  const bodyHtml = `
+    <h1 class="em-h1" style="margin:0 0 10px;font-size:23px;font-weight:600;line-height:1.25;letter-spacing:-0.02em;color:#171614;">
+      Your CogniTara School ID
+    </h1>
+    <p style="margin:0 0 20px;font-size:14.5px;line-height:1.65;color:#575551;">
+      Hello ${safeName}, here is the School ID registered for <strong style="color:#171614;">${safeSchool}</strong> on the CogniTara Online Exam Portal.
+    </p>
+
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width:100%;margin:0 0 22px;background-color:#F8F8F8;border:1px solid #E2DFD9;border-radius:12px;">
+      <tr>
+        <td align="center" class="em-otp-box" style="padding:22px 18px;text-align:center;">
+          <div style="font-size:12px;font-weight:500;color:#78756F;margin-bottom:8px;">
+            School ID for ${safeSchool}
+          </div>
+          <div class="em-otp-code" style="font-family:'SFMono-Regular',Consolas,'Liberation Mono',Menlo,monospace;font-size:32px;font-weight:700;letter-spacing:0.14em;color:#171614;line-height:1.2;">
+            ${safeCode}
+          </div>
+          <div style="font-size:12px;color:#78756F;margin-top:10px;">
+            Share this ID with your teachers and students to sign in at portal.cognitara.net
+          </div>
+        </td>
+      </tr>
+    </table>
+
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width:100%;margin:0 0 22px;">
+      <tr>
+        <td align="center">
+          <a href="${safePortalUrl}" target="_blank" class="em-btn" style="display:inline-block;padding:13px 26px;background-color:#171614;color:#FFFFFF;font-size:14px;font-weight:600;border-radius:10px;text-decoration:none;">
+            Open School Portal
+          </a>
+        </td>
+      </tr>
+    </table>
+
+    <p style="margin:0;font-size:12.5px;line-height:1.6;color:#78756F;border-top:1px solid #ECEAE5;padding-top:16px;">
+      If you did not request this reminder, you can safely ignore this message. Your account password and exam database remain unchanged.
+    </p>
+  `;
+
+  return renderEmailShell({
+    title: `Your CogniTara School ID (${params.schoolCode})`,
+    preheader: `School ID ${params.schoolCode} for ${params.schoolName} on portal.cognitara.net`,
+    badgeText: "School ID",
+    bodyHtml,
+    siteUrl: params.siteUrl,
+    supportEmail: params.supportEmail,
+  });
+}
+
+export async function sendSchoolIdRecoveryEmail(params: {
+  settings: PlatformSettingsRow;
+  toEmail: string;
+  fullName?: string;
+  schoolName: string;
+  schoolCode: string;
+}): Promise<{ ok: boolean; error?: string }> {
+  if (!params.settings.brevo_configured || !params.settings.brevo_api_key) {
+    return { ok: false, error: "Email delivery service is not configured yet." };
+  }
+  const htmlContent = buildSchoolIdRecoveryEmailHtml({
+    schoolName: params.schoolName,
+    schoolCode: params.schoolCode,
+    fullName: params.fullName,
+    supportEmail: params.settings.brevo_sender_email || "support@cognitara.net",
+  });
+  return brevoSendTransactionalEmail({
+    apiKey: params.settings.brevo_api_key,
+    senderEmail: params.settings.brevo_sender_email,
+    senderName: params.settings.brevo_sender_name,
+    toEmail: params.toEmail,
+    toName: params.fullName || params.schoolName,
+    subject: `Your CogniTara School ID: ${params.schoolCode}`,
+    htmlContent,
+    textContent: `Your CogniTara School ID for ${params.schoolName} is ${params.schoolCode}. Sign in at https://portal.cognitara.net/s/${params.schoolCode}`,
+    tags: ["cognitara-school-id-recovery"],
+  });
 }
