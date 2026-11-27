@@ -2025,7 +2025,7 @@
   }
 
   .ct-dialog::backdrop {
-    background: rgba(5, 8, 15, 0.56);
+    background: rgba(17, 17, 18, 0.56);
     backdrop-filter: blur(4px);
   }
 

@@ -433,7 +433,7 @@ body.tc-studio .ct-btn--primary:hover {
   border-color: transparent;
   color: var(--tc-ok) !important;
 }
-.tc-btn--ok:hover { background: var(--tc-ok); color: #0B1117 !important; border-color: transparent; }
+.tc-btn--ok:hover { background: var(--tc-ok); color: #151517 !important; border-color: transparent; }
 .tc-btn--danger-soft {
   background: var(--tc-bad-soft);
   border-color: transparent;

@@ -1,6 +1,6 @@
 {%- from '_ct_shell.html' import ico, ct_boot_script, admin_shell_start, teacher_shell_start, student_topbar, shell_end with context -%}
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="en" data-theme="light">
 <head>
     <title>{{ student.full_name }} - Exam Review | COGNITARA EXAM SYSTEM</title>
     <link href="{{ url_for('static', filename='vendor/bootstrap/css/bootstrap.min.css') }}" rel="stylesheet">
@@ -13,7 +13,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { background: linear-gradient(135deg, #f5f7fa 0%, #e8edf5 100%); font-family: 'Segoe UI', 'Poppins', sans-serif; }
+        body { background: linear-gradient(135deg, #f5f7fa 0%, #EAE9E6 100%); font-family: 'Segoe UI', 'Poppins', sans-serif; }
         
         .review-container { max-width: 1200px; margin: 0 auto; padding: 30px; }
         
@@ -188,7 +188,7 @@
             </div>
             <div style="text-align: center;">
                 {% if attempt_status == 'approved' %}
-                    <div class="score-ring" style="background: conic-gradient(from 0deg, #575551 0deg, #575551 {{ score_percentage * 3.6 }}deg, #e2e8f0 {{ score_percentage * 3.6 }}deg);">
+                    <div class="score-ring" style="background: conic-gradient(from 0deg, #575551 0deg, #575551 {{ score_percentage * 3.6 }}deg, #E6E5E2 {{ score_percentage * 3.6 }}deg);">
                         <div class="score-ring-inner">
                             <span style="font-size: 36px; font-weight: 800; color: #575551;">{{ score_percentage }}%</span>
                             <span style="font-size: 12px; color: #2B2926;">Score</span>
@@ -196,7 +196,7 @@
                     </div>
                     <div><span class="badge-correct"><i class="fas fa-check-circle"></i> Approved</span></div>
                 {% elif attempt_status == 'pending' %}
-                    <div class="score-ring" style="background: conic-gradient(from 0deg, #D6D4CF 0deg, #D6D4CF {{ score_percentage * 3.6 }}deg, #e2e8f0 {{ score_percentage * 3.6 }}deg);">
+                    <div class="score-ring" style="background: conic-gradient(from 0deg, #D6D4CF 0deg, #D6D4CF {{ score_percentage * 3.6 }}deg, #E6E5E2 {{ score_percentage * 3.6 }}deg);">
                         <div class="score-ring-inner">
                             <span style="font-size: 36px; font-weight: 800; color: #D6D4CF;">{{ score_percentage }}%</span>
                             <span style="font-size: 12px; color: #2B2926;">Score</span>
@@ -204,7 +204,7 @@
                     </div>
                     <div><span class="badge-pending"><i class="fas fa-hourglass-half"></i> Pending Review</span></div>
                 {% elif attempt_status == 'rejected' %}
-                    <div class="score-ring" style="background: conic-gradient(from 0deg, #2B2926 0deg, #2B2926 {{ score_percentage * 3.6 }}deg, #e2e8f0 {{ score_percentage * 3.6 }}deg);">
+                    <div class="score-ring" style="background: conic-gradient(from 0deg, #2B2926 0deg, #2B2926 {{ score_percentage * 3.6 }}deg, #E6E5E2 {{ score_percentage * 3.6 }}deg);">
                         <div class="score-ring-inner">
                             <span style="font-size: 36px; font-weight: 800; color: #2B2926;">{{ score_percentage }}%</span>
                             <span style="font-size: 12px; color: #2B2926;">Score</span>
@@ -212,7 +212,7 @@
                     </div>
                     <div><span class="badge-incorrect"><i class="fas fa-times-circle"></i> Rejected</span></div>
                 {% else %}
-                    <div style="background: #e2e8f0; border-radius: 60px; padding: 20px; text-align: center;">
+                    <div style="background: #E6E5E2; border-radius: 60px; padding: 20px; text-align: center;">
                         <i class="fas fa-clock" style="font-size: 48px; color: #2B2926;"></i>
                         <p class="mt-2">Not Started Yet</p>
                     </div>
@@ -318,7 +318,7 @@
                 </div>
                 <div class="mb-3" style="font-size: 15px; line-height: 1.5;">{{ q.question|sanitize|safe }}</div>
                 {% if q.image %}
-                <div class="mb-2"><img src="/static/images/{{ q.image }}" style="max-width: 150px; border-radius: 10px; border: 1px solid #e2e8f0;"></div>
+                <div class="mb-2"><img src="/static/images/{{ q.image }}" style="max-width: 150px; border-radius: 10px; border: 1px solid #E6E5E2;"></div>
                 {% endif %}
                 <div class="row mt-2">
                     <div class="col-md-6">

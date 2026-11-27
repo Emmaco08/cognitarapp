@@ -20,12 +20,12 @@
 {%- set display_name = full_name or username -%}
 {%- set has_real_photo = photo and photo != 'default.png' and photo != 'None' -%}
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="en" data-theme="light">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="csrf-token" content="{{ csrf_token() }}">
-  <meta name="color-scheme" content="dark light">
+  <meta name="color-scheme" content="light dark">
   <meta name="description" content="Student examination portal for {{ _school.school_name }} — view scheduled exams, resume active papers, and review grades.">
   <title>Student Portal — {{ _school.school_name }} | CogniTara</title>
   <link rel="icon" href="{{ url_for('static', filename='images/cognitara-favicon.ico') }}">
@@ -55,11 +55,14 @@
         </button>
 
         <div class="ct-dropdown" data-ct-dropdown>
+          {%- set _parts = (display_name or 'S').split() -%}
+          {%- set _initials = (_parts[0][0] ~ (_parts[1][0] if _parts|length > 1 else ''))|upper -%}
           <button type="button" class="st-user-btn" data-ct-dropdown-trigger aria-haspopup="menu" aria-expanded="false">
             {% if has_real_photo %}
-            <img class="st-user-btn__img" src="{{ url_for('static', filename='images/' + photo) }}" alt="" onerror="this.style.display='none'">
+            <img class="st-user-btn__img" src="{{ url_for('static', filename='images/' + photo) }}" alt="" onerror="this.style.display='none';if(this.nextElementSibling)this.nextElementSibling.style.display='grid';">
+            <span class="st-user-btn__img" style="display:none;place-items:center;background:var(--st-cta-bg);color:var(--st-cta-ink);font-family:var(--ct-mono);font-size:10px;font-weight:700;">{{ _initials }}</span>
             {% else %}
-            <span class="st-user-btn__img" style="display:grid;place-items:center;color:var(--st-ink-2)"><svg class="ct-ico ct-ico--xs" aria-hidden="true"><use href="{{ ICONS }}#i-person-avatar"/></svg></span>
+            <span class="st-user-btn__img" style="display:grid;place-items:center;background:var(--st-cta-bg);color:var(--st-cta-ink);font-family:var(--ct-mono);font-size:10px;font-weight:700;">{{ _initials }}</span>
             {% endif %}
             <span>{{ display_name }}</span>
             {{ ico('i-chevron-down', 'ct-ico--xs') }}
@@ -81,9 +84,10 @@
         <div class="st-identity">
           <div class="st-avatar" aria-hidden="true">
             {% if has_real_photo %}
-            <img src="{{ url_for('static', filename='images/' + photo) }}" alt="{{ display_name }}" onerror="this.remove()">
+            <img src="{{ url_for('static', filename='images/' + photo) }}" alt="{{ display_name }}" onerror="this.style.display='none';if(this.nextElementSibling)this.nextElementSibling.style.display='grid';">
+            <span style="display:none;width:100%;height:100%;place-items:center;background:var(--st-cta-bg);color:var(--st-cta-ink);font-family:var(--ct-mono);font-size:18px;font-weight:740;letter-spacing:0.04em;">{{ _initials }}</span>
             {% else %}
-            <svg style="width:30px;height:30px;color:var(--st-ink-2)" aria-hidden="true"><use href="{{ ICONS }}#i-person-avatar"/></svg>
+            <span style="display:grid;width:100%;height:100%;place-items:center;background:var(--st-cta-bg);color:var(--st-cta-ink);font-family:var(--ct-mono);font-size:18px;font-weight:740;letter-spacing:0.04em;">{{ _initials }}</span>
             {% endif %}
           </div>
           <div class="st-greeting">

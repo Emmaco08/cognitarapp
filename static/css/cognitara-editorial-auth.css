@@ -300,7 +300,7 @@ body.ed-body {
   position: relative;
 }
 [data-theme="dark"] .ed-line--3 {
-  color: rgba(236, 240, 248, 0.78);
+  color: rgba(245, 245, 244, 0.78);
 }
 [data-theme="light"] .ed-line--3 {
   color: var(--ed-ink-2);

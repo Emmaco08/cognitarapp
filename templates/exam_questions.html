@@ -1,6 +1,6 @@
 {%- from '_ct_shell.html' import ico, ct_boot_script, admin_shell_start, teacher_shell_start, portal_shell_start, portal_shell_end, student_topbar, shell_end with context -%}
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="en" data-theme="light">
 <head>
     <title>Manage Questions | {{ section.section_name }}</title>
     <link href="{{ url_for('static', filename='vendor/bootstrap/css/bootstrap.min.css') }}" rel="stylesheet">
@@ -161,7 +161,7 @@
         .opt-card.is-correct .opt-keycap {
             background: var(--ct-ok);
             border-color: var(--ct-ok);
-            color: #0b1410;
+            color: #151517;
         }
         .opt-correct-btn {
             border: 1px solid var(--ct-line-2);
@@ -181,7 +181,7 @@
         .opt-card.is-correct .opt-correct-btn {
             background: var(--ct-ok);
             border-color: var(--ct-ok);
-            color: #0b1410;
+            color: #151517;
             font-weight: 700;
         }
         .opt-card .editor-area {

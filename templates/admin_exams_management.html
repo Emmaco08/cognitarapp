@@ -1,11 +1,11 @@
 {%- from '_ct_shell.html' import ico, person_avatar, ct_boot_script, admin_shell_start, shell_end with context -%}
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="en" data-theme="light">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="csrf-token" content="{{ csrf_token() }}">
-  <meta name="color-scheme" content="dark light">
+  <meta name="color-scheme" content="light dark">
   <title>Exam Control Center — {{ school_branding.school_name }} | CogniTara</title>
   <link rel="icon" href="{{ url_for('static', filename='images/cognitara-favicon.ico') }}">
   <script src="{{ url_for('static', filename='vendor/chartjs/chart.umd.min.js') }}"></script>
@@ -854,7 +854,7 @@
             var counts = dist.map(function (x) { return Number(x.count || 0); });
             var colors = dist.map(function (x, i) { return x.color || palette[i % palette.length]; });
             var isLight = document.documentElement.getAttribute("data-theme") === "light";
-            var tickCol = isLight ? "#52525B" : "#9E9E9E";
+            var tickCol = isLight ? "#575551" : "#9E9E9E";
             var gridCol = isLight ? "rgba(20,20,22,0.06)" : "rgba(255,255,255,0.06)";
             gradeChart = new Chart(ctx, {
               type: "bar",

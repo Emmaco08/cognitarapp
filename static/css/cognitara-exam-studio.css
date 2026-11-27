@@ -225,21 +225,22 @@ body.ct-exam-studio .student-name-badge {
 }
 body.ct-exam-studio .student-name-badge span { color: var(--ex-ink-3) !important; }
 
-/* Precision Monochrome Timepiece (Zero Pulse, Quiet Hairline) */
+/* Precision Monochrome Timepiece */
 body.ct-exam-studio .timer-box {
-  height: 34px !important;
+  height: 36px !important;
   background: var(--ex-surface) !important;
   color: var(--ex-ink) !important;
-  padding: 0 12px !important;
-  border-radius: 8px !important;
-  min-width: 118px !important;
-  border: 1px solid var(--ex-line) !important;
+  padding: 0 14px !important;
+  border-radius: 9px !important;
+  min-width: 126px !important;
+  border: 1px solid var(--ex-line-2) !important;
   box-shadow: none !important;
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
   gap: 8px !important;
   animation: none !important;
+  transition: background-color 220ms cubic-bezier(0.23, 1, 0.32, 1), border-color 220ms ease, color 220ms ease !important;
 }
 body.ct-exam-studio .timer-label {
   font-family: var(--ct-mono) !important;
@@ -248,35 +249,42 @@ body.ct-exam-studio .timer-label {
   letter-spacing: 0.08em;
   color: var(--ex-ink-3) !important;
   opacity: 1 !important;
-  font-weight: 580 !important;
+  font-weight: 600 !important;
 }
 body.ct-exam-studio .timer-value {
   font-family: var(--ct-mono) !important;
-  font-size: 15px !important;
-  font-weight: 700 !important;
+  font-size: 15.5px !important;
+  font-weight: 740 !important;
   color: var(--ex-ink) !important;
   font-variant-numeric: tabular-nums;
   line-height: 1 !important;
 }
 body.ct-exam-studio .timer-box.timer-warning {
-  background: var(--ex-warn-soft) !important;
-  border-color: var(--ex-warn-line) !important;
+  background: var(--ex-elevated) !important;
+  border-color: var(--ex-ink) !important;
   animation: none !important;
 }
 body.ct-exam-studio .timer-box.timer-warning .timer-label,
-body.ct-exam-studio .timer-box.timer-warning .timer-value { color: var(--ex-warn) !important; }
+body.ct-exam-studio .timer-box.timer-warning .timer-value { color: var(--ex-ink) !important; }
 body.ct-exam-studio .timer-box.timer-danger {
-  background: var(--ex-bad-soft) !important;
-  border-color: var(--ex-bad-line) !important;
-  animation: none !important;
+  background: var(--ex-cta-bg) !important;
+  border-color: var(--ex-cta-bg) !important;
+  animation: ex-timer-tick 1.6s cubic-bezier(0.23, 1, 0.32, 1) infinite !important;
 }
-body.ct-exam-studio .timer-box.timer-danger .timer-label,
-body.ct-exam-studio .timer-box.timer-danger .timer-value { color: var(--ex-bad) !important; }
+body.ct-exam-studio .timer-box.timer-danger .timer-label {
+  color: var(--ex-cta-ink) !important;
+  opacity: 0.72 !important;
+}
+body.ct-exam-studio .timer-box.timer-danger .timer-value { color: var(--ex-cta-ink) !important; }
+@keyframes ex-timer-tick {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(23, 22, 20, 0.28); }
+  50% { box-shadow: 0 0 0 5px rgba(23, 22, 20, 0); }
+}
 
 /* Sub-Row: Section Tabs & Minimalist Progress Bar */
 body.ct-exam-studio .nav-row,
 body.ct-exam-studio .progress-wrapper {
-  max-width: 1180px !important;
+  max-width: 1200px !important;
   margin: 8px auto 0 !important;
   padding-top: 8px !important;
   border-top: 1px solid var(--ex-line) !important;
@@ -301,25 +309,43 @@ body.ct-exam-studio .section-tabs::-webkit-scrollbar { display: none; }
 body.ct-exam-studio .section-tab {
   flex: 0 0 auto;
   white-space: nowrap;
-  padding: 4px 11px !important;
+  padding: 5px 12px !important;
   background: transparent !important;
   border: 1px solid transparent !important;
-  border-radius: 7px !important;
+  border-radius: 8px !important;
   color: var(--ex-ink-2) !important;
   font-size: 12px !important;
   font-weight: 560 !important;
   cursor: pointer;
-  transition: background-color 160ms var(--ct-ease), color 160ms var(--ct-ease) !important;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  transition: background-color 160ms var(--ct-ease), color 160ms var(--ct-ease), border-color 160ms var(--ct-ease) !important;
+}
+body.ct-exam-studio .section-tab .section-progress {
+  font-family: var(--ct-mono);
+  font-size: 10.5px;
+  padding: 1px 6px;
+  border-radius: 5px;
+  background: var(--ex-surface-2);
+  color: var(--ex-ink-3);
 }
 body.ct-exam-studio .section-tab:hover {
   background: var(--ex-surface-2) !important;
   color: var(--ex-ink) !important;
 }
 body.ct-exam-studio .section-tab.active {
-  background: var(--ex-elevated) !important;
-  border-color: var(--ex-line-2) !important;
-  color: var(--ex-ink) !important;
-  font-weight: 620 !important;
+  background: var(--ex-cta-bg) !important;
+  border-color: var(--ex-cta-bg) !important;
+  color: var(--ex-cta-ink) !important;
+  font-weight: 640 !important;
+}
+body.ct-exam-studio .section-tab.active .section-progress {
+  background: rgba(255, 255, 255, 0.16);
+  color: var(--ex-cta-ink);
+}
+[data-theme="dark"] body.ct-exam-studio .section-tab.active .section-progress {
+  background: rgba(23, 22, 20, 0.16);
 }
 body.ct-exam-studio .mini-progress {
   display: flex;
@@ -333,7 +359,7 @@ body.ct-exam-studio .mini-progress {
 }
 body.ct-exam-studio .mini-progress-bar,
 body.ct-exam-studio .progress-bar-custom {
-  width: 128px !important;
+  width: 132px !important;
   height: 5px !important;
   background: var(--ex-elevated) !important;
   border-radius: 99px !important;
@@ -342,7 +368,7 @@ body.ct-exam-studio .progress-bar-custom {
 body.ct-exam-studio .mini-progress-fill,
 body.ct-exam-studio .progress-fill {
   height: 100%;
-  background: var(--ex-ok) !important;
+  background: var(--ex-ink) !important;
   border-radius: 99px !important;
   transition: width 320ms var(--ct-ease);
 }
@@ -350,155 +376,272 @@ body.ct-exam-studio .mini-progress-text,
 body.ct-exam-studio .progress-text {
   font-family: var(--ct-mono) !important;
   font-size: 11.5px !important;
-  font-weight: 650 !important;
-  color: var(--ex-ink-2) !important;
+  font-weight: 660 !important;
+  color: var(--ex-ink) !important;
   font-variant-numeric: tabular-nums;
 }
 
 /* ==========================================================================
-   2. TWO-COLUMN BLUEBOOK EXAMINATION WORKSPACE (.main-content Grid)
-   Left: Serene Question Reading Stage + Previous/Next Dock
-   Right: Sticky Question Map Rail + Dignified Submit Exam Action
+   2. TWO-COLUMN MONOCHROME EXAMINATION WORKSPACE (.main-content Grid)
+   Left: Distraction-free Question Reading Sheet
+   Right (.exam-rail): Sticky Command Column with
+     1. Previous / Next Dock AT THE VERY TOP (immediately visible above palette!)
+     2. Question Navigator Palette with Monochrome Legend
+     3. Submit Exam Action CTA
    ========================================================================== */
 body.ct-exam-studio .main-content {
-  max-width: 1180px !important;
-  margin: 112px auto 136px !important;
+  max-width: 1200px !important;
+  margin: 114px auto 72px !important;
   padding: 0 28px !important;
   display: grid !important;
-  grid-template-columns: minmax(0, 1fr) 288px !important;
-  grid-template-rows: auto 1fr;
+  grid-template-columns: minmax(0, 1fr) 316px !important;
   column-gap: 24px !important;
-  row-gap: 14px !important;
+  row-gap: 16px !important;
   align-items: start !important;
 }
 body.ct-exam-studio #questionsContainer {
   grid-column: 1 !important;
-  grid-row: 1 / span 2 !important;
   min-width: 0;
 }
-body.ct-exam-studio .nav-buttons {
-  position: fixed !important;
-  bottom: 44px !important;
-  left: max(28px, calc((100vw - 1180px) / 2 + 28px)) !important;
-  width: min(calc(100vw - 368px), 812px) !important;
-  z-index: 860 !important;
-  display: flex !important;
-  justify-content: space-between !important;
-  align-items: center !important;
-  gap: 12px;
-  margin: 0 !important;
-  padding: 10px 14px !important;
-  border-radius: 16px !important;
-  background: rgba(25, 25, 25, 0.92) !important;
-  border: 1px solid var(--ex-line-2) !important;
-  backdrop-filter: blur(14px) !important;
-  -webkit-backdrop-filter: blur(14px) !important;
-  box-shadow: 0 14px 32px -12px rgba(0, 0, 0, 0.62) !important;
-}
-[data-theme="light"] body.ct-exam-studio .nav-buttons {
-  background: rgba(255, 255, 255, 0.94) !important;
-  box-shadow: 0 14px 30px -14px rgba(20, 20, 22, 0.16), 0 0 0 1px rgba(20, 20, 22, 0.05) !important;
-}
-body.ct-exam-studio .palette-container {
+
+/* Sticky Right-Hand Exam Command Rail */
+body.ct-exam-studio .exam-rail {
   grid-column: 2 !important;
-  grid-row: 1 !important;
   position: sticky !important;
-  top: 112px !important;
+  top: 114px !important;
   display: flex !important;
   flex-direction: column !important;
-  max-height: calc(100vh - 236px) !important;
-  background: var(--ex-surface) !important;
-  border: 1px solid var(--ex-line) !important;
-  border-radius: 18px !important;
-  padding: 18px !important;
-  margin: 0 !important;
-  box-shadow: var(--ex-shadow), var(--ex-specular) !important;
+  gap: 12px !important;
+  max-height: calc(100vh - 160px) !important;
+  min-width: 0;
 }
-body.ct-exam-studio .submit-btn {
-  position: fixed !important;
-  bottom: 44px !important;
-  right: max(28px, calc((100vw - 1180px) / 2 + 28px)) !important;
-  width: 288px !important;
-  z-index: 860 !important;
-  height: 62px !important;
-  border-radius: 16px !important;
+
+/* Previous / Next Card — Right-Hand Side ABOVE Question Palette */
+body.ct-exam-studio .nav-buttons {
+  position: static !important;
+  width: 100% !important;
+  left: auto !important;
+  right: auto !important;
+  bottom: auto !important;
+  z-index: auto !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: stretch !important;
+  gap: 10px !important;
+  margin: 0 !important;
+  padding: 15px 16px 14px !important;
+  border-radius: 18px !important;
+  background: var(--ex-surface) !important;
   border: 1px solid var(--ex-line-2) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  box-shadow: var(--ex-shadow) !important;
+}
+body.ct-exam-studio .nav-rail-head {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 8px !important;
+}
+body.ct-exam-studio .nav-rail-eyebrow {
+  font-family: var(--ct-mono) !important;
+  font-size: 10px !important;
+  font-weight: 660 !important;
+  letter-spacing: 0.10em !important;
+  text-transform: uppercase !important;
+  color: var(--ex-ink-3) !important;
+}
+body.ct-exam-studio .nav-rail-pos {
+  font-family: var(--ct-mono) !important;
+  font-size: 11.5px !important;
+  font-weight: 700 !important;
+  font-variant-numeric: tabular-nums !important;
+  color: var(--ex-ink) !important;
+  padding: 2px 8px !important;
+  border-radius: 6px !important;
+  background: var(--ex-well) !important;
+  border: 1px solid var(--ex-line) !important;
+}
+body.ct-exam-studio .nav-rail-grid {
+  display: grid !important;
+  grid-template-columns: 1fr 1fr !important;
+  gap: 8px !important;
+}
+body.ct-exam-studio .nav-rail-hint {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 6px !important;
+  font-family: var(--ct-mono) !important;
+  font-size: 10.5px !important;
+  color: var(--ex-ink-3) !important;
+  padding-top: 2px !important;
+}
+body.ct-exam-studio .nav-rail-hint kbd {
+  font-family: var(--ct-mono) !important;
+  font-size: 10px !important;
+  padding: 1px 5px !important;
+  border-radius: 4px !important;
+  background: var(--ex-well) !important;
+  border: 1px solid var(--ex-line-2) !important;
+  color: var(--ex-ink-2) !important;
+}
+
+body.ct-exam-studio .palette-container {
+  grid-column: auto !important;
+  grid-row: auto !important;
+  position: static !important;
+  top: auto !important;
+  display: flex !important;
+  flex-direction: column !important;
+  flex: 1 1 auto !important;
+  min-height: 150px !important;
+  max-height: calc(100vh - 368px) !important;
+  background: var(--ex-surface) !important;
+  border: 1px solid var(--ex-line-2) !important;
+  border-radius: 18px !important;
+  padding: 16px !important;
+  margin: 0 !important;
+  box-shadow: var(--ex-shadow) !important;
+}
+
+/* Monochrome Palette Legend */
+body.ct-exam-studio .palette-legend {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 8px !important;
+  padding-bottom: 10px !important;
+  margin-bottom: 10px !important;
+  border-bottom: 1px solid var(--ex-line) !important;
+  font-size: 11px !important;
+  color: var(--ex-ink-3) !important;
+}
+body.ct-exam-studio .palette-legend-item {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 5px !important;
+  white-space: nowrap !important;
+}
+body.ct-exam-studio .palette-swatch {
+  width: 10px !important;
+  height: 10px !important;
+  border-radius: 3px !important;
+  display: inline-block !important;
+  flex: none !important;
+}
+body.ct-exam-studio .palette-swatch--current {
+  background: var(--ex-cta-bg) !important;
+  border: 1px solid var(--ex-cta-bg) !important;
+}
+body.ct-exam-studio .palette-swatch--answered {
+  background: var(--ex-elevated) !important;
+  border: 1.5px solid var(--ex-ink) !important;
+}
+body.ct-exam-studio .palette-swatch--unanswered {
+  background: var(--ex-surface) !important;
+  border: 1px solid var(--ex-line-2) !important;
+}
+
+/* Submit Exam Button — Anchored Cleanly Inside Right Rail */
+body.ct-exam-studio .submit-btn {
+  position: static !important;
+  bottom: auto !important;
+  right: auto !important;
+  width: 100% !important;
+  z-index: auto !important;
+  height: 50px !important;
+  flex: none !important;
+  border-radius: 14px !important;
+  border: 1.5px solid var(--ex-ink) !important;
   background: var(--ex-surface) !important;
   color: var(--ex-ink) !important;
   font-family: var(--ct-font) !important;
-  font-size: 14.5px !important;
+  font-size: 14px !important;
   font-weight: 680 !important;
   letter-spacing: -0.01em;
   cursor: pointer;
-  box-shadow: 0 14px 32px -12px rgba(0, 0, 0, 0.48) !important;
-  transition: background-color 180ms var(--ct-ease), border-color 180ms var(--ct-ease), color 180ms var(--ct-ease), transform 140ms var(--ct-ease) !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  box-shadow: var(--ex-shadow) !important;
+  transition: background-color 180ms cubic-bezier(0.23, 1, 0.32, 1), border-color 180ms ease, color 180ms ease, transform 140ms cubic-bezier(0.23, 1, 0.32, 1) !important;
 }
-[data-theme="light"] body.ct-exam-studio .submit-btn {
-  box-shadow: 0 14px 30px -14px rgba(20, 20, 22, 0.14), 0 0 0 1px rgba(20, 20, 22, 0.05) !important;
-}
-body.ct-exam-studio .submit-btn:hover {
-  background: var(--ex-cta-bg) !important;
-  color: var(--ex-cta-ink) !important;
-  border-color: transparent !important;
-  transform: translateY(-1px);
-  filter: none !important;
+@media (hover: hover) and (pointer: fine) {
+  body.ct-exam-studio .submit-btn:hover {
+    background: var(--ex-cta-bg) !important;
+    color: var(--ex-cta-ink) !important;
+    border-color: var(--ex-cta-bg) !important;
+    transform: translateY(-1px);
+    filter: none !important;
+  }
 }
 body.ct-exam-studio .submit-btn:active { transform: scale(0.985); }
 
 /* Question Reading Card */
 body.ct-exam-studio .question-card {
   background: var(--ex-surface) !important;
-  border: 1px solid var(--ex-line) !important;
+  border: 1px solid var(--ex-line-2) !important;
   border-radius: 20px !important;
-  padding: 28px 34px 30px !important;
+  padding: 30px 36px 34px !important;
   margin: 0 !important;
-  box-shadow: var(--ex-shadow), var(--ex-specular) !important;
+  box-shadow: var(--ex-shadow) !important;
   color: var(--ex-ink) !important;
 }
 body.ct-exam-studio .question-card.active {
   display: block;
-  animation: ct-fade-up 240ms var(--ct-ease) both !important;
+  animation: ex-question-in 240ms cubic-bezier(0.23, 1, 0.32, 1) both !important;
+}
+@keyframes ex-question-in {
+  from { opacity: 0; transform: translate3d(0, 6px, 0); }
+  to { opacity: 1; transform: translate3d(0, 0, 0); }
 }
 body.ct-exam-studio .question-header {
   display: flex !important;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 18px !important;
-  padding-bottom: 12px !important;
+  gap: 12px;
+  margin-bottom: 20px !important;
+  padding-bottom: 14px !important;
   border-bottom: 1px solid var(--ex-line) !important;
 }
 body.ct-exam-studio .question-number {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 0 !important;
-  border-radius: 0 !important;
-  background: transparent !important;
-  color: var(--ex-ink-3) !important;
+  padding: 4px 10px !important;
+  border-radius: 7px !important;
+  background: var(--ex-well) !important;
+  border: 1px solid var(--ex-line) !important;
+  color: var(--ex-ink) !important;
   font-family: var(--ct-mono) !important;
-  font-size: 11.5px !important;
-  font-weight: 650 !important;
-  letter-spacing: 0.10em;
+  font-size: 11px !important;
+  font-weight: 680 !important;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 body.ct-exam-studio .mandatory-badge {
   padding: 4px 10px;
-  border-radius: 8px;
-  background: var(--ex-warn-soft) !important;
-  color: var(--ex-warn) !important;
-  border: 1px solid var(--ex-warn-line) !important;
-  font-size: 11px;
-  font-weight: 650;
+  border-radius: 7px;
+  background: var(--ex-cta-bg) !important;
+  color: var(--ex-cta-ink) !important;
+  border: 1px solid transparent !important;
+  font-family: var(--ct-mono);
+  font-size: 10.5px;
+  font-weight: 660;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 
 /* Passage / Group Box */
 body.ct-exam-studio .group-content-box {
   background: var(--ex-well) !important;
-  border: 1px solid var(--ex-line) !important;
-  border-left: 3px solid var(--ex-sel) !important;
+  border: 1px solid var(--ex-line-2) !important;
+  border-left: 3px solid var(--ex-ink) !important;
   border-radius: 14px !important;
   padding: 18px 20px !important;
-  margin-bottom: 20px !important;
+  margin-bottom: 22px !important;
   color: var(--ex-ink) !important;
 }
 body.ct-exam-studio .group-content-box h4 {
@@ -507,21 +650,21 @@ body.ct-exam-studio .group-content-box h4 {
   font-weight: 700 !important;
 }
 body.ct-exam-studio .group-instruction {
-  background: var(--ex-warn-soft) !important;
-  border: 1px solid var(--ex-warn-line) !important;
-  color: var(--ex-warn) !important;
+  background: var(--ex-surface) !important;
+  border: 1px solid var(--ex-line-2) !important;
+  color: var(--ex-ink) !important;
   border-radius: 9px !important;
 }
 body.ct-exam-studio .passage-text-content,
 body.ct-exam-studio .passage-text {
   color: var(--ex-ink-2) !important;
-  line-height: 1.68;
+  line-height: 1.72;
 }
 body.ct-exam-studio .passage-fade-overlay {
   background: linear-gradient(to bottom, transparent 0%, var(--ex-well) 100%) !important;
 }
 body.ct-exam-studio .passage-expand-cta {
-  background: var(--ex-surface-2) !important;
+  background: var(--ex-surface) !important;
   color: var(--ex-ink) !important;
   border: 1px solid var(--ex-line-2) !important;
 }
@@ -530,16 +673,16 @@ body.ct-exam-studio .passage-expand-cta {
 body.ct-exam-studio .question-text {
   font-size: 18.5px !important;
   font-weight: 540 !important;
-  line-height: 1.64 !important;
-  letter-spacing: -0.01em;
+  line-height: 1.66 !important;
+  letter-spacing: -0.012em;
   color: var(--ex-ink) !important;
-  margin-bottom: 20px !important;
+  margin-bottom: 24px !important;
 }
 body.ct-exam-studio .question-image,
 body.ct-exam-studio .passage-image {
   display: block !important;
   max-width: 100% !important;
-  max-height: 210px !important;
+  max-height: 220px !important;
   width: auto !important;
   height: auto !important;
   object-fit: contain !important;
@@ -575,10 +718,10 @@ body.ct-exam-studio .question-text .frac-num {
   border-bottom-color: currentColor !important;
 }
 
-/* Tactile A/B/C/D Keycap MCQ Option Cards */
+/* Tactile A/B/C/D Keycap MCQ Option Cards with Crisp Monochrome Check Indicator */
 body.ct-exam-studio .options-container {
   display: grid !important;
-  gap: 10px !important;
+  gap: 11px !important;
   counter-reset: ct-opt;
 }
 body.ct-exam-studio .radio-option {
@@ -587,50 +730,74 @@ body.ct-exam-studio .radio-option {
   display: flex !important;
   align-items: center !important;
   gap: 14px !important;
-  padding: 14px 18px !important;
-  border-radius: 12px !important;
-  border: 1px solid var(--ex-line-2) !important;
+  padding: 15px 46px 15px 16px !important;
+  border-radius: 14px !important;
+  border: 1.5px solid var(--ex-line-2) !important;
   background: var(--ex-well) !important;
   color: var(--ex-ink) !important;
   cursor: pointer;
   margin: 0 !important;
-  transition: transform 150ms var(--ct-ease), border-color 160ms var(--ct-ease), background-color 160ms var(--ct-ease) !important;
+  transition: transform 140ms cubic-bezier(0.23, 1, 0.32, 1), border-color 160ms ease, background-color 160ms ease !important;
 }
-[data-theme="light"] body.ct-exam-studio .radio-option { background: #FAFAFB !important; }
+[data-theme="light"] body.ct-exam-studio .radio-option { background: #FAF9F7 !important; }
 
 /* Auto-generated crisp A / B / C / D keycap badge */
 body.ct-exam-studio .radio-option::before {
   content: counter(ct-opt, upper-alpha);
   flex: none;
-  width: 28px;
-  height: 28px;
-  border-radius: 7px;
-  border: 1px solid var(--ex-line);
-  background: var(--ex-surface-2);
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  border: 1px solid var(--ex-line-2);
+  background: var(--ex-surface);
   color: var(--ex-ink-2);
   font-family: var(--ct-mono);
-  font-size: 12px;
-  font-weight: 660;
+  font-size: 12.5px;
+  font-weight: 700;
   display: inline-grid;
   place-items: center;
-  transition: background-color 160ms var(--ct-ease), border-color 160ms var(--ct-ease), color 160ms var(--ct-ease);
+  transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease, transform 160ms cubic-bezier(0.23, 1, 0.32, 1);
 }
-body.ct-exam-studio .radio-option:hover {
-  border-color: var(--ex-line-3) !important;
-  background: var(--ex-surface-2) !important;
-  transform: none;
+/* Crisp right-side check circle that illuminates on selection */
+body.ct-exam-studio .radio-option::after {
+  content: "";
+  position: absolute;
+  right: 16px;
+  top: 50%;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 1.5px solid var(--ex-line-2);
+  background: transparent;
+  transform: translateY(-50%);
+  transition: background-color 160ms ease, border-color 160ms ease, transform 180ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+@media (hover: hover) and (pointer: fine) {
+  body.ct-exam-studio .radio-option:hover {
+    border-color: var(--ex-line-3) !important;
+    background: var(--ex-surface-2) !important;
+  }
+}
+body.ct-exam-studio .radio-option:active {
+  transform: scale(0.994);
 }
 body.ct-exam-studio .radio-option.selected,
 body.ct-exam-studio .radio-option:has(input:checked) {
-  border-color: var(--ex-sel) !important;
-  background: var(--ex-sel-soft) !important;
-  box-shadow: none !important;
+  border-color: var(--ex-ink) !important;
+  background: var(--ex-surface-2) !important;
+  box-shadow: 0 2px 10px -4px rgba(23, 22, 20, 0.14) !important;
 }
 body.ct-exam-studio .radio-option.selected::before,
 body.ct-exam-studio .radio-option:has(input:checked)::before {
-  background: var(--ex-sel);
-  border-color: var(--ex-sel);
-  color: #FFFFFF;
+  background: var(--ex-cta-bg);
+  border-color: var(--ex-cta-bg);
+  color: var(--ex-cta-ink);
+}
+body.ct-exam-studio .radio-option.selected::after,
+body.ct-exam-studio .radio-option:has(input:checked)::after {
+  border-color: var(--ex-cta-bg);
+  background: var(--ex-cta-bg);
+  box-shadow: inset 0 0 0 4px var(--ex-surface-2);
 }
 /* Keep real native radio accessible while visual keycap leads */
 body.ct-exam-studio .radio-option input[type="radio"] {
@@ -644,47 +811,58 @@ body.ct-exam-studio .radio-option input[type="radio"] {
 body.ct-exam-studio .radio-option label {
   flex: 1;
   font-size: 15.5px !important;
-  line-height: 1.55 !important;
+  line-height: 1.56 !important;
   color: var(--ex-ink) !important;
   cursor: pointer;
   margin: 0 !important;
 }
 
-/* Previous / Next Navigation Buttons */
+/* Previous / Next Navigation Buttons (Inside Right Rail Above Palette) */
 body.ct-exam-studio .nav-btn {
-  height: 42px !important;
-  padding: 0 20px !important;
-  border-radius: 10px !important;
+  width: 100% !important;
+  height: 44px !important;
+  padding: 0 14px !important;
+  border-radius: 11px !important;
   font-family: var(--ct-font) !important;
   font-size: 13.5px !important;
-  font-weight: 620 !important;
+  font-weight: 660 !important;
   display: inline-flex !important;
   align-items: center !important;
-  gap: 8px;
+  justify-content: center !important;
+  gap: 7px;
   cursor: pointer;
-  transition: transform 140ms var(--ct-ease), background-color 160ms var(--ct-ease), border-color 160ms var(--ct-ease) !important;
+  transition: transform 140ms cubic-bezier(0.23, 1, 0.32, 1), background-color 160ms ease, border-color 160ms ease, opacity 160ms ease !important;
 }
-body.ct-exam-studio .nav-btn:active { transform: scale(0.98); }
+body.ct-exam-studio .nav-btn:disabled {
+  opacity: 0.38 !important;
+  cursor: not-allowed !important;
+  transform: none !important;
+}
+body.ct-exam-studio .nav-btn:active:not(:disabled) { transform: scale(0.97); }
 body.ct-exam-studio .nav-btn-secondary {
-  background: var(--ex-surface-2) !important;
+  background: var(--ex-well) !important;
   border: 1px solid var(--ex-line-2) !important;
   color: var(--ex-ink) !important;
   box-shadow: none !important;
 }
-body.ct-exam-studio .nav-btn-secondary:hover {
-  background: var(--ex-elevated) !important;
-  border-color: var(--ex-line-3) !important;
+@media (hover: hover) and (pointer: fine) {
+  body.ct-exam-studio .nav-btn-secondary:hover:not(:disabled) {
+    background: var(--ex-elevated) !important;
+    border-color: var(--ex-line-3) !important;
+  }
 }
 body.ct-exam-studio .nav-btn-primary {
   background: var(--ex-cta-bg) !important;
-  border: 1px solid transparent !important;
+  border: 1px solid var(--ex-cta-bg) !important;
   color: var(--ex-cta-ink) !important;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25) !important;
+  box-shadow: 0 2px 6px rgba(23, 22, 20, 0.16) !important;
 }
-body.ct-exam-studio .nav-btn-primary:hover {
-  background: var(--ex-cta-hover) !important;
-  filter: none !important;
-  transform: translateY(-1px);
+@media (hover: hover) and (pointer: fine) {
+  body.ct-exam-studio .nav-btn-primary:hover:not(:disabled) {
+    background: var(--ex-cta-hover) !important;
+    filter: none !important;
+    transform: translateY(-1px);
+  }
 }
 
 /* Right Rail: Question Map */
@@ -693,19 +871,31 @@ body.ct-exam-studio .palette-title {
   align-items: center !important;
   justify-content: space-between !important;
   flex: none !important;
-  font-size: 12.5px !important;
-  font-weight: 660 !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.01em !important;
   color: var(--ex-ink) !important;
-  margin-bottom: 12px !important;
-  padding-bottom: 10px !important;
-  border-bottom: 1px solid var(--ex-line) !important;
+  margin-bottom: 10px !important;
+  padding-bottom: 0 !important;
+  border-bottom: 0 !important;
 }
 body.ct-exam-studio .palette-title i { display: none; }
+body.ct-exam-studio .palette-count-pill {
+  font-family: var(--ct-mono);
+  font-size: 11px;
+  font-weight: 660;
+  color: var(--ex-ink-2);
+  padding: 2px 8px;
+  border-radius: 6px;
+  background: var(--ex-well);
+  border: 1px solid var(--ex-line);
+  font-variant-numeric: tabular-nums;
+}
 body.ct-exam-studio #answeredCount {
   font-family: var(--ct-mono);
-  font-size: 11.5px;
-  font-weight: 600;
-  color: var(--ex-ink-3);
+  font-size: inherit;
+  font-weight: 700;
+  color: var(--ex-ink);
   padding: 0;
   border-radius: 0;
   background: transparent;
@@ -718,9 +908,10 @@ body.ct-exam-studio .palette-buttons {
   overflow-y: auto !important;
   flex: 1 1 auto !important;
   min-height: 0 !important;
-  padding-right: 2px !important;
+  padding: 2px 2px 4px 2px !important;
 }
 body.ct-exam-studio .palette-btn {
+  position: relative !important;
   width: 100% !important;
   min-width: 0 !important;
   min-height: 36px !important;
@@ -729,36 +920,51 @@ body.ct-exam-studio .palette-btn {
   font-family: var(--ct-mono) !important;
   font-size: 12.5px !important;
   font-weight: 640 !important;
-  border: 1px solid var(--ex-line) !important;
+  border: 1px solid var(--ex-line-2) !important;
   cursor: pointer;
-  transition: transform 120ms var(--ct-ease), background-color 150ms var(--ct-ease), border-color 150ms var(--ct-ease), color 150ms var(--ct-ease) !important;
+  transition: transform 120ms cubic-bezier(0.23, 1, 0.32, 1), background-color 150ms ease, border-color 150ms ease, color 150ms ease !important;
 }
-body.ct-exam-studio .palette-btn:hover { border-color: var(--ex-line-3) !important; }
+body.ct-exam-studio .palette-btn:hover { border-color: var(--ex-ink) !important; }
 body.ct-exam-studio .palette-btn.unanswered {
-  background: var(--ex-well) !important;
-  color: var(--ex-ink-2) !important;
+  background: var(--ex-surface) !important;
+  color: var(--ex-ink-3) !important;
 }
 body.ct-exam-studio .palette-btn.answered {
-  background: var(--ex-ok-soft) !important;
-  border-color: var(--ex-ok-line) !important;
-  color: var(--ex-ok) !important;
+  background: var(--ex-elevated) !important;
+  border-color: var(--ex-ink) !important;
+  color: var(--ex-ink) !important;
+  font-weight: 740 !important;
+}
+body.ct-exam-studio .palette-btn.answered::after {
+  content: "";
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--ex-ink);
 }
 body.ct-exam-studio .palette-btn.current {
   background: var(--ex-cta-bg) !important;
-  border-color: transparent !important;
+  border-color: var(--ex-cta-bg) !important;
   color: var(--ex-cta-ink) !important;
-  box-shadow: none !important;
+  box-shadow: 0 0 0 2px var(--ex-surface), 0 0 0 3.5px var(--ex-cta-bg) !important;
+  font-weight: 760 !important;
   transform: none !important;
 }
+body.ct-exam-studio .palette-btn.current::after {
+  background: var(--ex-cta-ink);
+}
 
-/* Dedicated Non-Overlapping Bottom Status Rail (Zero Overlap with Options) */
+/* Dedicated Non-Overlapping Bottom Status Rail */
 body.ct-exam-studio::after {
   content: "";
   position: fixed;
   left: 0;
   right: 0;
   bottom: 0;
-  height: 34px;
+  height: 36px;
   z-index: 880;
   background: var(--ex-canvas);
   border-top: 1px solid var(--ex-line);
@@ -766,7 +972,7 @@ body.ct-exam-studio::after {
 }
 body.ct-exam-studio .warning-badge {
   position: fixed !important;
-  bottom: 3px !important;
+  bottom: 4px !important;
   left: 24px !important;
   top: auto !important;
   right: auto !important;
@@ -775,21 +981,39 @@ body.ct-exam-studio .warning-badge {
   display: inline-flex !important;
   align-items: center !important;
   gap: 7px;
-  padding: 0 !important;
-  border-radius: 0 !important;
+  padding: 0 10px !important;
+  border-radius: 7px !important;
   font-family: var(--ct-mono) !important;
-  font-size: 11.5px !important;
-  font-weight: 560 !important;
-  border: 0 !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  border: 1px solid transparent !important;
   background: transparent !important;
   color: var(--ex-ink-3) !important;
   box-shadow: none !important;
+  transition: background-color 200ms ease, color 200ms ease, border-color 200ms ease !important;
 }
-body.ct-exam-studio .warning-badge.stage-clean { color: var(--ex-ok) !important; border: 0 !important; }
+body.ct-exam-studio .warning-badge.stage-clean {
+  color: var(--ex-ink-2) !important;
+}
+body.ct-exam-studio .warning-badge.stage-low,
 body.ct-exam-studio .warning-badge.stage-warn,
-body.ct-exam-studio .warning-badge.warning { border: 0 !important; color: var(--ex-warn) !important; }
+body.ct-exam-studio .warning-badge.warning {
+  background: var(--ex-surface) !important;
+  border-color: var(--ex-line-2) !important;
+  color: var(--ex-ink) !important;
+}
+body.ct-exam-studio .warning-badge.stage-mid {
+  background: var(--ex-elevated) !important;
+  border-color: var(--ex-ink) !important;
+  color: var(--ex-ink) !important;
+}
+body.ct-exam-studio .warning-badge.stage-critical,
 body.ct-exam-studio .warning-badge.stage-danger,
-body.ct-exam-studio .warning-badge.danger { border: 0 !important; color: var(--ex-bad) !important; }
+body.ct-exam-studio .warning-badge.danger {
+  background: var(--ex-cta-bg) !important;
+  border-color: var(--ex-cta-bg) !important;
+  color: var(--ex-cta-ink) !important;
+}
 
 body.ct-exam-studio #saveStatusIndicator {
   position: fixed !important;
@@ -946,7 +1170,7 @@ body.ct-exam-studio #saveStatusIndicator {
   gap: 5px !important;
 }
 [data-theme="light"] #calculatorModal .calculator-display {
-  box-shadow: inset 0 1px 3px rgba(17, 20, 28, 0.06) !important;
+  box-shadow: inset 0 1px 3px rgba(23, 22, 20, 0.06) !important;
 }
 
 #calculatorModal .calculator-expression,
@@ -1524,222 +1748,252 @@ body.ct-exam-studio .btn-submit:hover {
   box-shadow: 0 8px 20px -8px rgba(23, 22, 20, 0.25) !important;
 }
 
-/* ---------- Result Popup Modal (#resultModal) — Dark & Light Native ---------- */
-body.ct-exam-studio #resultModal .modal-container.ex-result-card {
-  width: min(500px, calc(100vw - 28px)) !important;
-  max-width: 500px !important;
+/* ==========================================================================
+   5. BRAND-NEW ARCHITECTURAL MONOCHROME SCORE SLIP (#resultModal)
+      Inverted Obsidian Masthead + Oversized Tabular Score + Grade Stamp +
+      Linear Pass-Benchmark Scale + 4-Cell Editorial Dossier
+   ========================================================================== */
+@keyframes sc-folio-reveal {
+  from { opacity: 0; transform: translate3d(0, 14px, 0) scale(0.975); filter: blur(6px); }
+  to { opacity: 1; transform: translate3d(0, 0, 0) scale(1); filter: blur(0); }
+}
+body.ct-exam-studio #resultModal .modal-container.sc-modal-card {
+  width: min(560px, calc(100vw - 28px)) !important;
+  max-width: 560px !important;
   padding: 0 !important;
   background: var(--ex-surface) !important;
+  border: 1px solid var(--ex-line-2) !important;
+  border-radius: 22px !important;
   color: var(--ex-ink) !important;
   text-align: left !important;
-  --res-accent: var(--ex-ok);
-  --res-soft: var(--ex-ok-soft);
-  --res-line: var(--ex-ok-line);
+  animation: sc-folio-reveal 440ms cubic-bezier(0.23, 1, 0.32, 1) both !important;
 }
-body.ct-exam-studio #resultModal .ex-result-card[data-grade="A"] {
-  --res-accent: var(--ex-ok);
-  --res-soft: var(--ex-ok-soft);
-  --res-line: var(--ex-ok-line);
-}
-body.ct-exam-studio #resultModal .ex-result-card[data-grade="B"],
-body.ct-exam-studio #resultModal .ex-result-card[data-grade="withheld"] {
-  --res-accent: var(--ex-sel);
-  --res-soft: var(--ex-sel-soft);
-  --res-line: var(--ex-line-2);
-}
-body.ct-exam-studio #resultModal .ex-result-card[data-grade="C"],
-body.ct-exam-studio #resultModal .ex-result-card[data-grade="D"] {
-  --res-accent: var(--ex-warn);
-  --res-soft: var(--ex-warn-soft);
-  --res-line: var(--ex-warn-line);
-}
-body.ct-exam-studio #resultModal .ex-result-card[data-grade="F"] {
-  --res-accent: var(--ex-bad);
-  --res-soft: var(--ex-bad-soft);
-  --res-line: var(--ex-bad-line);
-}
-
-body.ct-exam-studio .ex-result-head {
+body.ct-exam-studio .sc-masthead {
+  background: #171614 !important;
+  color: #FFFFFF !important;
+  padding: 24px 28px 26px !important;
+  display: grid !important;
+  gap: 18px !important;
   position: relative;
-  padding: 26px 28px 20px;
-  background: var(--ex-well);
-  border-bottom: 1px solid var(--ex-line);
+}
+[data-theme="dark"] body.ct-exam-studio .sc-masthead {
+  background: #0F0F11 !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.10) !important;
+}
+body.ct-exam-studio .sc-masthead__meta {
   display: flex;
   align-items: center;
-  gap: 16px;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
 }
-body.ct-exam-studio .ex-result-head::before {
-  content: "";
-  position: absolute;
-  top: 0; left: 0; right: 0;
-  height: 3px;
-  background: var(--res-accent);
+body.ct-exam-studio .sc-doc-tag {
+  font-family: var(--ct-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.56);
 }
-body.ct-exam-studio .ex-result-seal {
-  width: 52px;
-  height: 52px;
-  border-radius: 14px;
-  background: var(--res-soft);
-  border: 1px solid var(--res-line);
-  color: var(--res-accent);
-  display: grid;
-  place-items: center;
-  flex: none;
-  font-size: 22px;
-  animation: ex-stagger-in 360ms cubic-bezier(0.22, 1, 0.36, 1) 40ms both;
+body.ct-exam-studio .sc-status-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  background: rgba(255, 255, 255, 0.08);
+  color: #FFFFFF;
+  font-family: var(--ct-mono);
+  font-size: 10.5px;
+  font-weight: 660;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
-body.ct-exam-studio .ex-result-head-copy {
-  display: grid;
-  gap: 3px;
+body.ct-exam-studio .sc-masthead__main {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 20px;
+}
+body.ct-exam-studio .sc-masthead__copy {
   min-width: 0;
+  display: grid;
+  gap: 5px;
 }
-body.ct-exam-studio .ex-result-head h2 {
-  margin: 0;
-  font-size: 21px;
-  font-weight: 740;
-  letter-spacing: -0.025em;
-  color: var(--ex-ink);
-  line-height: 1.2;
+body.ct-exam-studio .sc-masthead__copy h2 {
+  margin: 0 !important;
+  font-size: 22px !important;
+  font-weight: 740 !important;
+  letter-spacing: -0.028em !important;
+  color: #FFFFFF !important;
+  line-height: 1.18 !important;
 }
-body.ct-exam-studio .ex-result-head p {
-  margin: 0;
-  font-size: 13px;
-  color: var(--ex-ink-2);
+body.ct-exam-studio .sc-masthead__copy p {
+  margin: 0 !important;
+  font-size: 13px !important;
+  color: rgba(255, 255, 255, 0.68) !important;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-
-body.ct-exam-studio .ex-result-body {
-  padding: 24px 28px 22px;
-  display: grid;
-  gap: 18px;
-}
-body.ct-exam-studio .ex-result-metrics {
+body.ct-exam-studio .sc-masthead__score {
   display: flex;
   align-items: center;
-  gap: 24px;
-  padding: 18px 20px;
-  border-radius: 16px;
-  background: var(--ex-well);
-  border: 1px solid var(--ex-line);
-  animation: ex-stagger-in 380ms cubic-bezier(0.22, 1, 0.36, 1) 80ms both;
-}
-body.ct-exam-studio .ex-result-dial {
-  position: relative;
-  width: 112px;
-  height: 112px;
+  gap: 14px;
   flex: none;
 }
-body.ct-exam-studio .ex-result-dial svg {
-  width: 112px;
-  height: 112px;
-  display: block;
+body.ct-exam-studio #resultPercentageDisplay {
+  font-family: var(--ct-mono) !important;
+  font-variant-numeric: tabular-nums !important;
+  font-size: 46px !important;
+  font-weight: 800 !important;
+  letter-spacing: -0.05em !important;
+  line-height: 0.95 !important;
+  color: #FFFFFF !important;
 }
-body.ct-exam-studio .ex-result-dial-track {
-  stroke: var(--ex-elevated);
-}
-body.ct-exam-studio .ex-result-dial-ticks {
-  stroke: var(--ex-line-2);
-  stroke-dasharray: 1.5 6.8;
-}
-body.ct-exam-studio #resultScoreCircle {
-  stroke: var(--res-accent);
-  transition: stroke-dashoffset 950ms cubic-bezier(0.22, 1, 0.36, 1), stroke 240ms ease;
-}
-body.ct-exam-studio .ex-result-dial-center {
-  position: absolute;
-  inset: 0;
+body.ct-exam-studio .sc-grade-stamp {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 1px;
+  min-width: 56px;
+  height: 56px;
+  padding: 0 10px;
+  border-radius: 12px;
+  border: 1.5px solid rgba(255, 255, 255, 0.28);
+  background: rgba(255, 255, 255, 0.08);
   text-align: center;
 }
-body.ct-exam-studio #resultScoreDisplay {
+body.ct-exam-studio .sc-grade-stamp small {
   font-family: var(--ct-mono);
-  font-variant-numeric: tabular-nums;
-  font-size: 26px;
-  font-weight: 760;
-  letter-spacing: -0.03em;
-  color: var(--ex-ink) !important;
-  line-height: 1.05;
-}
-body.ct-exam-studio .ex-result-dial-sub {
-  font-family: var(--ct-mono);
-  font-variant-numeric: tabular-nums;
-  font-size: 11px;
-  color: var(--ex-ink-3);
-}
-
-body.ct-exam-studio .ex-result-summary {
-  flex: 1;
-  min-width: 0;
-  display: grid;
-  gap: 12px;
-}
-body.ct-exam-studio .ex-result-grade-row {
-  display: flex;
-  align-items: center;
-  gap: 14px;
+  font-size: 8.5px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.56);
+  line-height: 1;
 }
 body.ct-exam-studio #resultGradeLetter {
-  width: 54px;
-  height: 54px;
-  border-radius: 14px;
-  background: var(--res-soft);
-  border: 1px solid var(--res-line);
-  color: var(--res-accent);
-  font-family: var(--ct-mono);
-  font-size: 26px;
-  font-weight: 800;
-  display: inline-grid;
-  place-items: center;
-  flex: none;
-  animation: ex-stagger-in 420ms cubic-bezier(0.22, 1, 0.36, 1) 140ms both;
-}
-body.ct-exam-studio #resultPercentageDisplay {
-  font-family: var(--ct-mono);
-  font-variant-numeric: tabular-nums;
-  font-size: 24px;
-  font-weight: 760;
-  letter-spacing: -0.03em;
-  color: var(--ex-ink) !important;
-  line-height: 1.1;
-}
-body.ct-exam-studio .ex-result-correct-line {
-  font-size: 12.5px;
-  color: var(--ex-ink-2);
+  width: auto !important;
+  height: auto !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  border: 0 !important;
+  color: #FFFFFF !important;
+  font-family: var(--ct-mono) !important;
+  font-size: 24px !important;
+  font-weight: 800 !important;
+  line-height: 1.08 !important;
   margin-top: 2px;
-  font-variant-numeric: tabular-nums;
 }
 
-body.ct-exam-studio #resultMessageBox {
-  background: var(--res-soft);
-  border: 1px solid var(--res-line);
-  border-left: 3px solid var(--res-accent);
-  border-radius: 12px;
-  padding: 13px 16px;
-  text-align: left;
-  animation: ex-stagger-in 420ms cubic-bezier(0.22, 1, 0.36, 1) 180ms both;
+body.ct-exam-studio .sc-body {
+  padding: 22px 28px 20px !important;
+  display: grid !important;
+  gap: 18px !important;
 }
-body.ct-exam-studio #resultMessageText {
-  font-size: 13.5px;
-  font-weight: 560;
-  line-height: 1.5;
-  color: var(--ex-ink);
+body.ct-exam-studio .sc-scale {
+  display: grid;
+  gap: 8px;
 }
-
-body.ct-exam-studio .ex-result-foot {
-  padding: 16px 28px 20px;
-  background: var(--ex-well);
-  border-top: 1px solid var(--ex-line);
+body.ct-exam-studio .sc-scale__head {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  flex-wrap: wrap;
+  font-family: var(--ct-mono);
+  font-size: 10.5px;
+  color: var(--ex-ink-3);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+body.ct-exam-studio .sc-scale__track {
+  position: relative;
+  height: 10px;
+  border-radius: 999px;
+  background: var(--ex-elevated);
+  overflow: visible;
+}
+body.ct-exam-studio .sc-scale__fill {
+  height: 100%;
+  width: 100%;
+  border-radius: 999px;
+  background: var(--ex-ink);
+  transform-origin: left center;
+  transform: scaleX(0);
+  transition: transform 820ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+body.ct-exam-studio .sc-scale__mark {
+  position: absolute;
+  top: -4px;
+  bottom: -4px;
+  left: 50%;
+  width: 2px;
+  border-radius: 2px;
+  background: var(--ex-ink-2);
+}
+
+body.ct-exam-studio .sc-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  border: 1px solid var(--ex-line-2);
+  border-radius: 14px;
+  background: var(--ex-well);
+  overflow: hidden;
+}
+body.ct-exam-studio .sc-metric {
+  padding: 13px 14px;
+  display: grid;
+  gap: 3px;
+  border-right: 1px solid var(--ex-line);
+}
+body.ct-exam-studio .sc-metric:last-child { border-right: 0; }
+body.ct-exam-studio .sc-metric span {
+  font-family: var(--ct-mono);
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--ex-ink-3);
+}
+body.ct-exam-studio .sc-metric strong {
+  font-family: var(--ct-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 18px;
+  font-weight: 760;
+  color: var(--ex-ink);
+  line-height: 1.15;
+}
+body.ct-exam-studio #resultScoreDisplay {
+  font-family: inherit !important;
+  font-size: inherit !important;
+  font-weight: inherit !important;
+  color: inherit !important;
+}
+
+body.ct-exam-studio #resultMessageBox {
+  background: var(--ex-surface) !important;
+  border: 1px solid var(--ex-line-2) !important;
+  border-left: 3px solid var(--ex-ink) !important;
+  border-radius: 12px !important;
+  padding: 13px 16px !important;
+  text-align: left !important;
+}
+body.ct-exam-studio #resultMessageText {
+  font-size: 13.5px !important;
+  font-weight: 540 !important;
+  line-height: 1.52 !important;
+  color: var(--ex-ink-2) !important;
+}
+
+body.ct-exam-studio .ex-result-foot {
+  padding: 15px 28px 18px !important;
+  background: var(--ex-well) !important;
+  border-top: 1px solid var(--ex-line) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 12px !important;
+  flex-wrap: wrap !important;
 }
 body.ct-exam-studio .ex-result-countdown {
   display: inline-flex;
@@ -1752,7 +2006,7 @@ body.ct-exam-studio .ex-result-countdown {
 body.ct-exam-studio .ex-result-countdown strong {
   font-family: var(--ct-mono);
   color: var(--ex-ink);
-  font-weight: 680;
+  font-weight: 700;
 }
 body.ct-exam-studio .ex-stay-btn {
   background: transparent;
@@ -1763,7 +2017,7 @@ body.ct-exam-studio .ex-stay-btn {
   color: var(--ex-ink-2);
   font-family: inherit;
   font-size: 12.5px;
-  font-weight: 620;
+  font-weight: 640;
   cursor: pointer;
   transition: color 160ms ease;
 }
@@ -1776,142 +2030,478 @@ body.ct-exam-studio .ex-result-cta {
   color: var(--ex-cta-ink) !important;
   text-decoration: none;
   font-size: 13.5px;
-  font-weight: 650;
+  font-weight: 660;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  transition: background-color 160ms cubic-bezier(0.22, 1, 0.36, 1), transform 140ms cubic-bezier(0.22, 1, 0.36, 1);
+  transition: background-color 160ms ease, transform 140ms cubic-bezier(0.23, 1, 0.32, 1);
 }
-body.ct-exam-studio .ex-result-cta:hover {
-  background: var(--ex-cta-hover);
-  transform: translateY(-1px);
+@media (hover: hover) and (pointer: fine) {
+  body.ct-exam-studio .ex-result-cta:hover {
+    background: var(--ex-cta-hover);
+    transform: translateY(-1px);
+  }
 }
 
-/* ---------- Loading, Lock, Pause, Time-Up & Superseded Modals ---------- */
+/* ==========================================================================
+   6. BESPOKE PURE-MONOCHROME ANIMATED EXAM SCENARIO OVERLAYS
+      Paused · Time Up · Max Warnings · Session Locked · Superseded ·
+      Force Submit · Submitting Loader
+   ========================================================================== */
+@keyframes ex-sonar-wave {
+  0% { opacity: 0.48; transform: scale3d(0.86, 0.86, 1); }
+  100% { opacity: 0; transform: scale3d(1.42, 1.42, 1); }
+}
+@keyframes ex-orbit-rotate {
+  to { transform: rotate(360deg); }
+}
+@keyframes ex-pause-breathe {
+  0%, 100% { transform: scaleY(1); opacity: 1; }
+  50% { transform: scaleY(0.76); opacity: 0.65; }
+}
+@keyframes ex-sweep-bar {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(260%); }
+}
+@keyframes ex-clock-sweep {
+  from { stroke-dashoffset: 164; }
+  to { stroke-dashoffset: 0; }
+}
+@keyframes ex-check-draw {
+  from { stroke-dashoffset: 48; }
+  to { stroke-dashoffset: 0; }
+}
+@keyframes ex-dot-live {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.35; transform: scale(0.75); }
+}
+
+body.ct-exam-studio .ex-scene-card,
+body.ct-exam-studio .paused-content.ex-scene-card,
+body.ct-exam-studio .loading-content.ex-scene-card,
+body.ct-exam-studio #supersededModal .ex-scene-card {
+  width: min(444px, calc(100vw - 28px)) !important;
+  max-width: 444px !important;
+  padding: 0 !important;
+  background: var(--ex-surface) !important;
+  border: 1px solid var(--ex-line-2) !important;
+  border-radius: 22px !important;
+  color: var(--ex-ink) !important;
+  text-align: center !important;
+  box-shadow: 0 32px 72px -20px rgba(23, 22, 20, 0.36), 0 0 0 1px var(--ex-line) !important;
+  overflow: hidden !important;
+}
+body.ct-exam-studio .ex-scene-top {
+  padding: 13px 22px;
+  background: var(--ex-well);
+  border-bottom: 1px solid var(--ex-line);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+body.ct-exam-studio .ex-scene-code {
+  font-family: var(--ct-mono);
+  font-size: 10px;
+  font-weight: 660;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  color: var(--ex-ink-3);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: left;
+}
+body.ct-exam-studio .ex-scene-pill {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  gap: 6px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: var(--ex-cta-bg);
+  color: var(--ex-cta-ink);
+  font-family: var(--ct-mono);
+  font-size: 10px;
+  font-weight: 680;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+body.ct-exam-studio .ex-scene-pill i {
+  width: 5px !important;
+  height: 5px !important;
+  margin: 0 !important;
+  font-size: 0 !important;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: currentColor !important;
+  color: inherit !important;
+  display: inline-block;
+  animation: ex-dot-live 1.5s ease-in-out infinite;
+}
+body.ct-exam-studio .ex-scene-body {
+  padding: 30px 28px 26px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+
+/* Bespoke Animated Monochrome Emblem Stage */
+body.ct-exam-studio .ex-scene-emblem {
+  position: relative;
+  width: 92px;
+  height: 92px;
+  display: grid;
+  place-items: center;
+  margin-bottom: 4px;
+}
+body.ct-exam-studio .ex-emblem-ring {
+  position: absolute;
+  inset: 6px;
+  border-radius: 50%;
+  border: 1.5px solid var(--ex-ink);
+  opacity: 0;
+  pointer-events: none;
+}
+body.ct-exam-studio .ex-emblem-ring--1 {
+  animation: ex-sonar-wave 2.4s cubic-bezier(0.23, 1, 0.32, 1) infinite;
+}
+body.ct-exam-studio .ex-emblem-ring--2 {
+  animation: ex-sonar-wave 2.4s cubic-bezier(0.23, 1, 0.32, 1) 1.2s infinite;
+}
+body.ct-exam-studio .ex-emblem-orbit {
+  position: absolute;
+  inset: 2px;
+  border-radius: 50%;
+  border: 1.5px dashed var(--ex-line-3);
+  animation: ex-orbit-rotate 7s linear infinite;
+  pointer-events: none;
+}
+body.ct-exam-studio .ex-emblem-core {
+  position: relative;
+  z-index: 2;
+  width: 66px;
+  height: 66px;
+  border-radius: 50%;
+  background: var(--ex-cta-bg);
+  color: var(--ex-cta-ink);
+  display: grid;
+  place-items: center;
+  box-shadow: 0 12px 26px -10px rgba(23, 22, 20, 0.38);
+}
+body.ct-exam-studio .ex-emblem-core--outline {
+  background: var(--ex-well);
+  color: var(--ex-ink);
+  border: 2px solid var(--ex-ink);
+  box-shadow: none;
+}
+body.ct-exam-studio .ex-emblem-core svg {
+  width: 28px;
+  height: 28px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2.1;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+body.ct-exam-studio .ex-pause-bar {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: ex-pause-breathe 2s ease-in-out infinite;
+}
+body.ct-exam-studio .ex-pause-bar--2 {
+  animation-delay: 260ms;
+}
+body.ct-exam-studio .ex-lock-svg {
+  position: absolute;
+  inset: 0;
+  width: 92px;
+  height: 92px;
+  transform: rotate(-90deg);
+}
+body.ct-exam-studio .ex-lock-track {
+  fill: none;
+  stroke: var(--ex-elevated);
+  stroke-width: 2.5;
+}
+body.ct-exam-studio .ex-lock-arc {
+  fill: none;
+  stroke: var(--ex-ink);
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-dasharray: 164;
+  stroke-dashoffset: 164;
+  animation: ex-clock-sweep 2.2s cubic-bezier(0.23, 1, 0.32, 1) infinite;
+}
+body.ct-exam-studio .ex-check-stroke {
+  stroke-dasharray: 48;
+  animation: ex-check-draw 620ms cubic-bezier(0.23, 1, 0.32, 1) 180ms both;
+}
+
+body.ct-exam-studio .ex-scene-card h2,
+body.ct-exam-studio .ex-scene-card h3,
+body.ct-exam-studio .ex-scene-card .modal-title {
+  margin: 0 !important;
+  font-size: 21px !important;
+  font-weight: 740 !important;
+  letter-spacing: -0.025em !important;
+  color: var(--ex-ink) !important;
+  line-height: 1.2 !important;
+}
+body.ct-exam-studio .ex-scene-card p,
+body.ct-exam-studio .ex-scene-card .modal-message {
+  margin: 0 !important;
+  font-size: 13.5px !important;
+  line-height: 1.56 !important;
+  color: var(--ex-ink-2) !important;
+  max-width: 36ch;
+}
+
+body.ct-exam-studio .ex-scene-meta {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 4px;
+}
+body.ct-exam-studio .ex-scene-chip {
+  padding: 10px 12px;
+  border-radius: 11px;
+  background: var(--ex-well);
+  border: 1px solid var(--ex-line);
+  display: grid;
+  gap: 2px;
+  text-align: left;
+}
+body.ct-exam-studio .ex-scene-chip span {
+  font-family: var(--ct-mono);
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ex-ink-3);
+}
+body.ct-exam-studio .ex-scene-chip strong {
+  font-size: 12.5px;
+  font-weight: 680;
+  color: var(--ex-ink);
+}
+
+/* Sweeping Monochrome Auto-Submit / Polling Progress Bar */
+body.ct-exam-studio .ex-auto-bar {
+  width: 100%;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--ex-elevated);
+  overflow: hidden;
+  position: relative;
+  margin-top: 6px;
+}
+body.ct-exam-studio .ex-auto-bar > i {
+  position: absolute !important;
+  inset: 0 auto 0 0 !important;
+  width: 42% !important;
+  height: 100% !important;
+  margin: 0 !important;
+  font-size: 0 !important;
+  border-radius: 999px;
+  background: var(--ex-ink) !important;
+  color: transparent !important;
+  animation: ex-sweep-bar 1.5s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+}
+body.ct-exam-studio .ex-scene-foot {
+  padding: 14px 24px 18px;
+  background: var(--ex-well);
+  border-top: 1px solid var(--ex-line);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+body.ct-exam-studio .ex-scene-status-line {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--ct-mono);
+  font-size: 11px;
+  font-weight: 560;
+  color: var(--ex-ink-2);
+}
+body.ct-exam-studio .ex-scene-status-line i {
+  width: 6px !important;
+  height: 6px !important;
+  margin: 0 !important;
+  font-size: 0 !important;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: var(--ex-ink) !important;
+  color: inherit !important;
+  display: inline-block;
+  animation: ex-dot-live 1.4s ease-in-out infinite;
+}
+body.ct-exam-studio .ex-scene-btn {
+  width: 100%;
+  height: 44px;
+  padding: 0 20px;
+  border-radius: 11px;
+  border: 1px solid var(--ex-cta-bg);
+  background: var(--ex-cta-bg) !important;
+  color: var(--ex-cta-ink) !important;
+  font-family: var(--ct-font);
+  font-size: 13.5px;
+  font-weight: 660;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  text-decoration: none !important;
+  cursor: pointer;
+  transition: background-color 160ms ease, transform 140ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+@media (hover: hover) and (pointer: fine) {
+  body.ct-exam-studio .ex-scene-btn:hover {
+    background: var(--ex-cta-hover) !important;
+    transform: translateY(-1px);
+  }
+}
+body.ct-exam-studio .ex-scene-btn:active { transform: scale(0.98); }
+
+/* Monochrome initials fallback inside student badge when photo file is absent */
+body.ct-exam-studio .ex-avatar-initials {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--ex-cta-bg);
+  color: var(--ex-cta-ink);
+  font-family: var(--ct-mono);
+  font-size: 10px;
+  font-weight: 700;
+  display: inline-grid;
+  place-items: center;
+  flex-shrink: 0;
+  letter-spacing: 0.02em;
+}
+
+/* Fallback for generic modal-container / spinners */
 body.ct-exam-studio .modal-container {
   padding: 32px 28px !important;
-  max-width: min(420px, calc(100vw - 28px)) !important;
-}
-body.ct-exam-studio .loading-content {
-  padding: 36px 32px !important;
-  width: min(380px, calc(100vw - 28px)) !important;
+  max-width: min(444px, calc(100vw - 28px)) !important;
 }
 body.ct-exam-studio .loading-spinner-large,
 body.ct-exam-studio .modal-spinner {
   border-color: var(--ex-elevated) !important;
   border-top-color: var(--ex-cta-bg) !important;
 }
-body.ct-exam-studio .modal-icon {
-  font-size: 40px !important;
-  width: 64px;
-  height: 64px;
-  border-radius: 16px;
-  background: var(--ex-well);
-  border: 1px solid var(--ex-line-2);
-  display: inline-grid;
-  place-items: center;
-  margin: 0 auto 16px !important;
-}
-body.ct-exam-studio .modal-title,
-body.ct-exam-studio .paused-content h2,
-body.ct-exam-studio .loading-content h3,
 body.ct-exam-studio .passage-modal-title {
   color: var(--ex-ink) !important;
-  font-size: 20px !important;
+  font-size: 18px !important;
   font-weight: 720 !important;
   letter-spacing: -0.02em;
 }
-body.ct-exam-studio .modal-message,
-body.ct-exam-studio .paused-content p,
-body.ct-exam-studio .loading-content p,
 body.ct-exam-studio .passage-modal-body {
   color: var(--ex-ink-2) !important;
-  font-size: 13.5px !important;
-  line-height: 1.55 !important;
+  font-size: 14px !important;
+  line-height: 1.65 !important;
 }
-body.ct-exam-studio #supersededModal > div,
-body.ct-exam-studio .ex-superseded-card {
-  background: var(--ex-surface) !important;
-  border: 1px solid var(--ex-line-2) !important;
-  border-radius: 22px !important;
-  padding: 32px 28px !important;
-  max-width: min(440px, calc(100vw - 28px)) !important;
-  color: var(--ex-ink) !important;
-  box-shadow: 0 32px 72px -20px rgba(0, 0, 0, 0.65) !important;
-}
-body.ct-exam-studio #supersededModal h3 { color: var(--ex-ink) !important; }
-body.ct-exam-studio #supersededModal p { color: var(--ex-ink-2) !important; }
 
-/* Theme-native toast cards */
+/* Theme-native monochrome toast cards */
 body.ct-exam-studio .toast-custom {
   background: var(--ex-surface) !important;
   border: 1px solid var(--ex-line-2) !important;
-  border-left: 3px solid var(--ex-sel) !important;
+  border-left: 3px solid var(--ex-ink) !important;
+  border-radius: 12px !important;
   color: var(--ex-ink) !important;
-  box-shadow: var(--ex-shadow) !important;
+  box-shadow: 0 18px 40px -16px rgba(23, 22, 20, 0.28) !important;
 }
-body.ct-exam-studio .toast-custom.warning { border-left-color: var(--ex-warn) !important; }
-body.ct-exam-studio .toast-custom.danger { border-left-color: var(--ex-bad) !important; background: var(--ex-surface) !important; }
-body.ct-exam-studio .toast-message { color: var(--ex-ink) !important; }
+body.ct-exam-studio .toast-custom.danger {
+  background: var(--ex-cta-bg) !important;
+  border-color: var(--ex-cta-bg) !important;
+  border-left-color: var(--ex-cta-bg) !important;
+  color: var(--ex-cta-ink) !important;
+}
+body.ct-exam-studio .toast-custom.danger .toast-message,
+body.ct-exam-studio .toast-custom.danger .toast-icon,
+body.ct-exam-studio .toast-custom.danger .toast-close {
+  color: var(--ex-cta-ink) !important;
+}
+body.ct-exam-studio .toast-message { color: var(--ex-ink) !important; font-size: 13px !important; font-weight: 560 !important; }
 body.ct-exam-studio .toast-close { color: var(--ex-ink-3) !important; }
 
-@media (max-width: 520px) {
-  body.ct-exam-studio .ex-result-metrics { flex-direction: column; text-align: center; }
-  body.ct-exam-studio .ex-result-grade-row { justify-content: center; }
+@media (max-width: 560px) {
+  body.ct-exam-studio .sc-masthead__main { flex-direction: column; align-items: flex-start; gap: 14px; }
+  body.ct-exam-studio .sc-metrics { grid-template-columns: 1fr; }
+  body.ct-exam-studio .sc-metric { border-right: 0; border-bottom: 1px solid var(--ex-line); }
+  body.ct-exam-studio .sc-metric:last-child { border-bottom: 0; }
   body.ct-exam-studio .ex-result-foot { flex-direction: column; align-items: stretch; }
   body.ct-exam-studio .ex-result-countdown { justify-content: center; }
+  body.ct-exam-studio .ex-scene-meta { grid-template-columns: 1fr; }
 }
 @media (prefers-reduced-motion: reduce) {
   body.ct-exam-studio .modal-container,
   body.ct-exam-studio .submit-premium-content,
   body.ct-exam-studio .loading-content,
-  body.ct-exam-studio .ex-result-metrics,
   body.ct-exam-studio .progress-ring-container,
   body.ct-exam-studio .warning-message-box,
   body.ct-exam-studio .success-message-box,
-  body.ct-exam-studio #resultMessageBox,
-  body.ct-exam-studio #resultGradeLetter,
-  body.ct-exam-studio .ex-result-seal,
   body.ct-exam-studio .submit-animation-icon .circle-bg,
-  body.ct-exam-studio .ex-seal-path {
+  body.ct-exam-studio .ex-seal-path,
+  body.ct-exam-studio .ex-emblem-ring,
+  body.ct-exam-studio .ex-emblem-orbit,
+  body.ct-exam-studio .ex-pause-bar,
+  body.ct-exam-studio .ex-lock-arc,
+  body.ct-exam-studio .ex-auto-bar > i,
+  body.ct-exam-studio .ex-scene-pill i,
+  body.ct-exam-studio .ex-scene-status-line i,
+  body.ct-exam-studio .timer-box.timer-danger {
     animation: none !important;
   }
 }
 
-/* Responsive Collapse */
-@media (max-width: 980px) {
+/* Responsive Collapse (Tablets & Mobile <= 960px) */
+@media (max-width: 960px) {
   body.ct-exam-studio .main-content {
     grid-template-columns: 1fr !important;
-    margin: 120px auto 136px !important;
-    padding: 0 18px !important;
+    margin: 158px auto 132px !important;
+    padding: 0 16px !important;
   }
-  body.ct-exam-studio #questionsContainer { grid-column: 1 !important; grid-row: 1 !important; }
-  body.ct-exam-studio .nav-buttons {
-    position: fixed !important;
-    left: 16px !important;
-    right: 16px !important;
-    width: auto !important;
-    bottom: 42px !important;
-  }
-  body.ct-exam-studio .palette-container {
+  body.ct-exam-studio #questionsContainer { grid-column: 1 !important; }
+  body.ct-exam-studio .exam-rail {
     grid-column: 1 !important;
-    grid-row: 2 !important;
     position: static !important;
     max-height: none !important;
   }
-  body.ct-exam-studio .submit-btn {
-    position: static !important;
-    grid-column: 1 !important;
-    grid-row: 3 !important;
-    width: 100% !important;
-    height: 48px !important;
+  /* On small mobile screens, dock Previous / Next flush above the bottom status bar so students never have to scroll to navigate */
+  body.ct-exam-studio .nav-buttons {
+    position: fixed !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 36px !important;
+    width: auto !important;
+    z-index: 860 !important;
+    padding: 10px 16px !important;
+    border-radius: 0 !important;
+    border-left: 0 !important;
+    border-right: 0 !important;
+    border-bottom: 0 !important;
+    gap: 10px !important;
+    box-shadow: 0 -10px 26px -12px rgba(23, 22, 20, 0.16) !important;
+  }
+  body.ct-exam-studio .nav-rail-head,
+  body.ct-exam-studio .nav-rail-hint {
+    display: none !important;
+  }
+  body.ct-exam-studio .palette-container {
+    max-height: none !important;
   }
   body.ct-exam-studio .fixed-header { padding: 10px 16px !important; }
-  body.ct-exam-studio .question-card { padding: 24px 20px !important; }
+  body.ct-exam-studio .question-card { padding: 22px 18px !important; }
 }
 @media (max-width: 600px) {
+  body.ct-exam-studio .main-content { margin-top: 176px !important; }
   body.ct-exam-studio .student-name-badge { display: none !important; }
   body.ct-exam-studio .timer-label { display: none !important; }
-  body.ct-exam-studio .timer-box { min-width: 82px !important; }
+  body.ct-exam-studio .timer-box { min-width: 82px !important; padding: 0 10px !important; }
 }

@@ -1,6 +1,6 @@
 {%- from '_ct_shell.html' import ico, ct_boot_script, admin_shell_start, teacher_shell_start, portal_shell_start, portal_shell_end, student_topbar, shell_end with context -%}
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="en" data-theme="light">
 <head>
     <title>Question Groups | {{ section.section_name }}</title>
     <link href="{{ url_for('static', filename='vendor/bootstrap/css/bootstrap.min.css') }}" rel="stylesheet">
@@ -509,7 +509,7 @@
                 if(d.success){
                     const q=d.question;const opts=[q.option1,q.option2,q.option3,q.option4];
                     let oh='';const l=['A','B','C','D'];
-                    for(let i=0;i<opts.length;i++){const c=opts[i]===q.answer;oh+=`<div style="padding:10px;background: var(--ct-surface-2);border-radius:8px;margin-bottom:6px;border-left:3px solid ${c?'#575551':'#e2e8f0'};word-wrap:break-word;overflow-wrap:break-word;"><strong>${l[i]}.</strong> ${opts[i]} ${c?'<span class="badge bg-success"><i class="fas fa-check"></i></span>':''}</div>`;}
+                    for(let i=0;i<opts.length;i++){const c=opts[i]===q.answer;oh+=`<div style="padding:10px;background: var(--ct-surface-2);border-radius:8px;margin-bottom:6px;border-left:3px solid ${c?'#575551':'#E6E5E2'};word-wrap:break-word;overflow-wrap:break-word;"><strong>${l[i]}.</strong> ${opts[i]} ${c?'<span class="badge bg-success"><i class="fas fa-check"></i></span>':''}</div>`;}
                     E('previewBody').innerHTML=`<div style="background: var(--ct-surface-2);border-radius:10px;padding:12px;margin-bottom:12px;word-wrap:break-word;overflow-wrap:break-word;"><strong>Question:</strong><div style="margin-top:6px;">${q.question}</div></div>${q.image?`<img src="/static/images/${q.image}" style="max-width:200px;border-radius:8px;margin-bottom:10px;">`:''}${oh}`;
                     if (typeof renderMathInElement === 'function') {
                         renderMathInElement(E('previewBody'), {

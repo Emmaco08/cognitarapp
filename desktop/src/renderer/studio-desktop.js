@@ -1434,36 +1434,73 @@
     renderLive();
   }
 
+  var serverAnimToken = 0;
+
   async function startServer() {
     if (state.server !== "stopped") return;
     setServer("starting");
+    var token = ++serverAnimToken;
     var arc = $("#coreArc"), stepEl = $("#coreStep");
-    stepEl.textContent = "Checking licence vault…";
-    setProgress(0.35);
-    arc.style.strokeDashoffset = "55";
+    var steps = [
+      "Checking licence vault…",
+      "Opening exam database…",
+      "Listening on " + state.ip + ":" + state.port,
+      "Ready"
+    ];
+    var dur = REDUCED ? 120 : 1850;
+    var stepTimers = steps.map(function (label, i) {
+      return setTimeout(function () {
+        if (token === serverAnimToken && state.server === "starting") stepEl.textContent = label;
+      }, REDUCED ? 0 : Math.round((dur / steps.length) * i));
+    });
+    function clearStepTimers() { stepTimers.forEach(clearTimeout); }
+
+    arc.style.strokeDashoffset = "100";
+    var sweepDone = new Promise(function (resolve) {
+      animate(dur, function (p) {
+        if (token !== serverAnimToken) return;
+        arc.style.strokeDashoffset = String(Math.max(0, 100 - p * 100));
+        setProgress(p);
+      }, resolve);
+    });
 
     if (!bridge) {
-      // Headless visual preview fallback
-      state.startedAt = Date.now();
+      await sweepDone;
+      clearStepTimers();
+      if (token !== serverAnimToken) return;
       setProgress(null);
+      state.startedAt = Date.now();
       setServer("running");
       stepEl.textContent = "";
+      arc.style.strokeDashoffset = "0";
       logEvent("server", "ok", "i-power", "<b>Server started</b> at " + esc(addr()));
       return;
     }
 
-    var res = await bridge.startServer().catch(function (err) { return { ok: false, error: String(err) }; });
-    setProgress(null);
-    stepEl.textContent = "";
+    var ipcPromise = bridge.startServer().catch(function (err) { return { ok: false, error: String(err) }; });
+    var res = await ipcPromise;
 
     if (res && res.ok) {
+      await sweepDone;
+      clearStepTimers();
+      if (token !== serverAnimToken) return;
+      setProgress(null);
+      stepEl.textContent = "";
       state.startedAt = Date.now();
       if (res.license) state.license = res.license;
       setServer("running");
+      arc.style.strokeDashoffset = "0";
       logEvent("server", "ok", "i-power", "<b>Server started</b> at " + esc(addr()));
       pollTelemetryNow();
       return;
     }
+
+    // Start failed or licence blocked — cancel forward sweep cleanly
+    serverAnimToken++;
+    clearStepTimers();
+    setProgress(null);
+    stepEl.textContent = "";
+    arc.style.strokeDashoffset = "100";
 
     if (res && res.license) {
       state.license = res.license;
@@ -1488,13 +1525,36 @@
     }
     state.stopArmed = false;
     setServer("stopping");
-    $("#coreStep").textContent = "Saving open answers…";
+    var token = ++serverAnimToken;
+    var arc = $("#coreArc"), stepEl = $("#coreStep");
+    stepEl.textContent = "Saving open answers…";
+    var dur = REDUCED ? 100 : 1200;
+    var midTimer = setTimeout(function () {
+      if (token === serverAnimToken && state.server === "stopping") stepEl.textContent = "Closing school LAN socket…";
+    }, REDUCED ? 0 : Math.round(dur * 0.52));
+
+    var unwindDone = new Promise(function (resolve) {
+      animate(dur, function (p) {
+        if (token !== serverAnimToken) return;
+        arc.style.strokeDashoffset = String(Math.min(100, p * 100));
+        setProgress(Math.max(0.02, 1 - p));
+      }, resolve);
+    });
 
     if (bridge) {
-      await bridge.stopServer().catch(function () {});
+      await Promise.all([
+        bridge.stopServer().catch(function () {}),
+        unwindDone
+      ]);
+    } else {
+      await unwindDone;
     }
+    clearTimeout(midTimer);
+    if (token !== serverAnimToken) return;
+    setProgress(null);
+    arc.style.strokeDashoffset = "100";
     setServer("stopped");
-    $("#coreStep").textContent = "";
+    stepEl.textContent = "";
     state.startedAt = 0;
     state.devices = 0;
     state.writing = 0;

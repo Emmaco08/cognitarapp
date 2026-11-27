@@ -1,6 +1,6 @@
 {%- from '_ct_shell.html' import ico, ct_boot_script, admin_shell_start, teacher_shell_start, student_topbar, shell_end with context -%}
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="en" data-theme="light">
 <head>
     <title>Entrance EXAM Admin | COGNITARA EXAM SYSTEM</title>
     <link href="{{ url_for('static', filename='vendor/bootstrap/css/bootstrap.min.css') }}" rel="stylesheet">
@@ -9,7 +9,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { background: linear-gradient(135deg, #f5f7fa 0%, #e8edf5 100%); font-family: 'Segoe UI', 'Poppins', sans-serif; }
+        body { background: linear-gradient(135deg, #f5f7fa 0%, #EAE9E6 100%); font-family: 'Segoe UI', 'Poppins', sans-serif; }
         
         .admin-container { max-width: 1400px; margin: 0 auto; padding: 40px 30px; position: relative; z-index: 10; }
         
@@ -121,7 +121,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            background: linear-gradient(135deg, #faf5ff 0%, #ffffff 100%);
+            background: linear-gradient(135deg, #F3F2F0 0%, #ffffff 100%);
         }
         .premium-modal-header h3 {
             margin: 0;
@@ -219,7 +219,7 @@
             to { transform: translateX(0); opacity: 1; }
         }
         .toast-premium.success { border-left-color: #575551; background: var(--ct-surface-2); }
-        .toast-premium.error { border-left-color: #2B2926; background: linear-gradient(135deg, #ffffff 0%, #fef2f2 100%); }
+        .toast-premium.error { border-left-color: #2B2926; background: linear-gradient(135deg, #ffffff 0%, #F3F2F0 100%); }
         .loading-spinner {
             width: 30px;
             height: 30px;
@@ -756,7 +756,7 @@
             message = 'Student has passed the exam. Consider approval with encouragement for improvement.';
             textColor='#2B2926';
         } else {
-            bgColor='linear-gradient(135deg, #F8F8F8 0%, #fef2f2 100%)';
+            bgColor='linear-gradient(135deg, #F8F8F8 0%, #F3F2F0 100%)';
             ringColor='#2B2926';
             icon = '<i class="fas fa-exclamation-triangle"></i>';
             title = 'BELOW PASSING';
@@ -766,7 +766,7 @@
         
         const modalContent = `
             <div style="text-align: center;">
-                <div class="score-ring" style="background: conic-gradient(from 0deg, ${ringColor} 0deg, ${ringColor} ${pct * 3.6}deg, #e2e8f0 ${pct * 3.6}deg);">
+                <div class="score-ring" style="background: conic-gradient(from 0deg, ${ringColor} 0deg, ${ringColor} ${pct * 3.6}deg, #E6E5E2 ${pct * 3.6}deg);">
                     <div class="score-ring-inner">
                         <span style="font-size: 28px; font-weight: 800; color: ${ringColor};">${pct}%</span>
                         <span style="font-size: 10px; color: #2B2926;">Score</span>
@@ -820,7 +820,7 @@
         let bgColor, borderColor, icon, title, message, textColor;
         
         if (pct >= 80) {
-            bgColor='linear-gradient(135deg, #F8F8F8 0%, #fef2f2 100%)';
+            bgColor='linear-gradient(135deg, #F8F8F8 0%, #F3F2F0 100%)';
             borderColor='#2B2926';
             icon = '<i class="fas fa-circle text-danger"></i>';
             title = 'CRITICAL WARNING!';
@@ -858,7 +858,7 @@
         
         const modalContent = `
             <div style="text-align: center;">
-                <div class="score-ring" style="background: conic-gradient(from 0deg, #2B2926 0deg, #2B2926 ${pct * 3.6}deg, #e2e8f0 ${pct * 3.6}deg);">
+                <div class="score-ring" style="background: conic-gradient(from 0deg, #2B2926 0deg, #2B2926 ${pct * 3.6}deg, #E6E5E2 ${pct * 3.6}deg);">
                     <div class="score-ring-inner">
                         <span style="font-size: 28px; font-weight: 800; color: #2B2926;">${pct}%</span>
                         <span style="font-size: 10px; color: #2B2926;">Score</span>

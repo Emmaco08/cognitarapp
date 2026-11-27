@@ -7,15 +7,14 @@
 {%- set show_score = (vis in ['immediate', 'score_and_decision']) and attempt -%}
 {%- set show_decision = (vis in ['immediate', 'score_and_decision', 'decision_only']) and attempt -%}
 {%- set pct = (attempt.percentage|default(0)|round(1)) if attempt else 0 -%}
-{%- set circ = 540.35 -%}
-{%- set dash_offset = (circ - (circ * ([pct, 100]|min) / 100))|round(2) -%}
+{%- set pass_mark = exam.passing_score if (exam and exam.passing_score) else 50 -%}
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="en" data-theme="light">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="csrf-token" content="{{ csrf_token() }}">
-  <meta name="color-scheme" content="dark light">
+  <meta name="color-scheme" content="light dark">
   <title>Entrance Exam Completed | {{ ce_settings.portal_title or _school.school_name }}</title>
   <link rel="icon" href="{{ url_for('static', filename='images/cognitara-favicon.ico') }}">
   <link rel="preload" href="{{ url_for('static', filename='fonts/ui/PlusJakartaSans-Variable.woff2') }}" as="font" type="font/woff2" crossorigin>
@@ -25,9 +24,6 @@
 </head>
 <body class="st-body">
   <div class="st-grain" aria-hidden="true"></div>
-  {% if show_decision and (status == 'approved' or passed) %}
-  <canvas id="confetti-canvas" aria-hidden="true"></canvas>
-  {% endif %}
 
   <div class="st-shell">
     <header class="st-nav">
@@ -46,129 +42,118 @@
     </header>
 
     <main class="st-folio-stage">
-      <section class="st-folio" aria-label="Common Entrance submission report">
-        <div class="st-folio__top">
-          <span class="st-folio__doc-id" style="text-transform:none;letter-spacing:0.01em">
-            {{ student.username if student else 'Candidate' }}{% if exam and exam.target_class %} · {{ exam.target_class }}{% endif %}
-          </span>
-          {% if show_decision %}
-            {% if status == 'approved' %}
-            <span class="st-pill st-pill--ok">{{ ico('i-check-circle', 'ct-ico--xs') }}Admission approved</span>
-            {% elif status == 'rejected' %}
-            <span class="st-pill st-pill--bad">{{ ico('i-alert', 'ct-ico--xs') }}Cut-off not met</span>
+      <section class="sc-slip" aria-label="Common Entrance submission report">
+        <div class="sc-slip__masthead">
+          <div class="sc-slip__bar">
+            <span class="sc-slip__doc">Common Entrance Slip · {{ ce_settings.admission_session or '2026/2027' }}</span>
+            {% if show_decision %}
+              {% if status == 'approved' %}
+              <span class="sc-slip__badge sc-slip__badge--solid">{{ ico('i-check-circle', 'ct-ico--xs') }}Admission Approved</span>
+              {% elif status == 'rejected' %}
+              <span class="sc-slip__badge">{{ ico('i-alert', 'ct-ico--xs') }}Cut-off Not Met</span>
+              {% else %}
+              <span class="sc-slip__badge">{{ ico('i-clock', 'ct-ico--xs') }}Under Review</span>
+              {% endif %}
             {% else %}
-            <span class="st-pill st-pill--warn">{{ ico('i-clock', 'ct-ico--xs') }}Under review</span>
-            {% endif %}
-          {% else %}
-            <span class="st-pill st-pill--ok">{{ ico('i-check-circle', 'ct-ico--xs') }}Paper submitted</span>
-          {% endif %}
-        </div>
-
-        <div class="st-folio__grid">
-          <!-- Left Motion-Graphics Column: Animated Score Dial OR Animated Verification Seal -->
-          <div class="st-folio__dial-col">
-            {% if show_score %}
-            <div class="st-dial {% if status == 'rejected' or (not passed and status != 'approved') %}st-dial--fail{% elif status == 'pending' %}st-dial--warn{% endif %}" aria-label="Score {{ pct }} percent">
-              <svg viewBox="0 0 204 204">
-                <circle class="st-dial__ticks" cx="102" cy="102" r="96"/>
-                <circle class="st-dial__track" cx="102" cy="102" r="86"/>
-                <circle class="st-dial__arc" id="ceRingFill" cx="102" cy="102" r="86" stroke-dasharray="{{ circ }}" stroke-dashoffset="{{ circ }}" data-target="{{ dash_offset }}"/>
-              </svg>
-              <div class="st-dial__center">
-                <strong class="st-dial__pct" data-ct-count data-ct-decimals="1" data-ct-suffix="%">{{ pct }}%</strong>
-                <span class="st-dial__sub">{{ attempt.score or 0 }} / {{ attempt.total or 0 }} marks</span>
-              </div>
-            </div>
-            <div class="st-tier {% if status == 'rejected' %}st-tier--fail{% elif status == 'pending' and not passed %}st-tier--warn{% endif %}">
-              <span>Standing <strong>{{ attempt.grade_label or ('Pass' if passed else 'Review') }}</strong></span>
-            </div>
-            {% else %}
-            <div class="st-seal-stage {% if show_decision and status == 'rejected' %}st-seal-stage--bad{% elif show_decision and status == 'pending' %}st-seal-stage--warn{% else %}st-seal-stage--ok{% endif %}" id="ceSealStage" aria-hidden="true">
-              <span class="st-seal-pulse"></span>
-              <svg class="st-seal-svg" viewBox="0 0 172 172">
-                <g class="st-seal-orbit">
-                  <circle cx="86" cy="86" r="76" fill="none" stroke="var(--st-line-2)" stroke-width="1.5" stroke-dasharray="3 9"/>
-                  <circle cx="86" cy="10" r="3" fill="var(--seal-color)"/>
-                </g>
-                <circle cx="86" cy="86" r="60" fill="none" stroke="var(--st-line)" stroke-width="1.5"/>
-                <circle class="st-seal-ring-fill" cx="86" cy="86" r="46"/>
-                {% if show_decision and status == 'rejected' %}
-                <path class="st-seal-check" d="M72 72l28 28M100 72l-28 28"/>
-                {% elif show_decision and status == 'pending' %}
-                <path class="st-seal-check" d="M86 68v18l11 7"/>
-                {% else %}
-                <path class="st-seal-check" d="M68 87l12 12 25-26"/>
-                {% endif %}
-              </svg>
-            </div>
-            <div class="st-tier {% if show_decision and status == 'rejected' %}st-tier--fail{% elif show_decision and status == 'pending' %}st-tier--warn{% endif %}">
-              <span>{% if show_decision and status == 'approved' %}<strong>Approved</strong>{% elif show_decision and status == 'rejected' %}<strong>Reviewed</strong>{% else %}<strong>Verified</strong> · Locked on server{% endif %}</span>
-            </div>
+              <span class="sc-slip__badge sc-slip__badge--solid">{{ ico('i-check-circle', 'ct-ico--xs') }}Paper Submitted</span>
             {% endif %}
           </div>
 
-          <!-- Right Detail Column: Candidate Outcome, Benchmark & Ledger -->
-          <div class="st-folio__detail-col">
-            <div class="st-folio__headline">
+          <div class="sc-slip__hero">
+            <div class="sc-slip__title-block">
               <h1>{{ student.full_name if student else 'Examination Candidate' }}</h1>
-              {% if show_decision %}
-                {% if status == 'approved' %}
-                <p>{{ ce_settings.approved_message or 'Congratulations. Your examination score meets the official admission benchmark for this intake.' }}</p>
-                {% elif status == 'rejected' %}
-                <p>{{ ce_settings.rejected_message or 'Thank you for sitting this entrance examination. Your score did not meet the required cut-off benchmark.' }}</p>
+              <span class="sc-slip__candidate">{{ student.username if student else 'Candidate' }} · {{ exam.name if exam else 'Common Entrance' }}{% if exam and exam.target_class %} · {{ exam.target_class }}{% endif %}</span>
+              <p class="sc-slip__verdict">
+                {% if show_decision %}
+                  {% if status == 'approved' %}
+                  {{ ce_settings.approved_message or 'Congratulations. Your examination score meets the official admission benchmark for this intake.' }}
+                  {% elif status == 'rejected' %}
+                  {{ ce_settings.rejected_message or 'Thank you for sitting this entrance examination. Your score did not meet the required cut-off benchmark.' }}
+                  {% else %}
+                  {{ ce_settings.pending_message or 'Your entrance examination is complete and is now under admissions review.' }}
+                  {% endif %}
                 {% else %}
-                <p>{{ ce_settings.pending_message or 'Your entrance examination is complete and is now under admissions review.' }}</p>
+                  {{ ce_settings.pending_message or 'Your answers have been recorded and locked on the local school server for official admissions grading.' }}
                 {% endif %}
+              </p>
+            </div>
+
+            <div class="sc-slip__score-block">
+              {% if show_score %}
+              <strong class="sc-slip__pct" data-ct-count data-ct-decimals="1" data-ct-suffix="%">{{ pct }}%</strong>
+              <div class="sc-slip__stamp">
+                <small>Standing</small>
+                <strong>{{ attempt.grade_label or ('PASS' if passed else 'REV') }}</strong>
+                <span>{{ attempt.score or 0 }} / {{ attempt.total or 0 }}</span>
+              </div>
               {% else %}
-                <p>{{ ce_settings.pending_message or 'Your answers have been recorded and locked on the local school server for official admissions grading.' }}</p>
+              <div class="sc-slip__stamp">
+                <small>Receipt</small>
+                <strong>SEALED</strong>
+                <span>Locked on server</span>
+              </div>
               {% endif %}
             </div>
+          </div>
+        </div>
 
-            {% if show_score %}
-            {% set pass_mark = exam.passing_score if (exam and exam.passing_score) else 50 %}
-            <div class="st-bench">
-              <div class="st-bench__labels">
-                <span>0%</span>
-                <span>Cut-off · {{ pass_mark }}%</span>
-                <span>100%</span>
-              </div>
-              <div class="st-bench__track">
-                <div class="st-bench__fill {% if status == 'rejected' or not passed %}st-bench__fill--fail{% endif %}" id="ceBenchFill" data-pct="{{ [pct, 100]|min }}"></div>
-                <div class="st-bench__mark" style="left:{{ [pass_mark, 100]|min }}%" title="{{ pass_mark }}% Cut-off Benchmark"></div>
-              </div>
+        <div class="sc-slip__body">
+          {% if show_score %}
+          <div class="sc-slip__scale">
+            <div class="sc-slip__scale-head">
+              <span>Admissions Cut-off Scale</span>
+              <strong>{{ pct }}% Achieved · {{ pass_mark }}% Cut-off</strong>
             </div>
-            {% endif %}
+            <div class="sc-slip__track">
+              <div class="sc-slip__fill" id="ceBenchFill" data-pct="{{ [pct, 100]|min }}"></div>
+              <div class="sc-slip__mark" style="left:{{ [pass_mark, 100]|min }}%" title="{{ pass_mark }}% Cut-off Benchmark"></div>
+            </div>
+            <div class="sc-slip__ticks">
+              <span>0%</span>
+              <span>25%</span>
+              <span>Cut-off · {{ pass_mark }}%</span>
+              <span>75%</span>
+              <span>100%</span>
+            </div>
+          </div>
+          {% endif %}
 
-            <div class="st-ledger">
-              <div class="st-ledger__cell">
-                <span>Examination</span>
-                <strong>{{ exam.name if exam else (ce_settings.portal_title or 'Common Entrance') }}</strong>
-              </div>
-              <div class="st-ledger__cell">
-                <span>Target Class</span>
-                <strong>{{ exam.target_class if (exam and exam.target_class) else 'Admissions Intake' }}</strong>
-              </div>
-              <div class="st-ledger__cell">
-                <span>Admission Session</span>
-                <strong class="st-mono">{{ ce_settings.admission_session or '2026/2027' }}</strong>
-              </div>
-              <div class="st-ledger__cell">
-                <span>Submitted At</span>
-                <strong class="st-mono">{{ attempt.completed_at if attempt and attempt.completed_at else 'Just now' }}</strong>
-              </div>
+          <div class="sc-slip__stats">
+            <div class="sc-slip__stat">
+              <span>{{ 'Marks Scored' if show_score else 'Script Status' }}</span>
+              <strong>{% if show_score %}{{ attempt.score or 0 }} / {{ attempt.total or 0 }}{% else %}Sealed{% endif %}</strong>
+              <em>{{ 'Graded items' if show_score else 'Locked on server' }}</em>
             </div>
+            <div class="sc-slip__stat">
+              <span>Target Class</span>
+              <strong>{{ exam.target_class if (exam and exam.target_class) else 'Intake' }}</strong>
+              <em>Applied Cohort</em>
+            </div>
+            <div class="sc-slip__stat">
+              <span>Session</span>
+              <strong>{{ ce_settings.admission_session or '2026/2027' }}</strong>
+              <em>Academic Year</em>
+            </div>
+            <div class="sc-slip__stat">
+              <span>Submitted</span>
+              <strong>{{ attempt.completed_at[:10] if (attempt and attempt.completed_at) else 'Just now' }}</strong>
+              <em>Verified timestamp</em>
+            </div>
+          </div>
+        </div>
 
-            <div class="st-folio__actions">
-              <a href="/ce_dashboard" class="st-btn st-btn--primary st-btn--lg">
-                <span>Candidate Dashboard</span>
-                {{ ico('i-arrow-right', 'ct-ico--sm st-arrow') }}
-              </a>
-              <button type="button" class="st-btn st-btn--secondary st-btn--lg" onclick="window.print()">
-                {{ ico('i-doc', 'ct-ico--sm') }}
-                <span>Print Slip</span>
-              </button>
-              <a href="/ce_login" class="st-btn st-btn--ghost st-btn--lg">Sign Out</a>
-            </div>
+        <div class="sc-slip__foot">
+          <span class="sc-slip__stamp-note"><i></i>Admissions Record · {{ ce_settings.admission_session or '2026/2027' }}</span>
+          <div class="st-folio__actions">
+            <a href="/ce_login" class="st-btn st-btn--ghost st-btn--lg">Sign Out</a>
+            <button type="button" class="st-btn st-btn--secondary st-btn--lg" onclick="window.print()">
+              {{ ico('i-doc', 'ct-ico--sm') }}
+              <span>Print Slip</span>
+            </button>
+            <a href="/ce_dashboard" class="st-btn st-btn--primary st-btn--lg">
+              <span>Candidate Dashboard</span>
+              {{ ico('i-arrow-right', 'ct-ico--sm st-arrow') }}
+            </a>
           </div>
         </div>
       </section>
@@ -176,72 +161,22 @@
 
     <footer class="st-foot">
       <span>{{ _school.school_name }} · Common Entrance Portal</span>
-      <span class="st-mono" style="font-size:11.5px">Verified local server</span>
+      <span class="st-mono" style="font-size:11.5px">VERIFIED LOCAL SERVER</span>
     </footer>
   </div>
 
   <script src="{{ url_for('static', filename='js/cognitara-web.js') }}"></script>
   <script>
     (function () {
-      var ring = document.getElementById("ceRingFill");
       var bench = document.getElementById("ceBenchFill");
-      var seal = document.getElementById("ceSealStage");
-      requestAnimationFrame(function () {
+      if (bench) {
+        var pct = Math.max(0, Math.min(100, Number(bench.getAttribute("data-pct")) || 0));
         requestAnimationFrame(function () {
-          if (ring) ring.style.strokeDashoffset = ring.getAttribute("data-target") || "0";
-          if (bench) bench.style.width = (bench.getAttribute("data-pct") || "0") + "%";
-          if (seal) seal.classList.add("is-live");
+          requestAnimationFrame(function () {
+            bench.style.transform = "scaleX(" + (pct / 100).toFixed(4) + ")";
+          });
         });
-      });
-
-      {% if show_decision and (status == 'approved' or passed) %}
-      if (!(window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches)) {
-        var canvas = document.getElementById("confetti-canvas");
-        if (canvas && canvas.getContext) {
-          var ctx = canvas.getContext("2d");
-          var dpr = Math.min(window.devicePixelRatio || 1, 2);
-          var W = window.innerWidth, H = window.innerHeight;
-          canvas.width = W * dpr;
-          canvas.height = H * dpr;
-          ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-          var colors = ["#575551", "#ECECEC", "#575551", "#D6D4CF"];
-          var parts = [];
-          for (var i = 0; i < 40; i++) {
-            parts.push({
-              x: W * (0.25 + Math.random() * 0.5),
-              y: H * 0.24 + (Math.random() - 0.5) * 70,
-              vx: (Math.random() - 0.5) * 3.2,
-              vy: -1.6 - Math.random() * 2.4,
-              s: 2.5 + Math.random() * 3.5,
-              c: colors[i % colors.length],
-              a: 0.85,
-              r: Math.random() * Math.PI * 2,
-              vr: (Math.random() - 0.5) * 0.12
-            });
-          }
-          var start = performance.now();
-          function tick(now) {
-            var elapsed = now - start;
-            ctx.clearRect(0, 0, W, H);
-            if (elapsed > 2300) return;
-            var fade = Math.max(0, 1 - Math.max(0, elapsed - 1200) / 1100);
-            for (var j = 0; j < parts.length; j++) {
-              var p = parts[j];
-              p.x += p.vx; p.y += p.vy; p.vy += 0.08; p.vx *= 0.99; p.r += p.vr;
-              ctx.save();
-              ctx.globalAlpha = p.a * fade;
-              ctx.translate(p.x, p.y);
-              ctx.rotate(p.r);
-              ctx.fillStyle = p.c;
-              ctx.fillRect(-p.s / 2, -p.s * 0.35, p.s, p.s * 0.7);
-              ctx.restore();
-            }
-            requestAnimationFrame(tick);
-          }
-          requestAnimationFrame(tick);
-        }
       }
-      {% endif %}
     })();
   </script>
 </body>

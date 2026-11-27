@@ -11,12 +11,12 @@
 {%- set avg_pct = (completed.sum_pct / completed.count)|round(1) if completed.count > 0 else 0 -%}
 {%- set pass_rate = ((completed.passed / completed.count) * 100)|round(1) if completed.count > 0 else 0 -%}
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="en" data-theme="light">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="csrf-token" content="{{ csrf_token() }}">
-  <meta name="color-scheme" content="dark light">
+  <meta name="color-scheme" content="light dark">
   <title>{{ exam.name }} — Results Ledger</title>
   <link rel="icon" href="{{ url_for('static', filename='images/cognitara-favicon.ico') }}">
   <link rel="preload" href="{{ url_for('static', filename='fonts/ui/PlusJakartaSans-Variable.woff2') }}" as="font" type="font/woff2" crossorigin>

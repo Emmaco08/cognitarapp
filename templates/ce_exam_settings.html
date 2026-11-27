@@ -1,6 +1,6 @@
 {%- from '_ct_shell.html' import ico, ct_boot_script, admin_shell_start, teacher_shell_start, student_topbar, shell_end with context -%}
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="en" data-theme="light">
 <head>
     <title>{% if exam %}Exam Settings | {{ exam.name }}{% else %}Create Entrance Exam{% endif %}</title>
     <link href="{{ url_for('static', filename='vendor/bootstrap/css/bootstrap.min.css') }}" rel="stylesheet">
@@ -13,7 +13,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { background: linear-gradient(135deg, #f5f7fa 0%, #e8edf5 100%); font-family: 'Segoe UI', 'Poppins', sans-serif; }
+        body { background: linear-gradient(135deg, #f5f7fa 0%, #EAE9E6 100%); font-family: 'Segoe UI', 'Poppins', sans-serif; }
         
         .settings-container { max-width: 1400px; margin: 0 auto; padding: 40px 30px; position: relative; z-index: 10; }
         
@@ -29,7 +29,7 @@
         
         .card-custom { background: var(--ct-surface); border-radius: 24px; border: 1px solid var(--ct-line-2); margin-bottom: 30px; overflow: hidden; box-shadow: 0 5px 15px rgba(0,0,0,0.03); transition: all 0.3s; }
         .card-custom:hover { box-shadow: 0 10px 25px -10px rgba(0,0,0,0.1); }
-        .card-header-custom { padding: 20px 25px; border-bottom: 1px solid var(--ct-line-2); background: linear-gradient(135deg, #faf5ff 0%, #ffffff 100%); display: flex; align-items: center; gap: 12px; }
+        .card-header-custom { padding: 20px 25px; border-bottom: 1px solid var(--ct-line-2); background: linear-gradient(135deg, #F3F2F0 0%, #ffffff 100%); display: flex; align-items: center; gap: 12px; }
         .card-header-custom i { font-size: 24px; color: var(--ct-primary); }
         .card-header-custom h3 { margin: 0; font-size: 18px; font-weight: 700; color: var(--ct-ink); }
         .card-body-custom { padding: 25px; }
@@ -51,9 +51,9 @@
         .section-card { background: var(--ct-surface); border-radius: 18px; border: 1px solid var(--ct-line-2); overflow: hidden; transition: all 0.3s; }
         .section-card:hover { border-color: var(--ct-primary); box-shadow: 0 5px 15px rgba(0,0,0,0.05); }
         .section-card.deactivated { opacity: 0.65; background: var(--ct-bad-soft); border-color: #F3F2F0; }
-        .section-card.deactivated .section-header { background: #fff5f5; }
+        .section-card.deactivated .section-header { background: #F3F2F0; }
         .section-header { padding: 16px 20px; background: var(--ct-surface); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; cursor: pointer; transition: all 0.2s; }
-        .section-header:hover { background: #faf5ff; }
+        .section-header:hover { background: #F3F2F0; }
         .section-title { display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0; }
         .section-title i { font-size: 20px; color: var(--ct-primary); }
         .section-title h4 { margin: 0; font-size: 16px; font-weight: 700; color: var(--ct-ink); }
@@ -223,7 +223,7 @@
     box-shadow: 0 20px 40px -12px rgba(0, 0, 0, 0.4);
 }
 .premium-modal-header {
-    background: linear-gradient(135deg, #fef2f2 0%, #fff5f5 100%);
+    background: linear-gradient(135deg, #F3F2F0 0%, #F3F2F0 100%);
     padding: 20px 24px 14px;
     text-align: center;
     position: relative;

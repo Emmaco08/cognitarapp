@@ -326,7 +326,7 @@
         if (dark) {
           grad.addColorStop(0, "rgba(23, 22, 20, 0.13)");
           grad.addColorStop(0.45, "rgba(23, 22, 20, 0.06)");
-          grad.addColorStop(1, "rgba(13, 18, 27, 0)");
+          grad.addColorStop(1, "rgba(17, 17, 18, 0)");
         } else {
           grad.addColorStop(0, "rgba(23, 22, 20, 0.10)");
           grad.addColorStop(0.5, "rgba(23, 22, 20, 0.05)");

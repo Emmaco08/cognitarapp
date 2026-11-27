@@ -2,12 +2,12 @@
 {%- set ICONS = url_for('static', filename='icons/cognitara-icons.svg') -%}
 {%- set _school = school_branding if school_branding is defined and school_branding else {'school_name': 'CogniTara School', 'current_term': 'First Term', 'academic_session': '2026/2027'} -%}
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="en" data-theme="light">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="csrf-token" content="{{ csrf_token() }}">
-  <meta name="color-scheme" content="dark light">
+  <meta name="color-scheme" content="light dark">
   <meta name="description" content="Welcome to the CogniTara Examination Portal — sign in or register to access your school's offline examination network.">
   <title>Welcome to CogniTara Exam Portal — {{ _school.school_name }}</title>
   <link rel="icon" href="{{ url_for('static', filename='images/cognitara-favicon.ico') }}">
@@ -316,7 +316,7 @@
 
           var sg = ctx.createLinearGradient(0, baseY - rb.amp * 0.9, 0, baseY + rb.depth);
           if (light) {
-            sg.addColorStop(0, r % 2 === 0 ? "rgba(20, 20, 22, 0.04)" : "rgba(80, 80, 90, 0.028)");
+            sg.addColorStop(0, r % 2 === 0 ? "rgba(20, 20, 22, 0.04)" : "rgba(87, 85, 81, 0.028)");
             sg.addColorStop(0.5, "rgba(20, 20, 22, 0.014)");
             sg.addColorStop(1, "rgba(247, 247, 248, 0)");
           } else {

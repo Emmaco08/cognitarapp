@@ -7,12 +7,12 @@
 {%- set _ce_prof_w = 5 if _ce.anti_cheating_profile == 'low' else (2 if _ce.anti_cheating_profile == 'high' else 3) -%}
 {%- set _eff_w = [exam.max_warnings if (exam and exam.max_warnings) else _ce_prof_w, _ce_prof_w]|min -%}
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="en" data-theme="light">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="csrf-token" content="{{ csrf_token() }}">
-  <meta name="color-scheme" content="dark light">
+  <meta name="color-scheme" content="light dark">
   <title>{{ exam.name if exam else _ce_title }} | {{ _ce_title }}</title>
   <link rel="icon" href="{{ url_for('static', filename='images/cognitara-favicon.ico') }}">
   <link rel="preload" href="{{ url_for('static', filename='fonts/ui/PlusJakartaSans-Variable.woff2') }}" as="font" type="font/woff2" crossorigin>
