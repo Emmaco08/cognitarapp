@@ -176,20 +176,90 @@ def create_app(config_class=Config):
             if now_ts - last_refresh >= 43200:
                 _sess["_refreshed_at"] = now_ts
 
+    def _resolve_error_home():
+        from flask import session as _sess
+        if "admin_id" in _sess:
+            return "/admin", "Back to Admin Console"
+        if "teacher_id" in _sess:
+            return "/teacher_dashboard", "Back to Teacher Studio"
+        if "ce_student_id" in _sess:
+            return "/ce_dashboard", "Back to Exam Portal"
+        if "student_id" in _sess:
+            return "/dashboard", "Back to Student Portal"
+        return "/login", "Back to Sign In"
+
+    def _render_error_page(code, status, title, message):
+        from flask import request, render_template
+        if (
+            request.is_json
+            or request.path.startswith("/api/")
+            or request.headers.get("X-Requested-With") == "XMLHttpRequest"
+        ):
+            return {"error": status, "message": message}, code
+        primary_href, primary_label = _resolve_error_home()
+        try:
+            return (
+                render_template(
+                    "error.html",
+                    error_code=code,
+                    error_status=status,
+                    error_title=title,
+                    error_message=message,
+                    primary_href=primary_href,
+                    primary_label=primary_label,
+                    request_path=request.path or "/",
+                ),
+                code,
+            )
+        except Exception as render_err:
+            app.logger.error(f"Error page template fallback ({code}): {render_err}")
+            return (
+                f"<!doctype html><html><body style='font-family:system-ui,sans-serif;background:#f8f8f8;color:#171614;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0'>"
+                f"<div style='max-width:440px;background:#fff;border:1px solid #e5e3dd;border-radius:12px;padding:28px'>"
+                f"<div style='font-family:monospace;font-size:36px;font-weight:600;margin-bottom:8px'>{code}</div>"
+                f"<h1 style='margin:0 0 8px;font-size:18px'>{title}</h1>"
+                f"<p style='margin:0 0 18px;font-size:14px;color:#575551;line-height:1.5'>{message}</p>"
+                f"<a href='{primary_href}' style='display:inline-block;padding:10px 16px;background:#171614;color:#fff;text-decoration:none;border-radius:8px;font-size:13px'>{primary_label}</a>"
+                f"</div></body></html>",
+                code,
+            )
+
+    @app.errorhandler(403)
+    def handle_forbidden(error):
+        return _render_error_page(
+            403,
+            "Access restricted",
+            "You do not have access to this page",
+            "Your current account role cannot open this route. Sign in with an authorized account or return to your workspace.",
+        )
+
+    @app.errorhandler(404)
+    def handle_not_found(error):
+        return _render_error_page(
+            404,
+            "Page not found",
+            "This page does not exist",
+            "The address may have moved, expired, or been mistyped. Check the URL or return to your workspace below.",
+        )
+
     @app.errorhandler(413)
     def handle_large_payload(error):
-        from flask import request
-        if request.is_json or request.path.startswith('/api/'):
-            return {"error": "Payload too large", "message": "Uploaded content exceeds the server limit."}, 413
-        return "Uploaded content exceeds the configured server upload limit.", 413
+        return _render_error_page(
+            413,
+            "Payload too large",
+            "The uploaded file exceeds the size limit",
+            "Reduce the file size or compress your upload, then try again.",
+        )
 
     @app.errorhandler(500)
     def handle_server_error(error):
-        from flask import request
         app.logger.error(f"Internal server error: {error}")
-        if request.is_json or request.path.startswith('/api/'):
-            return {"error": "Internal server error", "message": "An unexpected server error occurred."}, 500
-        return "An internal server error occurred.", 500
+        return _render_error_page(
+            500,
+            "Server error",
+            "Something went wrong on this server",
+            "An unexpected server error interrupted this request. Your saved data and examination records remain intact. Try reloading or return to your workspace.",
+        )
 
     # 100% Backward compatibility for un-prefixed url_for('endpoint') calls
     def handle_build_error(error, endpoint, values):

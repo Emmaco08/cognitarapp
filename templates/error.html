@@ -1,0 +1,477 @@
+{%- set _school = school_branding if school_branding is defined and school_branding else {'school_name': 'CogniTara School'} -%}
+{%- set _code = error_code if error_code is defined else 500 -%}
+{%- set _status = error_status if error_status is defined else ('Page not found' if _code == 404 else 'Server error') -%}
+{%- set _title = error_title if error_title is defined else ('This page does not exist' if _code == 404 else 'Something went wrong on this server') -%}
+{%- set _message = error_message if error_message is defined else ('The address may have moved or been mistyped. Return to your workspace below.' if _code == 404 else 'An unexpected server error interrupted this request. Your exam records remain safely stored in the local database.') -%}
+{%- set _primary_href = primary_href if primary_href is defined else '/login' -%}
+{%- set _primary_label = primary_label if primary_label is defined else 'Back to Sign In' -%}
+{%- set _req_path = request_path if request_path is defined else '/' -%}
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light dark">
+  <title>{{ _code }} {{ _status }} | CogniTara</title>
+  <link rel="icon" href="{{ url_for('static', filename='images/cognitara-favicon.ico') }}">
+  <script>
+    (function () {
+      try {
+        var saved = localStorage.getItem('ct-theme') || localStorage.getItem('ct-portal-theme') || 'light';
+        document.documentElement.setAttribute('data-theme', saved === 'dark' ? 'dark' : 'light');
+      } catch (e) {}
+    })();
+  </script>
+  <style>
+    @font-face {
+      font-family: "Plus Jakarta Sans";
+      src: url("{{ url_for('static', filename='fonts/ui/PlusJakartaSans-Variable.woff2') }}") format("woff2");
+      font-weight: 300 700;
+      font-display: swap;
+    }
+
+    :root {
+      --er-bg: #f8f8f8;
+      --er-surface: #ffffff;
+      --er-well: #f2f1ee;
+      --er-foot: #f6f5f2;
+      --er-line: #e5e3dd;
+      --er-line-strong: #d4d1c9;
+      --er-ink: #171614;
+      --er-ink-2: #575551;
+      --er-ink-3: #838079;
+      --er-btn-bg: #171614;
+      --er-btn-ink: #ffffff;
+      --er-btn-hover: #2c2a26;
+      --er-shadow: 0 1px 2px rgba(23, 22, 20, 0.04), 0 12px 32px rgba(23, 22, 20, 0.05);
+    }
+
+    [data-theme="dark"] {
+      --er-bg: #151517;
+      --er-surface: #1b1b1e;
+      --er-well: #111112;
+      --er-foot: #141416;
+      --er-line: #2a2a2e;
+      --er-line-strong: #3a3a40;
+      --er-ink: #f5f5f4;
+      --er-ink-2: #a8a6a1;
+      --er-ink-3: #767470;
+      --er-btn-bg: #f5f5f4;
+      --er-btn-ink: #151517;
+      --er-btn-hover: #ffffff;
+      --er-shadow: 0 1px 2px rgba(0, 0, 0, 0.35), 0 16px 36px rgba(0, 0, 0, 0.32);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      background: var(--er-bg);
+      color: var(--er-ink);
+      font-family: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .er-nav {
+      height: 56px;
+      padding: 0 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--er-line);
+      background: var(--er-surface);
+    }
+
+    .er-brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      color: var(--er-ink);
+      text-decoration: none;
+      font-size: 14.5px;
+      font-weight: 600;
+      letter-spacing: -0.015em;
+    }
+
+    .er-brand__mark {
+      width: 24px;
+      height: 24px;
+      border-radius: 6px;
+      background: var(--er-btn-bg);
+      color: var(--er-btn-ink);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .er-brand__sep {
+      width: 1px;
+      height: 16px;
+      background: var(--er-line-strong);
+      margin: 0 2px;
+    }
+
+    .er-brand__meta {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--er-ink-2);
+    }
+
+    .er-icon-btn {
+      width: 34px;
+      height: 34px;
+      border-radius: 8px;
+      border: 1px solid var(--er-line);
+      background: var(--er-surface);
+      color: var(--er-ink-2);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: background-color 140ms ease, border-color 140ms ease, color 140ms ease;
+    }
+
+    .er-icon-btn:hover {
+      background: var(--er-well);
+      border-color: var(--er-line-strong);
+      color: var(--er-ink);
+    }
+
+    .er-ico-sun { display: none; }
+    [data-theme="dark"] .er-ico-sun { display: block; }
+    [data-theme="dark"] .er-ico-moon { display: none; }
+
+    .er-stage {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 32px 20px 48px;
+      gap: 16px;
+    }
+
+    .er-card {
+      width: 100%;
+      max-width: 520px;
+      background: var(--er-surface);
+      border: 1px solid var(--er-line);
+      border-radius: 14px;
+      box-shadow: var(--er-shadow);
+      overflow: hidden;
+    }
+
+    .er-card__head {
+      padding: 14px 24px;
+      border-bottom: 1px solid var(--er-line);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .er-status-row {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+
+    .er-code-tag {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      height: 22px;
+      padding: 0 7px;
+      border-radius: 4px;
+      background: var(--er-well);
+      border: 1px solid var(--er-line);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 11.5px;
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
+      color: var(--er-ink);
+    }
+
+    .er-status-txt {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12.5px;
+      font-weight: 500;
+      color: var(--er-ink-2);
+    }
+
+    .er-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--er-ink-3);
+      flex-shrink: 0;
+    }
+
+    .er-dot.is-alert {
+      background: var(--er-ink);
+    }
+
+    .er-path {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 11.5px;
+      color: var(--er-ink-3);
+      max-width: 210px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .er-card__body {
+      padding: 32px 24px 28px;
+    }
+
+    .er-numeral {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 56px;
+      font-weight: 600;
+      line-height: 1;
+      letter-spacing: -0.04em;
+      font-variant-numeric: tabular-nums;
+      color: var(--er-ink);
+      margin-bottom: 18px;
+    }
+
+    .er-title {
+      margin: 0 0 10px;
+      font-size: 20px;
+      font-weight: 600;
+      line-height: 1.3;
+      letter-spacing: -0.02em;
+      color: var(--er-ink);
+    }
+
+    .er-desc {
+      margin: 0 0 24px;
+      font-size: 14px;
+      line-height: 1.6;
+      color: var(--er-ink-2);
+    }
+
+    .er-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .er-btn {
+      height: 40px;
+      padding: 0 16px;
+      border-radius: 8px;
+      border: 1px solid var(--er-line-strong);
+      background: var(--er-surface);
+      color: var(--er-ink);
+      font-family: inherit;
+      font-size: 13.5px;
+      font-weight: 500;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      cursor: pointer;
+      transition: background-color 140ms ease, border-color 140ms ease;
+    }
+
+    .er-btn:hover {
+      background: var(--er-well);
+    }
+
+    .er-btn--primary {
+      background: var(--er-btn-bg);
+      color: var(--er-btn-ink);
+      border-color: var(--er-btn-bg);
+    }
+
+    .er-btn--primary:hover {
+      background: var(--er-btn-hover);
+      border-color: var(--er-btn-hover);
+    }
+
+    .er-card__foot {
+      padding: 13px 24px;
+      border-top: 1px solid var(--er-line);
+      background: var(--er-foot);
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      flex-wrap: wrap;
+    }
+
+    .er-card__foot a,
+    .er-card__foot button {
+      background: none;
+      border: 0;
+      padding: 0;
+      font-family: inherit;
+      font-size: 12.5px;
+      font-weight: 500;
+      color: var(--er-ink-2);
+      text-decoration: none;
+      cursor: pointer;
+    }
+
+    .er-card__foot a:hover,
+    .er-card__foot button:hover {
+      color: var(--er-ink);
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+
+    .er-kbd-hint {
+      display: inline-flex;
+      align-items: center;
+      gap: 18px;
+      font-size: 12px;
+      color: var(--er-ink-3);
+    }
+
+    .er-kbd-hint kbd {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 20px;
+      height: 20px;
+      padding: 0 5px;
+      margin: 0 3px;
+      border-radius: 4px;
+      border: 1px solid var(--er-line-strong);
+      background: var(--er-surface);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--er-ink-2);
+    }
+
+    @media (max-width: 560px) {
+      .er-nav { padding: 0 16px; }
+      .er-brand__sep, .er-brand__meta { display: none; }
+      .er-card__head { padding: 12px 18px; }
+      .er-path { max-width: 120px; }
+      .er-card__body { padding: 24px 18px 22px; }
+      .er-numeral { font-size: 46px; }
+      .er-actions { flex-direction: column; align-items: stretch; }
+      .er-btn { width: 100%; }
+      .er-card__foot { padding: 12px 18px; gap: 14px; }
+      .er-kbd-hint { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <header class="er-nav">
+    <a class="er-brand" href="{{ _primary_href }}">
+      <span class="er-brand__mark" aria-hidden="true">
+        <svg width="14" height="14" viewBox="46 31 86 98" fill="none">
+          <path d="M128.09 113.09 C109.82 131.37 80.18 131.37 61.91 113.09 C43.63 94.82 43.63 65.18 61.91 46.91 C80.18 28.63 109.82 28.63 128.09 46.91 L115.22 59.78 C104.05 48.61 85.95 48.61 74.78 59.78 C63.61 70.95 63.61 89.05 74.78 100.22 C85.95 111.39 104.05 111.39 115.22 100.22 Z" fill="currentColor"/>
+          <path d="M100.2 63.1 C104.75 75.45 104.75 75.45 124.9 80 C104.75 84.55 104.75 84.55 100.2 96.9 C95.65 84.55 95.65 84.55 88.5 80 C95.65 75.45 95.65 75.45 100.2 63.1 Z" fill="currentColor"/>
+        </svg>
+      </span>
+      <span>CogniTara</span>
+      <span class="er-brand__sep" aria-hidden="true"></span>
+      <span class="er-brand__meta">{{ _school.school_name }}</span>
+    </a>
+
+    <button type="button" class="er-icon-btn" id="erThemeToggle" aria-label="Switch theme">
+      <svg class="er-ico-moon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 12.79A9 9 0 1 1 11.21 3a7 7 0 0 0 9.79 9.79Z"/>
+      </svg>
+      <svg class="er-ico-sun" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="4"/>
+        <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/>
+      </svg>
+    </button>
+  </header>
+
+  <main class="er-stage">
+    <section class="er-card" aria-labelledby="erHeading">
+      <div class="er-card__head">
+        <div class="er-status-row">
+          <span class="er-code-tag">{{ _code }}</span>
+          <span class="er-status-txt">
+            <span class="er-dot {% if _code >= 500 %}is-alert{% endif %}"></span>
+            {{ _status }}
+          </span>
+        </div>
+        <span class="er-path" title="{{ _req_path }}">{{ _req_path }}</span>
+      </div>
+
+      <div class="er-card__body">
+        <div class="er-numeral" aria-hidden="true">{{ _code }}</div>
+        <h1 id="erHeading" class="er-title">{{ _title }}</h1>
+        <p class="er-desc">{{ _message }}</p>
+
+        <div class="er-actions">
+          {% if _code >= 500 %}
+            <button type="button" class="er-btn er-btn--primary" onclick="window.location.reload()">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 12a9 9 0 1 1-2.64-6.36"/>
+                <path d="M21 3v6h-6"/>
+              </svg>
+              <span>Try Again</span>
+            </button>
+            <a href="{{ _primary_href }}" class="er-btn">{{ _primary_label }}</a>
+          {% else %}
+            <a href="{{ _primary_href }}" class="er-btn er-btn--primary">
+              <span>{{ _primary_label }}</span>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M5 12h14M13 6l6 6-6 6"/>
+              </svg>
+            </a>
+            <button type="button" class="er-btn" onclick="if (window.history.length > 1) { window.history.back(); } else { window.location.href = '{{ _primary_href }}'; }">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M19 12H5M11 6l-6 6 6 6"/>
+              </svg>
+              <span>Go Back</span>
+            </button>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="er-card__foot">
+        <a href="{{ _primary_href }}">Workspace</a>
+        <a href="/login">Portal Sign In</a>
+        <button type="button" onclick="window.location.reload()">Reload Page</button>
+      </div>
+    </section>
+
+    <div class="er-kbd-hint" aria-hidden="true">
+      <span>Press <kbd>H</kbd> for home</span>
+      <span>Press <kbd>R</kbd> to reload</span>
+    </div>
+  </main>
+
+  <script>
+    (function () {
+      var btn = document.getElementById('erThemeToggle');
+      if (btn) {
+        btn.addEventListener('click', function () {
+          var cur = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
+          var next = cur === 'dark' ? 'light' : 'dark';
+          document.documentElement.setAttribute('data-theme', next);
+          try {
+            localStorage.setItem('ct-theme', next);
+            localStorage.setItem('ct-portal-theme', next);
+          } catch (e) {}
+        });
+      }
+      window.addEventListener('keydown', function (e) {
+        if (e.metaKey || e.ctrlKey || e.altKey) return;
+        if (e.key === 'h' || e.key === 'H') window.location.href = {{ _primary_href | tojson }};
+        else if (e.key === 'r' || e.key === 'R') window.location.reload();
+      });
+    })();
+  </script>
+</body>
+</html>
