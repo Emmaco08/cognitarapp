@@ -36,102 +36,64 @@
     </header>
 
     <main class="st-folio-stage">
-      <section class="st-brief st-brief--motion" aria-label="Examination briefing">
-        <div class="st-folio__top">
-          <span class="st-folio__doc-id">Pre-Exam Briefing · {{ exam.class }}</span>
-          <span class="st-pill st-pill--accent st-mono">{{ exam.duration }} MIN</span>
-        </div>
-
-        <div class="st-brief__body">
-          <div class="st-brief__stage">
-            <div class="st-brief__crest" aria-hidden="true">
-              <svg viewBox="0 0 56 56">
-                <circle class="st-crest-ring" cx="28" cy="28" r="24"/>
-                <circle class="st-crest-orbit-rev" cx="28" cy="28" r="19"/>
-                <path class="st-crest-shield" d="M28 11 L40 16 V26 C40 34 34.8 40.5 28 43.5 C21.2 40.5 16 34 16 26 V16 Z"/>
-                <path class="st-crest-spark" d="M23 27.5 L26.5 31 L33.5 23.5"/>
-              </svg>
-            </div>
-            <div class="st-folio__headline">
-              <span class="st-brief__candidate"><i class="st-brief__dot"></i>Candidate · {{ student_name }}</span>
-              <h1>{{ exam.name }}</h1>
-              <p>Review your examination details below. Once you begin, your server-synced countdown timer starts immediately and every answer is auto-saved.</p>
-            </div>
-          </div>
-
-          <div class="st-ledger">
-            <div class="st-ledger__cell">
-              <span>Duration</span>
-              <strong class="st-mono">{{ exam.duration }} minutes</strong>
-            </div>
-            <div class="st-ledger__cell">
-              <span>Class</span>
-              <strong>{{ exam.class }}</strong>
-            </div>
-            <div class="st-ledger__cell">
-              <span>Subject</span>
-              <strong>{{ exam.subject_tag or 'General' }}</strong>
-            </div>
-            <div class="st-ledger__cell">
-              <span>Track</span>
-              <strong>{{ exam.specialisation_tag or 'General' }}</strong>
-            </div>
-          </div>
-
-          {% if error %}
-          <div style="padding:14px 16px;border-radius:12px;background:var(--st-bad-soft);border:1px solid var(--st-bad-line);color:var(--st-bad);font-size:13.5px;display:flex;align-items:flex-start;gap:10px" role="alert">
-            {{ ico('i-x-circle', 'ct-ico--sm') }}
-            <div><strong>Unavailable:</strong> {{ error }}</div>
-          </div>
-          <a href="/dashboard" class="st-btn st-btn--secondary st-btn--lg st-btn--block">{{ ico('i-arrow-left', 'ct-ico--sm') }}<span>Back to Dashboard</span></a>
-          {% else %}
-          <div style="display:grid;gap:10px">
-            <button type="button" class="st-btn st-btn--primary st-btn--lg st-btn--block st-brief__cta" onclick="openStartModal()">
-              <span>Begin Examination</span>
-              {{ ico('i-arrow-right', 'ct-ico--sm st-arrow') }}
-            </button>
-            <a href="/dashboard" class="st-btn st-btn--ghost st-btn--block">Return to Dashboard</a>
-          </div>
-          {% endif %}
-
-          <div class="st-brief__integrity">
-            <span class="st-brief__integrity-pulse" aria-hidden="true"></span>
-            {{ ico('i-shield', 'ct-ico--xs') }}
-            <span>Integrity monitoring active · {{ exam.max_warnings if exam.max_warnings else 5 }} focus warnings auto-submit</span>
+      <section class="sc-min-card" aria-label="Exam start">
+        <div class="sc-min-card__emblem" aria-hidden="true">
+          <div class="sc-min-card__core">
+            <svg viewBox="0 0 24 24">
+              <path d="M12 3l7.5 3.2v5.3c0 4.8-3.2 8.2-7.5 9.8-4.3-1.6-7.5-5-7.5-9.8V6.2L12 3z"/>
+              <path d="M9 12.2l2.1 2.1L15.4 10"/>
+            </svg>
           </div>
         </div>
+
+        <h1 class="sc-min-card__title">{{ exam.name }}</h1>
+
+        <div class="sc-min-card__facts sc-min-card__facts--3">
+          <div class="sc-min-card__fact">
+            <span>Time</span>
+            <strong>{{ exam.duration }} min</strong>
+          </div>
+          <div class="sc-min-card__fact">
+            <span>Class</span>
+            <strong>{{ exam.class }}</strong>
+          </div>
+          <div class="sc-min-card__fact">
+            <span>Subject</span>
+            <strong>{{ exam.subject_tag or 'General' }}</strong>
+          </div>
+        </div>
+
+        {% if error %}
+        <span class="sc-min-card__pill sc-min-card__pill--muted" role="alert">{{ error }}</span>
+        <div class="sc-min-card__stack">
+          <a href="/dashboard" class="st-btn st-btn--secondary st-btn--lg st-btn--block">Back</a>
+        </div>
+        {% else %}
+        <div class="sc-min-card__stack">
+          <button type="button" class="st-btn st-btn--primary st-btn--lg st-btn--block" onclick="openStartModal()">
+            <span>Begin Exam</span>
+            {{ ico('i-arrow-right', 'ct-ico--sm st-arrow') }}
+          </button>
+          <a href="/dashboard" class="st-btn st-btn--ghost st-btn--block">Back</a>
+        </div>
+        {% endif %}
       </section>
     </main>
   </div>
 
-  <!-- Confirmation Modal (CogniTara Kinetic Modal System) -->
+  <!-- Minimalist Start Confirmation Modal -->
   <div class="ct-modal-backdrop" id="startModal" role="dialog" aria-modal="true" aria-hidden="true" data-ct-dismissable>
-    <div class="ct-modal ct-confirm-modal" data-tone="primary">
-      <div class="ct-m-head">
-        <div class="ct-m-medallion">
-          <span class="ct-m-medallion__halo" aria-hidden="true"></span>
-          <svg class="ct-m-medallion__svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <circle class="ct-svg-draw" style="--d:40ms" pathLength="100" cx="12" cy="12" r="9"/>
-            <path class="ct-svg-draw" style="--d:165ms" pathLength="100" d="M12 7.5V12l3 2"/>
-          </svg>
+    <div class="ct-modal ct-confirm-modal" data-tone="primary" style="max-width:348px;">
+      <div class="ct-m-body" style="padding:30px 26px 20px; text-align:center; display:flex; flex-direction:column; align-items:center; gap:14px;">
+        <div class="sc-min-card__core" style="width:54px;height:54px;" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7.5V12l3 2"/></svg>
         </div>
-        <div class="ct-m-copy">
-          <h3>Start {{ exam.name }}</h3>
-          <div class="ct-m-desc">Your {{ exam.duration }}-minute timer will start immediately once confirmed.</div>
-        </div>
-        <button type="button" class="ct-iconbtn ct-iconbtn--ghost ct-modal__close" onclick="closeStartModal()" aria-label="Close">{{ ico('i-x', 'ct-ico--sm') }}</button>
+        <h3 style="margin:0;font-size:19px;font-weight:740;letter-spacing:-0.02em;color:var(--st-ink);">Start Exam?</h3>
+        <p style="margin:-6px 0 0;font-family:var(--ct-mono);font-size:12.5px;color:var(--st-ink-2);">{{ exam.duration }} min timer starts now</p>
       </div>
-      <div class="ct-m-body">
-        <div style="padding:13px 15px;border-radius:12px;background:var(--st-warn-soft);border:1px solid var(--st-warn-line);color:var(--st-warn);font-size:13px;line-height:1.55">
-          <strong>Stay inside this window:</strong> Avoid tab switching, right-clicking, or DevTools. Reaching {{ exam.max_warnings if exam.max_warnings else 5 }} warnings will automatically submit your paper.
-        </div>
-      </div>
-      <div class="ct-m-foot">
-        <span class="ct-m-kbd"><kbd>Esc</kbd><span>Cancel</span></span>
-        <div class="ct-m-foot__btns">
-          <button type="button" class="st-btn st-btn--ghost" onclick="closeStartModal()">Cancel</button>
-          <button type="button" class="st-btn st-btn--primary" onclick="confirmStartExam()"><span>Start now</span>{{ ico('i-arrow-right', 'ct-ico--sm st-arrow') }}</button>
-        </div>
+      <div class="ct-m-foot" style="padding:0 26px 24px;border-top:0;background:transparent;display:flex;gap:10px;">
+        <button type="button" class="st-btn st-btn--secondary st-btn--lg" style="flex:1" onclick="closeStartModal()">Cancel</button>
+        <button type="button" class="st-btn st-btn--primary st-btn--lg" style="flex:1" onclick="confirmStartExam()">Start</button>
       </div>
     </div>
   </div>

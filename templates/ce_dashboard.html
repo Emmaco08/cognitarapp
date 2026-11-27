@@ -41,114 +41,74 @@
     </header>
 
     <main class="st-folio-stage">
-      <section class="st-brief st-brief--motion" style="width:min(640px,100%)" aria-label="Common Entrance candidate briefing">
-        <div class="st-folio__top">
-          <span class="st-folio__doc-id" style="text-transform:none;letter-spacing:0.01em">Candidate · {{ student_name }}</span>
-          {% if exam %}<span class="st-pill st-pill--accent st-mono">{{ exam.duration }} min · {{ exam.total_questions_to_show }} questions</span>{% endif %}
+      <section class="sc-min-card" aria-label="Entrance exam">
+        <div class="sc-min-card__emblem" aria-hidden="true">
+          <div class="sc-min-card__core">
+            <svg viewBox="0 0 24 24">
+              <path d="M12 3l7.5 3.2v5.3c0 4.8-3.2 8.2-7.5 9.8-4.3-1.6-7.5-5-7.5-9.8V6.2L12 3z"/>
+              <path d="M9 12.2l2.1 2.1L15.4 10"/>
+            </svg>
+          </div>
         </div>
 
-        <div class="st-brief__body">
-          <div class="st-brief__stage">
-            <div class="st-brief__crest" aria-hidden="true">
-              <svg viewBox="0 0 56 56">
-                <circle class="st-crest-ring" cx="28" cy="28" r="24"/>
-                <circle class="st-crest-orbit-rev" cx="28" cy="28" r="19"/>
-                <path class="st-crest-shield" d="M28 11 L40 16 V26 C40 34 34.8 40.5 28 43.5 C21.2 40.5 16 34 16 26 V16 Z"/>
-                <path class="st-crest-spark" d="M23 27.5 L26.5 31 L33.5 23.5"/>
-              </svg>
-            </div>
-            <div class="st-folio__headline">
-              <span class="st-brief__candidate"><i class="st-brief__dot"></i>{{ _ce_title }}{% if exam %} · {{ exam.target_class }}{% endif %}</span>
-              <h1>{{ exam.name if exam else _ce_title }}</h1>
-              <p>Welcome, {{ student_name }}. Review your paper settings below before entering the examination room. Every answer saves immediately to the school server.</p>
-            </div>
-          </div>
+        <h1 class="sc-min-card__title">{{ exam.name if exam else _ce_title }}</h1>
 
-          {% if exam %}
-          <div class="st-ledger">
-            <div class="st-ledger__cell">
-              <span>Duration</span>
-              <strong class="st-mono">{{ exam.duration }} minutes</strong>
-            </div>
-            <div class="st-ledger__cell">
-              <span>Questions</span>
-              <strong class="st-mono">{{ exam.total_questions_to_show }} items</strong>
-            </div>
-            <div class="st-ledger__cell">
-              <span>Passing cut-off</span>
-              <strong class="st-mono">{{ exam.passing_score or _ce.default_passing_score or 50 }}%</strong>
-            </div>
-            <div class="st-ledger__cell">
-              <span>Target class</span>
-              <strong>{{ exam.target_class }}</strong>
-            </div>
+        {% if exam %}
+        <div class="sc-min-card__facts sc-min-card__facts--3">
+          <div class="sc-min-card__fact">
+            <span>Time</span>
+            <strong>{{ exam.duration }} min</strong>
           </div>
-          {% endif %}
+          <div class="sc-min-card__fact">
+            <span>Questions</span>
+            <strong>{{ exam.total_questions_to_show }}</strong>
+          </div>
+          <div class="sc-min-card__fact">
+            <span>Class</span>
+            <strong>{{ exam.target_class }}</strong>
+          </div>
+        </div>
+        {% endif %}
 
-          {% if existing_attempt %}
-            {% if existing_attempt.status == 'pending' %}
-              <div class="st-ce-banner st-ce-banner--warn" role="status">
-                {{ ico('i-clock', 'ct-ico--sm') }}
-                <span>{{ _ce.pending_message or 'Your submitted examination is currently under administrative review.' }}</span>
-              </div>
-            {% elif existing_attempt.status == 'approved' %}
-              <div class="st-ce-banner st-ce-banner--ok" role="status">
-                {{ ico('i-check-circle', 'ct-ico--sm') }}
-                <span>{{ _ce.approved_message or ('Approved for ' ~ (exam.target_class if exam else 'admission') ~ '. Your admission status is confirmed.') }}</span>
-              </div>
-            {% elif existing_attempt.status == 'rejected' %}
-              <div class="st-ce-banner st-ce-banner--bad" role="status">
-                {{ ico('i-alert', 'ct-ico--sm') }}
-                <span>{{ _ce.rejected_message or 'Your previous attempt did not meet the cut-off.' }}{% if exam and exam.active %} You may sit the paper again below.{% endif %}</span>
-              </div>
-              {% if exam and exam.active %}
-              <button type="button" class="st-btn st-btn--primary st-btn--lg st-btn--block st-brief__cta" onclick="openStartModal()">
-                <span>Retake Examination</span>
+        {% if existing_attempt %}
+          {% if existing_attempt.status == 'pending' %}
+            <span class="sc-min-card__pill sc-min-card__pill--muted" role="status">Under Review</span>
+          {% elif existing_attempt.status == 'approved' %}
+            <span class="sc-min-card__pill" role="status">{{ ico('i-check-circle', 'ct-ico--xs') }}Admission Approved</span>
+          {% elif existing_attempt.status == 'rejected' %}
+            <span class="sc-min-card__pill sc-min-card__pill--muted" role="status">Not Passed</span>
+            {% if exam and exam.active %}
+            <div class="sc-min-card__stack">
+              <button type="button" class="st-btn st-btn--primary st-btn--lg st-btn--block" onclick="openStartModal()">
+                <span>Retake Exam</span>
                 {{ ico('i-arrow-right', 'ct-ico--sm st-arrow') }}
               </button>
-              {% else %}
-              <div class="st-ce-banner" role="status">
-                {{ ico('i-lock', 'ct-ico--sm') }}
-                <span>This entrance examination is currently closed by the administrator.</span>
-              </div>
-              {% endif %}
-            {% else %}
-              {% if existing_attempt.is_paused == 1 %}
-              <div class="st-ce-banner st-ce-banner--warn" role="status">
-                {{ ico('i-alert', 'ct-ico--sm') }}
-                <span>Exam paused: {{ existing_attempt.pause_reason or 'Proctor authorization required to resume.' }}</span>
-              </div>
-              <button type="button" class="st-btn st-btn--secondary st-btn--lg st-btn--block" disabled style="opacity:0.55;cursor:not-allowed">
-                {{ ico('i-lock', 'ct-ico--sm') }}
-                <span>Waiting for Proctor Authorization</span>
-              </button>
-              {% else %}
-              <button type="button" class="st-btn st-btn--primary st-btn--lg st-btn--block st-brief__cta" onclick="openResumeModal({{ existing_attempt.id }})">
-                <span>Resume Examination</span>
-                {{ ico('i-arrow-right', 'ct-ico--sm st-arrow') }}
-              </button>
-              {% endif %}
+            </div>
             {% endif %}
           {% else %}
-            {% if exam and exam.active %}
-            <button type="button" class="st-btn st-btn--primary st-btn--lg st-btn--block st-brief__cta" onclick="openStartModal()">
-              <span>Begin Examination</span>
-              {{ ico('i-arrow-right', 'ct-ico--sm st-arrow') }}
-            </button>
+            {% if existing_attempt.is_paused == 1 %}
+            <span class="sc-min-card__pill sc-min-card__pill--muted" role="status">Exam Paused</span>
             {% else %}
-            <div class="st-ce-banner" role="status">
-              {{ ico('i-lock', 'ct-ico--sm') }}
-              <span>This examination has not been opened yet. Please wait for your invigilator.</span>
+            <div class="sc-min-card__stack">
+              <button type="button" class="st-btn st-btn--primary st-btn--lg st-btn--block" onclick="openResumeModal({{ existing_attempt.id }})">
+                <span>Resume Exam</span>
+                {{ ico('i-arrow-right', 'ct-ico--sm st-arrow') }}
+              </button>
             </div>
             {% endif %}
           {% endif %}
-
-          <div class="st-brief__integrity">
-            <span class="st-brief__integrity-pulse" aria-hidden="true"></span>
-            {{ ico('i-shield', 'ct-ico--xs') }}
-            <span>Integrity shield active · {{ _eff_w }} focus warnings auto-submit</span>
+        {% else %}
+          {% if exam and exam.active %}
+          <div class="sc-min-card__stack">
+            <button type="button" class="st-btn st-btn--primary st-btn--lg st-btn--block" onclick="openStartModal()">
+              <span>Begin Exam</span>
+              {{ ico('i-arrow-right', 'ct-ico--sm st-arrow') }}
+            </button>
           </div>
-        </div>
+          {% else %}
+          <span class="sc-min-card__pill sc-min-card__pill--muted" role="status">Not Open Yet</span>
+          {% endif %}
+        {% endif %}
       </section>
     </main>
 
@@ -158,83 +118,35 @@
     </footer>
   </div>
 
-  <!-- Examination Guidelines & Start Confirmation Modal (Kinetic Modal System) -->
+  <!-- Minimalist Start Confirmation Modal -->
   <div class="ct-modal-backdrop" id="startModal" role="dialog" aria-modal="true" aria-hidden="true" data-ct-dismissable>
-    <div class="ct-modal" data-tone="primary" style="max-width:540px">
-      <div class="ct-m-head">
-        <div class="ct-m-medallion">
-          <span class="ct-m-medallion__halo" aria-hidden="true"></span>
-          <svg class="ct-m-medallion__svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <circle class="ct-svg-draw" style="--d:40ms" pathLength="100" cx="12" cy="12" r="9"/>
-            <path class="ct-svg-draw" style="--d:165ms" pathLength="100" d="M12 7.5V12l3 2"/>
-          </svg>
+    <div class="ct-modal ct-confirm-modal" data-tone="primary" style="max-width:348px;">
+      <div class="ct-m-body" style="padding:30px 26px 20px; text-align:center; display:flex; flex-direction:column; align-items:center; gap:14px;">
+        <div class="sc-min-card__core" style="width:54px;height:54px;" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7.5V12l3 2"/></svg>
         </div>
-        <div class="ct-m-copy">
-          <h3>Examination guidelines</h3>
-          <div class="ct-m-desc">{{ exam.name }} · {{ exam.duration }} minutes · {{ exam.total_questions_to_show }} questions</div>
-        </div>
-        <button type="button" class="ct-iconbtn ct-iconbtn--ghost ct-modal__close" onclick="closeStartModal()" aria-label="Close">{{ ico('i-x', 'ct-ico--sm') }}</button>
+        <h3 style="margin:0;font-size:19px;font-weight:740;letter-spacing:-0.02em;color:var(--st-ink);">Start Exam?</h3>
+        <p style="margin:-6px 0 0;font-family:var(--ct-mono);font-size:12.5px;color:var(--st-ink-2);">{{ exam.duration if exam else 60 }} min timer starts now</p>
       </div>
-      <div class="ct-m-body" style="max-height:58vh">
-        <div class="st-ce-rules">
-          <div class="st-ce-rule-box st-ce-rule-box--ok">
-            <strong>Before you begin</strong>
-            <ul>
-              <li>Keep your browser focused in fullscreen mode throughout the test.</li>
-              <li>Every selected answer saves immediately to the local school server.</li>
-              <li>Click any diagram or reading passage to enlarge it.</li>
-              <li>Review answered and remaining questions anytime using the question map.</li>
-            </ul>
-          </div>
-          <div class="st-ce-rule-box st-ce-rule-box--bad">
-            <strong>Examination conduct</strong>
-            <ul>
-              <li>Do not switch tabs, minimize, or leave the exam screen.</li>
-              <li>Do not refresh the page or open browser developer tools.</li>
-              <li>Reaching {{ exam.max_warnings if exam.max_warnings else 5 }} warnings automatically locks and submits your paper.</li>
-            </ul>
-          </div>
-        </div>
-      </div>
-      <div class="ct-m-foot">
-        <span class="ct-m-kbd"><kbd>Esc</kbd><span>Cancel</span></span>
-        <div class="ct-m-foot__btns">
-          <button type="button" class="st-btn st-btn--ghost" onclick="closeStartModal()">Cancel</button>
-          <button type="button" class="st-btn st-btn--primary" onclick="confirmStartExam()"><span>Start examination</span>{{ ico('i-arrow-right', 'ct-ico--sm st-arrow') }}</button>
-        </div>
+      <div class="ct-m-foot" style="padding:0 26px 24px;border-top:0;background:transparent;display:flex;gap:10px;">
+        <button type="button" class="st-btn st-btn--secondary st-btn--lg" style="flex:1" onclick="closeStartModal()">Cancel</button>
+        <button type="button" class="st-btn st-btn--primary st-btn--lg" style="flex:1" onclick="confirmStartExam()">Start</button>
       </div>
     </div>
   </div>
 
-  <!-- Resume Confirmation Modal (Kinetic Modal System) -->
+  <!-- Minimalist Resume Confirmation Modal -->
   <div class="ct-modal-backdrop" id="resumeModal" role="dialog" aria-modal="true" aria-hidden="true" data-ct-dismissable>
-    <div class="ct-modal ct-confirm-modal" data-tone="ok" style="max-width:440px">
-      <div class="ct-m-head">
-        <div class="ct-m-medallion">
-          <span class="ct-m-medallion__halo" aria-hidden="true"></span>
-          <svg class="ct-m-medallion__svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <circle class="ct-svg-draw" style="--d:40ms" pathLength="100" cx="12" cy="12" r="8.5"/>
-            <path class="ct-svg-draw" style="--d:155ms" pathLength="100" d="m8.5 12.2 2.35 2.45 4.75-5.1"/>
-          </svg>
+    <div class="ct-modal ct-confirm-modal" data-tone="primary" style="max-width:348px;">
+      <div class="ct-m-body" style="padding:30px 26px 20px; text-align:center; display:flex; flex-direction:column; align-items:center; gap:14px;">
+        <div class="sc-min-card__core" style="width:54px;height:54px;" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><polygon points="8 6 19 12 8 18 8 6" fill="currentColor" stroke="none"/></svg>
         </div>
-        <div class="ct-m-copy">
-          <h3>Resume examination</h3>
-          <div class="ct-m-desc">Your previous answers and remaining time are safely preserved.</div>
-        </div>
-        <button type="button" class="ct-iconbtn ct-iconbtn--ghost ct-modal__close" onclick="closeResumeModal()" aria-label="Close">{{ ico('i-x', 'ct-ico--sm') }}</button>
+        <h3 style="margin:0;font-size:19px;font-weight:740;letter-spacing:-0.02em;color:var(--st-ink);">Resume Exam?</h3>
       </div>
-      <div class="ct-m-body">
-        <div class="st-ce-banner st-ce-banner--ok">
-          {{ ico('i-check-circle', 'ct-ico--sm') }}
-          <span>Ready to restore {{ exam.name }} for {{ exam.target_class }}.</span>
-        </div>
-      </div>
-      <div class="ct-m-foot">
-        <span class="ct-m-kbd"><kbd>Esc</kbd><span>Cancel</span></span>
-        <div class="ct-m-foot__btns">
-          <button type="button" class="st-btn st-btn--ghost" onclick="closeResumeModal()">Cancel</button>
-          <button type="button" class="st-btn st-btn--primary" id="resumeConfirmBtn"><span>Resume now</span>{{ ico('i-arrow-right', 'ct-ico--sm st-arrow') }}</button>
-        </div>
+      <div class="ct-m-foot" style="padding:0 26px 24px;border-top:0;background:transparent;display:flex;gap:10px;">
+        <button type="button" class="st-btn st-btn--secondary st-btn--lg" style="flex:1" onclick="closeResumeModal()">Cancel</button>
+        <button type="button" class="st-btn st-btn--primary st-btn--lg" style="flex:1" id="resumeConfirmBtn">Resume</button>
       </div>
     </div>
   </div>

@@ -42,119 +42,53 @@
     </header>
 
     <main class="st-folio-stage">
-      <section class="sc-slip" aria-label="Common Entrance submission report">
-        <div class="sc-slip__masthead">
-          <div class="sc-slip__bar">
-            <span class="sc-slip__doc">Common Entrance Slip · {{ ce_settings.admission_session or '2026/2027' }}</span>
-            {% if show_decision %}
-              {% if status == 'approved' %}
-              <span class="sc-slip__badge sc-slip__badge--solid">{{ ico('i-check-circle', 'ct-ico--xs') }}Admission Approved</span>
-              {% elif status == 'rejected' %}
-              <span class="sc-slip__badge">{{ ico('i-alert', 'ct-ico--xs') }}Cut-off Not Met</span>
-              {% else %}
-              <span class="sc-slip__badge">{{ ico('i-clock', 'ct-ico--xs') }}Under Review</span>
-              {% endif %}
-            {% else %}
-              <span class="sc-slip__badge sc-slip__badge--solid">{{ ico('i-check-circle', 'ct-ico--xs') }}Paper Submitted</span>
-            {% endif %}
-          </div>
+      <section class="sc-min-card" aria-label="Entrance exam result">
+        <p class="sc-min-card__label">{{ exam.name if exam else (ce_settings.portal_title or 'Common Entrance') }}</p>
 
-          <div class="sc-slip__hero">
-            <div class="sc-slip__title-block">
-              <h1>{{ student.full_name if student else 'Examination Candidate' }}</h1>
-              <span class="sc-slip__candidate">{{ student.username if student else 'Candidate' }} · {{ exam.name if exam else 'Common Entrance' }}{% if exam and exam.target_class %} · {{ exam.target_class }}{% endif %}</span>
-              <p class="sc-slip__verdict">
-                {% if show_decision %}
-                  {% if status == 'approved' %}
-                  {{ ce_settings.approved_message or 'Congratulations. Your examination score meets the official admission benchmark for this intake.' }}
-                  {% elif status == 'rejected' %}
-                  {{ ce_settings.rejected_message or 'Thank you for sitting this entrance examination. Your score did not meet the required cut-off benchmark.' }}
-                  {% else %}
-                  {{ ce_settings.pending_message or 'Your entrance examination is complete and is now under admissions review.' }}
-                  {% endif %}
-                {% else %}
-                  {{ ce_settings.pending_message or 'Your answers have been recorded and locked on the local school server for official admissions grading.' }}
-                {% endif %}
-              </p>
-            </div>
+        {% if show_score %}
+        <strong class="sc-min-card__pct" data-ct-count data-ct-decimals="1" data-ct-suffix="%">{{ pct }}%</strong>
 
-            <div class="sc-slip__score-block">
-              {% if show_score %}
-              <strong class="sc-slip__pct" data-ct-count data-ct-decimals="1" data-ct-suffix="%">{{ pct }}%</strong>
-              <div class="sc-slip__stamp">
-                <small>Standing</small>
-                <strong>{{ attempt.grade_label or ('PASS' if passed else 'REV') }}</strong>
-                <span>{{ attempt.score or 0 }} / {{ attempt.total or 0 }}</span>
-              </div>
-              {% else %}
-              <div class="sc-slip__stamp">
-                <small>Receipt</small>
-                <strong>SEALED</strong>
-                <span>Locked on server</span>
-              </div>
-              {% endif %}
-            </div>
-          </div>
+        <div class="sc-min-card__bar" aria-hidden="true">
+          <div class="sc-min-card__fill" id="ceBenchFill" data-pct="{{ [pct, 100]|min }}"></div>
         </div>
 
-        <div class="sc-slip__body">
-          {% if show_score %}
-          <div class="sc-slip__scale">
-            <div class="sc-slip__scale-head">
-              <span>Admissions Cut-off Scale</span>
-              <strong>{{ pct }}% Achieved · {{ pass_mark }}% Cut-off</strong>
-            </div>
-            <div class="sc-slip__track">
-              <div class="sc-slip__fill" id="ceBenchFill" data-pct="{{ [pct, 100]|min }}"></div>
-              <div class="sc-slip__mark" style="left:{{ [pass_mark, 100]|min }}%" title="{{ pass_mark }}% Cut-off Benchmark"></div>
-            </div>
-            <div class="sc-slip__ticks">
-              <span>0%</span>
-              <span>25%</span>
-              <span>Cut-off · {{ pass_mark }}%</span>
-              <span>75%</span>
-              <span>100%</span>
-            </div>
+        <div class="sc-min-card__facts">
+          <div class="sc-min-card__fact">
+            <span>Score</span>
+            <strong>{{ attempt.score or 0 }} / {{ attempt.total or 0 }}</strong>
           </div>
+          <div class="sc-min-card__fact">
+            <span>{{ 'Status' if show_decision else 'Grade' }}</span>
+            <strong>
+              {% if show_decision %}
+                {% if status == 'approved' %}Approved{% elif status == 'rejected' %}Not Passed{% else %}Pending{% endif %}
+              {% else %}
+                {{ attempt.grade_label or ('Pass' if passed else 'Review') }}
+              {% endif %}
+            </strong>
+          </div>
+        </div>
+        {% else %}
+        <div class="sc-min-card__emblem" aria-hidden="true">
+          <div class="sc-min-card__core">
+            <svg viewBox="0 0 24 24"><path d="M5 12.5l4.2 4.2L19 7.5"/></svg>
+          </div>
+        </div>
+        <h1 class="sc-min-card__title">
+          {% if show_decision %}
+            {% if status == 'approved' %}Admission Approved{% elif status == 'rejected' %}Not Approved{% else %}Exam Submitted{% endif %}
+          {% else %}
+            Exam Submitted
           {% endif %}
+        </h1>
+        {% endif %}
 
-          <div class="sc-slip__stats">
-            <div class="sc-slip__stat">
-              <span>{{ 'Marks Scored' if show_score else 'Script Status' }}</span>
-              <strong>{% if show_score %}{{ attempt.score or 0 }} / {{ attempt.total or 0 }}{% else %}Sealed{% endif %}</strong>
-              <em>{{ 'Graded items' if show_score else 'Locked on server' }}</em>
-            </div>
-            <div class="sc-slip__stat">
-              <span>Target Class</span>
-              <strong>{{ exam.target_class if (exam and exam.target_class) else 'Intake' }}</strong>
-              <em>Applied Cohort</em>
-            </div>
-            <div class="sc-slip__stat">
-              <span>Session</span>
-              <strong>{{ ce_settings.admission_session or '2026/2027' }}</strong>
-              <em>Academic Year</em>
-            </div>
-            <div class="sc-slip__stat">
-              <span>Submitted</span>
-              <strong>{{ attempt.completed_at[:10] if (attempt and attempt.completed_at) else 'Just now' }}</strong>
-              <em>Verified timestamp</em>
-            </div>
-          </div>
-        </div>
-
-        <div class="sc-slip__foot">
-          <span class="sc-slip__stamp-note"><i></i>Admissions Record · {{ ce_settings.admission_session or '2026/2027' }}</span>
-          <div class="st-folio__actions">
-            <a href="/ce_login" class="st-btn st-btn--ghost st-btn--lg">Sign Out</a>
-            <button type="button" class="st-btn st-btn--secondary st-btn--lg" onclick="window.print()">
-              {{ ico('i-doc', 'ct-ico--sm') }}
-              <span>Print Slip</span>
-            </button>
-            <a href="/ce_dashboard" class="st-btn st-btn--primary st-btn--lg">
-              <span>Candidate Dashboard</span>
-              {{ ico('i-arrow-right', 'ct-ico--sm st-arrow') }}
-            </a>
-          </div>
+        <div class="sc-min-card__actions">
+          <button type="button" class="st-btn st-btn--secondary st-btn--lg" onclick="window.print()">Print</button>
+          <a href="/ce_dashboard" class="st-btn st-btn--primary st-btn--lg">
+            <span>Dashboard</span>
+            {{ ico('i-arrow-right', 'ct-ico--sm st-arrow') }}
+          </a>
         </div>
       </section>
     </main>

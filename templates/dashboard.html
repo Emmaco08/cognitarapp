@@ -338,20 +338,19 @@
     </footer>
   </div>
 
-  <!-- Exam Launch Overlay -->
+  <!-- Minimalist Exam Launch Overlay -->
   <div class="st-overlay" id="loadingOverlay" aria-hidden="true">
-    <div class="st-overlay__card">
-      <div style="display:grid;gap:6px">
-        <span class="st-eyebrow">Preparing Examination</span>
-        <h3 id="loadingLabel" style="margin:0;font-size:18px;font-weight:720;letter-spacing:-0.02em;color:var(--st-ink)">Preparing Your Exam</h3>
-        <p id="loadingStatus" style="margin:0;font-size:13px;color:var(--st-ink-3)">Initializing secure session…</p>
-      </div>
-      <div style="display:grid;gap:8px">
-        <div class="st-overlay__track" id="loadingTrack" style="--value:0">
-          <div class="st-overlay__fill" id="loadingBar"></div>
+    <div class="sc-min-card sc-min-card--compact" role="status" aria-live="polite">
+      <div class="sc-min-card__emblem" aria-hidden="true">
+        <div class="sc-min-card__core">
+          <svg viewBox="0 0 24 24">
+            <path d="M12 3l7.5 3.2v5.4c0 4.6-3.1 8.1-7.5 9.6-4.4-1.5-7.5-5-7.5-9.6V6.2L12 3z"/>
+            <path d="M9.2 12.2l2 2 3.8-4"/>
+          </svg>
         </div>
-        <div style="display:flex;justify-content:flex-end;font-family:var(--ct-mono);font-size:12px;color:var(--st-ink-2)" id="loadingPercent">0%</div>
       </div>
+      <h3 id="loadingLabel" class="sc-min-card__title">Opening Exam</h3>
+      <div class="sc-sweep-track" aria-hidden="true"><i></i></div>
     </div>
   </div>
 
@@ -359,47 +358,15 @@
   <script>
     function showLoading(examId, examName) {
       var overlay = document.getElementById("loadingOverlay");
-      var track = document.getElementById("loadingTrack");
-      var percent = document.getElementById("loadingPercent");
       var label = document.getElementById("loadingLabel");
-      var status = document.getElementById("loadingStatus");
-
-      overlay.classList.add("is-open");
-      overlay.setAttribute("aria-hidden", "false");
-      label.textContent = examName;
-
-      var messages = [
-        "Randomizing question order…",
-        "Synchronizing exam timer…",
-        "Enabling integrity shield…",
-        "Opening exam studio…"
-      ];
-
-      var progress = 0;
-      var msgIndex = 0;
-
-      var progressInterval = setInterval(function () {
-        progress = Math.min(90, progress + Math.random() * 16 + 6);
-        track.style.setProperty("--value", String(Math.round(progress)));
-        percent.textContent = Math.round(progress) + "%";
-      }, 140);
-
-      var msgInterval = setInterval(function () {
-        if (msgIndex < messages.length) {
-          status.textContent = messages[msgIndex++];
-        }
-      }, 360);
-
+      if (label && examName) label.textContent = examName;
+      if (overlay) {
+        overlay.classList.add("is-open");
+        overlay.setAttribute("aria-hidden", "false");
+      }
       setTimeout(function () {
-        clearInterval(progressInterval);
-        clearInterval(msgInterval);
-        track.style.setProperty("--value", "100");
-        percent.textContent = "100%";
-        status.textContent = "Launching exam…";
-        setTimeout(function () {
-          window.location.href = "/exam_start/" + examId;
-        }, 180);
-      }, 1400);
+        window.location.href = "/exam_start/" + examId;
+      }, 650);
     }
 
     function showStartPopup(examId, examName, duration) {

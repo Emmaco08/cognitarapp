@@ -47,159 +47,54 @@
       </div>
     </header>
 
-    <!-- Brand-New Architectural Monochrome Score Slip -->
+    <!-- Minimalist Monochrome Student Score Card -->
     <main class="st-folio-stage">
       {% if withheld %}
-      <section class="sc-slip" aria-label="Examination submission receipt">
-        <div class="sc-slip__masthead">
-          <div class="sc-slip__bar">
-            <span class="sc-slip__doc">Submission Receipt · {{ _school.current_term }} {{ _school.academic_session }}</span>
-            <span class="sc-slip__badge">{{ ico('i-lock', 'ct-ico--xs') }}Pending Release</span>
-          </div>
-          <div class="sc-slip__hero">
-            <div class="sc-slip__title-block">
-              <h1>{{ exam_name }}</h1>
-              <span class="sc-slip__candidate">{{ candidate_name }} · @{{ username }}{% if candidate_class %} · {{ candidate_class }}{% endif %}</span>
-              <p class="sc-slip__verdict">Your examination script has been locked and verified on the local school server. Detailed grades will appear on your Academic Transcript once released by administration.</p>
-            </div>
-            <div class="sc-slip__score-block">
-              <div class="sc-slip__stamp">
-                <small>Status</small>
-                <strong>LOCKED</strong>
-                <span>Verified</span>
-              </div>
-            </div>
+      <section class="sc-min-card sc-min-card--compact" aria-label="Score withheld">
+        <p class="sc-min-card__label">{{ exam_name }}</p>
+        <div class="sc-min-card__emblem" aria-hidden="true">
+          <div class="sc-min-card__core">
+            <svg viewBox="0 0 24 24">
+              <rect x="5" y="11" width="14" height="9" rx="2.5"/>
+              <path d="M8 11V7.5a4 4 0 0 1 8 0V11"/>
+            </svg>
           </div>
         </div>
-
-        <div class="sc-slip__body">
-          <div class="sc-slip__stats">
-            <div class="sc-slip__stat">
-              <span>Candidate</span>
-              <strong>{{ candidate_name }}</strong>
-              <em>@{{ username }}</em>
-            </div>
-            <div class="sc-slip__stat">
-              <span>Class</span>
-              <strong>{{ candidate_class or 'Registered' }}</strong>
-              <em>{{ _school.current_term }}</em>
-            </div>
-            <div class="sc-slip__stat">
-              <span>Paper State</span>
-              <strong>Submitted</strong>
-              <em>Integrity verified</em>
-            </div>
-            <div class="sc-slip__stat">
-              <span>Release Policy</span>
-              <strong>Withheld</strong>
-              <em>Held by school admin</em>
-            </div>
-          </div>
-        </div>
-
-        <div class="sc-slip__foot">
-          <span class="sc-slip__stamp-note"><i></i>Verified Local Server · {{ _school.school_name }}</span>
-          <div class="st-folio__actions">
-            <button type="button" class="st-btn st-btn--primary st-btn--lg" onclick="backToDashboard()">
-              <span>Return to Dashboard</span>
-              {{ ico('i-arrow-right', 'ct-ico--sm st-arrow') }}
-            </button>
-          </div>
+        <h1 class="sc-min-card__title">Score Withheld</h1>
+        <div class="sc-min-card__stack">
+          <button type="button" class="st-btn st-btn--primary st-btn--lg st-btn--block" onclick="backToDashboard()">
+            <span>Dashboard</span>
+            {{ ico('i-arrow-right', 'ct-ico--sm st-arrow') }}
+          </button>
         </div>
       </section>
       {% else %}
-      <section class="sc-slip" aria-label="Official examination score slip">
-        <!-- Top Inverted Obsidian Masthead -->
-        <div class="sc-slip__masthead">
-          <div class="sc-slip__bar">
-            <span class="sc-slip__doc">Official Score Slip · {{ _school.school_name }} · {{ _school.current_term }} {{ _school.academic_session }}</span>
-            {% if passed %}
-            <span class="sc-slip__badge sc-slip__badge--solid">{{ ico('i-check-circle', 'ct-ico--xs') }}Passed Examination</span>
-            {% else %}
-            <span class="sc-slip__badge">{{ ico('i-alert', 'ct-ico--xs') }}Below Pass Benchmark</span>
-            {% endif %}
+      <section class="sc-min-card" aria-label="Exam score">
+        <p class="sc-min-card__label">{{ exam_name }}</p>
+
+        <strong class="sc-min-card__pct" data-ct-count data-ct-suffix="%">{{ pct }}%</strong>
+
+        <div class="sc-min-card__bar" aria-hidden="true">
+          <div class="sc-min-card__fill" id="benchFill" data-pct="{{ pct }}"></div>
+        </div>
+
+        <div class="sc-min-card__facts">
+          <div class="sc-min-card__fact">
+            <span>Score</span>
+            <strong>{{ score }} / {{ total }}</strong>
           </div>
-
-          <div class="sc-slip__hero">
-            <div class="sc-slip__title-block">
-              <h1>{{ exam_name }}</h1>
-              <span class="sc-slip__candidate">{{ candidate_name }} · @{{ username }}{% if candidate_class %} · {{ candidate_class }}{% endif %}</span>
-              <p class="sc-slip__verdict">
-                {% if passed %}
-                Well done, {{ candidate_name }}. You surpassed the 50% passing benchmark and your final standing has been recorded on your Academic Transcript.
-                {% else %}
-                Your script has been graded and recorded, {{ candidate_name }}. Review missed topics with your subject teacher before your next sitting.
-                {% endif %}
-              </p>
-            </div>
-
-            <div class="sc-slip__score-block" aria-label="Score {{ pct }} percent, Grade {{ grade_letter }}">
-              <strong class="sc-slip__pct" data-ct-count data-ct-suffix="%">{{ pct }}%</strong>
-              <div class="sc-slip__stamp">
-                <small>Grade</small>
-                <strong>{{ grade_letter }}</strong>
-                <span>{{ grade_desc }}</span>
-              </div>
-            </div>
+          <div class="sc-min-card__fact">
+            <span>Grade</span>
+            <strong>{{ grade_letter }}</strong>
           </div>
         </div>
 
-        <!-- Lower Editorial Performance Folio -->
-        <div class="sc-slip__body">
-          <div class="sc-slip__scale">
-            <div class="sc-slip__scale-head">
-              <span>Performance Benchmark</span>
-              <strong>{{ pct }}% Achieved · 50% Pass Mark</strong>
-            </div>
-            <div class="sc-slip__track">
-              <div class="sc-slip__fill" id="benchFill" data-pct="{{ pct }}"></div>
-              <div class="sc-slip__mark" title="50% Pass Benchmark"></div>
-            </div>
-            <div class="sc-slip__ticks">
-              <span>0%</span>
-              <span>25%</span>
-              <span>50% Pass</span>
-              <span>75%</span>
-              <span>100%</span>
-            </div>
-          </div>
-
-          <div class="sc-slip__stats">
-            <div class="sc-slip__stat">
-              <span>Marks Scored</span>
-              <strong>{{ score }} / {{ total }}</strong>
-              <em>Total items graded</em>
-            </div>
-            <div class="sc-slip__stat">
-              <span>Correct Answers</span>
-              <strong>{{ score }}</strong>
-              <em>Verified matches</em>
-            </div>
-            <div class="sc-slip__stat">
-              <span>Missed Items</span>
-              <strong>{{ missed if missed > 0 else 0 }}</strong>
-              <em>{{ 'Zero errors' if missed <= 0 else 'Areas to review' }}</em>
-            </div>
-            <div class="sc-slip__stat">
-              <span>Final Standing</span>
-              <strong>Grade {{ grade_letter }}</strong>
-              <em>{{ grade_desc }}</em>
-            </div>
-          </div>
-        </div>
-
-        <div class="sc-slip__foot">
-          <span class="sc-slip__stamp-note"><i></i>Recorded on Local School Server · {{ _school.academic_session }}</span>
-          <div class="st-folio__actions">
-            <button type="button" class="st-btn st-btn--secondary st-btn--lg" onclick="window.print()">
-              {{ ico('i-doc', 'ct-ico--sm') }}
-              <span>Print Score Slip</span>
-            </button>
-            <button type="button" class="st-btn st-btn--primary st-btn--lg" onclick="backToDashboard()">
-              <span>Return to Dashboard</span>
-              {{ ico('i-arrow-right', 'ct-ico--sm st-arrow') }}
-            </button>
-          </div>
+        <div class="sc-min-card__actions">
+          <button type="button" class="st-btn st-btn--secondary st-btn--lg" onclick="window.print()">Print</button>
+          <button type="button" class="st-btn st-btn--primary st-btn--lg" onclick="backToDashboard()">
+            <span>Dashboard</span>
+            {{ ico('i-arrow-right', 'ct-ico--sm st-arrow') }}
+          </button>
         </div>
       </section>
       {% endif %}

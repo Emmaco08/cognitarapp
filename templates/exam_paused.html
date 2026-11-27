@@ -34,52 +34,23 @@
     </header>
 
     <main class="st-folio-stage">
-      <section class="st-brief blocked-card" aria-label="Examination paused">
-        <div class="st-folio__top">
-          <span class="st-folio__doc-id">{{ exam.name if exam else "Exam Session" }}</span>
-          <span class="st-pill st-pill--warn">{{ ico('i-lock', 'ct-ico--xs') }}Paused Hold</span>
+      <section class="sc-min-card sc-min-card--compact blocked-card" aria-label="Exam paused">
+        <div class="sc-pause-emblem" aria-hidden="true">
+          <span class="sc-pause-ring sc-pause-ring--1"></span>
+          <span class="sc-pause-ring sc-pause-ring--2"></span>
+          <div class="sc-pause-core">
+            <svg viewBox="0 0 24 24">
+              <rect class="sc-pause-bar" x="7" y="5" width="3.5" height="14" rx="1.2" fill="currentColor"/>
+              <rect class="sc-pause-bar sc-pause-bar--2" x="13.5" y="5" width="3.5" height="14" rx="1.2" fill="currentColor"/>
+            </svg>
+          </div>
         </div>
 
-        <div class="st-brief__body" style="text-align:center;">
-          <div class="sc-pause-emblem" aria-hidden="true">
-            <span class="sc-pause-ring sc-pause-ring--1"></span>
-            <span class="sc-pause-ring sc-pause-ring--2"></span>
-            <div class="sc-pause-core">
-              <svg viewBox="0 0 24 24">
-                <rect class="sc-pause-bar" x="7" y="5" width="3.5" height="14" rx="1.2" fill="currentColor"/>
-                <rect class="sc-pause-bar sc-pause-bar--2" x="13.5" y="5" width="3.5" height="14" rx="1.2" fill="currentColor"/>
-              </svg>
-            </div>
-          </div>
+        <h1 class="sc-min-card__title">Exam Paused</h1>
+        <div class="sc-sweep-track" aria-hidden="true"><i></i></div>
 
-          <div class="st-folio__headline">
-            <span class="st-eyebrow">Proctoring Notice</span>
-            <h1>Examination Temporarily Paused</h1>
-            <p class="message-box">{{ pause_reason or "Your examination attempt has been paused by the examination supervisor or proctoring system." }} Please notify your invigilator — your answers and remaining time are safely preserved.</p>
-          </div>
-
-          <div class="st-ledger" style="text-align:left;">
-            <div class="st-ledger__cell">
-              <span>Clock State</span>
-              <strong>Timer Frozen</strong>
-            </div>
-            <div class="st-ledger__cell">
-              <span>Answer Backup</span>
-              <strong>Saved on Server</strong>
-            </div>
-          </div>
-
-          <div class="sc-sweep-track" aria-hidden="true"><i></i></div>
-
-          <div style="display:flex;align-items:center;justify-content:center;gap:10px;padding:12px 16px;border-radius:12px;background:var(--st-well);border:1px solid var(--st-line);font-family:var(--ct-mono);font-size:12px;color:var(--st-ink-2)">
-            <span class="st-status-live"><i></i></span>
-            <span>Waiting for administrator to resume your session automatically…</span>
-          </div>
-
-          <a href="{% if is_ce %}/ce_dashboard{% else %}/dashboard{% endif %}" class="st-btn st-btn--secondary st-btn--lg st-btn--block">
-            {{ ico('i-arrow-left', 'ct-ico--sm') }}
-            <span>Return to Dashboard</span>
-          </a>
+        <div class="sc-min-card__stack" style="margin-top:4px;">
+          <a href="{% if is_ce %}/ce_dashboard{% else %}/dashboard{% endif %}" class="st-btn st-btn--secondary st-btn--lg st-btn--block">Back to Dashboard</a>
         </div>
       </section>
     </main>
