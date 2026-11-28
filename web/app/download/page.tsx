@@ -80,7 +80,7 @@ export default function DownloadPage() {
         email: String(data.email || clean),
         email_sent: Boolean(data.email_sent),
         download_url: String(data.download_url || "/api/v1/download/windows"),
-        latest_version: String(data.latest_version || "v2.2.7"),
+        latest_version: String(data.latest_version || "v2.6.0"),
         message: String(data.message || ""),
       });
     } catch {

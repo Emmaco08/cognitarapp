@@ -102,6 +102,14 @@ function OfflineShellBase({
   }, []);
 
   useEffect(() => {
+    if (typeof document === "undefined") return;
+    document.documentElement.classList.toggle("ct-drawer-open", drawerOpen);
+    return () => {
+      document.documentElement.classList.remove("ct-drawer-open");
+    };
+  }, [drawerOpen]);
+
+  useEffect(() => {
     _toastListener = (item) => {
       setToasts((prev) => [...prev.slice(-3), item]);
       setTimeout(() => {
@@ -319,16 +327,24 @@ function OfflineShellBase({
           aria-label={role === "admin" ? "Admin navigation" : "Teacher navigation"}
         >
           <div className="ct-sidebar__brand">
-            <Link href={role === "admin" ? "/admin" : "/teacher"} aria-label={`CogniTara ${role} home`}>
+            <Link href={role === "admin" ? "/admin" : "/teacher"} aria-label={`CogniTara ${role} home`} onClick={() => setDrawerOpen(false)}>
               <CtBrandMark />
               <CtWordmark />
             </Link>
             <span className="ct-brand-tag">{role === "admin" ? "Admin" : "Teacher"}</span>
+            <button
+              type="button"
+              className="ct-iconbtn ct-iconbtn--ghost ct-sidebar__close"
+              onClick={() => setDrawerOpen(false)}
+              aria-label="Close navigation"
+            >
+              <CtIco name="i-x" />
+            </button>
           </div>
 
           <div className="ct-sidebar__scroll">
             {role === "admin" ? (
-              <Link className="ct-school" href="/admin/school-settings" title="Edit school profile and logo">
+              <Link className="ct-school" href="/admin/school-settings" title="Edit school profile and logo" onClick={() => setDrawerOpen(false)}>
                 <span className="ct-school__crest">
                   {school?.school_logo_b64 ? (
                     <img src={school.school_logo_b64} alt={`${schoolName} logo`} />
@@ -470,11 +486,11 @@ function OfflineShellBase({
 
           <div className="ct-sidebar__foot">
             {role === "admin" ? (
-              <Link className="ct-btn ct-btn--soft ct-btn--sm ct-btn--block" href="/admin/exams-management">
+              <Link className="ct-btn ct-btn--soft ct-btn--sm ct-btn--block" href="/admin/exams-management" onClick={() => setDrawerOpen(false)}>
                 <CtIco name="i-live" /><span className="ct-hide-collapsed">Exam Control</span>
               </Link>
             ) : (
-              <Link className="ct-btn ct-btn--primary ct-btn--sm ct-btn--block" href="/teacher/create-exam">
+              <Link className="ct-btn ct-btn--primary ct-btn--sm ct-btn--block" href="/teacher/create-exam" onClick={() => setDrawerOpen(false)}>
                 <CtIco name="i-plus" /><span className="ct-hide-collapsed">New Exam</span>
               </Link>
             )}

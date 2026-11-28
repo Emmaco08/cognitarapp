@@ -468,7 +468,7 @@ CREATE TABLE IF NOT EXISTS download_leads (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     email TEXT NOT NULL,
     source TEXT NOT NULL DEFAULT 'download_page',
-    app_version TEXT NOT NULL DEFAULT 'v2.2.7',
+    app_version TEXT NOT NULL DEFAULT 'v2.6.0',
     ip_address TEXT,
     user_agent TEXT,
     email_sent BOOLEAN NOT NULL DEFAULT FALSE,

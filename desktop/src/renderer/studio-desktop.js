@@ -51,7 +51,7 @@
     writing: 0,
     samples: new Array(120).fill(0),
     stopArmed: false,
-    version: "2.2.7",
+    version: "2.6.0",
     activeView: "home",
     cloudAccount: null,
     updateState: null
@@ -3702,7 +3702,7 @@
       renderUpdateState({
         status: "downloading",
         currentVersion: "2.2.3",
-        availableVersion: "2.2.7",
+        availableVersion: "2.6.0",
         percent: 68.4,
         bytesPerSecond: 4.2 * 1024 * 1024,
         transferred: 58.2 * 1024 * 1024,
@@ -3712,7 +3712,7 @@
       renderUpdateState({
         status: "downloaded",
         currentVersion: "2.2.3",
-        availableVersion: "2.2.7",
+        availableVersion: "2.6.0",
         percent: 100
       });
     }

@@ -515,7 +515,7 @@ export function HqBroadcastsTab({
                 <option value="warning">Warning</option>
                 <option value="critical">Critical</option>
               </select>
-              <input className="mono" value={minVer} onChange={(e) => setMinVer(e.target.value)} placeholder="2.2.7" />
+              <input className="mono" value={minVer} onChange={(e) => setMinVer(e.target.value)} placeholder="2.6.0" />
             </div>
           </div>
         </div>

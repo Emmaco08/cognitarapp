@@ -12,7 +12,7 @@
   max-width: none !important;
   margin: 0 !important;
   padding: 0 !important;
-  display: flex;
+  display: grid !important;
   min-height: 100vh;
 }
 .pt-offline-root .ct-nav {
@@ -23,6 +23,75 @@
   display: flex;
   align-items: center;
   gap: 10px;
+}
+.pt-offline-root .ct-iconbtn {
+  padding: 0 !important;
+  flex: none;
+}
+.ct-sidebar__close {
+  display: none;
+  margin-left: auto;
+}
+@media (max-width: 960px) {
+  .pt-offline-root .ct-shell,
+  html[data-ct-sidebar="collapsed"] .pt-offline-root .ct-shell {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+  .pt-offline-root .ct-topbar {
+    padding: 0 12px !important;
+    gap: 8px !important;
+  }
+  .pt-offline-root .ct-topbar__menu {
+    display: inline-grid !important;
+    place-items: center !important;
+    width: 36px !important;
+    height: 36px !important;
+    padding: 0 !important;
+    flex: none !important;
+  }
+  .pt-offline-root .ct-sidebar {
+    position: fixed !important;
+    left: 0 !important;
+    top: 0 !important;
+    bottom: 0 !important;
+    width: min(300px, 86vw) !important;
+    z-index: 110 !important;
+    transform: translateX(-105%) !important;
+    transition: transform 240ms cubic-bezier(0.22, 1, 0.36, 1) !important;
+  }
+  html.ct-drawer-open .pt-offline-root .ct-sidebar,
+  .pt-offline-root .ct-sidebar.is-open {
+    transform: translateX(0) !important;
+  }
+  .pt-offline-root .ct-scrim {
+    position: fixed !important;
+    inset: 0 !important;
+    z-index: 105 !important;
+    background: var(--ct-scrim, rgba(23, 22, 20, 0.45)) !important;
+  }
+  html.ct-drawer-open .pt-offline-root .ct-scrim,
+  .pt-offline-root .ct-scrim.is-open {
+    opacity: 1 !important;
+    visibility: visible !important;
+    pointer-events: auto !important;
+  }
+  .ct-sidebar__close {
+    display: inline-grid !important;
+    place-items: center !important;
+  }
+}
+@media (max-width: 640px) {
+  .tc-kpi {
+    padding: 14px 12px !important;
+  }
+  .tc-kpi__val {
+    font-size: 24px !important;
+  }
+  .tc-kpi__meta {
+    flex-wrap: wrap !important;
+    gap: 4px 8px !important;
+    font-size: 11.5px !important;
+  }
 }
 
 /* Fix body-scoped answer key class for Next.js wrapper */

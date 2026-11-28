@@ -190,9 +190,10 @@ def create_app(config_class=Config):
 
     def _render_error_page(code, status, title, message):
         from flask import request, render_template
+        path = request.path or "/"
         if (
             request.is_json
-            or request.path.startswith("/api/")
+            or path.startswith(("/api/", "/avatar/", "/uploads/", "/static/"))
             or request.headers.get("X-Requested-With") == "XMLHttpRequest"
         ):
             return {"error": status, "message": message}, code

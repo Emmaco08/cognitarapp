@@ -15,6 +15,27 @@ export interface ChangelogRelease {
 
 export const CHANGELOG_RELEASES: ChangelogRelease[] = [
   {
+    version: "v2.6.0",
+    date: "November 28, 2026",
+    title: "CogniTara Studio 2.6.0, Offline-Exact Online Exam Portal & Custom Branded Error Screens",
+    summary:
+      "Full desktop & local exam engine release bringing the pure monochrome interface, minimalist exam & score cards, licence-key-only Studio, School ID Online Portal sync, and custom branded 403/404/500 error templates to every school.",
+    newItems: [
+      "Online Exam Portal on portal.cognitara.net matching the offline LAN server UI 1:1 across Student, Teacher, and Admin workspaces, complete with Admin Online Portal On/Off switch and Super Admin School ID email lookup.",
+      "Custom branded monochrome 403, 404, 413, and 500 error screens in both the local Flask server and CogniTara web portals.",
+      "Interactive mobile navigation drawer with centered controls and responsive KPI cards across Student, Teacher, and Admin screens.",
+    ],
+    improvedItems: [
+      "Pure monochrome design across Desktop Studio, Admin Control Center, Teacher Studio, Student Dashboard, and the Live Exam Room with minimalist score cards.",
+      "Removed in-app Plans & Billing tabs from Desktop Studio in favor of clean inline Ed25519 licence key activation.",
+      "School logo and crisp monochrome typography on payment receipts and Brevo email notifications.",
+    ],
+    fixedItems: [
+      "Fixed mobile navigation menu button on portal.cognitara.net Admin and Teacher workspaces.",
+      "Fixed asset/avatar 404 handling to return clean JSON instead of HTML error pages.",
+    ],
+  },
+  {
     version: "v2.4.0",
     date: "November 27, 2026",
     title: "Dedicated web-only checkout, signed PDF receipts & licence-key-only Desktop",

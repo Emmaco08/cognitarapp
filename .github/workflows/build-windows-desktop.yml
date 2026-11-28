@@ -378,17 +378,17 @@ jobs:
           $latestYml = (Resolve-Path "desktop/release/latest.yml").Path
           $sums = (Resolve-Path "desktop/release/SHA256SUMS.txt").Path
           $notes = @'
-          CogniTara Studio __VER__ - Hardened Desktop Studio, Cloud Exam Backups, Paystack Payment Receipts & Simplified Portal UX
+          CogniTara Studio __VER__ - Pure Monochrome Studio, Online Exam Portal Sync, Minimalist Exam & Score Cards & Branded Error Screens
 
           ### Downloads
           - **Recommended Direct Installer:** `CogniTara-Studio-Setup-__VER__-x64.exe` - Borderless custom portrait Windows setup wizard with install-path picker, shortcut toggles, animated progress ring, and Dark/Light themes.
           - **In-App Auto-Updater Channel:** `CogniTara-Studio-Update-__VER__-x64.exe` + `.blockmap` + `latest.yml` (used automatically by CogniTara Studio's built-in updater).
 
           ### What's New & Fixed in __VER__
-          - **Portal Bug Fixes & Stability:** Optional profile photos with unlimited upload size (smart auto-compression to clean JPEG), Teacher Add Question & Exam Control Center fixes (staying signed in cleanly), permanent non-expiring CSRF/sessions without cookie overflow, 90-second disconnect grace, and universal laptop-to-4K responsive layout.
-          - **Clear Paystack Checkout & Receipts:** Dedicated `/pay/done` payment confirmation & printable receipt page, automatic Brevo email receipts, crisp in-app **Payment Confirmed & Receipt** pane with one-click licence key copy, dual Live/Test Paystack keys, and 3-way fee configuration in Developer HQ.
-          - **Cloud Exam Database Backups & Configurable Reminder:** One-click compressed, SHA-256 verified Cloud Exam Backups & Restore inside CogniTara Studio and the Cloud Dashboard, with an automatic 7-day reminder banner configurable from Developer HQ.
-          - **Anti-Tampering & Security Hardening:** Packaged ASAR with `@electron/fuses` (`RunAsNode`, `NODE_OPTIONS`, `--inspect` disabled; `OnlyLoadAppFromAsar` enabled), Terser JS minification/mangling, pinned Ed25519 key in packaged builds, DevTools/shortcuts locked in production, signed pre-auth OTP challenge tokens, persistent DB login lockouts, and HQ 2FA (Brevo Email OTP + Authenticator TOTP QR + recovery codes).
+          - **Pure Monochrome Desktop Studio & Exam Engine:** Unified calm pure black & warm cream-white interface across CogniTara Studio Desktop, Admin Control Center, Teacher Studio, Student Dashboard, Live Exam Room, and minimalist score cards.
+          - **Cleaner Licence-Only Desktop Experience:** Removed in-app Plans & Billing menus from Desktop Studio; schools purchase or renew on cognitara.net and activate cleanly with their Ed25519 licence key under Licence or directly on the Lock Screen.
+          - **School ID & Online Exam Portal Sync:** Backed-up school databases now power the 1:1 Online Exam Portal at `portal.cognitara.net`, with instant Admin Online Server On/Off control for teachers and students.
+          - **Custom Branded Error Screens & Stability:** Added bespoke monochrome 403, 404, 413, and 500 error pages to the local Flask server, clean JSON 404 handling for asset routes, strict Admin read-only exam oversight, hold-to-confirm destructive modals, and full security hardening (`@electron/fuses`, Terser minification, pinned Ed25519 key).
           '@.Replace("__VER__", $pkgVer)
           gh release view $tag 2>$null
           if ($LASTEXITCODE -eq 0) {

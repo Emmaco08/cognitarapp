@@ -27,7 +27,7 @@ export async function resolveLatestWindowsInstaller(): Promise<{ url: string; ve
         html_url?: string;
         assets?: Array<{ name?: string; browser_download_url?: string }>;
       } | null;
-      const version = String(data?.tag_name || "v2.2.7");
+      const version = String(data?.tag_name || "v2.6.0");
       const exeAsset = Array.isArray(data?.assets)
         ? data.assets.find((a) => typeof a?.name === "string" && a.name.toLowerCase().endsWith(".exe"))
         : null;
@@ -39,5 +39,5 @@ export async function resolveLatestWindowsInstaller(): Promise<{ url: string; ve
     // Fallback cleanly if GitHub API is unreachable
   }
 
-  return { url: FALLBACK_RELEASE_URL, version: "v2.2.7" };
+  return { url: FALLBACK_RELEASE_URL, version: "v2.6.0" };
 }
